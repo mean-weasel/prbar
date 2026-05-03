@@ -45,10 +45,9 @@ struct PRMenuBarApp: App {
   }
 
   private func refresh(now: Date) {
-    guard isRefreshing == false else {
+    guard beginRefresh() else {
       return
     }
-    isRefreshing = true
     defer {
       isRefreshing = false
     }
@@ -62,14 +61,13 @@ struct PRMenuBarApp: App {
   }
 
   private func refreshIfDue(now: Date) {
-    guard isRefreshing == false else {
-      return
-    }
     let policy = RefreshPolicy(interval: store.refreshInterval)
     guard policy.isRefreshDue(lastRefreshedAt: store.refreshedAt, now: now) else {
       return
     }
-    isRefreshing = true
+    guard beginRefresh() else {
+      return
+    }
     defer {
       isRefreshing = false
     }
@@ -80,5 +78,13 @@ struct PRMenuBarApp: App {
     } catch {
       refreshError = RefreshFailureMessage.scheduled(error: error)
     }
+  }
+
+  private func beginRefresh() -> Bool {
+    guard isRefreshing == false else {
+      return false
+    }
+    isRefreshing = true
+    return true
   }
 }

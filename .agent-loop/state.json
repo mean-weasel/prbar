@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 38,
+  "iteration": 39,
   "completed": [
     {
       "iteration": 1,
@@ -254,6 +254,12 @@
       "at": "2026-05-03T02:51:18Z",
       "summary": "Documented current live GitHub data source status, refresh, and rate-limit reset behavior in the README.",
       "report": ".agent-loop/iterations/038-report.md"
+    },
+    {
+      "iteration": 39,
+      "at": "2026-05-03T02:52:12Z",
+      "summary": "Extracted shared refresh start guarding so manual and scheduled refresh paths use one in-progress gate.",
+      "report": ".agent-loop/iterations/039-report.md"
     }
   ],
   "open_findings": [
@@ -266,21 +272,9 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-027",
-      "title": "Extract shared refresh-start guard to reduce app refresh duplication",
-      "kind": "reliability",
-      "impact": 3,
-      "confidence": 3,
-      "evidence": 3,
-      "effort": 2,
-      "risk": 4,
-      "score": 26,
-      "verification": "App build plus make ci-local"
-    },
-    {
       "id": "T-028",
       "title": "Add refresh status detail to the popover footer",
-      "kind": "reliability",
+      "kind": "feature",
       "impact": 3,
       "confidence": 3,
       "evidence": 3,
@@ -288,6 +282,18 @@
       "risk": 4,
       "score": 26,
       "verification": "View build plus make ci-local"
+    },
+    {
+      "id": "T-029",
+      "title": "Add provider factory tests for trimmed token selection details",
+      "kind": "reliability",
+      "impact": 2,
+      "confidence": 4,
+      "evidence": 3,
+      "effort": 1,
+      "risk": 4,
+      "score": 25,
+      "verification": "Factory tests plus make ci-local"
     }
   ],
   "blocked": [],
@@ -302,12 +308,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 38."
+    "make ci-local passed for iteration 39."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.84,
-    "reason": "README behavior docs now match the current live provider and refresh UX; next useful work is reducing duplicated refresh guard logic in the app entry point.",
-    "next_focus": "Extract shared refresh-start guard to reduce app refresh duplication."
+    "reason": "Refresh guard duplication is reduced; next useful work is making the footer communicate active refresh state alongside next-refresh timing.",
+    "next_focus": "Add refresh status detail to the popover footer."
   }
 }
