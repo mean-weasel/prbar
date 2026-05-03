@@ -3,6 +3,7 @@ import SwiftUI
 struct PRPopoverView: View {
   @Binding var store: PRActivityStore
   var refreshError: String?
+  var isRefreshing = false
   var dataSource: PRActivityDataSource = .sample
   var onRefresh: () -> Void
   @State private var selectedBucketIndex = 0
@@ -42,10 +43,11 @@ struct PRPopoverView: View {
         .foregroundStyle(.secondary)
       }
       Spacer()
-      Button("Refresh") {
+      Button(isRefreshing ? "Refreshing..." : "Refresh") {
         onRefresh()
       }
       .buttonStyle(.bordered)
+      .disabled(isRefreshing)
     }
   }
 

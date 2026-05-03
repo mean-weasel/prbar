@@ -7,6 +7,7 @@ struct PRMenuBarApp: App {
   private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
   @State private var store: PRActivityStore
   @State private var refreshError: String?
+  @State private var isRefreshing = false
 
   init() {
     let settingsStore = PRSettingsStore()
@@ -22,6 +23,7 @@ struct PRMenuBarApp: App {
       PRPopoverView(
         store: $store,
         refreshError: refreshError,
+        isRefreshing: isRefreshing,
         dataSource: providerSelection.dataSource
       ) {
         refresh(now: Date())
@@ -43,6 +45,13 @@ struct PRMenuBarApp: App {
   }
 
   private func refresh(now: Date) {
+    guard isRefreshing == false else {
+      return
+    }
+    isRefreshing = true
+    defer {
+      isRefreshing = false
+    }
     let refresher = PRActivityRefresher(provider: providerSelection.provider)
     do {
       store = try refresher.refresh(current: store, now: now)
