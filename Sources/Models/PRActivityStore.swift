@@ -142,8 +142,8 @@ struct PRActivityStore {
         now: now
       )
       .labels,
-      window: .twoWeeks,
-      bin: .week,
+      window: .oneWeek,
+      bin: .day,
       refreshInterval: .daily,
       repositories: RepositoryActivity.samples.map { $0.withDistributedDailyCounts() },
       refreshedAt: now
