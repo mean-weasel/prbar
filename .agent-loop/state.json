@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 26,
+  "iteration": 27,
   "completed": [
     {
       "iteration": 1,
@@ -182,6 +182,12 @@
       "at": "2026-05-03T02:26:42Z",
       "summary": "Added explicit GitHub request timeouts and recorded loop learnings for the live-provider batch.",
       "report": ".agent-loop/iterations/026-report.md"
+    },
+    {
+      "iteration": 27,
+      "at": "2026-05-03T02:39:04Z",
+      "summary": "Added visible sample-vs-GitHub data source status to the popover header and provider selection model.",
+      "report": ".agent-loop/iterations/027-report.md"
     }
   ],
   "open_findings": [
@@ -236,12 +242,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 26."
+    "make ci-local passed for iteration 27."
   ],
   "judge": {
-    "continue": false,
+    "continue": true,
     "confidence": 0.88,
-    "reason": "The requested 20-iteration continuation is complete. Valuable follow-up tasks remain, but the loop budget is exhausted.",
-    "next_focus": "Open a coherent PR for the live GitHub provider batch."
+    "reason": "The data source is now visible in the app; next useful work is tightening app startup so initial load and refresh use the same provider selection.",
+    "next_focus": "Reuse a single provider selection during app startup."
   }
 }

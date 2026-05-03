@@ -3,6 +3,7 @@ import SwiftUI
 struct PRPopoverView: View {
   @Binding var store: PRActivityStore
   var refreshError: String?
+  var dataSource: PRActivityDataSource = .sample
   var onRefresh: () -> Void
   @State private var selectedBucketIndex = 0
 
@@ -33,9 +34,12 @@ struct PRPopoverView: View {
       VStack(alignment: .leading, spacing: 4) {
         Text("PR Activity")
           .font(.headline)
-        Text(store.summaryText)
-          .font(.caption)
-          .foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+          Text(store.summaryText)
+          Label(dataSource.title, systemImage: dataSource.systemImage)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
       }
       Spacer()
       Button("Refresh") {

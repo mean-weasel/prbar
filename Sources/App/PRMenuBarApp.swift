@@ -3,21 +3,25 @@ import SwiftUI
 @main
 struct PRMenuBarApp: App {
   private let settingsStore = PRSettingsStore()
-  private let activityProvider: PRActivityProviding = PRActivityProviderFactory.make()
+  private let providerSelection = PRActivityProviderFactory.makeSelection()
   private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
   @State private var store: PRActivityStore
   @State private var refreshError: String?
 
   init() {
     let settingsStore = PRSettingsStore()
-    let activityProvider = PRActivityProviderFactory.make()
-    let sample = (try? activityProvider.load(now: Date())) ?? PRActivityStore.sample()
+    let providerSelection = PRActivityProviderFactory.makeSelection()
+    let sample = (try? providerSelection.provider.load(now: Date())) ?? PRActivityStore.sample()
     _store = State(initialValue: settingsStore.load().map(sample.applying) ?? sample)
   }
 
   var body: some Scene {
     MenuBarExtra {
-      PRPopoverView(store: $store, refreshError: refreshError) {
+      PRPopoverView(
+        store: $store,
+        refreshError: refreshError,
+        dataSource: providerSelection.dataSource
+      ) {
         refresh(now: Date())
       }
       .frame(width: 460)
@@ -37,7 +41,7 @@ struct PRMenuBarApp: App {
   }
 
   private func refresh(now: Date) {
-    let refresher = PRActivityRefresher(provider: activityProvider)
+    let refresher = PRActivityRefresher(provider: providerSelection.provider)
     do {
       store = try refresher.refresh(current: store, now: now)
       refreshError = nil
@@ -47,7 +51,7 @@ struct PRMenuBarApp: App {
   }
 
   private func refreshIfDue(now: Date) {
-    let refresher = PRActivityRefresher(provider: activityProvider)
+    let refresher = PRActivityRefresher(provider: providerSelection.provider)
     do {
       guard let refreshed = try refresher.refreshIfDue(current: store, now: now) else {
         return
