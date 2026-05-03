@@ -19,6 +19,16 @@ final class PRActivityProviderFactoryTests: XCTestCase {
     XCTAssertEqual(selection.dataSource, .github)
   }
 
+  func testFactoryTrimsGitHubProviderToken() throws {
+    let selection = PRActivityProviderFactory.makeSelection(
+      environment: [PRActivityProviderFactory.tokenEnvironmentKey: " \ntoken\t"]
+    )
+    let provider = try XCTUnwrap(selection.provider as? GitHubPRActivityProvider)
+
+    XCTAssertEqual(provider.token, "token")
+    XCTAssertEqual(selection.dataSource, .github)
+  }
+
   func testFactoryUsesStaticProviderWithWhitespaceOnlyToken() {
     let selection = PRActivityProviderFactory.makeSelection(
       environment: [PRActivityProviderFactory.tokenEnvironmentKey: "   \n"]

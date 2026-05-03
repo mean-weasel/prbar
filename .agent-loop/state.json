@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 40,
+  "iteration": 41,
   "completed": [
     {
       "iteration": 1,
@@ -266,6 +266,12 @@
       "at": "2026-05-03T02:53:05Z",
       "summary": "Added footer refresh status text so the popover shows whether refresh is ready or in progress.",
       "report": ".agent-loop/iterations/040-report.md"
+    },
+    {
+      "iteration": 41,
+      "at": "2026-05-03T02:54:20Z",
+      "summary": "Added provider factory coverage proving GitHub token whitespace is trimmed while retaining GitHub source selection.",
+      "report": ".agent-loop/iterations/041-report.md"
     }
   ],
   "open_findings": [
@@ -278,18 +284,6 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-029",
-      "title": "Add provider factory tests for trimmed token selection details",
-      "kind": "reliability",
-      "impact": 2,
-      "confidence": 4,
-      "evidence": 3,
-      "effort": 1,
-      "risk": 4,
-      "score": 25,
-      "verification": "Factory tests plus make ci-local"
-    },
-    {
       "id": "T-030",
       "title": "Record source-status batch learnings",
       "kind": "reliability",
@@ -300,6 +294,18 @@
       "risk": 4,
       "score": 25,
       "verification": "Docs review plus make ci-local"
+    },
+    {
+      "id": "T-031",
+      "title": "Add GitHub provider search page-size request coverage",
+      "kind": "reliability",
+      "impact": 2,
+      "confidence": 4,
+      "evidence": 3,
+      "effort": 1,
+      "risk": 4,
+      "score": 25,
+      "verification": "Provider request test plus make ci-local"
     }
   ],
   "blocked": [],
@@ -314,12 +320,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 40."
+    "make ci-local passed for iteration 41."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "The popover now shows refresh readiness; next useful low-risk task is tightening provider factory coverage around trimmed token selection.",
-    "next_focus": "Add provider factory tests for trimmed token selection details."
+    "reason": "Provider factory token handling is covered; the next useful audit task is recording source-status batch learnings while they are fresh.",
+    "next_focus": "Record source-status batch learnings."
   }
 }
