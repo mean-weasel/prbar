@@ -36,7 +36,8 @@ jobs:
       - name: Prepare site
         run: |
           mkdir _site
-          cp index.html pr-chart-mobile.html _site/
+          cp pr-chart-mobile.html _site/index.html
+          cp pr-chart-mobile.html _site/pr-chart-mobile.html
           touch _site/.nojekyll
 
       - name: Upload artifact
