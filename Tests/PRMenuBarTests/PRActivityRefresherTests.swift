@@ -4,7 +4,10 @@ import XCTest
 
 final class PRActivityRefresherTests: XCTestCase {
   func testRefreshPreservesCurrentSettings() throws {
-    var current = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    var current = PRActivityStore.sample(
+      now: Date(timeIntervalSince1970: 0),
+      calendar: .prActivityUTC
+    )
     current.window = .oneMonth
     current.refreshInterval = .manual
     current.repositories[0].isIncluded = false
@@ -25,7 +28,10 @@ final class PRActivityRefresherTests: XCTestCase {
   }
 
   func testRefreshIfDueReturnsNilWhenPolicyIsNotDue() throws {
-    var current = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    var current = PRActivityStore.sample(
+      now: Date(timeIntervalSince1970: 0),
+      calendar: .prActivityUTC
+    )
     current.refreshInterval = .daily
     let refresher = PRActivityRefresher(provider: StaticPRActivityProvider())
 
@@ -38,7 +44,10 @@ final class PRActivityRefresherTests: XCTestCase {
   }
 
   func testRefreshIfDuePropagatesProviderErrorsWhenDue() {
-    var current = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    var current = PRActivityStore.sample(
+      now: Date(timeIntervalSince1970: 0),
+      calendar: .prActivityUTC
+    )
     current.refreshInterval = .daily
     let refresher = PRActivityRefresher(provider: FailingPRActivityProvider())
 
