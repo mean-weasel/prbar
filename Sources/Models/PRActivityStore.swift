@@ -42,6 +42,25 @@ struct PRActivityStore {
     "\(totalPullRequests) merged across \(activeRepositoryCount) repos"
   }
 
+  var settingsSnapshot: PRSettingsSnapshot {
+    PRSettingsSnapshot(
+      window: window,
+      includedRepositoryIDs: repositories.filter(\.isIncluded).map(\.id)
+    )
+  }
+
+  func applying(_ settings: PRSettingsSnapshot) -> PRActivityStore {
+    let included = Set(settings.includedRepositoryIDs)
+    var copy = self
+    copy.window = settings.window
+    copy.repositories = repositories.map { repository in
+      var updated = repository
+      updated.isIncluded = included.contains(repository.id)
+      return updated
+    }
+    return copy
+  }
+
   static func sample(now: Date = Date()) -> PRActivityStore {
     PRActivityStore(
       bucketLabels: [

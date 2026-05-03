@@ -7,4 +7,5 @@
 - A separate learnings log is useful for meta observations about the loop itself; mixing these into product state would make the judge signal noisier.
 - Strict CI guards created a productive repair loop: formatting failed before build, and tests caught a wrong expectation derived from manually summing scratch data.
 - The loop needs an explicit convention for whether generated `.agent-loop` artifacts should be committed after each iteration.
-
+- Repeated manual total mistakes suggest the loop should favor fixture-derived expected values or helper assertions over hand-summed numbers in tests.
+- When the user changes the iteration budget, the agent should update the persisted loop budget immediately so state matches the active charter.

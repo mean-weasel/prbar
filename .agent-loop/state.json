@@ -21,17 +21,23 @@
       "make ci-local"
     ],
     "budgets": {
-      "max_iterations": 4,
+      "max_iterations": 6,
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 1,
+  "iteration": 2,
   "completed": [
     {
       "iteration": 1,
       "at": "2026-05-03T01:12:45Z",
       "summary": "Imported scratch PR activity data into the app model, added window filtering, repository inclusion toggles, refresh timestamp behavior, and a stacked chart in the menu bar popover.",
       "report": ".agent-loop/iterations/001-report.md"
+    },
+    {
+      "iteration": 2,
+      "at": "2026-05-03T01:15:20Z",
+      "summary": "Persisted the selected time window and included repositories using a UserDefaults-backed settings store.",
+      "report": ".agent-loop/iterations/002-report.md"
     }
   ],
   "open_findings": [
@@ -48,25 +54,13 @@
       "text": "The chart has no hover/selection detail for individual repo segment values."
     },
     {
-      "id": "F-003",
+      "id": "F-004",
       "kind": "reliability",
-      "severity": "medium",
-      "text": "Repository selections and time window are not persisted across app launches."
+      "severity": "low",
+      "text": "Settings persistence does not yet handle repository IDs disappearing from future fetched data beyond excluding unknown IDs."
     }
   ],
   "candidate_tasks": [
-    {
-      "id": "T-002",
-      "title": "Persist selected repos and time window with AppStorage or UserDefaults",
-      "kind": "reliability",
-      "impact": 4,
-      "confidence": 5,
-      "evidence": 5,
-      "effort": 4,
-      "risk": 5,
-      "score": 41,
-      "verification": "Unit tests for settings defaults plus make ci-local"
-    },
     {
       "id": "T-003",
       "title": "Add chart selection detail for a bucket and repo breakdown",
@@ -104,12 +98,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed after fixing strict formatting findings and a test expectation."
+    "make ci-local passed for iteration 2 after fixing strict formatting and a manual total expectation."
   ],
   "judge": {
     "continue": true,
-    "confidence": 0.82,
-    "reason": "High-value reliability and product gaps remain with clear verification paths.",
-    "next_focus": "Persist selected repos and time window."
+    "confidence": 0.8,
+    "reason": "The next product gap is visible in the current app: chart values are not inspectable by bucket/repo.",
+    "next_focus": "Add chart selection detail for bucket and repository breakdown."
   }
 }

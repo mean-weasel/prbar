@@ -51,4 +51,19 @@ final class PRActivityStoreTests: XCTestCase {
     XCTAssertEqual(store.visibleBucketLabels, ["04/06", "04/13", "04/20", "04/27"])
     XCTAssertEqual(store.bucketTotals, [128, 288, 205, 462])
   }
+
+  func testSettingsSnapshotCanBeApplied() {
+    let store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    let settings = PRSettingsSnapshot(
+      window: .oneMonth,
+      includedRepositoryIDs: ["mean-weasel/deckchecker", "neonwatty/RedditReminder"]
+    )
+
+    let updated = store.applying(settings)
+
+    XCTAssertEqual(updated.window, .oneMonth)
+    XCTAssertEqual(updated.activeRepositoryCount, 2)
+    XCTAssertEqual(updated.totalPullRequests, 343)
+    XCTAssertEqual(updated.settingsSnapshot, settings)
+  }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-enum ActivityWindow: String, CaseIterable, Identifiable {
+enum ActivityWindow: String, CaseIterable, Codable, Identifiable {
   case oneDay = "1 day"
   case oneWeek = "1 week"
   case twoWeeks = "2 weeks"
