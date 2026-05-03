@@ -14,3 +14,4 @@
 - SwiftUI `some View` edits are prone to small composition mistakes; fast local build verification catches them before they become loop-state noise.
 - For a fixed user-requested loop count, stop-state should distinguish "batch complete" from "no valuable work remains".
 - Empty-state loops are good late-batch tasks because they improve UX without expanding scope into external dependencies.
+- Commit each loop for auditability and rollback, but open PRs for coherent batches of loops so review stays product-shaped instead of iteration-shaped.
