@@ -13,6 +13,7 @@ struct GitHubPRActivityProvider: PRActivityProviding {
   var transport: GitHubAPITransport
   var bucketLabels: [String]
   var defaultWindow: ActivityWindow = .twoWeeks
+  private let dailyBucketCount = 30
   private let repositoryPageSize = 100
   private let searchPageSize = 100
 
@@ -28,9 +29,16 @@ struct GitHubPRActivityProvider: PRActivityProviding {
       now: now
     )
     .labels
+    let dailyLabels = PRActivityBucketSeries.daily(
+      mergedDates: [],
+      bucketCount: dailyBucketCount,
+      now: now
+    )
+    .labels
 
     return PRActivityStore(
       bucketLabels: labels,
+      dailyBucketLabels: dailyLabels,
       window: defaultWindow,
       bin: .week,
       refreshInterval: .daily,
@@ -71,8 +79,17 @@ struct GitHubPRActivityProvider: PRActivityProviding {
       bucketCount: bucketLabels.count,
       now: now
     )
-    var activity = repository.activity(bucketCount: bucketLabels.count)
+    let dailySeries = PRActivityBucketSeries.daily(
+      mergedDates: mergedPullRequests.map(\.mergedAt),
+      bucketCount: dailyBucketCount,
+      now: now
+    )
+    var activity = repository.activity(
+      bucketCount: bucketLabels.count,
+      dailyBucketCount: dailyBucketCount
+    )
     activity.weeklyCounts = series.counts
+    activity.dailyCounts = dailySeries.counts
     return activity
   }
 

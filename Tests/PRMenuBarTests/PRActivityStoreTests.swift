@@ -60,9 +60,20 @@ final class PRActivityStoreTests: XCTestCase {
     store.window = .oneMonth
     store.bin = .month
 
-    XCTAssertEqual(store.visibleBucketLabels, ["04/06-04/27"])
-    XCTAssertEqual(store.bucketTotals, [1_083])
-    XCTAssertEqual(store.totalPullRequests, 1_083)
+    XCTAssertEqual(store.visibleBucketLabels.count, 1)
+    XCTAssertEqual(store.bucketTotals, [1_119])
+    XCTAssertEqual(store.totalPullRequests, 1_119)
+  }
+
+  func testDayBinShowsDailyBuckets() {
+    var store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+
+    store.window = .oneWeek
+    store.bin = .day
+
+    XCTAssertEqual(store.visibleBucketLabels.count, 7)
+    XCTAssertEqual(store.bucketTotals.count, 7)
+    XCTAssertEqual(store.totalPullRequests, 462)
   }
 
   func testSettingsSnapshotCanBeApplied() {
@@ -81,7 +92,7 @@ final class PRActivityStoreTests: XCTestCase {
     XCTAssertEqual(updated.bin, .month)
     XCTAssertEqual(updated.refreshInterval, .manual)
     XCTAssertEqual(updated.activeRepositoryCount, 2)
-    XCTAssertEqual(updated.totalPullRequests, 343)
+    XCTAssertEqual(updated.totalPullRequests, 359)
     XCTAssertEqual(updated.settingsSnapshot, settings)
   }
 

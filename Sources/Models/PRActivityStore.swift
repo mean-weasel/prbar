@@ -2,15 +2,46 @@ import Foundation
 
 struct PRActivityStore {
   var bucketLabels: [String]
+  var dailyBucketLabels: [String]
   var window: ActivityWindow
   var bin: ActivityBin
   var refreshInterval: AutoRefreshInterval
   var repositories: [RepositoryActivity]
   var refreshedAt: Date
 
+  init(
+    bucketLabels: [String],
+    dailyBucketLabels: [String] = [],
+    window: ActivityWindow,
+    bin: ActivityBin = .week,
+    refreshInterval: AutoRefreshInterval,
+    repositories: [RepositoryActivity],
+    refreshedAt: Date
+  ) {
+    self.bucketLabels = bucketLabels
+    self.dailyBucketLabels = dailyBucketLabels
+    self.window = window
+    self.bin = bin
+    self.refreshInterval = refreshInterval
+    self.repositories = repositories
+    self.refreshedAt = refreshedAt
+  }
+
   var visibleBucketLabels: [String] {
-    Array(bucketLabels.suffix(window.visibleBucketCount))
-      .groupedLabels(size: bin.sourceBucketGroupSize)
+    switch bin {
+    case .day:
+      guard dailyBucketLabels.isEmpty == false else {
+        return Array(bucketLabels.suffix(window.visibleBucketCount))
+      }
+      return Array(dailyBucketLabels.suffix(window.dayCount))
+    case .week:
+      return Array(bucketLabels.suffix(window.visibleBucketCount))
+    case .month:
+      guard dailyBucketLabels.isEmpty == false else {
+        return Array(bucketLabels.suffix(window.visibleBucketCount)).groupedLabels(size: 4)
+      }
+      return Array(dailyBucketLabels.suffix(window.dayCount)).rangeLabel()
+    }
   }
 
   var includedRepositories: [RepositoryActivity] {
@@ -105,10 +136,16 @@ struct PRActivityStore {
       bucketLabels: [
         "03/02", "03/09", "03/16", "03/23", "03/30", "04/06", "04/13", "04/20", "04/27",
       ],
+      dailyBucketLabels: PRActivityBucketSeries.daily(
+        mergedDates: [],
+        bucketCount: 63,
+        now: now
+      )
+      .labels,
       window: .twoWeeks,
       bin: .week,
       refreshInterval: .daily,
-      repositories: RepositoryActivity.samples,
+      repositories: RepositoryActivity.samples.map { $0.withDistributedDailyCounts() },
       refreshedAt: now
     )
   }
@@ -126,5 +163,12 @@ extension Array where Element == String {
       }
       return "\(first)-\(last)"
     }
+  }
+
+  func rangeLabel() -> [String] {
+    guard let first, let last, first != last else {
+      return first.map { [$0] } ?? []
+    }
+    return ["\(first)-\(last)"]
   }
 }

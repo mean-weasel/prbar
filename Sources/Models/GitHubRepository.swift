@@ -10,13 +10,18 @@ struct GitHubRepository: Decodable, Equatable {
     permissions?.pull ?? true
   }
 
-  func activity(bucketCount: Int, isIncluded: Bool = true) -> RepositoryActivity {
+  func activity(
+    bucketCount: Int,
+    dailyBucketCount: Int = 0,
+    isIncluded: Bool = true
+  ) -> RepositoryActivity {
     RepositoryActivity(
       id: fullName,
       owner: owner.login,
       name: name,
       colorHex: RepositoryColor.hexColor(for: fullName),
       weeklyCounts: Array(repeating: 0, count: bucketCount),
+      dailyCounts: Array(repeating: 0, count: dailyBucketCount),
       isIncluded: isIncluded
     )
   }
