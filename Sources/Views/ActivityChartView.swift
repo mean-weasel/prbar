@@ -3,6 +3,7 @@ import SwiftUI
 struct ActivityChartView: View {
   var store: PRActivityStore
   @Binding var selectedBucketIndex: Int
+  @State private var hoveredBucketIndex: Int?
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
@@ -10,39 +11,54 @@ struct ActivityChartView: View {
         .font(.caption)
         .foregroundStyle(.secondary)
 
-      ScrollViewReader { proxy in
-        ScrollView(.horizontal) {
-          HStack(alignment: .bottom, spacing: columnSpacing) {
-            ForEach(Array(store.visibleBucketLabels.enumerated()), id: \.offset) { index, label in
-              ActivityChartColumn(
-                label: label,
-                total: store.bucketTotals[index],
-                maxTotal: store.maxBucketTotal,
-                repositories: store.includedRepositories,
-                bucketIndex: index,
-                window: store.window,
-                bin: store.bin,
-                isSelected: selectedBucketIndex == index
-              )
-              .id(index)
-              .frame(width: columnWidth)
-              .contentShape(Rectangle())
-              .help(helpText(for: index, label: label))
-              .onTapGesture {
-                selectedBucketIndex = index
+      ZStack(alignment: .topTrailing) {
+        ScrollViewReader { proxy in
+          ScrollView(.horizontal) {
+            HStack(alignment: .bottom, spacing: columnSpacing) {
+              ForEach(Array(store.visibleBucketLabels.enumerated()), id: \.offset) { index, label in
+                ActivityChartColumn(
+                  label: label,
+                  total: store.bucketTotals[index],
+                  maxTotal: store.maxBucketTotal,
+                  repositories: store.includedRepositories,
+                  bucketIndex: index,
+                  window: store.window,
+                  bin: store.bin,
+                  isSelected: selectedBucketIndex == index
+                )
+                .id(index)
+                .frame(width: columnWidth)
+                .contentShape(Rectangle())
+                .onHover { isHovering in
+                  hoveredBucketIndex = isHovering ? index : nil
+                }
+                .onTapGesture {
+                  selectedBucketIndex = index
+                }
               }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
           }
-          .frame(maxWidth: .infinity, alignment: .leading)
+          .onAppear {
+            scrollToMostRecent(proxy)
+          }
+          .onChange(of: store.window) { _, _ in
+            hoveredBucketIndex = nil
+            scrollToMostRecent(proxy)
+          }
+          .onChange(of: store.bin) { _, _ in
+            hoveredBucketIndex = nil
+            scrollToMostRecent(proxy)
+          }
         }
-        .onAppear {
-          scrollToMostRecent(proxy)
-        }
-        .onChange(of: store.window) { _, _ in
-          scrollToMostRecent(proxy)
-        }
-        .onChange(of: store.bin) { _, _ in
-          scrollToMostRecent(proxy)
+
+        if let text = hoveredTooltipText {
+          ChartTooltip(text: text)
+            .padding(.top, 2)
+            .padding(.trailing, 2)
+            .allowsHitTesting(false)
+            .transition(.opacity)
+            .zIndex(1)
         }
       }
       .frame(height: 150)
@@ -71,6 +87,18 @@ struct ActivityChartView: View {
     return "\(label): \(total) merged PRs\n\(repositories.joined(separator: "\n"))"
   }
 
+  private var hoveredTooltipText: String? {
+    guard let hoveredBucketIndex,
+      store.visibleBucketLabels.indices.contains(hoveredBucketIndex)
+    else {
+      return nil
+    }
+    return helpText(
+      for: hoveredBucketIndex,
+      label: store.visibleBucketLabels[hoveredBucketIndex]
+    )
+  }
+
   private var columnSpacing: CGFloat {
     store.bin == .day ? 4 : 8
   }
@@ -84,6 +112,25 @@ struct ActivityChartView: View {
     case .month:
       return 140
     }
+  }
+}
+
+private struct ChartTooltip: View {
+  var text: String
+
+  var body: some View {
+    Text(text)
+      .font(.caption2.monospacedDigit())
+      .foregroundStyle(.primary)
+      .multilineTextAlignment(.leading)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 6)
+      .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+      .overlay(
+        RoundedRectangle(cornerRadius: 6)
+          .stroke(Color.primary.opacity(0.12))
+      )
+      .shadow(color: Color.black.opacity(0.12), radius: 6, y: 2)
   }
 }
 
