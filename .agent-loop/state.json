@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 21,
+  "iteration": 22,
   "completed": [
     {
       "iteration": 1,
@@ -152,6 +152,12 @@
       "at": "2026-05-03T02:22:17Z",
       "summary": "Fetched additional GitHub search pages for high-volume repositories when total_count exceeds the first page.",
       "report": ".agent-loop/iterations/021-report.md"
+    },
+    {
+      "iteration": 22,
+      "at": "2026-05-03T02:23:11Z",
+      "summary": "Rejected incomplete GitHub merged PR search responses so partial activity data is surfaced as a refresh failure.",
+      "report": ".agent-loop/iterations/022-report.md"
     }
   ],
   "open_findings": [
@@ -212,12 +218,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 21."
+    "make ci-local passed for iteration 22."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "High-volume GitHub search pagination is handled; the next useful reliability step is handling incomplete search responses explicitly.",
-    "next_focus": "Surface incomplete GitHub search responses as provider errors."
+    "reason": "Incomplete GitHub search responses now fail closed; next useful data-correctness work is accepting GitHub timestamps without fractional seconds.",
+    "next_focus": "Accept merged_at timestamps with and without fractional seconds."
   }
 }

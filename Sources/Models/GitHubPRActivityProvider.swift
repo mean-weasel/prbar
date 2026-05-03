@@ -4,6 +4,10 @@ protocol GitHubAPITransport {
   func data(for request: URLRequest) throws -> Data
 }
 
+enum GitHubPRActivityProviderError: Error, Equatable {
+  case incompleteSearchResults(repositoryID: String)
+}
+
 struct GitHubPRActivityProvider: PRActivityProviding {
   var token: String
   var transport: GitHubAPITransport
@@ -73,6 +77,9 @@ struct GitHubPRActivityProvider: PRActivityProviding {
         GitHubMergedPullRequestSearchResponse.self,
         from: data
       )
+      guard response.incompleteResults == false else {
+        throw GitHubPRActivityProviderError.incompleteSearchResults(repositoryID: repositoryID)
+      }
       totalCount = response.totalCount
       items.append(contentsOf: response.items)
       page += 1

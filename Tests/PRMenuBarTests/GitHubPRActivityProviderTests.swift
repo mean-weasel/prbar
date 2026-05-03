@@ -62,6 +62,31 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     XCTAssertTrue(transport.capturedRequests[2].url?.query?.contains("page=2") ?? false)
   }
 
+  func testProviderRejectsIncompleteMergedPullRequestSearchResults() throws {
+    let transport = FixtureGitHubAPITransport(
+      responses: [
+        repositoryDiscoveryData(),
+        mergedPullRequestData(
+          totalCount: 1,
+          incompleteResults: true,
+          mergedAt: "2026-04-26T12:00:00.000Z"
+        ),
+      ]
+    )
+    let provider = GitHubPRActivityProvider(
+      token: "token",
+      transport: transport,
+      bucketLabels: ["W1"]
+    )
+
+    XCTAssertThrowsError(try provider.load(now: try date("2026-05-02T18:00:00Z"))) { error in
+      XCTAssertEqual(
+        error as? GitHubPRActivityProviderError,
+        .incompleteSearchResults(repositoryID: "owner/visible")
+      )
+    }
+  }
+
   private func repositoryDiscoveryData() -> Data {
     Data(
       """
@@ -83,11 +108,16 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     )
   }
 
-  private func mergedPullRequestData(totalCount: Int = 1, mergedAt: String) -> Data {
+  private func mergedPullRequestData(
+    totalCount: Int = 1,
+    incompleteResults: Bool = false,
+    mergedAt: String
+  ) -> Data {
     Data(
       """
       {
         "total_count": \(totalCount),
+        "incomplete_results": \(incompleteResults),
         "items": [
           {
             "title": "Merged",
