@@ -62,12 +62,20 @@ struct PRMenuBarApp: App {
   }
 
   private func refreshIfDue(now: Date) {
+    guard isRefreshing == false else {
+      return
+    }
+    let policy = RefreshPolicy(interval: store.refreshInterval)
+    guard policy.isRefreshDue(lastRefreshedAt: store.refreshedAt, now: now) else {
+      return
+    }
+    isRefreshing = true
+    defer {
+      isRefreshing = false
+    }
     let refresher = PRActivityRefresher(provider: providerSelection.provider)
     do {
-      guard let refreshed = try refresher.refreshIfDue(current: store, now: now) else {
-        return
-      }
-      store = refreshed
+      store = try refresher.refresh(current: store, now: now)
       refreshError = nil
     } catch {
       refreshError = RefreshFailureMessage.scheduled(error: error)

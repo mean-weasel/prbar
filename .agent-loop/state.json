@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 34,
+  "iteration": 35,
   "completed": [
     {
       "iteration": 1,
@@ -230,6 +230,12 @@
       "at": "2026-05-03T02:47:40Z",
       "summary": "Disabled manual refresh while a refresh is running and reflected the in-progress state in the button label.",
       "report": ".agent-loop/iterations/034-report.md"
+    },
+    {
+      "iteration": 35,
+      "at": "2026-05-03T02:48:46Z",
+      "summary": "Guarded scheduled refresh with the same in-progress state so timer refreshes do not duplicate active refresh work.",
+      "report": ".agent-loop/iterations/035-report.md"
     }
   ],
   "open_findings": [
@@ -242,18 +248,6 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-023",
-      "title": "Guard scheduled refresh while another refresh is already running",
-      "kind": "feature",
-      "impact": 3,
-      "confidence": 4,
-      "evidence": 4,
-      "effort": 2,
-      "risk": 4,
-      "score": 30,
-      "verification": "App logic review plus make ci-local"
-    },
-    {
       "id": "T-024",
       "title": "Prevent GitHub merged PR pagination from stalling on empty pages",
       "kind": "reliability",
@@ -264,6 +258,18 @@
       "risk": 4,
       "score": 34,
       "verification": "Provider pagination regression test plus make ci-local"
+    },
+    {
+      "id": "T-025",
+      "title": "Skip GitHub search requests when no discovered repositories are pullable",
+      "kind": "reliability",
+      "impact": 3,
+      "confidence": 4,
+      "evidence": 4,
+      "effort": 2,
+      "risk": 4,
+      "score": 30,
+      "verification": "Provider regression test plus make ci-local"
     }
   ],
   "blocked": [],
@@ -278,12 +284,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 34."
+    "make ci-local passed for iteration 35."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.87,
-    "reason": "Manual refresh now has in-progress feedback; the next reliability gap is avoiding duplicate refresh work from scheduled and manual paths.",
-    "next_focus": "Guard scheduled refresh while another refresh is already running."
+    "reason": "Both manual and scheduled refresh paths now honor in-progress state; the next highest-value reliability task is hardening GitHub search pagination against empty pages.",
+    "next_focus": "Prevent GitHub merged PR pagination from stalling on empty pages."
   }
 }
