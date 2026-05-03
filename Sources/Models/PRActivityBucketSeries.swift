@@ -16,7 +16,7 @@ struct PRActivityBucketSeries: Equatable {
       return mergedDates.filter { $0 >= start && $0 < end }.count
     }
     return PRActivityBucketSeries(
-      labels: starts.map { Self.label(for: $0) },
+      labels: starts.map { Self.label(for: $0, calendar: calendar) },
       counts: counts
     )
   }
@@ -33,7 +33,7 @@ struct PRActivityBucketSeries: Equatable {
       return mergedDates.filter { $0 >= start && $0 < end }.count
     }
     return PRActivityBucketSeries(
-      labels: starts.map { Self.label(for: $0) },
+      labels: starts.map { Self.label(for: $0, calendar: calendar) },
       counts: counts
     )
   }
@@ -52,11 +52,11 @@ struct PRActivityBucketSeries: Equatable {
     }
   }
 
-  private static func label(for date: Date) -> String {
+  private static func label(for date: Date, calendar: Calendar) -> String {
     let formatter = DateFormatter()
-    formatter.calendar = .prActivity
+    formatter.calendar = calendar
     formatter.locale = Locale(identifier: "en_US_POSIX")
-    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.timeZone = calendar.timeZone
     formatter.dateFormat = "MM/dd"
     return formatter.string(from: date)
   }
@@ -64,6 +64,13 @@ struct PRActivityBucketSeries: Equatable {
 
 extension Calendar {
   static var prActivity: Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.firstWeekday = 1
+    calendar.timeZone = .autoupdatingCurrent
+    return calendar
+  }
+
+  static var prActivityUTC: Calendar {
     var calendar = Calendar(identifier: .gregorian)
     calendar.firstWeekday = 1
     calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt

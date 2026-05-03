@@ -4,7 +4,10 @@ import XCTest
 
 final class PRActivityStoreTests: XCTestCase {
   func testSampleStoreSummarizesIncludedRepositories() {
-    let store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    let store = PRActivityStore.sample(
+      now: Date(timeIntervalSince1970: 0),
+      calendar: .prActivityUTC
+    )
 
     XCTAssertEqual(store.window, .oneWeek)
     XCTAssertEqual(store.bin, .day)
@@ -48,7 +51,10 @@ final class PRActivityStoreTests: XCTestCase {
   }
 
   func testWindowLimitsVisibleBuckets() {
-    var store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    var store = PRActivityStore.sample(
+      now: Date(timeIntervalSince1970: 0),
+      calendar: .prActivityUTC
+    )
 
     store.window = .oneMonth
 
@@ -65,7 +71,10 @@ final class PRActivityStoreTests: XCTestCase {
   }
 
   func testMonthBinAggregatesVisibleBuckets() {
-    var store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    var store = PRActivityStore.sample(
+      now: Date(timeIntervalSince1970: 0),
+      calendar: .prActivityUTC
+    )
 
     store.window = .oneMonth
     store.bin = .month
@@ -76,7 +85,10 @@ final class PRActivityStoreTests: XCTestCase {
   }
 
   func testDayBinShowsDailyBuckets() {
-    var store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    var store = PRActivityStore.sample(
+      now: Date(timeIntervalSince1970: 0),
+      calendar: .prActivityUTC
+    )
 
     store.window = .oneWeek
     store.bin = .day
@@ -91,7 +103,10 @@ final class PRActivityStoreTests: XCTestCase {
   }
 
   func testSettingsSnapshotCanBeApplied() {
-    let store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    let store = PRActivityStore.sample(
+      now: Date(timeIntervalSince1970: 0),
+      calendar: .prActivityUTC
+    )
     let settings = PRSettingsSnapshot(
       window: .oneMonth,
       bin: .month,
@@ -181,7 +196,10 @@ final class PRActivityStoreTests: XCTestCase {
   }
 
   func testBucketBreakdownSortsNonZeroRepoValues() {
-    let store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    let store = PRActivityStore.sample(
+      now: Date(timeIntervalSince1970: 0),
+      calendar: .prActivityUTC
+    )
     let breakdown = store.bucketBreakdown(at: 6)
 
     XCTAssertEqual(breakdown.first?.repository.id, "mean-weasel/deckchecker")
@@ -190,7 +208,10 @@ final class PRActivityStoreTests: XCTestCase {
   }
 
   func testIncludeAllRepositoriesRecoversVisibleActivity() {
-    var store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    var store = PRActivityStore.sample(
+      now: Date(timeIntervalSince1970: 0),
+      calendar: .prActivityUTC
+    )
     store.repositories = store.repositories.map { repository in
       var updated = repository
       updated.isIncluded = false

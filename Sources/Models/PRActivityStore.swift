@@ -131,7 +131,10 @@ struct PRActivityStore {
     return copy
   }
 
-  static func sample(now: Date = Date()) -> PRActivityStore {
+  static func sample(
+    now: Date = Date(),
+    calendar: Calendar = .prActivity
+  ) -> PRActivityStore {
     PRActivityStore(
       bucketLabels: [
         "03/02", "03/09", "03/16", "03/23", "03/30", "04/06", "04/13", "04/20", "04/27",
@@ -139,7 +142,8 @@ struct PRActivityStore {
       dailyBucketLabels: PRActivityBucketSeries.daily(
         mergedDates: [],
         bucketCount: 63,
-        now: now
+        now: now,
+        calendar: calendar
       )
       .labels,
       window: .oneWeek,

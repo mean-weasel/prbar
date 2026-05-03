@@ -11,7 +11,8 @@ final class PRActivityBucketSeriesTests: XCTestCase {
         try date("2026-04-26T00:00:00Z"),
       ],
       bucketCount: 2,
-      now: try date("2026-05-02T18:00:00Z")
+      now: try date("2026-05-02T18:00:00Z"),
+      calendar: .prActivityUTC
     )
 
     XCTAssertEqual(series.labels, ["04/19", "04/26"])
@@ -25,11 +26,25 @@ final class PRActivityBucketSeriesTests: XCTestCase {
         try date("2026-04-19T00:00:00Z"),
       ],
       bucketCount: 1,
-      now: try date("2026-04-25T12:00:00Z")
+      now: try date("2026-04-25T12:00:00Z"),
+      calendar: .prActivityUTC
     )
 
     XCTAssertEqual(series.labels, ["04/19"])
     XCTAssertEqual(series.counts, [1])
+  }
+
+  func testDailyBucketsUseProvidedCalendarTimeZone() throws {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Phoenix"))
+    let series = PRActivityBucketSeries.daily(
+      mergedDates: [],
+      bucketCount: 1,
+      now: try date("2026-05-03T03:00:00Z"),
+      calendar: calendar
+    )
+
+    XCTAssertEqual(series.labels, ["05/02"])
   }
 
   private func date(_ text: String) throws -> Date {
