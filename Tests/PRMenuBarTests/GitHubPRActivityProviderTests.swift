@@ -23,6 +23,7 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     XCTAssertEqual(store.bucketLabels, ["04/12", "04/19", "04/26"])
     XCTAssertEqual(store.refreshedAt, try date("2026-05-02T18:00:00Z"))
     XCTAssertEqual(transport.capturedRequests.count, 2)
+    XCTAssertEqual(transport.capturedRequests.first?.url?.query?.contains("per_page=100"), true)
     XCTAssertEqual(
       transport.capturedRequests.first?.value(forHTTPHeaderField: "Authorization"),
       "Bearer token"

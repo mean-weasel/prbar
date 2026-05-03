@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 43,
+  "iteration": 44,
   "completed": [
     {
       "iteration": 1,
@@ -284,6 +284,12 @@
       "at": "2026-05-03T02:55:52Z",
       "summary": "Added request-level coverage that GitHub merged PR search requests use the intended page size.",
       "report": ".agent-loop/iterations/043-report.md"
+    },
+    {
+      "iteration": 44,
+      "at": "2026-05-03T02:56:44Z",
+      "summary": "Added request-level coverage that GitHub repository discovery requests use the intended page size.",
+      "report": ".agent-loop/iterations/044-report.md"
     }
   ],
   "open_findings": [
@@ -296,18 +302,6 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-032",
-      "title": "Add repository discovery page-size request coverage",
-      "kind": "reliability",
-      "impact": 2,
-      "confidence": 4,
-      "evidence": 3,
-      "effort": 1,
-      "risk": 4,
-      "score": 25,
-      "verification": "Provider request test plus make ci-local"
-    },
-    {
       "id": "T-033",
       "title": "Add request query helper to provider tests",
       "kind": "reliability",
@@ -318,6 +312,18 @@
       "risk": 4,
       "score": 23,
       "verification": "Provider tests plus make ci-local"
+    },
+    {
+      "id": "T-034",
+      "title": "Document open product decision for in-app GitHub auth",
+      "kind": "product",
+      "impact": 2,
+      "confidence": 4,
+      "evidence": 4,
+      "effort": 1,
+      "risk": 4,
+      "score": 26,
+      "verification": "State/report update plus make ci-local"
     }
   ],
   "blocked": [],
@@ -332,12 +338,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 43."
+    "make ci-local passed for iteration 44."
   ],
   "judge": {
     "continue": true,
-    "confidence": 0.82,
-    "reason": "Merged PR search page sizing is covered; next useful provider task is covering repository discovery page sizing.",
-    "next_focus": "Add repository discovery page-size request coverage."
+    "confidence": 0.81,
+    "reason": "Both provider request page sizes are now covered; next useful test cleanup is reducing ad hoc URL query assertions.",
+    "next_focus": "Add request query helper to provider tests."
   }
 }
