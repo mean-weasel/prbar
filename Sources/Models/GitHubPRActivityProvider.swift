@@ -9,6 +9,7 @@ struct GitHubPRActivityProvider: PRActivityProviding {
   var transport: GitHubAPITransport
   var bucketLabels: [String]
   var defaultWindow: ActivityWindow = .twoWeeks
+  private let searchPageSize = 100
 
   func load(now: Date = Date()) throws -> PRActivityStore {
     let request = try GitHubAPIRequest.userRepositories().urlRequest(token: token)
@@ -36,25 +37,48 @@ struct GitHubPRActivityProvider: PRActivityProviding {
 
   private func activity(for repository: GitHubRepository, now: Date) throws -> RepositoryActivity {
     let since = startDate(now: now)
-    let request = try GitHubAPIRequest.mergedPullRequests(
+    let mergedPullRequests = try mergedPullRequests(
       repositoryID: repository.fullName,
       since: since,
       until: now
     )
-    .urlRequest(token: token)
-    let data = try transport.data(for: request)
-    let response = try JSONDecoder().decode(
-      GitHubMergedPullRequestSearchResponse.self,
-      from: data
-    )
     let series = PRActivityBucketSeries.weekly(
-      mergedDates: response.items.map(\.mergedAt),
+      mergedDates: mergedPullRequests.map(\.mergedAt),
       bucketCount: bucketLabels.count,
       now: now
     )
     var activity = repository.activity(bucketCount: bucketLabels.count)
     activity.weeklyCounts = series.counts
     return activity
+  }
+
+  private func mergedPullRequests(repositoryID: String, since: Date, until: Date) throws
+    -> [GitHubMergedPullRequest]
+  {
+    var page = 1
+    var items: [GitHubMergedPullRequest] = []
+    var totalCount = 0
+
+    repeat {
+      let request = try GitHubAPIRequest.mergedPullRequests(
+        repositoryID: repositoryID,
+        since: since,
+        until: until,
+        page: page,
+        perPage: searchPageSize
+      )
+      .urlRequest(token: token)
+      let data = try transport.data(for: request)
+      let response = try JSONDecoder().decode(
+        GitHubMergedPullRequestSearchResponse.self,
+        from: data
+      )
+      totalCount = response.totalCount
+      items.append(contentsOf: response.items)
+      page += 1
+    } while items.count < totalCount
+
+    return items
   }
 
   private func startDate(now: Date) -> Date {

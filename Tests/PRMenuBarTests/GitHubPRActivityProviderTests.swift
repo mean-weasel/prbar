@@ -40,6 +40,28 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     XCTAssertThrowsError(try provider.load(now: Date()))
   }
 
+  func testProviderFetchesAdditionalMergedPullRequestPages() throws {
+    let transport = FixtureGitHubAPITransport(
+      responses: [
+        repositoryDiscoveryData(),
+        mergedPullRequestData(totalCount: 2, mergedAt: "2026-04-26T12:00:00.000Z"),
+        mergedPullRequestData(totalCount: 2, mergedAt: "2026-04-27T12:00:00.000Z"),
+      ]
+    )
+    let provider = GitHubPRActivityProvider(
+      token: "token",
+      transport: transport,
+      bucketLabels: ["W1"]
+    )
+
+    let store = try provider.load(now: try date("2026-05-02T18:00:00Z"))
+
+    XCTAssertEqual(store.repositories.first?.weeklyCounts, [2])
+    XCTAssertEqual(transport.capturedRequests.count, 3)
+    XCTAssertTrue(transport.capturedRequests[1].url?.query?.contains("page=1") ?? false)
+    XCTAssertTrue(transport.capturedRequests[2].url?.query?.contains("page=2") ?? false)
+  }
+
   private func repositoryDiscoveryData() -> Data {
     Data(
       """
@@ -61,10 +83,11 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     )
   }
 
-  private func mergedPullRequestData(mergedAt: String) -> Data {
+  private func mergedPullRequestData(totalCount: Int = 1, mergedAt: String) -> Data {
     Data(
       """
       {
+        "total_count": \(totalCount),
         "items": [
           {
             "title": "Merged",

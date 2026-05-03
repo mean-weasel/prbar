@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 20,
+  "iteration": 21,
   "completed": [
     {
       "iteration": 1,
@@ -146,6 +146,12 @@
       "at": "2026-05-03T02:19:48Z",
       "summary": "Decoded GitHub search pagination metadata so over-limit merged PR result sets can be detected.",
       "report": ".agent-loop/iterations/020-report.md"
+    },
+    {
+      "iteration": 21,
+      "at": "2026-05-03T02:22:17Z",
+      "summary": "Fetched additional GitHub search pages for high-volume repositories when total_count exceeds the first page.",
+      "report": ".agent-loop/iterations/021-report.md"
     }
   ],
   "open_findings": [
@@ -206,12 +212,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 20."
+    "make ci-local passed for iteration 21."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "Pagination metadata is decoded; the next useful step is fetching additional result pages when total_count exceeds per_page.",
-    "next_focus": "Fetch additional GitHub search pages for high-volume repos."
+    "reason": "High-volume GitHub search pagination is handled; the next useful reliability step is handling incomplete search responses explicitly.",
+    "next_focus": "Surface incomplete GitHub search responses as provider errors."
   }
 }
