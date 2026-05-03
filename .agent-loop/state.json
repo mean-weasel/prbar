@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 7,
+  "iteration": 8,
   "completed": [
     {
       "iteration": 1,
@@ -68,6 +68,12 @@
       "at": "2026-05-03T02:04:20Z",
       "summary": "Documented the conservative GitHub integration plan for environment-token auth, repository discovery, activity fetching, and rate-limit-safe refresh behavior.",
       "report": ".agent-loop/iterations/007-report.md"
+    },
+    {
+      "iteration": 8,
+      "at": "2026-05-03T02:05:36Z",
+      "summary": "Added a GitHub API request builder for authenticated repository discovery requests with focused unit tests.",
+      "report": ".agent-loop/iterations/008-report.md"
     }
   ],
   "open_findings": [
@@ -92,8 +98,8 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-009",
-      "title": "Add GitHub request construction and fixture transport",
+      "id": "T-010",
+      "title": "Add fixture-backed GitHub transport and repository decoder",
       "kind": "feature",
       "impact": 5,
       "confidence": 4,
@@ -128,12 +134,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 7."
+    "make ci-local passed for iteration 8."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "A conservative GitHub plan is documented and implementation can proceed behind provider boundaries with fixture tests.",
-    "next_focus": "Add GitHub request construction and fixture transport."
+    "reason": "GitHub request construction is covered; repository decoding and fixture transport are the next bounded provider steps.",
+    "next_focus": "Add fixture-backed GitHub transport and repository decoder."
   }
 }
