@@ -264,6 +264,16 @@
     place-items: center;
   }
 
+  .product-video {
+    width: min(520px, 100%);
+    max-height: 620px;
+    border: 1px solid rgba(202, 213, 225, 0.2);
+    border-radius: 8px;
+    background: #05070a;
+    box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    object-fit: contain;
+  }
+
   .menu-bar {
     position: absolute;
     top: 44px;
@@ -828,6 +838,11 @@
       place-items: start;
     }
 
+    .product-video {
+      width: min(100%, 330px);
+      max-height: 520px;
+    }
+
     .popover {
       margin-top: 54px;
       width: min(100%, 330px);
@@ -918,44 +933,9 @@
       </div>
 
       <div class="product-stage" aria-label="PR Menu Bar app preview">
-        <div class="menu-bar" aria-hidden="true">
-          <div class="traffic"><span></span><span></span><span></span></div>
-          <div class="bar-items">
-            <span>Finder</span>
-            <span>File</span>
-            <span>Edit</span>
-          </div>
-          <div class="bar-items">
-            <span class="bar-icon">1,618</span>
-            <span>10:42 AM</span>
-          </div>
-        </div>
-
-        <article class="popover">
-          <div class="popover-header">
-            <div class="popover-title-row">
-              <div>
-                <h2>PR Activity</h2>
-                <div class="date-line">Mar 2 - May 2, 2026</div>
-              </div>
-              <div class="source-state">GitHub data</div>
-            </div>
-            <div class="stat-row">
-              <div class="mini-stat"><strong style="color: var(--cyan)">1,329</strong><span>team PRs</span></div>
-              <div class="mini-stat"><strong style="color: var(--green)">289</strong><span>personal</span></div>
-              <div class="mini-stat"><strong style="color: var(--amber)">462</strong><span>peak week</span></div>
-            </div>
-          </div>
-
-          <div class="chart-panel">
-            <div class="chart" id="chart" aria-label="Merged pull request activity by week"></div>
-          </div>
-
-          <div class="refresh-strip">
-            <span class="refresh-dot">Updated 2 minutes ago</span>
-            <span>Refreshes every 15 minutes</span>
-          </div>
-        </article>
+        <video class="product-video" controls muted autoplay loop playsinline poster="assets/social-preview.png">
+          <source src="assets/pr-menu.mp4" type="video/mp4" />
+        </video>
       </div>
     </section>
 
