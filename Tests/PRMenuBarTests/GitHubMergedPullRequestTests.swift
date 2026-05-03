@@ -43,6 +43,30 @@ final class GitHubMergedPullRequestTests: XCTestCase {
     XCTAssertTrue(response.needsPagination(perPage: 100))
   }
 
+  func testSearchResponseDecodesMergedAtWithoutFractionalSeconds() throws {
+    let data = Data(
+      """
+      {
+        "items": [
+          {
+            "title": "Ship provider",
+            "pull_request": {
+              "merged_at": "2026-05-01T12:34:56Z"
+            }
+          }
+        ]
+      }
+      """.utf8
+    )
+
+    let response = try JSONDecoder().decode(
+      GitHubMergedPullRequestSearchResponse.self,
+      from: data
+    )
+
+    XCTAssertEqual(response.items.first?.mergedAt, Date(timeIntervalSince1970: 1_777_638_896))
+  }
+
   func testSearchResponseRejectsInvalidMergedAtDate() {
     let data = Data(
       """

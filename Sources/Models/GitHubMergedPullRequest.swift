@@ -51,7 +51,7 @@ struct GitHubMergedPullRequest: Decodable, Equatable {
       forKey: .pullRequest
     )
     let mergedAtText = try pullRequest.decode(String.self, forKey: .mergedAt)
-    guard let mergedAt = ISO8601DateFormatter.github.date(from: mergedAtText) else {
+    guard let mergedAt = ISO8601DateFormatter.githubDate(from: mergedAtText) else {
       throw DecodingError.dataCorruptedError(
         forKey: .mergedAt,
         in: pullRequest,
@@ -68,9 +68,19 @@ struct GitHubMergedPullRequest: Decodable, Equatable {
 }
 
 extension ISO8601DateFormatter {
-  fileprivate static let github: ISO8601DateFormatter = {
+  fileprivate static func githubDate(from text: String) -> Date? {
+    githubWithFractionalSeconds.date(from: text) ?? githubWithoutFractionalSeconds.date(from: text)
+  }
+
+  private static let githubWithFractionalSeconds: ISO8601DateFormatter = {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+  }()
+
+  private static let githubWithoutFractionalSeconds: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
     return formatter
   }()
 }
