@@ -40,9 +40,14 @@ struct PRSettingsView: View {
       Text("Included Repositories")
         .font(.caption)
         .foregroundStyle(.secondary)
-      ForEach($store.repositories) { $repository in
-        RepositoryActivityRow(repository: $repository, window: store.window, bin: store.bin)
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 8) {
+          ForEach($store.repositories) { $repository in
+            RepositoryActivityRow(repository: $repository, window: store.window, bin: store.bin)
+          }
+        }
       }
+      .frame(maxHeight: 260)
     }
   }
 }
