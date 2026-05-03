@@ -18,6 +18,7 @@ struct JSONPRActivityProvider: PRActivityProviding {
     return PRActivityStore(
       bucketLabels: payload.bucketLabels,
       window: payload.defaultWindow,
+      bin: .week,
       refreshInterval: .daily,
       repositories: payload.repositories,
       refreshedAt: now

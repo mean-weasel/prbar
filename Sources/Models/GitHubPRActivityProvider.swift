@@ -32,6 +32,7 @@ struct GitHubPRActivityProvider: PRActivityProviding {
     return PRActivityStore(
       bucketLabels: labels,
       window: defaultWindow,
+      bin: .week,
       refreshInterval: .daily,
       repositories: activities,
       refreshedAt: now
