@@ -20,7 +20,9 @@ final class GitHubPRActivityProviderTests: XCTestCase {
 
     XCTAssertEqual(store.repositories.map(\.id), ["owner/visible"])
     XCTAssertEqual(store.repositories.first?.weeklyCounts, [0, 0, 1])
+    XCTAssertEqual(store.repositories.first?.dailyCounts.suffix(7).reduce(0, +), 1)
     XCTAssertEqual(store.bucketLabels, ["04/12", "04/19", "04/26"])
+    XCTAssertEqual(store.dailyBucketLabels.count, 30)
     XCTAssertEqual(store.refreshedAt, try date("2026-05-02T18:00:00Z"))
     XCTAssertEqual(transport.capturedRequests.count, 2)
     XCTAssertEqual(queryValue("per_page", in: transport.capturedRequests[0]), "100")
