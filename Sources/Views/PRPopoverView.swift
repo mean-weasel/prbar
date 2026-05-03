@@ -90,6 +90,7 @@ struct PRPopoverView: View {
 
   private var footer: some View {
     VStack(alignment: .leading, spacing: 2) {
+      Text(refreshStatusText)
       Text("Last refreshed \(store.refreshedAt.formatted(date: .omitted, time: .shortened))")
       Text(nextRefreshText)
     }
@@ -103,6 +104,10 @@ struct PRPopoverView: View {
       return "Manual refresh only"
     }
     return "Next refresh after \(next.formatted(date: .omitted, time: .shortened))"
+  }
+
+  private var refreshStatusText: String {
+    isRefreshing ? "Refresh in progress" : "Refresh ready"
   }
 
   private var safeSelectedBucketIndex: Int {

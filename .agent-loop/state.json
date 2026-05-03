@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 39,
+  "iteration": 40,
   "completed": [
     {
       "iteration": 1,
@@ -260,6 +260,12 @@
       "at": "2026-05-03T02:52:12Z",
       "summary": "Extracted shared refresh start guarding so manual and scheduled refresh paths use one in-progress gate.",
       "report": ".agent-loop/iterations/039-report.md"
+    },
+    {
+      "iteration": 40,
+      "at": "2026-05-03T02:53:05Z",
+      "summary": "Added footer refresh status text so the popover shows whether refresh is ready or in progress.",
+      "report": ".agent-loop/iterations/040-report.md"
     }
   ],
   "open_findings": [
@@ -272,18 +278,6 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-028",
-      "title": "Add refresh status detail to the popover footer",
-      "kind": "feature",
-      "impact": 3,
-      "confidence": 3,
-      "evidence": 3,
-      "effort": 2,
-      "risk": 4,
-      "score": 26,
-      "verification": "View build plus make ci-local"
-    },
-    {
       "id": "T-029",
       "title": "Add provider factory tests for trimmed token selection details",
       "kind": "reliability",
@@ -294,6 +288,18 @@
       "risk": 4,
       "score": 25,
       "verification": "Factory tests plus make ci-local"
+    },
+    {
+      "id": "T-030",
+      "title": "Record source-status batch learnings",
+      "kind": "reliability",
+      "impact": 2,
+      "confidence": 4,
+      "evidence": 3,
+      "effort": 1,
+      "risk": 4,
+      "score": 25,
+      "verification": "Docs review plus make ci-local"
     }
   ],
   "blocked": [],
@@ -308,12 +314,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 39."
+    "make ci-local passed for iteration 40."
   ],
   "judge": {
     "continue": true,
-    "confidence": 0.84,
-    "reason": "Refresh guard duplication is reduced; next useful work is making the footer communicate active refresh state alongside next-refresh timing.",
-    "next_focus": "Add refresh status detail to the popover footer."
+    "confidence": 0.83,
+    "reason": "The popover now shows refresh readiness; next useful low-risk task is tightening provider factory coverage around trimmed token selection.",
+    "next_focus": "Add provider factory tests for trimmed token selection details."
   }
 }
