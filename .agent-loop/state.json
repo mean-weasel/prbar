@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 15,
+  "iteration": 16,
   "completed": [
     {
       "iteration": 1,
@@ -116,6 +116,12 @@
       "at": "2026-05-03T02:14:09Z",
       "summary": "Added provider factory selection so PR_MENU_BAR_GITHUB_TOKEN switches the app from sample data to the GitHub provider path.",
       "report": ".agent-loop/iterations/015-report.md"
+    },
+    {
+      "iteration": 16,
+      "at": "2026-05-03T02:15:03Z",
+      "summary": "Added GitHub merged pull request search request construction with date range query coverage.",
+      "report": ".agent-loop/iterations/016-report.md"
     }
   ],
   "open_findings": [
@@ -176,12 +182,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 15."
+    "make ci-local passed for iteration 16."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "The app can select the GitHub provider; the provider still needs merged PR request construction to move beyond repo discovery.",
-    "next_focus": "Add merged pull request request construction."
+    "reason": "Merged PR request construction is covered; the provider still needs search result decoding before bucketed counts can be populated.",
+    "next_focus": "Decode GitHub merged pull request search results."
   }
 }

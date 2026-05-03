@@ -40,6 +40,41 @@ struct GitHubAPIRequest: Equatable {
       ]
     )
   }
+
+  static func mergedPullRequests(
+    repositoryID: String,
+    since: Date,
+    until: Date,
+    page: Int = 1,
+    perPage: Int = 100
+  ) -> GitHubAPIRequest {
+    let query = [
+      "repo:\(repositoryID)",
+      "is:pr",
+      "is:merged",
+      "merged:\(Self.dateString(since))..\(Self.dateString(until))",
+    ].joined(separator: " ")
+
+    return GitHubAPIRequest(
+      path: "/search/issues",
+      queryItems: [
+        URLQueryItem(name: "q", value: query),
+        URLQueryItem(name: "sort", value: "updated"),
+        URLQueryItem(name: "order", value: "desc"),
+        URLQueryItem(name: "per_page", value: "\(perPage)"),
+        URLQueryItem(name: "page", value: "\(page)"),
+      ]
+    )
+  }
+
+  private static func dateString(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.dateFormat = "yyyy-MM-dd"
+    return formatter.string(from: date)
+  }
 }
 
 enum GitHubAPIRequestError: Error, Equatable {
