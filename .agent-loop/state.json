@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 8,
+  "iteration": 9,
   "completed": [
     {
       "iteration": 1,
@@ -74,6 +74,12 @@
       "at": "2026-05-03T02:05:36Z",
       "summary": "Added a GitHub API request builder for authenticated repository discovery requests with focused unit tests.",
       "report": ".agent-loop/iterations/008-report.md"
+    },
+    {
+      "iteration": 9,
+      "at": "2026-05-03T02:06:30Z",
+      "summary": "Added GitHub repository decoding and mapping into RepositoryActivity values with deterministic colors and default empty buckets.",
+      "report": ".agent-loop/iterations/009-report.md"
     }
   ],
   "open_findings": [
@@ -98,8 +104,8 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-010",
-      "title": "Add fixture-backed GitHub transport and repository decoder",
+      "id": "T-011",
+      "title": "Add GitHub activity provider skeleton using decoded repositories",
       "kind": "feature",
       "impact": 5,
       "confidence": 4,
@@ -134,12 +140,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 8."
+    "make ci-local passed for iteration 9."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "GitHub request construction is covered; repository decoding and fixture transport are the next bounded provider steps.",
-    "next_focus": "Add fixture-backed GitHub transport and repository decoder."
+    "reason": "Repository decoding is covered; the next useful step is wiring a GitHub provider skeleton that can load fixture repository data.",
+    "next_focus": "Add GitHub activity provider skeleton using decoded repositories."
   }
 }
