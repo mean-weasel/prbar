@@ -27,9 +27,14 @@ final class GitHubAPIRequestTests: XCTestCase {
 
   func testRequestCanUseFixtureBaseURL() throws {
     let request = try GitHubAPIRequest(path: "/repos/owner/repo/pulls")
-      .urlRequest(token: "token", baseURL: URL(string: "https://example.test/api")!)
+      .urlRequest(
+        token: "token",
+        baseURL: URL(string: "https://example.test/api")!,
+        timeoutInterval: 5
+      )
 
     XCTAssertEqual(request.url?.absoluteString, "https://example.test/api/repos/owner/repo/pulls")
+    XCTAssertEqual(request.timeoutInterval, 5)
   }
 
   func testMergedPullRequestsRequestUsesSearchQuery() throws {

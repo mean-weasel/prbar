@@ -4,7 +4,11 @@ struct GitHubAPIRequest: Equatable {
   var path: String
   var queryItems: [URLQueryItem] = []
 
-  func urlRequest(token: String, baseURL: URL = URL(string: "https://api.github.com")!) throws
+  func urlRequest(
+    token: String,
+    baseURL: URL = URL(string: "https://api.github.com")!,
+    timeoutInterval: TimeInterval = 20
+  ) throws
     -> URLRequest
   {
     let urlComponents = URLComponents(
@@ -20,7 +24,7 @@ struct GitHubAPIRequest: Equatable {
       throw GitHubAPIRequestError.invalidURL
     }
 
-    var request = URLRequest(url: url)
+    var request = URLRequest(url: url, timeoutInterval: timeoutInterval)
     request.httpMethod = "GET"
     request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")

@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 25,
+  "iteration": 26,
   "completed": [
     {
       "iteration": 1,
@@ -176,15 +176,15 @@
       "at": "2026-05-03T02:25:45Z",
       "summary": "Documented local usage for the live GitHub-backed provider path and its current scope.",
       "report": ".agent-loop/iterations/025-report.md"
+    },
+    {
+      "iteration": 26,
+      "at": "2026-05-03T02:26:42Z",
+      "summary": "Added explicit GitHub request timeouts and recorded loop learnings for the live-provider batch.",
+      "report": ".agent-loop/iterations/026-report.md"
     }
   ],
   "open_findings": [
-    {
-      "id": "F-001",
-      "kind": "product",
-      "severity": "medium",
-      "text": "The app still does not fetch PR history from GitHub, though provider boundaries now exist."
-    },
     {
       "id": "F-004",
       "kind": "reliability",
@@ -192,36 +192,36 @@
       "text": "Settings persistence does not yet handle repository IDs disappearing from future fetched data beyond excluding unknown IDs."
     },
     {
-      "id": "F-006",
-      "kind": "feature",
+      "id": "F-007",
+      "kind": "product",
       "severity": "medium",
-      "text": "The documented GitHub integration plan is not yet implemented in a real provider path."
+      "text": "Live GitHub mode is selected only by environment token; there is not yet in-app configuration or credential storage."
     }
   ],
   "candidate_tasks": [
     {
-      "id": "T-013",
-      "title": "Wire scheduled refresh into menu bar app lifecycle",
-      "kind": "feature",
-      "impact": 5,
-      "confidence": 4,
-      "evidence": 4,
-      "effort": 3,
-      "risk": 4,
-      "score": 38,
-      "verification": "Provider unit tests plus make ci-local"
-    },
-    {
-      "id": "T-008",
-      "title": "Add scheduled refresh trigger for daily auto-refresh",
+      "id": "T-021",
+      "title": "Add visible data-source status for sample vs GitHub mode",
       "kind": "feature",
       "impact": 4,
       "confidence": 4,
       "evidence": 4,
+      "effort": 2,
+      "risk": 4,
+      "score": 34,
+      "verification": "View/model tests plus make ci-local"
+    },
+    {
+      "id": "T-022",
+      "title": "Reconcile stale repository filters after GitHub repo removal",
+      "kind": "feature",
+      "impact": 4,
+      "confidence": 3,
+      "evidence": 4,
       "effort": 3,
       "risk": 4,
-      "score": 32,
-      "verification": "Refresh policy tests plus app build"
+      "score": 29,
+      "verification": "Settings/store reconciliation tests plus make ci-local"
     }
   ],
   "blocked": [],
@@ -236,12 +236,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 25."
+    "make ci-local passed for iteration 26."
   ],
   "judge": {
-    "continue": true,
-    "confidence": 0.83,
-    "reason": "Live GitHub provider usage is documented; final useful loop work is recording process learnings and closing the requested iteration budget.",
-    "next_focus": "Record loop learnings and close the 20-iteration run."
+    "continue": false,
+    "confidence": 0.88,
+    "reason": "The requested 20-iteration continuation is complete. Valuable follow-up tasks remain, but the loop budget is exhausted.",
+    "next_focus": "Open a coherent PR for the live GitHub provider batch."
   }
 }
