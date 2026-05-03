@@ -21,8 +21,3 @@
 - When a UI label depends on provider selection, construct the provider selection once at startup so initial load, refresh, and displayed source cannot drift.
 - GitHub pagination loops should defend against empty result pages even when `total_count` suggests more data.
 - Refresh UX improvements should cover both the command surface and scheduled timer path so the audit loop does not leave duplicate-work gaps.
-
-## 2026-05-03
-
-- When manually merging a green PR, check follow-up `workflow_run` jobs separately from PR/main CI; an auto-merge helper can fail because the PR is already merged, which should be recorded as a merge-race artifact rather than a product check failure.
-- Release setup changes should be verified on both the PR and post-merge push paths; semantic-release may intentionally produce no GitHub release for `chore:` commits while still proving the workflow is wired correctly.
