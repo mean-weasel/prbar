@@ -17,3 +17,7 @@
 - Commit each loop for auditability and rollback, but open PRs for coherent batches of loops so review stays product-shaped instead of iteration-shaped.
 - Live-provider work is easiest to review when network construction, decoding, bucketing, and provider selection each land as separate tested loops.
 - After a batch PR merges, verify the PR's check rollup and record the exact pass/fail state before summarizing the loop; "merged" alone is not enough audit evidence.
+- SwiftUI `App` conformers should keep the required no-argument initializer; dependency setup can still happen there without adding custom init parameters.
+- When a UI label depends on provider selection, construct the provider selection once at startup so initial load, refresh, and displayed source cannot drift.
+- GitHub pagination loops should defend against empty result pages even when `total_count` suggests more data.
+- Refresh UX improvements should cover both the command surface and scheduled timer path so the audit loop does not leave duplicate-work gaps.

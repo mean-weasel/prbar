@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 41,
+  "iteration": 42,
   "completed": [
     {
       "iteration": 1,
@@ -272,6 +272,12 @@
       "at": "2026-05-03T02:54:20Z",
       "summary": "Added provider factory coverage proving GitHub token whitespace is trimmed while retaining GitHub source selection.",
       "report": ".agent-loop/iterations/041-report.md"
+    },
+    {
+      "iteration": 42,
+      "at": "2026-05-03T02:55:07Z",
+      "summary": "Recorded audit-loop learnings for SwiftUI app initialization, provider selection reuse, pagination guards, and refresh UX coverage.",
+      "report": ".agent-loop/iterations/042-report.md"
     }
   ],
   "open_findings": [
@@ -284,8 +290,8 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-030",
-      "title": "Record source-status batch learnings",
+      "id": "T-031",
+      "title": "Add GitHub provider search page-size request coverage",
       "kind": "reliability",
       "impact": 2,
       "confidence": 4,
@@ -293,11 +299,11 @@
       "effort": 1,
       "risk": 4,
       "score": 25,
-      "verification": "Docs review plus make ci-local"
+      "verification": "Provider request test plus make ci-local"
     },
     {
-      "id": "T-031",
-      "title": "Add GitHub provider search page-size request coverage",
+      "id": "T-032",
+      "title": "Add repository discovery page-size request coverage",
       "kind": "reliability",
       "impact": 2,
       "confidence": 4,
@@ -320,12 +326,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 41."
+    "make ci-local passed for iteration 42."
   ],
   "judge": {
     "continue": true,
-    "confidence": 0.83,
-    "reason": "Provider factory token handling is covered; the next useful audit task is recording source-status batch learnings while they are fresh.",
-    "next_focus": "Record source-status batch learnings."
+    "confidence": 0.82,
+    "reason": "Batch learnings are recorded; next useful provider task is verifying search requests carry the intended page size.",
+    "next_focus": "Add GitHub provider search page-size request coverage."
   }
 }
