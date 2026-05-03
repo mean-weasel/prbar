@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 28,
+  "iteration": 29,
   "completed": [
     {
       "iteration": 1,
@@ -194,15 +194,15 @@
       "at": "2026-05-03T02:40:09Z",
       "summary": "Reused one provider selection during app startup so initial load, UI status, and refresh share the same provider.",
       "report": ".agent-loop/iterations/028-report.md"
+    },
+    {
+      "iteration": 29,
+      "at": "2026-05-03T02:41:20Z",
+      "summary": "Added regression coverage proving settings snapshots prune repository IDs that disappear after refresh.",
+      "report": ".agent-loop/iterations/029-report.md"
     }
   ],
   "open_findings": [
-    {
-      "id": "F-004",
-      "kind": "reliability",
-      "severity": "low",
-      "text": "Settings persistence does not yet handle repository IDs disappearing from future fetched data beyond excluding unknown IDs."
-    },
     {
       "id": "F-007",
       "kind": "product",
@@ -248,12 +248,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 28 after repairing the SwiftUI App initializer shape."
+    "make ci-local passed for iteration 29."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.88,
-    "reason": "Startup now uses one provider selection consistently; next useful settings work is pruning stale repository IDs when known repositories disappear.",
-    "next_focus": "Prune stale known repository IDs from settings snapshots."
+    "reason": "Stale repository ID pruning is now covered; next useful GitHub data work is paginating repository discovery beyond the first 100 repos.",
+    "next_focus": "Paginate GitHub repository discovery."
   }
 }
