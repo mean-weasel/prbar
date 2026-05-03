@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 37,
+  "iteration": 38,
   "completed": [
     {
       "iteration": 1,
@@ -248,6 +248,12 @@
       "at": "2026-05-03T02:50:32Z",
       "summary": "Covered the GitHub provider path where discovered repositories have no pull access so no search requests are issued.",
       "report": ".agent-loop/iterations/037-report.md"
+    },
+    {
+      "iteration": 38,
+      "at": "2026-05-03T02:51:18Z",
+      "summary": "Documented current live GitHub data source status, refresh, and rate-limit reset behavior in the README.",
+      "report": ".agent-loop/iterations/038-report.md"
     }
   ],
   "open_findings": [
@@ -260,18 +266,6 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-026",
-      "title": "Document refresh and rate-limit behavior in the README",
-      "kind": "reliability",
-      "impact": 3,
-      "confidence": 4,
-      "evidence": 3,
-      "effort": 1,
-      "risk": 4,
-      "score": 29,
-      "verification": "Docs review plus make ci-local"
-    },
-    {
       "id": "T-027",
       "title": "Extract shared refresh-start guard to reduce app refresh duplication",
       "kind": "reliability",
@@ -282,6 +276,18 @@
       "risk": 4,
       "score": 26,
       "verification": "App build plus make ci-local"
+    },
+    {
+      "id": "T-028",
+      "title": "Add refresh status detail to the popover footer",
+      "kind": "reliability",
+      "impact": 3,
+      "confidence": 3,
+      "evidence": 3,
+      "effort": 2,
+      "risk": 4,
+      "score": 26,
+      "verification": "View build plus make ci-local"
     }
   ],
   "blocked": [],
@@ -296,12 +302,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 37."
+    "make ci-local passed for iteration 38."
   ],
   "judge": {
     "continue": true,
-    "confidence": 0.86,
-    "reason": "The no-pullable-repository path is covered; the next useful batch item is keeping README usage details aligned with the current refresh and rate-limit behavior.",
-    "next_focus": "Document refresh and rate-limit behavior in the README."
+    "confidence": 0.84,
+    "reason": "README behavior docs now match the current live provider and refresh UX; next useful work is reducing duplicated refresh guard logic in the app entry point.",
+    "next_focus": "Extract shared refresh-start guard to reduce app refresh duplication."
   }
 }

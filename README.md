@@ -34,7 +34,13 @@ notarization, and distribution are intentionally out of scope for this prototype
 
 The live provider currently discovers repositories with pull access, fetches merged pull
 requests through GitHub Search, paginates high-volume result sets, and preserves the last
-visible activity if a refresh fails.
+visible activity if a refresh fails. The popover header shows whether the app is using
+sample data or GitHub data.
+
+Manual refresh is available from the popover and is disabled while a refresh is already
+running. Scheduled refreshes use the selected refresh interval, show the next eligible
+refresh time in the footer, and keep the previous activity on failure. GitHub rate-limit
+failures include the reset time when GitHub sends one.
 
 ## Guardrails
 
