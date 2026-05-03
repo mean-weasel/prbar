@@ -1,0 +1,176 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  merge_group:
+
+concurrency:
+  group: ci-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  detect-changes:
+    name: Detect Changed Paths
+    runs-on: macos-latest
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Detect code changes
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -Eq '^(Sources/|Tests/|scripts/|project.yml|Makefile|\.github/)'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  lint:
+    name: Lint
+    runs-on: macos-15
+    timeout-minutes: 10
+    needs: [detect-changes]
+    if: >-
+      always() && !cancelled() &&
+      (github.event_name != 'pull_request' ||
+       needs.detect-changes.outputs.code == 'true')
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install swift-format
+        run: brew install swift-format
+      - name: Lint
+        run: ./scripts/format-check.sh
+
+  build:
+    name: Build
+    runs-on: macos-15
+    timeout-minutes: 15
+    needs: [detect-changes]
+    if: >-
+      always() && !cancelled() &&
+      (github.event_name != 'pull_request' ||
+       needs.detect-changes.outputs.code == 'true')
+    steps:
+      - uses: actions/checkout@v6
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.3.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Build
+        run: make build
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: macos-15
+    timeout-minutes: 15
+    needs: [detect-changes]
+    if: >-
+      always() && !cancelled() &&
+      (github.event_name != 'pull_request' ||
+       needs.detect-changes.outputs.code == 'true')
+    steps:
+      - uses: actions/checkout@v6
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.3.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Run tests
+        run: make test
+      - name: Test summary
+        if: always()
+        run: |
+          echo "## Test Results" >> "$GITHUB_STEP_SUMMARY"
+          if [ -d TestResults.xcresult ]; then
+            xcrun xcresulttool get test-results summary \
+              --path TestResults.xcresult \
+              --compact 2>/dev/null >> "$GITHUB_STEP_SUMMARY" || \
+            echo "_Could not parse test results._" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "_No test results bundle found._" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: TestResults.xcresult
+          retention-days: 14
+
+  app-smoke:
+    name: App Smoke
+    runs-on: macos-15
+    timeout-minutes: 15
+    needs: [detect-changes]
+    if: >-
+      always() && !cancelled() &&
+      (github.event_name != 'pull_request' ||
+       needs.detect-changes.outputs.code == 'true')
+    steps:
+      - uses: actions/checkout@v6
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.3.app/Contents/Developer
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Run app smoke
+        run: make app-smoke
+
+  file-size-check:
+    name: File Size Check
+    runs-on: macos-latest
+    timeout-minutes: 2
+    needs: [detect-changes]
+    if: >-
+      always() && !cancelled() &&
+      (github.event_name != 'pull_request' ||
+       needs.detect-changes.outputs.code == 'true')
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check file sizes
+        run: ./scripts/file-size-check.sh
+
+  ci-gate:
+    name: CI Gate
+    runs-on: macos-latest
+    timeout-minutes: 5
+    if: always()
+    needs:
+      - lint
+      - build
+      - unit-tests
+      - app-smoke
+      - file-size-check
+    steps:
+      - name: Check required jobs
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          TEST_RESULT: ${{ needs.unit-tests.result }}
+          SMOKE_RESULT: ${{ needs.app-smoke.result }}
+          SIZE_RESULT: ${{ needs.file-size-check.result }}
+        run: |
+          echo "Lint: $LINT_RESULT, Build: $BUILD_RESULT, Tests: $TEST_RESULT"
+          echo "Smoke: $SMOKE_RESULT, Size: $SIZE_RESULT"
+          for result in "$LINT_RESULT" "$BUILD_RESULT" "$TEST_RESULT" "$SMOKE_RESULT" "$SIZE_RESULT"; do
+            if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+              echo "A required job reported: $result"
+              exit 1
+            fi
+          done
+          echo "All required jobs passed or were skipped"
+

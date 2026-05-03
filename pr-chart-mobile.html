@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PR Activity</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0a0a0a;
+    color: #e5e5e5;
+    width: 440px;
+    padding: 32px 24px;
+  }
+  h1 { font-size: 24px; font-weight: 700; margin-bottom: 2px; }
+  .subtitle { color: #737373; font-size: 13px; margin-bottom: 24px; }
+  .highlight { color: #a78bfa; font-weight: 600; }
+
+  /* Summary row */
+  .stats { display: flex; gap: 8px; margin-bottom: 24px; }
+  .stat {
+    flex: 1; background: #141414; border: 1px solid #262626;
+    border-radius: 10px; padding: 12px; text-align: center;
+  }
+  .stat-val { font-size: 22px; font-weight: 700; }
+  .stat-lbl { font-size: 10px; color: #737373; margin-top: 2px; }
+
+  /* Chart */
+  .chart-wrap { margin-bottom: 24px; }
+  .chart { display: flex; align-items: flex-end; gap: 6px; height: 200px; position: relative; padding-bottom: 28px; }
+  .chart::before {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 28px;
+    border-top: 1px solid #262626;
+  }
+  .col { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; height: 100%; }
+  .stack {
+    width: 100%; display: flex; flex-direction: column-reverse;
+    position: absolute; bottom: 28px; border-radius: 4px 4px 0 0; overflow: hidden;
+  }
+  .seg { width: 100%; }
+  .wk-label {
+    position: absolute; bottom: 0; font-size: 10px; color: #525252;
+    white-space: nowrap; transform: rotate(-35deg); transform-origin: top right;
+  }
+  .wk-total {
+    position: absolute; font-size: 11px; font-weight: 600; color: #d4d4d4;
+  }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 20px; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #a3a3a3; }
+  .dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* Repo breakdown */
+  .section-title { font-size: 13px; font-weight: 600; color: #737373; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .repo-row {
+    display: flex; align-items: center; padding: 7px 0;
+    border-bottom: 1px solid #1a1a1a; font-size: 13px;
+  }
+  .repo-row:last-child { border-bottom: none; }
+  .repo-name { flex: 1; font-weight: 500; }
+  .repo-bar-wrap { width: 180px; height: 14px; background: #1a1a1a; border-radius: 3px; margin: 0 10px; overflow: hidden; display: flex; }
+  .repo-bar { height: 100%; border-radius: 3px; }
+  .repo-count { width: 36px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tag {
+    font-size: 9px; padding: 1px 5px; border-radius: 3px; margin-left: 5px;
+    vertical-align: middle;
+  }
+  .tag-org { background: #1e1b4b; color: #a78bfa; }
+  .tag-per { background: #052e16; color: #4ade80; }
+
+  /* Sparklines */
+  .spark-section { margin-top: 20px; }
+  .spark-row {
+    display: flex; align-items: center; padding: 5px 0; font-size: 12px;
+  }
+  .spark-name { width: 110px; color: #a3a3a3; font-size: 11px; }
+  .spark-cells { display: flex; gap: 2px; flex: 1; }
+  .spark-cell {
+    flex: 1; height: 18px; border-radius: 2px; position: relative;
+  }
+  .spark-val {
+    position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; font-size: 8px; color: rgba(255,255,255,0.7);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<h1>PR Activity</h1>
+<p class="subtitle">Mar 2 – May 2, 2026 · <span class="highlight">1,618 PRs merged</span></p>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-val" style="color:#818cf8">1,329</div>
+    <div class="stat-lbl">mean-weasel</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val" style="color:#4ade80">289</div>
+    <div class="stat-lbl">neonwatty</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val" style="color:#f59e0b">462</div>
+    <div class="stat-lbl">peak week</div>
+  </div>
+</div>
+
+<div class="chart-wrap">
+  <div class="chart" id="chart"></div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="section-title">By repository</div>
+<div id="repoList"></div>
+
+<div class="spark-section">
+  <div class="section-title" style="margin-bottom:8px">Weekly heatmap</div>
+  <div id="heatmap"></div>
+</div>
+
+<script>
+const weeks = ['03/02','03/09','03/16','03/23','03/30','04/06','04/13','04/20','04/27'];
+const repos = [
+  { name: 'deckchecker',         org: 'mean-weasel', color: '#818cf8', data: [0,13,75,42,53,23,69,45,111] },
+  { name: 'seatify',             org: 'mean-weasel', color: '#c084fc', data: [15,16,34,35,20,22,113,40,79] },
+  { name: 'issuectl',            org: 'mean-weasel', color: '#6366f1', data: [0,0,0,0,0,51,57,69,53] },
+  { name: 'bleep-that-shit',     org: 'mean-weasel', color: '#a78bfa', data: [30,41,42,33,48,21,41,31,5] },
+  { name: 'issuectl-ios',        org: 'mean-weasel', color: '#4f46e5', data: [0,0,0,0,0,0,0,2,0] },
+  { name: 'RedditReminder',      org: 'neonwatty',   color: '#4ade80', data: [0,0,0,0,0,0,0,11,84] },
+  { name: 'nav-map',             org: 'neonwatty',   color: '#34d399', data: [0,0,35,3,0,1,1,0,42] },
+  { name: 'fleet',               org: 'neonwatty',   color: '#22d3ee', data: [0,0,0,0,0,10,7,0,30] },
+  { name: 'session-search',      org: 'neonwatty',   color: '#2dd4bf', data: [0,0,0,0,0,0,0,7,37] },
+  { name: 'playwright-dashboard', org: 'neonwatty',  color: '#a3e635', data: [0,0,0,0,0,0,0,0,20] },
+  { name: 'CCSwitcher-Codex',    org: 'neonwatty',   color: '#86efac', data: [0,0,0,0,0,0,0,0,1] },
+];
+
+const weekTotals = weeks.map(function(_, wi) {
+  return repos.reduce(function(s, r) { return s + r.data[wi]; }, 0);
+});
+const maxTotal = Math.max.apply(null, weekTotals);
+const maxRepo = Math.max.apply(null, repos.map(function(r) {
+  return r.data.reduce(function(a, b) { return a + b; }, 0);
+}));
+
+// Chart
+const chart = document.getElementById('chart');
+weeks.forEach(function(wk, wi) {
+  const col = document.createElement('div');
+  col.className = 'col';
+
+  const stack = document.createElement('div');
+  stack.className = 'stack';
+  const totalH = (weekTotals[wi] / maxTotal) * 160;
+
+  repos.forEach(function(r) {
+    if (r.data[wi] === 0) return;
+    const seg = document.createElement('div');
+    seg.className = 'seg';
+    seg.style.height = ((r.data[wi] / weekTotals[wi]) * totalH) + 'px';
+    seg.style.background = r.color;
+    stack.appendChild(seg);
+  });
+
+  stack.style.height = totalH + 'px';
+  col.appendChild(stack);
+
+  const lbl = document.createElement('div');
+  lbl.className = 'wk-label';
+  lbl.textContent = wk;
+  col.appendChild(lbl);
+
+  const tot = document.createElement('div');
+  tot.className = 'wk-total';
+  tot.textContent = weekTotals[wi];
+  tot.style.bottom = (totalH + 36) + 'px';
+  col.appendChild(tot);
+
+  chart.appendChild(col);
+});
+
+// Legend
+const legend = document.getElementById('legend');
+repos.forEach(function(r) {
+  const item = document.createElement('div');
+  item.className = 'leg';
+  const dot = document.createElement('div');
+  dot.className = 'dot';
+  dot.style.background = r.color;
+  item.appendChild(dot);
+  item.appendChild(document.createTextNode(r.name));
+  legend.appendChild(item);
+});
+
+// Repo list sorted by total
+const sorted = repos.slice().sort(function(a, b) {
+  var ta = a.data.reduce(function(s, v) { return s + v; }, 0);
+  var tb = b.data.reduce(function(s, v) { return s + v; }, 0);
+  return tb - ta;
+});
+
+const repoList = document.getElementById('repoList');
+sorted.forEach(function(r) {
+  var total = r.data.reduce(function(s, v) { return s + v; }, 0);
+  var row = document.createElement('div');
+  row.className = 'repo-row';
+
+  var name = document.createElement('span');
+  name.className = 'repo-name';
+  name.appendChild(document.createTextNode(r.name));
+  var tag = document.createElement('span');
+  tag.className = r.org === 'mean-weasel' ? 'tag tag-org' : 'tag tag-per';
+  tag.textContent = r.org === 'mean-weasel' ? 'org' : 'me';
+  name.appendChild(tag);
+  row.appendChild(name);
+
+  var barWrap = document.createElement('div');
+  barWrap.className = 'repo-bar-wrap';
+  var bar = document.createElement('div');
+  bar.className = 'repo-bar';
+  bar.style.width = ((total / maxRepo) * 100) + '%';
+  bar.style.background = r.color;
+  barWrap.appendChild(bar);
+  row.appendChild(barWrap);
+
+  var count = document.createElement('span');
+  count.className = 'repo-count';
+  count.textContent = total;
+  row.appendChild(count);
+
+  repoList.appendChild(row);
+});
+
+// Heatmap
+var heatmap = document.getElementById('heatmap');
+var allMax = Math.max.apply(null, repos.map(function(r) { return Math.max.apply(null, r.data); }));
+
+// Week header
+var headerRow = document.createElement('div');
+headerRow.className = 'spark-row';
+var spacer = document.createElement('div');
+spacer.className = 'spark-name';
+headerRow.appendChild(spacer);
+var headerCells = document.createElement('div');
+headerCells.className = 'spark-cells';
+weeks.forEach(function(w) {
+  var cell = document.createElement('div');
+  cell.style.flex = '1';
+  cell.style.textAlign = 'center';
+  cell.style.fontSize = '9px';
+  cell.style.color = '#525252';
+  cell.textContent = w;
+  headerCells.appendChild(cell);
+});
+headerRow.appendChild(headerCells);
+heatmap.appendChild(headerRow);
+
+sorted.forEach(function(r) {
+  var rMax = Math.max.apply(null, r.data);
+  if (rMax === 0) return;
+  var row = document.createElement('div');
+  row.className = 'spark-row';
+
+  var nm = document.createElement('div');
+  nm.className = 'spark-name';
+  nm.textContent = r.name;
+  row.appendChild(nm);
+
+  var cells = document.createElement('div');
+  cells.className = 'spark-cells';
+  r.data.forEach(function(v) {
+    var cell = document.createElement('div');
+    cell.className = 'spark-cell';
+    var opacity = v === 0 ? 0.05 : 0.15 + (v / allMax) * 0.85;
+    cell.style.background = r.color;
+    cell.style.opacity = opacity;
+    if (v > 0) {
+      var val = document.createElement('div');
+      val.className = 'spark-val';
+      val.textContent = v;
+      cell.appendChild(val);
+    }
+    cells.appendChild(cell);
+  });
+  row.appendChild(cells);
+
+  heatmap.appendChild(row);
+});
+</script>
+</body>
+</html>
