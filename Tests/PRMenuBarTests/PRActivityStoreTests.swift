@@ -58,7 +58,8 @@ final class PRActivityStoreTests: XCTestCase {
     let settings = PRSettingsSnapshot(
       window: .oneMonth,
       refreshInterval: .manual,
-      includedRepositoryIDs: ["mean-weasel/deckchecker", "neonwatty/RedditReminder"]
+      includedRepositoryIDs: ["mean-weasel/deckchecker", "neonwatty/RedditReminder"],
+      knownRepositoryIDs: store.repositories.map(\.id)
     )
 
     let updated = store.applying(settings)
@@ -68,6 +69,44 @@ final class PRActivityStoreTests: XCTestCase {
     XCTAssertEqual(updated.activeRepositoryCount, 2)
     XCTAssertEqual(updated.totalPullRequests, 343)
     XCTAssertEqual(updated.settingsSnapshot, settings)
+  }
+
+  func testApplyingSettingsKeepsNewlyDiscoveredRepositoriesIncluded() {
+    let repositories = [
+      RepositoryActivity(
+        id: "owner/known",
+        owner: "owner",
+        name: "known",
+        colorHex: "#ffffff",
+        weeklyCounts: [1],
+        isIncluded: true
+      ),
+      RepositoryActivity(
+        id: "owner/new",
+        owner: "owner",
+        name: "new",
+        colorHex: "#000000",
+        weeklyCounts: [1],
+        isIncluded: true
+      ),
+    ]
+    let store = PRActivityStore(
+      bucketLabels: ["W1"],
+      window: .twoWeeks,
+      refreshInterval: .daily,
+      repositories: repositories,
+      refreshedAt: Date()
+    )
+    let settings = PRSettingsSnapshot(
+      window: .twoWeeks,
+      includedRepositoryIDs: [],
+      knownRepositoryIDs: ["owner/known"]
+    )
+
+    let updated = store.applying(settings)
+
+    XCTAssertFalse(updated.repositories[0].isIncluded)
+    XCTAssertTrue(updated.repositories[1].isIncluded)
   }
 
   func testBucketBreakdownSortsNonZeroRepoValues() {
