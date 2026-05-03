@@ -75,18 +75,22 @@ struct PRActivityStore {
     PRSettingsSnapshot(
       window: window,
       refreshInterval: refreshInterval,
-      includedRepositoryIDs: repositories.filter(\.isIncluded).map(\.id)
+      includedRepositoryIDs: repositories.filter(\.isIncluded).map(\.id),
+      knownRepositoryIDs: repositories.map(\.id)
     )
   }
 
   func applying(_ settings: PRSettingsSnapshot) -> PRActivityStore {
     let included = Set(settings.includedRepositoryIDs)
+    let known = Set(settings.knownRepositoryIDs)
     var copy = self
     copy.window = settings.window
     copy.refreshInterval = settings.refreshInterval
     copy.repositories = repositories.map { repository in
       var updated = repository
-      updated.isIncluded = included.contains(repository.id)
+      if known.contains(repository.id) {
+        updated.isIncluded = included.contains(repository.id)
+      }
       return updated
     }
     return copy

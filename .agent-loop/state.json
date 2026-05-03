@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 10,
+  "iteration": 11,
   "completed": [
     {
       "iteration": 1,
@@ -86,6 +86,12 @@
       "at": "2026-05-03T02:07:44Z",
       "summary": "Added a fixture-backed GitHub activity provider skeleton that discovers pullable repositories through an injectable transport.",
       "report": ".agent-loop/iterations/010-report.md"
+    },
+    {
+      "iteration": 11,
+      "at": "2026-05-03T02:09:22Z",
+      "summary": "Persisted known repository IDs so settings preserve exclusions for known repos while keeping newly discovered repos included by default.",
+      "report": ".agent-loop/iterations/011-report.md"
     }
   ],
   "open_findings": [
@@ -110,8 +116,8 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-012",
-      "title": "Add settings reconciliation for discovered and removed repositories",
+      "id": "T-013",
+      "title": "Wire scheduled refresh into menu bar app lifecycle",
       "kind": "feature",
       "impact": 5,
       "confidence": 4,
@@ -146,12 +152,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 10."
+    "make ci-local passed for iteration 11."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "The provider skeleton can load discovered repositories; settings reconciliation is now the highest-value correctness gap.",
-    "next_focus": "Add settings reconciliation for discovered and removed repositories."
+    "reason": "Repository reconciliation now handles discovered repositories; scheduled refresh remains a user-visible gap with existing policy tests.",
+    "next_focus": "Wire scheduled refresh into menu bar app lifecycle."
   }
 }
