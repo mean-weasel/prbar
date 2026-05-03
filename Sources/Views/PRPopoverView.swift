@@ -46,7 +46,7 @@ struct PRPopoverView: View {
         .tabItem {
           Label("Activity", systemImage: "chart.bar.xaxis")
         }
-      PRSettingsView(store: $store)
+      PRSettingsView(store: $store, dataSource: dataSource)
         .tabItem {
           Label("Settings", systemImage: "gearshape")
         }
