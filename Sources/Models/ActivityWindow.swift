@@ -22,4 +22,15 @@ enum ActivityWindow: String, CaseIterable, Identifiable {
       return 30
     }
   }
+
+  var visibleBucketCount: Int {
+    switch self {
+    case .oneDay, .oneWeek:
+      return 1
+    case .twoWeeks:
+      return 2
+    case .oneMonth:
+      return 4
+    }
+  }
 }

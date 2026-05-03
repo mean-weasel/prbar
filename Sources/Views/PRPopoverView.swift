@@ -1,12 +1,14 @@
 import SwiftUI
 
 struct PRPopoverView: View {
-  var store: PRActivityStore
+  @Binding var store: PRActivityStore
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
       header
+      controls
       summary
+      ActivityChartView(store: store)
       repositoryList
       footer
     }
@@ -18,14 +20,25 @@ struct PRPopoverView: View {
       VStack(alignment: .leading, spacing: 4) {
         Text("PR Activity")
           .font(.headline)
-        Text(store.window.rawValue)
+        Text(store.summaryText)
           .font(.caption)
           .foregroundStyle(.secondary)
       }
       Spacer()
-      Button("Refresh") {}
-        .buttonStyle(.bordered)
+      Button("Refresh") {
+        store.refreshedAt = Date()
+      }
+      .buttonStyle(.bordered)
     }
+  }
+
+  private var controls: some View {
+    Picker("Window", selection: $store.window) {
+      ForEach(ActivityWindow.allCases) { window in
+        Text(window.rawValue).tag(window)
+      }
+    }
+    .pickerStyle(.segmented)
   }
 
   private var summary: some View {
@@ -41,8 +54,8 @@ struct PRPopoverView: View {
       Text("Repositories")
         .font(.caption)
         .foregroundStyle(.secondary)
-      ForEach(store.repositories) { repository in
-        RepositoryActivityRow(repository: repository)
+      ForEach($store.repositories) { $repository in
+        RepositoryActivityRow(repository: $repository, window: store.window)
       }
     }
   }
@@ -73,23 +86,27 @@ private struct MetricTile: View {
 }
 
 private struct RepositoryActivityRow: View {
-  var repository: RepositoryActivity
+  @Binding var repository: RepositoryActivity
+  var window: ActivityWindow
 
   var body: some View {
-    HStack(spacing: 10) {
-      RoundedRectangle(cornerRadius: 3)
-        .fill(Color(hex: repository.colorHex))
-        .frame(width: 10, height: 24)
-      VStack(alignment: .leading, spacing: 2) {
-        Text(repository.name)
-          .font(.subheadline.weight(.medium))
-        Text(repository.owner)
-          .font(.caption2)
-          .foregroundStyle(.secondary)
+    Toggle(isOn: $repository.isIncluded) {
+      HStack(spacing: 10) {
+        RoundedRectangle(cornerRadius: 3)
+          .fill(Color(hex: repository.colorHex))
+          .frame(width: 10, height: 24)
+        VStack(alignment: .leading, spacing: 2) {
+          Text(repository.name)
+            .font(.subheadline.weight(.medium))
+          Text(repository.owner)
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+        Spacer()
+        Text("\(repository.visibleTotal(for: window))")
+          .font(.subheadline.monospacedDigit().weight(.semibold))
       }
-      Spacer()
-      Text("\(repository.total)")
-        .font(.subheadline.monospacedDigit().weight(.semibold))
     }
+    .toggleStyle(.checkbox)
   }
 }
