@@ -8,6 +8,7 @@ final class GitHubMergedPullRequestTests: XCTestCase {
       """
       {
         "total_count": 1,
+        "incomplete_results": false,
         "items": [
           {
             "title": "Ship provider",
@@ -26,8 +27,20 @@ final class GitHubMergedPullRequestTests: XCTestCase {
     )
 
     XCTAssertEqual(response.items.count, 1)
+    XCTAssertEqual(response.totalCount, 1)
+    XCTAssertFalse(response.incompleteResults)
+    XCTAssertFalse(response.needsPagination(perPage: 100))
     XCTAssertEqual(response.items.first?.title, "Ship provider")
     XCTAssertEqual(response.items.first?.mergedAt, Date(timeIntervalSince1970: 1_777_638_896))
+  }
+
+  func testSearchResponseDetectsPaginationNeed() {
+    let response = GitHubMergedPullRequestSearchResponse(
+      totalCount: 101,
+      items: []
+    )
+
+    XCTAssertTrue(response.needsPagination(perPage: 100))
   }
 
   func testSearchResponseRejectsInvalidMergedAtDate() {

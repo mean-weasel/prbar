@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 19,
+  "iteration": 20,
   "completed": [
     {
       "iteration": 1,
@@ -140,6 +140,12 @@
       "at": "2026-05-03T02:18:58Z",
       "summary": "Updated the GitHub provider to fetch merged PR search results per discovered repo and populate weekly activity counts.",
       "report": ".agent-loop/iterations/019-report.md"
+    },
+    {
+      "iteration": 20,
+      "at": "2026-05-03T02:19:48Z",
+      "summary": "Decoded GitHub search pagination metadata so over-limit merged PR result sets can be detected.",
+      "report": ".agent-loop/iterations/020-report.md"
     }
   ],
   "open_findings": [
@@ -200,12 +206,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 19."
+    "make ci-local passed for iteration 20."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "The GitHub provider now populates counts; pagination remains an API completeness gap for repositories with more than one page of results.",
-    "next_focus": "Handle GitHub search pagination metadata."
+    "reason": "Pagination metadata is decoded; the next useful step is fetching additional result pages when total_count exceeds per_page.",
+    "next_focus": "Fetch additional GitHub search pages for high-volume repos."
   }
 }

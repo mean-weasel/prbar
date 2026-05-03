@@ -1,7 +1,33 @@
 import Foundation
 
 struct GitHubMergedPullRequestSearchResponse: Decodable, Equatable {
+  var totalCount: Int
+  var incompleteResults: Bool
   var items: [GitHubMergedPullRequest]
+
+  func needsPagination(perPage: Int) -> Bool {
+    totalCount > perPage
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case totalCount = "total_count"
+    case incompleteResults = "incomplete_results"
+    case items
+  }
+
+  init(totalCount: Int, incompleteResults: Bool = false, items: [GitHubMergedPullRequest]) {
+    self.totalCount = totalCount
+    self.incompleteResults = incompleteResults
+    self.items = items
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    totalCount = try container.decodeIfPresent(Int.self, forKey: .totalCount) ?? 0
+    incompleteResults =
+      try container.decodeIfPresent(Bool.self, forKey: .incompleteResults) ?? false
+    items = try container.decode([GitHubMergedPullRequest].self, forKey: .items)
+  }
 }
 
 struct GitHubMergedPullRequest: Decodable, Equatable {
