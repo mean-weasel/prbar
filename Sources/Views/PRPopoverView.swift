@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PRPopoverView: View {
   @Binding var store: PRActivityStore
+  var onRefresh: () -> Void
   @State private var selectedBucketIndex = 0
 
   var body: some View {
@@ -28,19 +29,28 @@ struct PRPopoverView: View {
       }
       Spacer()
       Button("Refresh") {
-        store.refreshedAt = Date()
+        onRefresh()
       }
       .buttonStyle(.bordered)
     }
   }
 
   private var controls: some View {
-    Picker("Window", selection: $store.window) {
-      ForEach(ActivityWindow.allCases) { window in
-        Text(window.rawValue).tag(window)
+    VStack(spacing: 8) {
+      Picker("Window", selection: $store.window) {
+        ForEach(ActivityWindow.allCases) { window in
+          Text(window.rawValue).tag(window)
+        }
       }
+      .pickerStyle(.segmented)
+
+      Picker("Refresh", selection: $store.refreshInterval) {
+        ForEach(AutoRefreshInterval.allCases) { interval in
+          Text(interval.rawValue).tag(interval)
+        }
+      }
+      .pickerStyle(.segmented)
     }
-    .pickerStyle(.segmented)
   }
 
   private var summary: some View {

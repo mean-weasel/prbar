@@ -35,6 +35,7 @@ final class PRActivityStoreTests: XCTestCase {
     let store = PRActivityStore(
       bucketLabels: ["W1", "W2"],
       window: .twoWeeks,
+      refreshInterval: .daily,
       repositories: repositories,
       refreshedAt: Date()
     )
@@ -56,12 +57,14 @@ final class PRActivityStoreTests: XCTestCase {
     let store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
     let settings = PRSettingsSnapshot(
       window: .oneMonth,
+      refreshInterval: .manual,
       includedRepositoryIDs: ["mean-weasel/deckchecker", "neonwatty/RedditReminder"]
     )
 
     let updated = store.applying(settings)
 
     XCTAssertEqual(updated.window, .oneMonth)
+    XCTAssertEqual(updated.refreshInterval, .manual)
     XCTAssertEqual(updated.activeRepositoryCount, 2)
     XCTAssertEqual(updated.totalPullRequests, 343)
     XCTAssertEqual(updated.settingsSnapshot, settings)

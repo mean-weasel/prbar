@@ -15,11 +15,15 @@ struct PRMenuBarApp: App {
 
   var body: some Scene {
     MenuBarExtra {
-      PRPopoverView(store: $store)
-        .frame(width: 460)
-        .onChange(of: store.settingsSnapshot) { _, snapshot in
-          settingsStore.save(snapshot)
-        }
+      PRPopoverView(store: $store) {
+        let settings = store.settingsSnapshot
+        let loaded = (try? activityProvider.load(now: Date())) ?? PRActivityStore.sample()
+        store = loaded.applying(settings)
+      }
+      .frame(width: 460)
+      .onChange(of: store.settingsSnapshot) { _, snapshot in
+        settingsStore.save(snapshot)
+      }
     } label: {
       Label(store.statusTitle, systemImage: "chart.bar.xaxis")
     }

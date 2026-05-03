@@ -11,3 +11,4 @@
 - When the user changes the iteration budget, the agent should update the persisted loop budget immediately so state matches the active charter.
 - Small UI iterations are easier to judge when paired with a model-level test for the data shown in the UI.
 - A provider boundary can be useful before real credentials/API work; it gives the loop a testable next step without blocking on external services.
+- SwiftUI `some View` edits are prone to small composition mistakes; fast local build verification catches them before they become loop-state noise.

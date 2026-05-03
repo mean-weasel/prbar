@@ -3,6 +3,7 @@ import Foundation
 struct PRActivityStore {
   var bucketLabels: [String]
   var window: ActivityWindow
+  var refreshInterval: AutoRefreshInterval
   var repositories: [RepositoryActivity]
   var refreshedAt: Date
 
@@ -61,6 +62,7 @@ struct PRActivityStore {
   var settingsSnapshot: PRSettingsSnapshot {
     PRSettingsSnapshot(
       window: window,
+      refreshInterval: refreshInterval,
       includedRepositoryIDs: repositories.filter(\.isIncluded).map(\.id)
     )
   }
@@ -69,6 +71,7 @@ struct PRActivityStore {
     let included = Set(settings.includedRepositoryIDs)
     var copy = self
     copy.window = settings.window
+    copy.refreshInterval = settings.refreshInterval
     copy.repositories = repositories.map { repository in
       var updated = repository
       updated.isIncluded = included.contains(repository.id)
@@ -83,6 +86,7 @@ struct PRActivityStore {
         "03/02", "03/09", "03/16", "03/23", "03/30", "04/06", "04/13", "04/20", "04/27",
       ],
       window: .twoWeeks,
+      refreshInterval: .daily,
       repositories: RepositoryActivity.samples,
       refreshedAt: now
     )

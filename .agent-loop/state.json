@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 4,
+  "iteration": 5,
   "completed": [
     {
       "iteration": 1,
@@ -50,6 +50,12 @@
       "at": "2026-05-03T01:17:35Z",
       "summary": "Introduced a PR activity provider protocol with static and JSON-backed implementations.",
       "report": ".agent-loop/iterations/004-report.md"
+    },
+    {
+      "iteration": 5,
+      "at": "2026-05-03T01:19:10Z",
+      "summary": "Added persisted refresh interval settings, refresh policy tests, and provider-backed manual refresh behavior.",
+      "report": ".agent-loop/iterations/005-report.md"
     }
   ],
   "open_findings": [
@@ -67,18 +73,6 @@
     }
   ],
   "candidate_tasks": [
-    {
-      "id": "T-005",
-      "title": "Add refresh preferences and auto-refresh interval presentation",
-      "kind": "product",
-      "impact": 4,
-      "confidence": 4,
-      "evidence": 4,
-      "effort": 3,
-      "risk": 4,
-      "score": 35,
-      "verification": "Settings tests plus make ci-local"
-    },
     {
       "id": "T-006",
       "title": "Add empty and all-repos-excluded states",
@@ -104,12 +98,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 4."
+    "make ci-local passed for iteration 5 after wrapping two SwiftUI pickers in a container."
   ],
   "judge": {
     "continue": true,
-    "confidence": 0.74,
-    "reason": "Refresh is still only a timestamp button; the original charter called out daily auto-refresh and refresh controls.",
-    "next_focus": "Add refresh preferences and interval presentation."
+    "confidence": 0.72,
+    "reason": "A clear UX edge case remains: excluding all repositories leaves an empty chart/detail surface.",
+    "next_focus": "Add empty and all-repos-excluded states."
   }
 }
