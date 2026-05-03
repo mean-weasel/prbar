@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 35,
+  "iteration": 36,
   "completed": [
     {
       "iteration": 1,
@@ -236,6 +236,12 @@
       "at": "2026-05-03T02:48:46Z",
       "summary": "Guarded scheduled refresh with the same in-progress state so timer refreshes do not duplicate active refresh work.",
       "report": ".agent-loop/iterations/035-report.md"
+    },
+    {
+      "iteration": 36,
+      "at": "2026-05-03T02:49:43Z",
+      "summary": "Stopped GitHub merged PR pagination when a search page returns no items and covered the case with a regression test.",
+      "report": ".agent-loop/iterations/036-report.md"
     }
   ],
   "open_findings": [
@@ -248,18 +254,6 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-024",
-      "title": "Prevent GitHub merged PR pagination from stalling on empty pages",
-      "kind": "reliability",
-      "impact": 4,
-      "confidence": 4,
-      "evidence": 4,
-      "effort": 2,
-      "risk": 4,
-      "score": 34,
-      "verification": "Provider pagination regression test plus make ci-local"
-    },
-    {
       "id": "T-025",
       "title": "Skip GitHub search requests when no discovered repositories are pullable",
       "kind": "reliability",
@@ -270,6 +264,18 @@
       "risk": 4,
       "score": 30,
       "verification": "Provider regression test plus make ci-local"
+    },
+    {
+      "id": "T-026",
+      "title": "Document refresh and rate-limit behavior in the README",
+      "kind": "reliability",
+      "impact": 3,
+      "confidence": 4,
+      "evidence": 3,
+      "effort": 1,
+      "risk": 4,
+      "score": 29,
+      "verification": "Docs review plus make ci-local"
     }
   ],
   "blocked": [],
@@ -284,12 +290,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 35."
+    "make ci-local passed for iteration 36."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.87,
-    "reason": "Both manual and scheduled refresh paths now honor in-progress state; the next highest-value reliability task is hardening GitHub search pagination against empty pages.",
-    "next_focus": "Prevent GitHub merged PR pagination from stalling on empty pages."
+    "reason": "GitHub search pagination now has a defensive empty-page stop; the next useful provider guard is documenting and testing the no-pullable-repository path.",
+    "next_focus": "Skip GitHub search requests when no discovered repositories are pullable."
   }
 }

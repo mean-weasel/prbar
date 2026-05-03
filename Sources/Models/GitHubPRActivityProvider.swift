@@ -100,6 +100,9 @@ struct GitHubPRActivityProvider: PRActivityProviding {
         throw GitHubPRActivityProviderError.incompleteSearchResults(repositoryID: repositoryID)
       }
       totalCount = response.totalCount
+      guard response.items.isEmpty == false else {
+        break
+      }
       items.append(contentsOf: response.items)
       page += 1
     } while items.count < totalCount
