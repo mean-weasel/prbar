@@ -3,12 +3,14 @@ import Foundation
 struct PRActivityStore {
   var bucketLabels: [String]
   var window: ActivityWindow
+  var bin: ActivityBin
   var refreshInterval: AutoRefreshInterval
   var repositories: [RepositoryActivity]
   var refreshedAt: Date
 
   var visibleBucketLabels: [String] {
     Array(bucketLabels.suffix(window.visibleBucketCount))
+      .groupedLabels(size: bin.sourceBucketGroupSize)
   }
 
   var includedRepositories: [RepositoryActivity] {
@@ -16,17 +18,17 @@ struct PRActivityStore {
   }
 
   var totalPullRequests: Int {
-    includedRepositories.reduce(0) { $0 + $1.visibleTotal(for: window) }
+    includedRepositories.reduce(0) { $0 + $1.visibleTotal(for: window, bin: bin) }
   }
 
   var activeRepositoryCount: Int {
-    includedRepositories.filter { $0.visibleTotal(for: window) > 0 }.count
+    includedRepositories.filter { $0.visibleTotal(for: window, bin: bin) > 0 }.count
   }
 
   var bucketTotals: [Int] {
     visibleBucketLabels.indices.map { index in
       includedRepositories.reduce(0) { sum, repository in
-        sum + repository.visibleCounts(for: window)[index]
+        sum + repository.visibleCounts(for: window, bin: bin)[index]
       }
     }
   }
@@ -56,7 +58,7 @@ struct PRActivityStore {
       .map { repository in
         RepositoryBucketValue(
           repository: repository,
-          value: repository.visibleCounts(for: window)[index]
+          value: repository.visibleCounts(for: window, bin: bin)[index]
         )
       }
       .filter { $0.value > 0 }
@@ -74,6 +76,7 @@ struct PRActivityStore {
   var settingsSnapshot: PRSettingsSnapshot {
     PRSettingsSnapshot(
       window: window,
+      bin: bin,
       refreshInterval: refreshInterval,
       includedRepositoryIDs: repositories.filter(\.isIncluded).map(\.id),
       knownRepositoryIDs: repositories.map(\.id)
@@ -85,6 +88,7 @@ struct PRActivityStore {
     let known = Set(settings.knownRepositoryIDs)
     var copy = self
     copy.window = settings.window
+    copy.bin = settings.bin
     copy.refreshInterval = settings.refreshInterval
     copy.repositories = repositories.map { repository in
       var updated = repository
@@ -102,9 +106,25 @@ struct PRActivityStore {
         "03/02", "03/09", "03/16", "03/23", "03/30", "04/06", "04/13", "04/20", "04/27",
       ],
       window: .twoWeeks,
+      bin: .week,
       refreshInterval: .daily,
       repositories: RepositoryActivity.samples,
       refreshedAt: now
     )
+  }
+}
+
+extension Array where Element == String {
+  func groupedLabels(size: Int) -> [String] {
+    guard size > 1 else {
+      return self
+    }
+    return stride(from: 0, to: count, by: size).map { start in
+      let group = self[start..<Swift.min(start + size, count)]
+      guard let first = group.first, let last = group.last, first != last else {
+        return group.first ?? ""
+      }
+      return "\(first)-\(last)"
+    }
   }
 }
