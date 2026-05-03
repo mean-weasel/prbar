@@ -47,6 +47,29 @@ final class URLSessionGitHubAPITransportTests: XCTestCase {
     }
   }
 
+  func testTransportIncludesRateLimitResetDateInHTTPStatusErrors() {
+    MockURLProtocol.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!,
+        statusCode: 403,
+        httpVersion: nil,
+        headerFields: ["X-RateLimit-Reset": "1777638896"]
+      )!
+      return (response, Data())
+    }
+
+    let transport = URLSessionGitHubAPITransport(session: mockSession())
+
+    XCTAssertThrowsError(
+      try transport.data(for: URLRequest(url: URL(string: "https://example.test")!))
+    ) { error in
+      XCTAssertEqual(
+        error as? URLSessionGitHubAPITransportError,
+        .httpStatus(403, rateLimitReset: Date(timeIntervalSince1970: 1_777_638_896))
+      )
+    }
+  }
+
   private func mockSession() -> URLSession {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [MockURLProtocol.self]

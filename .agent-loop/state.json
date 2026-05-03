@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 30,
+  "iteration": 31,
   "completed": [
     {
       "iteration": 1,
@@ -206,6 +206,12 @@
       "at": "2026-05-03T02:42:22Z",
       "summary": "Paginated GitHub repository discovery until a short page is returned.",
       "report": ".agent-loop/iterations/030-report.md"
+    },
+    {
+      "iteration": 31,
+      "at": "2026-05-03T02:43:34Z",
+      "summary": "Decoded GitHub rate-limit reset headers into HTTP transport errors.",
+      "report": ".agent-loop/iterations/031-report.md"
     }
   ],
   "open_findings": [
@@ -254,12 +260,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 30."
+    "make ci-local passed for iteration 31 after repairing SwiftFormat access-level guidance."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.88,
-    "reason": "Repository discovery now handles accounts with more than 100 repos; next useful reliability work is exposing rate-limit reset details from GitHub HTTP responses.",
-    "next_focus": "Decode GitHub rate-limit headers in transport errors."
+    "reason": "HTTP errors now retain rate-limit reset metadata; next useful UX work is converting rate-limit failures into a clearer refresh banner.",
+    "next_focus": "Show rate-limit reset time in refresh errors."
   }
 }

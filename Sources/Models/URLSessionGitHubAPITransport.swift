@@ -27,7 +27,12 @@ final class URLSessionGitHubAPITransport: GitHubAPITransport {
       }
 
       guard (200..<300).contains(response.statusCode) else {
-        box.result = .failure(URLSessionGitHubAPITransportError.httpStatus(response.statusCode))
+        box.result = .failure(
+          URLSessionGitHubAPITransportError.httpStatus(
+            response.statusCode,
+            rateLimitReset: response.rateLimitResetDate
+          )
+        )
         return
       }
 
@@ -42,9 +47,22 @@ final class URLSessionGitHubAPITransport: GitHubAPITransport {
 
 enum URLSessionGitHubAPITransportError: Error, Equatable {
   case invalidResponse
-  case httpStatus(Int)
+  case httpStatus(Int, rateLimitReset: Date? = nil)
 }
 
 private final class URLSessionTransportResultBox {
   var result: Result<Data, Error>?
+}
+
+extension HTTPURLResponse {
+  fileprivate var rateLimitResetDate: Date? {
+    guard
+      let text = value(forHTTPHeaderField: "X-RateLimit-Reset"),
+      let seconds = TimeInterval(text)
+    else {
+      return nil
+    }
+
+    return Date(timeIntervalSince1970: seconds)
+  }
 }
