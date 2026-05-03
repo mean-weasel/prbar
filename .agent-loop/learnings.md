@@ -10,3 +10,4 @@
 - Repeated manual total mistakes suggest the loop should favor fixture-derived expected values or helper assertions over hand-summed numbers in tests.
 - When the user changes the iteration budget, the agent should update the persisted loop budget immediately so state matches the active charter.
 - Small UI iterations are easier to judge when paired with a model-level test for the data shown in the UI.
+- A provider boundary can be useful before real credentials/API work; it gives the loop a testable next step without blocking on external services.

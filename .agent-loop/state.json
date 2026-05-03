@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 3,
+  "iteration": 4,
   "completed": [
     {
       "iteration": 1,
@@ -44,6 +44,12 @@
       "at": "2026-05-03T01:16:30Z",
       "summary": "Added tappable chart buckets and a selected-bucket repository breakdown.",
       "report": ".agent-loop/iterations/003-report.md"
+    },
+    {
+      "iteration": 4,
+      "at": "2026-05-03T01:17:35Z",
+      "summary": "Introduced a PR activity provider protocol with static and JSON-backed implementations.",
+      "report": ".agent-loop/iterations/004-report.md"
     }
   ],
   "open_findings": [
@@ -51,7 +57,7 @@
       "id": "F-001",
       "kind": "product",
       "severity": "medium",
-      "text": "The app still uses embedded sample data rather than fetching PR history from GitHub."
+      "text": "The app still does not fetch PR history from GitHub, though provider boundaries now exist."
     },
     {
       "id": "F-004",
@@ -62,16 +68,28 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-004",
-      "title": "Introduce a GitHub data provider boundary with fixture-backed tests",
-      "kind": "maintainability",
-      "impact": 5,
+      "id": "T-005",
+      "title": "Add refresh preferences and auto-refresh interval presentation",
+      "kind": "product",
+      "impact": 4,
       "confidence": 4,
       "evidence": 4,
-      "effort": 2,
-      "risk": 3,
+      "effort": 3,
+      "risk": 4,
+      "score": 35,
+      "verification": "Settings tests plus make ci-local"
+    },
+    {
+      "id": "T-006",
+      "title": "Add empty and all-repos-excluded states",
+      "kind": "ux",
+      "impact": 3,
+      "confidence": 5,
+      "evidence": 4,
+      "effort": 4,
+      "risk": 5,
       "score": 36,
-      "verification": "Fixture parser tests plus make ci-local"
+      "verification": "Model tests plus make ci-local"
     }
   ],
   "blocked": [],
@@ -86,12 +104,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 3."
+    "make ci-local passed for iteration 4."
   ],
   "judge": {
     "continue": true,
-    "confidence": 0.78,
-    "reason": "The app is still tied to embedded sample data; a provider boundary is needed before real GitHub refresh work.",
-    "next_focus": "Introduce a fixture-backed PR activity data provider boundary."
+    "confidence": 0.74,
+    "reason": "Refresh is still only a timestamp button; the original charter called out daily auto-refresh and refresh controls.",
+    "next_focus": "Add refresh preferences and interval presentation."
   }
 }

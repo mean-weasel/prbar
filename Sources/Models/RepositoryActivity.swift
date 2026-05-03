@@ -1,6 +1,6 @@
 import Foundation
 
-struct RepositoryActivity: Identifiable, Equatable {
+struct RepositoryActivity: Codable, Identifiable, Equatable {
   let id: String
   var owner: String
   var name: String
