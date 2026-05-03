@@ -12,7 +12,7 @@ struct GitHubPRActivityProvider: PRActivityProviding {
   var token: String
   var transport: GitHubAPITransport
   var bucketLabels: [String]
-  var defaultWindow: ActivityWindow = .twoWeeks
+  var defaultWindow: ActivityWindow = .oneWeek
   private let dailyBucketCount = 30
   private let repositoryPageSize = 100
   private let searchPageSize = 100
@@ -40,7 +40,7 @@ struct GitHubPRActivityProvider: PRActivityProviding {
       bucketLabels: labels,
       dailyBucketLabels: dailyLabels,
       window: defaultWindow,
-      bin: .week,
+      bin: .day,
       refreshInterval: .daily,
       repositories: activities,
       refreshedAt: now

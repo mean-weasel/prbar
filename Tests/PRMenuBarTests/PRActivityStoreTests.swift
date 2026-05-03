@@ -6,11 +6,13 @@ final class PRActivityStoreTests: XCTestCase {
   func testSampleStoreSummarizesIncludedRepositories() {
     let store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
 
-    XCTAssertEqual(store.totalPullRequests, 667)
-    XCTAssertEqual(store.activeRepositoryCount, 11)
-    XCTAssertEqual(store.statusTitle, "667 PRs")
-    XCTAssertEqual(store.summaryText, "667 merged across 11 repos")
-    XCTAssertEqual(store.bucketTotals, [205, 462])
+    XCTAssertEqual(store.window, .oneWeek)
+    XCTAssertEqual(store.bin, .day)
+    XCTAssertEqual(store.totalPullRequests, 462)
+    XCTAssertEqual(store.activeRepositoryCount, 10)
+    XCTAssertEqual(store.statusTitle, "462 PRs")
+    XCTAssertEqual(store.summaryText, "462 merged across 10 repos")
+    XCTAssertEqual(store.bucketTotals, [62, 64, 65, 66, 66, 69, 70])
   }
 
   func testExcludedRepositoryDoesNotContributeToTotals() {
@@ -50,8 +52,16 @@ final class PRActivityStoreTests: XCTestCase {
 
     store.window = .oneMonth
 
-    XCTAssertEqual(store.visibleBucketLabels, ["04/06", "04/13", "04/20", "04/27"])
-    XCTAssertEqual(store.bucketTotals, [128, 288, 205, 462])
+    XCTAssertEqual(store.visibleBucketLabels.count, 30)
+    XCTAssertEqual(store.visibleBucketLabels.first, "12/03")
+    XCTAssertEqual(store.visibleBucketLabels.last, "01/01")
+    XCTAssertEqual(
+      store.bucketTotals,
+      [
+        18, 18, 17, 17, 17, 17, 18, 20, 22, 39, 41, 41, 41, 41, 41, 44, 26, 27, 28, 29,
+        31, 32, 32, 62, 64, 65, 66, 66, 69, 70,
+      ]
+    )
   }
 
   func testMonthBinAggregatesVisibleBuckets() {
@@ -172,10 +182,10 @@ final class PRActivityStoreTests: XCTestCase {
 
   func testBucketBreakdownSortsNonZeroRepoValues() {
     let store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
-    let breakdown = store.bucketBreakdown(at: 1)
+    let breakdown = store.bucketBreakdown(at: 6)
 
     XCTAssertEqual(breakdown.first?.repository.id, "mean-weasel/deckchecker")
-    XCTAssertEqual(breakdown.first?.value, 111)
+    XCTAssertEqual(breakdown.first?.value, 16)
     XCTAssertFalse(breakdown.contains { $0.value == 0 })
   }
 
@@ -192,6 +202,6 @@ final class PRActivityStoreTests: XCTestCase {
     store.includeAllRepositories()
 
     XCTAssertTrue(store.hasVisibleActivity)
-    XCTAssertEqual(store.activeRepositoryCount, 11)
+    XCTAssertEqual(store.activeRepositoryCount, 10)
   }
 }

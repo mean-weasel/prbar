@@ -10,30 +10,65 @@ struct ActivityChartView: View {
         .font(.caption)
         .foregroundStyle(.secondary)
 
-      ScrollView(.horizontal) {
-        HStack(alignment: .bottom, spacing: columnSpacing) {
-          ForEach(Array(store.visibleBucketLabels.enumerated()), id: \.offset) { index, label in
-            ActivityChartColumn(
-              label: label,
-              total: store.bucketTotals[index],
-              maxTotal: store.maxBucketTotal,
-              repositories: store.includedRepositories,
-              bucketIndex: index,
-              window: store.window,
-              bin: store.bin,
-              isSelected: selectedBucketIndex == index
-            )
-            .frame(width: columnWidth)
-            .contentShape(Rectangle())
-            .onTapGesture {
-              selectedBucketIndex = index
+      ScrollViewReader { proxy in
+        ScrollView(.horizontal) {
+          HStack(alignment: .bottom, spacing: columnSpacing) {
+            ForEach(Array(store.visibleBucketLabels.enumerated()), id: \.offset) { index, label in
+              ActivityChartColumn(
+                label: label,
+                total: store.bucketTotals[index],
+                maxTotal: store.maxBucketTotal,
+                repositories: store.includedRepositories,
+                bucketIndex: index,
+                window: store.window,
+                bin: store.bin,
+                isSelected: selectedBucketIndex == index
+              )
+              .id(index)
+              .frame(width: columnWidth)
+              .contentShape(Rectangle())
+              .help(helpText(for: index, label: label))
+              .onTapGesture {
+                selectedBucketIndex = index
+              }
             }
           }
+          .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+          scrollToMostRecent(proxy)
+        }
+        .onChange(of: store.window) { _, _ in
+          scrollToMostRecent(proxy)
+        }
+        .onChange(of: store.bin) { _, _ in
+          scrollToMostRecent(proxy)
+        }
       }
       .frame(height: 150)
     }
+  }
+
+  private func scrollToMostRecent(_ proxy: ScrollViewProxy) {
+    guard let lastIndex = store.visibleBucketLabels.indices.last else {
+      return
+    }
+    DispatchQueue.main.async {
+      selectedBucketIndex = lastIndex
+      proxy.scrollTo(lastIndex, anchor: .trailing)
+    }
+  }
+
+  private func helpText(for index: Int, label: String) -> String {
+    let total = store.bucketTotals[index]
+    let repositories = store.bucketBreakdown(at: index).prefix(3).map { item in
+      "\(item.repository.name): \(item.value)"
+    }
+
+    guard repositories.isEmpty == false else {
+      return "\(label): \(total) merged PRs"
+    }
+    return "\(label): \(total) merged PRs\n\(repositories.joined(separator: "\n"))"
   }
 
   private var columnSpacing: CGFloat {

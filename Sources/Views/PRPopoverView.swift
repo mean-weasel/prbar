@@ -6,7 +6,7 @@ struct PRPopoverView: View {
   var isRefreshing = false
   var dataSource: PRActivityDataSource = .sample
   var onRefresh: () -> Void
-  @State private var selectedBucketIndex = 0
+  @State private var selectedBucketIndex = Int.max
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
@@ -14,18 +14,7 @@ struct PRPopoverView: View {
       if let refreshError {
         RefreshErrorView(message: refreshError)
       }
-      controls
-      summary
-      if store.hasVisibleActivity {
-        ActivityChartView(store: store, selectedBucketIndex: selectedBucketBinding)
-        BucketDetailView(store: store, bucketIndex: safeSelectedBucketIndex)
-      } else {
-        EmptyActivityView {
-          store.includeAllRepositories()
-        }
-      }
-      repositoryList
-      footer
+      tabs
     }
     .padding(18)
   }
@@ -51,28 +40,32 @@ struct PRPopoverView: View {
     }
   }
 
-  private var controls: some View {
-    VStack(spacing: 8) {
-      Picker("Window", selection: $store.window) {
-        ForEach(ActivityWindow.allCases) { window in
-          Text(window.rawValue).tag(window)
+  private var tabs: some View {
+    TabView {
+      activityTab
+        .tabItem {
+          Label("Activity", systemImage: "chart.bar.xaxis")
         }
-      }
-      .pickerStyle(.segmented)
+      PRSettingsView(store: $store)
+        .tabItem {
+          Label("Settings", systemImage: "gearshape")
+        }
+    }
+    .frame(minHeight: 430)
+  }
 
-      Picker("Bins", selection: $store.bin) {
-        ForEach(ActivityBin.allCases) { bin in
-          Text(bin.rawValue).tag(bin)
+  private var activityTab: some View {
+    VStack(alignment: .leading, spacing: 16) {
+      summary
+      if store.hasVisibleActivity {
+        ActivityChartView(store: store, selectedBucketIndex: selectedBucketBinding)
+        BucketDetailView(store: store, bucketIndex: safeSelectedBucketIndex)
+      } else {
+        EmptyActivityView {
+          store.includeAllRepositories()
         }
       }
-      .pickerStyle(.segmented)
-
-      Picker("Refresh", selection: $store.refreshInterval) {
-        ForEach(AutoRefreshInterval.allCases) { interval in
-          Text(interval.rawValue).tag(interval)
-        }
-      }
-      .pickerStyle(.segmented)
+      footer
     }
   }
 
@@ -81,17 +74,6 @@ struct PRPopoverView: View {
       MetricTile(value: "\(store.totalPullRequests)", label: "merged")
       MetricTile(value: "\(store.activeRepositoryCount)", label: "repos")
       MetricTile(value: "\(store.window.dayCount)", label: "days")
-    }
-  }
-
-  private var repositoryList: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Text("Repositories")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-      ForEach($store.repositories) { $repository in
-        RepositoryActivityRow(repository: $repository, window: store.window, bin: store.bin)
-      }
     }
   }
 
@@ -144,33 +126,6 @@ private struct MetricTile: View {
     .frame(maxWidth: .infinity)
     .padding(.vertical, 10)
     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
-  }
-}
-
-private struct RepositoryActivityRow: View {
-  @Binding var repository: RepositoryActivity
-  var window: ActivityWindow
-  var bin: ActivityBin
-
-  var body: some View {
-    Toggle(isOn: $repository.isIncluded) {
-      HStack(spacing: 10) {
-        RoundedRectangle(cornerRadius: 3)
-          .fill(Color(hex: repository.colorHex))
-          .frame(width: 10, height: 24)
-        VStack(alignment: .leading, spacing: 2) {
-          Text(repository.name)
-            .font(.subheadline.weight(.medium))
-          Text(repository.owner)
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-        }
-        Spacer()
-        Text("\(repository.visibleTotal(for: window, bin: bin))")
-          .font(.subheadline.monospacedDigit().weight(.semibold))
-      }
-    }
-    .toggleStyle(.checkbox)
   }
 }
 
