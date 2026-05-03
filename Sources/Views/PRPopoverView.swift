@@ -3,6 +3,8 @@ import SwiftUI
 struct PRPopoverView: View {
   @Binding var store: PRActivityStore
   var refreshError: String?
+  var isRefreshing = false
+  var dataSource: PRActivityDataSource = .sample
   var onRefresh: () -> Void
   @State private var selectedBucketIndex = 0
 
@@ -33,15 +35,19 @@ struct PRPopoverView: View {
       VStack(alignment: .leading, spacing: 4) {
         Text("PR Activity")
           .font(.headline)
-        Text(store.summaryText)
-          .font(.caption)
-          .foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+          Text(store.summaryText)
+          Label(dataSource.title, systemImage: dataSource.systemImage)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
       }
       Spacer()
-      Button("Refresh") {
+      Button(isRefreshing ? "Refreshing..." : "Refresh") {
         onRefresh()
       }
       .buttonStyle(.bordered)
+      .disabled(isRefreshing)
     }
   }
 
@@ -83,9 +89,25 @@ struct PRPopoverView: View {
   }
 
   private var footer: some View {
-    Text("Last refreshed \(store.refreshedAt.formatted(date: .omitted, time: .shortened))")
-      .font(.caption2)
-      .foregroundStyle(.tertiary)
+    VStack(alignment: .leading, spacing: 2) {
+      Text(refreshStatusText)
+      Text("Last refreshed \(store.refreshedAt.formatted(date: .omitted, time: .shortened))")
+      Text(nextRefreshText)
+    }
+    .font(.caption2)
+    .foregroundStyle(.tertiary)
+  }
+
+  private var nextRefreshText: String {
+    let policy = RefreshPolicy(interval: store.refreshInterval)
+    guard let next = policy.nextRefreshDate(lastRefreshedAt: store.refreshedAt) else {
+      return "Manual refresh only"
+    }
+    return "Next refresh after \(next.formatted(date: .omitted, time: .shortened))"
+  }
+
+  private var refreshStatusText: String {
+    isRefreshing ? "Refresh in progress" : "Refresh ready"
   }
 
   private var safeSelectedBucketIndex: Int {

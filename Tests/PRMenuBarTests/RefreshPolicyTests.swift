@@ -35,4 +35,19 @@ final class RefreshPolicyTests: XCTestCase {
       )
     )
   }
+
+  func testDailyRefreshReportsNextRefreshDate() {
+    let policy = RefreshPolicy(interval: .daily)
+
+    XCTAssertEqual(
+      policy.nextRefreshDate(lastRefreshedAt: Date(timeIntervalSince1970: 0)),
+      Date(timeIntervalSince1970: 86_400)
+    )
+  }
+
+  func testManualRefreshDoesNotReportNextRefreshDate() {
+    let policy = RefreshPolicy(interval: .manual)
+
+    XCTAssertNil(policy.nextRefreshDate(lastRefreshedAt: Date(timeIntervalSince1970: 0)))
+  }
 }

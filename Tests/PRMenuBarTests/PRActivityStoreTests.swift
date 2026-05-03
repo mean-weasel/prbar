@@ -109,6 +109,36 @@ final class PRActivityStoreTests: XCTestCase {
     XCTAssertTrue(updated.repositories[1].isIncluded)
   }
 
+  func testSettingsSnapshotPrunesStaleKnownRepositoriesAfterRefresh() {
+    let repositories = [
+      RepositoryActivity(
+        id: "owner/remaining",
+        owner: "owner",
+        name: "remaining",
+        colorHex: "#ffffff",
+        weeklyCounts: [1],
+        isIncluded: true
+      )
+    ]
+    let store = PRActivityStore(
+      bucketLabels: ["W1"],
+      window: .twoWeeks,
+      refreshInterval: .daily,
+      repositories: repositories,
+      refreshedAt: Date()
+    )
+    let settings = PRSettingsSnapshot(
+      window: .twoWeeks,
+      includedRepositoryIDs: ["owner/remaining"],
+      knownRepositoryIDs: ["owner/remaining", "owner/removed"]
+    )
+
+    let updated = store.applying(settings)
+
+    XCTAssertEqual(updated.settingsSnapshot.knownRepositoryIDs, ["owner/remaining"])
+    XCTAssertEqual(updated.settingsSnapshot.includedRepositoryIDs, ["owner/remaining"])
+  }
+
   func testBucketBreakdownSortsNonZeroRepoValues() {
     let store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
     let breakdown = store.bucketBreakdown(at: 1)

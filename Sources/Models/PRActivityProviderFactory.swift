@@ -6,18 +6,30 @@ enum PRActivityProviderFactory {
   static func make(environment: [String: String] = ProcessInfo.processInfo.environment)
     -> PRActivityProviding
   {
+    makeSelection(environment: environment).provider
+  }
+
+  static func makeSelection(environment: [String: String] = ProcessInfo.processInfo.environment)
+    -> PRActivityProviderSelection
+  {
     guard
       let rawToken = environment[tokenEnvironmentKey],
       rawToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
     else {
-      return StaticPRActivityProvider()
+      return PRActivityProviderSelection(
+        provider: StaticPRActivityProvider(),
+        dataSource: .sample
+      )
     }
     let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
 
-    return GitHubPRActivityProvider(
-      token: token,
-      transport: URLSessionGitHubAPITransport(),
-      bucketLabels: PRActivityStore.sample().bucketLabels
+    return PRActivityProviderSelection(
+      provider: GitHubPRActivityProvider(
+        token: token,
+        transport: URLSessionGitHubAPITransport(),
+        bucketLabels: PRActivityStore.sample().bucketLabels
+      ),
+      dataSource: .github
     )
   }
 }

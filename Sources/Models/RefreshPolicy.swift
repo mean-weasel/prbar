@@ -9,4 +9,11 @@ struct RefreshPolicy {
     }
     return now.timeIntervalSince(lastRefreshedAt) >= duration
   }
+
+  func nextRefreshDate(lastRefreshedAt: Date) -> Date? {
+    guard let duration = interval.duration else {
+      return nil
+    }
+    return lastRefreshedAt.addingTimeInterval(duration)
+  }
 }

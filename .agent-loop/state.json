@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 26,
+  "iteration": 46,
   "completed": [
     {
       "iteration": 1,
@@ -182,15 +182,129 @@
       "at": "2026-05-03T02:26:42Z",
       "summary": "Added explicit GitHub request timeouts and recorded loop learnings for the live-provider batch.",
       "report": ".agent-loop/iterations/026-report.md"
+    },
+    {
+      "iteration": 27,
+      "at": "2026-05-03T02:39:04Z",
+      "summary": "Added visible sample-vs-GitHub data source status to the popover header and provider selection model.",
+      "report": ".agent-loop/iterations/027-report.md"
+    },
+    {
+      "iteration": 28,
+      "at": "2026-05-03T02:40:09Z",
+      "summary": "Reused one provider selection during app startup so initial load, UI status, and refresh share the same provider.",
+      "report": ".agent-loop/iterations/028-report.md"
+    },
+    {
+      "iteration": 29,
+      "at": "2026-05-03T02:41:20Z",
+      "summary": "Added regression coverage proving settings snapshots prune repository IDs that disappear after refresh.",
+      "report": ".agent-loop/iterations/029-report.md"
+    },
+    {
+      "iteration": 30,
+      "at": "2026-05-03T02:42:22Z",
+      "summary": "Paginated GitHub repository discovery until a short page is returned.",
+      "report": ".agent-loop/iterations/030-report.md"
+    },
+    {
+      "iteration": 31,
+      "at": "2026-05-03T02:43:34Z",
+      "summary": "Decoded GitHub rate-limit reset headers into HTTP transport errors.",
+      "report": ".agent-loop/iterations/031-report.md"
+    },
+    {
+      "iteration": 32,
+      "at": "2026-05-03T02:44:41Z",
+      "summary": "Formatted refresh failures with GitHub rate-limit reset times when available.",
+      "report": ".agent-loop/iterations/032-report.md"
+    },
+    {
+      "iteration": 33,
+      "at": "2026-05-03T02:45:41Z",
+      "summary": "Displayed next scheduled refresh timing in the popover footer.",
+      "report": ".agent-loop/iterations/033-report.md"
+    },
+    {
+      "iteration": 34,
+      "at": "2026-05-03T02:47:40Z",
+      "summary": "Disabled manual refresh while a refresh is running and reflected the in-progress state in the button label.",
+      "report": ".agent-loop/iterations/034-report.md"
+    },
+    {
+      "iteration": 35,
+      "at": "2026-05-03T02:48:46Z",
+      "summary": "Guarded scheduled refresh with the same in-progress state so timer refreshes do not duplicate active refresh work.",
+      "report": ".agent-loop/iterations/035-report.md"
+    },
+    {
+      "iteration": 36,
+      "at": "2026-05-03T02:49:43Z",
+      "summary": "Stopped GitHub merged PR pagination when a search page returns no items and covered the case with a regression test.",
+      "report": ".agent-loop/iterations/036-report.md"
+    },
+    {
+      "iteration": 37,
+      "at": "2026-05-03T02:50:32Z",
+      "summary": "Covered the GitHub provider path where discovered repositories have no pull access so no search requests are issued.",
+      "report": ".agent-loop/iterations/037-report.md"
+    },
+    {
+      "iteration": 38,
+      "at": "2026-05-03T02:51:18Z",
+      "summary": "Documented current live GitHub data source status, refresh, and rate-limit reset behavior in the README.",
+      "report": ".agent-loop/iterations/038-report.md"
+    },
+    {
+      "iteration": 39,
+      "at": "2026-05-03T02:52:12Z",
+      "summary": "Extracted shared refresh start guarding so manual and scheduled refresh paths use one in-progress gate.",
+      "report": ".agent-loop/iterations/039-report.md"
+    },
+    {
+      "iteration": 40,
+      "at": "2026-05-03T02:53:05Z",
+      "summary": "Added footer refresh status text so the popover shows whether refresh is ready or in progress.",
+      "report": ".agent-loop/iterations/040-report.md"
+    },
+    {
+      "iteration": 41,
+      "at": "2026-05-03T02:54:20Z",
+      "summary": "Added provider factory coverage proving GitHub token whitespace is trimmed while retaining GitHub source selection.",
+      "report": ".agent-loop/iterations/041-report.md"
+    },
+    {
+      "iteration": 42,
+      "at": "2026-05-03T02:55:07Z",
+      "summary": "Recorded audit-loop learnings for SwiftUI app initialization, provider selection reuse, pagination guards, and refresh UX coverage.",
+      "report": ".agent-loop/iterations/042-report.md"
+    },
+    {
+      "iteration": 43,
+      "at": "2026-05-03T02:55:52Z",
+      "summary": "Added request-level coverage that GitHub merged PR search requests use the intended page size.",
+      "report": ".agent-loop/iterations/043-report.md"
+    },
+    {
+      "iteration": 44,
+      "at": "2026-05-03T02:56:44Z",
+      "summary": "Added request-level coverage that GitHub repository discovery requests use the intended page size.",
+      "report": ".agent-loop/iterations/044-report.md"
+    },
+    {
+      "iteration": 45,
+      "at": "2026-05-03T02:57:37Z",
+      "summary": "Replaced ad hoc GitHub provider URL query assertions with a URLComponents-backed query helper.",
+      "report": ".agent-loop/iterations/045-report.md"
+    },
+    {
+      "iteration": 46,
+      "at": "2026-05-03T02:58:30Z",
+      "summary": "Documented that in-app GitHub sign-in and credential storage remain open product decisions while the environment-token path is supported.",
+      "report": ".agent-loop/iterations/046-report.md"
     }
   ],
   "open_findings": [
-    {
-      "id": "F-004",
-      "kind": "reliability",
-      "severity": "low",
-      "text": "Settings persistence does not yet handle repository IDs disappearing from future fetched data beyond excluding unknown IDs."
-    },
     {
       "id": "F-007",
       "kind": "product",
@@ -200,28 +314,28 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-021",
-      "title": "Add visible data-source status for sample vs GitHub mode",
-      "kind": "feature",
-      "impact": 4,
+      "id": "T-035",
+      "title": "Close batch budget and prepare PR",
+      "kind": "reliability",
+      "impact": 2,
       "confidence": 4,
       "evidence": 4,
-      "effort": 2,
+      "effort": 1,
       "risk": 4,
-      "score": 34,
-      "verification": "View/model tests plus make ci-local"
+      "score": 27,
+      "verification": "Final make ci-local, push branch, open PR"
     },
     {
-      "id": "T-022",
-      "title": "Reconcile stale repository filters after GitHub repo removal",
-      "kind": "feature",
+      "id": "T-036",
+      "title": "Design in-app GitHub auth and credential storage",
+      "kind": "product",
       "impact": 4,
       "confidence": 3,
       "evidence": 4,
-      "effort": 3,
-      "risk": 4,
-      "score": 29,
-      "verification": "Settings/store reconciliation tests plus make ci-local"
+      "effort": 4,
+      "risk": 3,
+      "score": 24,
+      "verification": "Design note and product decision before implementation"
     }
   ],
   "blocked": [],
@@ -236,12 +350,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 26."
+    "make ci-local passed for iteration 46."
   ],
   "judge": {
     "continue": false,
-    "confidence": 0.88,
-    "reason": "The requested 20-iteration continuation is complete. Valuable follow-up tasks remain, but the loop budget is exhausted.",
-    "next_focus": "Open a coherent PR for the live GitHub provider batch."
+    "confidence": 0.86,
+    "reason": "The requested 20-loop batch is complete and verified. Remaining work is a product decision about in-app GitHub auth and credential storage.",
+    "next_focus": "Open a coherent source-status and refresh reliability PR for iterations 27-46."
   }
 }

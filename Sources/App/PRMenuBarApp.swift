@@ -2,22 +2,30 @@ import SwiftUI
 
 @main
 struct PRMenuBarApp: App {
-  private let settingsStore = PRSettingsStore()
-  private let activityProvider: PRActivityProviding = PRActivityProviderFactory.make()
+  private let settingsStore: PRSettingsStore
+  private let providerSelection: PRActivityProviderSelection
   private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
   @State private var store: PRActivityStore
   @State private var refreshError: String?
+  @State private var isRefreshing = false
 
   init() {
     let settingsStore = PRSettingsStore()
-    let activityProvider = PRActivityProviderFactory.make()
-    let sample = (try? activityProvider.load(now: Date())) ?? PRActivityStore.sample()
+    let providerSelection = PRActivityProviderFactory.makeSelection()
+    self.settingsStore = settingsStore
+    self.providerSelection = providerSelection
+    let sample = (try? providerSelection.provider.load(now: Date())) ?? PRActivityStore.sample()
     _store = State(initialValue: settingsStore.load().map(sample.applying) ?? sample)
   }
 
   var body: some Scene {
     MenuBarExtra {
-      PRPopoverView(store: $store, refreshError: refreshError) {
+      PRPopoverView(
+        store: $store,
+        refreshError: refreshError,
+        isRefreshing: isRefreshing,
+        dataSource: providerSelection.dataSource
+      ) {
         refresh(now: Date())
       }
       .frame(width: 460)
@@ -37,25 +45,46 @@ struct PRMenuBarApp: App {
   }
 
   private func refresh(now: Date) {
-    let refresher = PRActivityRefresher(provider: activityProvider)
+    guard beginRefresh() else {
+      return
+    }
+    defer {
+      isRefreshing = false
+    }
+    let refresher = PRActivityRefresher(provider: providerSelection.provider)
     do {
       store = try refresher.refresh(current: store, now: now)
       refreshError = nil
     } catch {
-      refreshError = "Refresh failed. Keeping the previous activity."
+      refreshError = RefreshFailureMessage.manual(error: error)
     }
   }
 
   private func refreshIfDue(now: Date) {
-    let refresher = PRActivityRefresher(provider: activityProvider)
+    let policy = RefreshPolicy(interval: store.refreshInterval)
+    guard policy.isRefreshDue(lastRefreshedAt: store.refreshedAt, now: now) else {
+      return
+    }
+    guard beginRefresh() else {
+      return
+    }
+    defer {
+      isRefreshing = false
+    }
+    let refresher = PRActivityRefresher(provider: providerSelection.provider)
     do {
-      guard let refreshed = try refresher.refreshIfDue(current: store, now: now) else {
-        return
-      }
-      store = refreshed
+      store = try refresher.refresh(current: store, now: now)
       refreshError = nil
     } catch {
-      refreshError = "Scheduled refresh failed. Keeping the previous activity."
+      refreshError = RefreshFailureMessage.scheduled(error: error)
     }
+  }
+
+  private func beginRefresh() -> Bool {
+    guard isRefreshing == false else {
+      return false
+    }
+    isRefreshing = true
+    return true
   }
 }
