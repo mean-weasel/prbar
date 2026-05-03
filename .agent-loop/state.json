@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 24,
+  "iteration": 25,
   "completed": [
     {
       "iteration": 1,
@@ -170,6 +170,12 @@
       "at": "2026-05-03T02:24:50Z",
       "summary": "Trimmed environment tokens before provider selection so whitespace-only tokens keep the sample provider path.",
       "report": ".agent-loop/iterations/024-report.md"
+    },
+    {
+      "iteration": 25,
+      "at": "2026-05-03T02:25:45Z",
+      "summary": "Documented local usage for the live GitHub-backed provider path and its current scope.",
+      "report": ".agent-loop/iterations/025-report.md"
     }
   ],
   "open_findings": [
@@ -230,12 +236,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 24."
+    "make ci-local passed for iteration 25."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "Provider selection is resilient to blank tokens; next useful work is documenting how to run the live GitHub-backed path locally.",
-    "next_focus": "Document live GitHub provider local usage."
+    "reason": "Live GitHub provider usage is documented; final useful loop work is recording process learnings and closing the requested iteration budget.",
+    "next_focus": "Record loop learnings and close the 20-iteration run."
   }
 }

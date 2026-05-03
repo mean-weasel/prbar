@@ -27,6 +27,8 @@ of scope until the local product loop proves the provider and refresh behavior.
 - Bucket merged pull requests by calendar week first, matching the current model.
 - Keep API decoding isolated behind `PRActivityProviding` so tests can use fixture JSON.
 - Surface provider failures as app state instead of silently replacing real data with samples.
+- Paginate GitHub Search results until all reported items are fetched.
+- Fail closed when GitHub reports incomplete search results, keeping the previous app state.
 
 ## Rate Limits
 
