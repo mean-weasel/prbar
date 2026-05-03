@@ -2,13 +2,15 @@ import SwiftUI
 
 struct PRPopoverView: View {
   @Binding var store: PRActivityStore
+  @State private var selectedBucketIndex = 0
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
       header
       controls
       summary
-      ActivityChartView(store: store)
+      ActivityChartView(store: store, selectedBucketIndex: selectedBucketBinding)
+      BucketDetailView(store: store, bucketIndex: safeSelectedBucketIndex)
       repositoryList
       footer
     }
@@ -65,6 +67,17 @@ struct PRPopoverView: View {
       .font(.caption2)
       .foregroundStyle(.tertiary)
   }
+
+  private var safeSelectedBucketIndex: Int {
+    min(selectedBucketIndex, max(store.visibleBucketLabels.count - 1, 0))
+  }
+
+  private var selectedBucketBinding: Binding<Int> {
+    Binding(
+      get: { safeSelectedBucketIndex },
+      set: { selectedBucketIndex = $0 }
+    )
+  }
 }
 
 private struct MetricTile: View {
@@ -108,5 +121,38 @@ private struct RepositoryActivityRow: View {
       }
     }
     .toggleStyle(.checkbox)
+  }
+}
+
+private struct BucketDetailView: View {
+  var store: PRActivityStore
+  var bucketIndex: Int
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack {
+        Text(store.visibleBucketLabels[bucketIndex])
+          .font(.caption.weight(.semibold))
+        Spacer()
+        Text("\(store.bucketTotals[bucketIndex]) merged")
+          .font(.caption.monospacedDigit())
+          .foregroundStyle(.secondary)
+      }
+
+      ForEach(store.bucketBreakdown(at: bucketIndex).prefix(4)) { item in
+        HStack(spacing: 8) {
+          Circle()
+            .fill(Color(hex: item.repository.colorHex))
+            .frame(width: 7, height: 7)
+          Text(item.repository.name)
+            .font(.caption)
+          Spacer()
+          Text("\(item.value)")
+            .font(.caption.monospacedDigit().weight(.medium))
+        }
+      }
+    }
+    .padding(10)
+    .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
   }
 }

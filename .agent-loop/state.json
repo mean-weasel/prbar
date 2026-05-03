@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 2,
+  "iteration": 3,
   "completed": [
     {
       "iteration": 1,
@@ -38,6 +38,12 @@
       "at": "2026-05-03T01:15:20Z",
       "summary": "Persisted the selected time window and included repositories using a UserDefaults-backed settings store.",
       "report": ".agent-loop/iterations/002-report.md"
+    },
+    {
+      "iteration": 3,
+      "at": "2026-05-03T01:16:30Z",
+      "summary": "Added tappable chart buckets and a selected-bucket repository breakdown.",
+      "report": ".agent-loop/iterations/003-report.md"
     }
   ],
   "open_findings": [
@@ -48,12 +54,6 @@
       "text": "The app still uses embedded sample data rather than fetching PR history from GitHub."
     },
     {
-      "id": "F-002",
-      "kind": "ux",
-      "severity": "medium",
-      "text": "The chart has no hover/selection detail for individual repo segment values."
-    },
-    {
       "id": "F-004",
       "kind": "reliability",
       "severity": "low",
@@ -61,18 +61,6 @@
     }
   ],
   "candidate_tasks": [
-    {
-      "id": "T-003",
-      "title": "Add chart selection detail for a bucket and repo breakdown",
-      "kind": "ux",
-      "impact": 4,
-      "confidence": 4,
-      "evidence": 4,
-      "effort": 3,
-      "risk": 4,
-      "score": 35,
-      "verification": "make ci-local plus visual inspection"
-    },
     {
       "id": "T-004",
       "title": "Introduce a GitHub data provider boundary with fixture-backed tests",
@@ -98,12 +86,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 2 after fixing strict formatting and a manual total expectation."
+    "make ci-local passed for iteration 3."
   ],
   "judge": {
     "continue": true,
-    "confidence": 0.8,
-    "reason": "The next product gap is visible in the current app: chart values are not inspectable by bucket/repo.",
-    "next_focus": "Add chart selection detail for bucket and repository breakdown."
+    "confidence": 0.78,
+    "reason": "The app is still tied to embedded sample data; a provider boundary is needed before real GitHub refresh work.",
+    "next_focus": "Introduce a fixture-backed PR activity data provider boundary."
   }
 }

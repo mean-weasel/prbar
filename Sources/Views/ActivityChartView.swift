@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ActivityChartView: View {
   var store: PRActivityStore
+  @Binding var selectedBucketIndex: Int
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
@@ -17,8 +18,13 @@ struct ActivityChartView: View {
             maxTotal: store.maxBucketTotal,
             repositories: store.includedRepositories,
             bucketIndex: index,
-            window: store.window
+            window: store.window,
+            isSelected: selectedBucketIndex == index
           )
+          .contentShape(Rectangle())
+          .onTapGesture {
+            selectedBucketIndex = index
+          }
         }
       }
       .frame(height: 150)
@@ -33,6 +39,7 @@ private struct ActivityChartColumn: View {
   var repositories: [RepositoryActivity]
   var bucketIndex: Int
   var window: ActivityWindow
+  var isSelected: Bool
 
   var body: some View {
     VStack(spacing: 4) {
@@ -54,9 +61,12 @@ private struct ActivityChartColumn: View {
       }
       Text(label)
         .font(.caption2)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(isSelected ? .primary : .secondary)
     }
     .frame(maxWidth: .infinity)
+    .padding(4)
+    .background(isSelected ? Color.primary.opacity(0.08) : Color.clear)
+    .clipShape(RoundedRectangle(cornerRadius: 6))
   }
 
   private var repositoriesWithValues: [RepositoryActivity] {

@@ -66,4 +66,13 @@ final class PRActivityStoreTests: XCTestCase {
     XCTAssertEqual(updated.totalPullRequests, 343)
     XCTAssertEqual(updated.settingsSnapshot, settings)
   }
+
+  func testBucketBreakdownSortsNonZeroRepoValues() {
+    let store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    let breakdown = store.bucketBreakdown(at: 1)
+
+    XCTAssertEqual(breakdown.first?.repository.id, "mean-weasel/deckchecker")
+    XCTAssertEqual(breakdown.first?.value, 111)
+    XCTAssertFalse(breakdown.contains { $0.value == 0 })
+  }
 }

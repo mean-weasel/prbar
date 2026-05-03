@@ -34,6 +34,22 @@ struct PRActivityStore {
     max(bucketTotals.max() ?? 0, 1)
   }
 
+  func bucketBreakdown(at index: Int) -> [RepositoryBucketValue] {
+    guard visibleBucketLabels.indices.contains(index) else {
+      return []
+    }
+    return
+      includedRepositories
+      .map { repository in
+        RepositoryBucketValue(
+          repository: repository,
+          value: repository.visibleCounts(for: window)[index]
+        )
+      }
+      .filter { $0.value > 0 }
+      .sorted { $0.value > $1.value }
+  }
+
   var statusTitle: String {
     "\(totalPullRequests) PRs"
   }
