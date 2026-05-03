@@ -1,0 +1,129 @@
+name: Auto-merge
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "PR number to auto-merge"
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge-${{ github.event.inputs.pr || github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+env:
+  REPOSITORY: ${{ github.repository }}
+  AUTO_MERGE_ALLOWED_AUTHORS: "neonwatty"
+
+jobs:
+  auto-merge:
+    name: Enable auto-merge
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Resolve PR number
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PR: ${{ github.event.inputs.pr }}
+          WR_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if ! echo "$INPUT_PR" | grep -qE '^[0-9]+$'; then
+              echo "::error::Invalid PR number: '$INPUT_PR'"
+              exit 1
+            fi
+            echo "pr=$INPUT_PR" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -z "$WR_HEAD_BRANCH" ]; then
+            echo "::error::workflow_run event has no head_branch"
+            exit 1
+          fi
+
+          pr_list_output=$(gh pr list \
+            --repo "$REPOSITORY" \
+            --head "$WR_HEAD_BRANCH" \
+            --state open \
+            --json number)
+          pr=$(echo "$pr_list_output" | jq -r '.[0].number // empty')
+
+          if [ -z "$pr" ]; then
+            echo "::notice::No open PR for branch $WR_HEAD_BRANCH"
+            echo "pr=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+
+      - name: Check eligibility and enable auto-merge
+        if: steps.resolve.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TARGET: ${{ steps.resolve.outputs.pr }}
+        run: |
+          set -euo pipefail
+
+          pr_json=$(gh pr view "$PR_TARGET" \
+            --repo "$REPOSITORY" \
+            --json state,isDraft,mergeStateStatus,headRepositoryOwner,url,author)
+
+          state=$(echo "$pr_json" | jq -r '.state')
+          is_draft=$(echo "$pr_json" | jq -r '.isDraft')
+          merge_status=$(echo "$pr_json" | jq -r '.mergeStateStatus')
+          author=$(echo "$pr_json" | jq -r '.author.login')
+          head_owner=$(echo "$pr_json" | jq -r '.headRepositoryOwner.login')
+          pr_url=$(echo "$pr_json" | jq -r '.url')
+
+          echo "PR: $pr_url"
+          echo "State: $state | Draft: $is_draft | Merge status: $merge_status"
+          echo "Author: $author | Head owner: $head_owner"
+
+          if [ "$state" != "OPEN" ]; then
+            echo "::notice::PR is not open ($state)"
+            exit 0
+          fi
+
+          if [ "$is_draft" = "true" ]; then
+            echo "::notice::PR is a draft"
+            exit 0
+          fi
+
+          repo_owner=$(echo "$REPOSITORY" | cut -d/ -f1)
+          if [ "$head_owner" != "$repo_owner" ]; then
+            echo "::notice::PR is from a fork ($head_owner)"
+            exit 0
+          fi
+
+          allowed=false
+          for allowed_author in $AUTO_MERGE_ALLOWED_AUTHORS; do
+            if [ "$author" = "$allowed_author" ]; then
+              allowed=true
+              break
+            fi
+          done
+
+          if [ "$allowed" = "false" ]; then
+            echo "::notice::Author $author is not in the allowlist"
+            exit 0
+          fi
+
+          gh pr merge "$PR_TARGET" \
+            --repo "$REPOSITORY" \
+            --squash \
+            --auto \
+            --delete-branch
