@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 27,
+  "iteration": 28,
   "completed": [
     {
       "iteration": 1,
@@ -188,6 +188,12 @@
       "at": "2026-05-03T02:39:04Z",
       "summary": "Added visible sample-vs-GitHub data source status to the popover header and provider selection model.",
       "report": ".agent-loop/iterations/027-report.md"
+    },
+    {
+      "iteration": 28,
+      "at": "2026-05-03T02:40:09Z",
+      "summary": "Reused one provider selection during app startup so initial load, UI status, and refresh share the same provider.",
+      "report": ".agent-loop/iterations/028-report.md"
     }
   ],
   "open_findings": [
@@ -242,12 +248,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 27."
+    "make ci-local passed for iteration 28 after repairing the SwiftUI App initializer shape."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.88,
-    "reason": "The data source is now visible in the app; next useful work is tightening app startup so initial load and refresh use the same provider selection.",
-    "next_focus": "Reuse a single provider selection during app startup."
+    "reason": "Startup now uses one provider selection consistently; next useful settings work is pruning stale repository IDs when known repositories disappear.",
+    "next_focus": "Prune stale known repository IDs from settings snapshots."
   }
 }
