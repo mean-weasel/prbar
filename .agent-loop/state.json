@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 32,
+  "iteration": 33,
   "completed": [
     {
       "iteration": 1,
@@ -218,6 +218,12 @@
       "at": "2026-05-03T02:44:41Z",
       "summary": "Formatted refresh failures with GitHub rate-limit reset times when available.",
       "report": ".agent-loop/iterations/032-report.md"
+    },
+    {
+      "iteration": 33,
+      "at": "2026-05-03T02:45:41Z",
+      "summary": "Displayed next scheduled refresh timing in the popover footer.",
+      "report": ".agent-loop/iterations/033-report.md"
     }
   ],
   "open_findings": [
@@ -266,12 +272,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 32 after repairing SwiftFormat pattern-binding guidance."
+    "make ci-local passed for iteration 33."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.88,
-    "reason": "Rate-limit failures now produce clearer refresh copy; next useful UX work is showing the next scheduled refresh time.",
-    "next_focus": "Show next scheduled refresh time in the footer."
+    "reason": "The footer now explains scheduled refresh timing; next useful polish is making manual refresh state explicit in the refresh control.",
+    "next_focus": "Disable the refresh button while a refresh is running."
   }
 }

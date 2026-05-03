@@ -87,9 +87,20 @@ struct PRPopoverView: View {
   }
 
   private var footer: some View {
-    Text("Last refreshed \(store.refreshedAt.formatted(date: .omitted, time: .shortened))")
-      .font(.caption2)
-      .foregroundStyle(.tertiary)
+    VStack(alignment: .leading, spacing: 2) {
+      Text("Last refreshed \(store.refreshedAt.formatted(date: .omitted, time: .shortened))")
+      Text(nextRefreshText)
+    }
+    .font(.caption2)
+    .foregroundStyle(.tertiary)
+  }
+
+  private var nextRefreshText: String {
+    let policy = RefreshPolicy(interval: store.refreshInterval)
+    guard let next = policy.nextRefreshDate(lastRefreshedAt: store.refreshedAt) else {
+      return "Manual refresh only"
+    }
+    return "Next refresh after \(next.formatted(date: .omitted, time: .shortened))"
   }
 
   private var safeSelectedBucketIndex: Int {
