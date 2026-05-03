@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - assets/**
       - index.html
       - pr-chart-mobile.html
       - .github/workflows/pages.yml
@@ -36,6 +37,7 @@ jobs:
       - name: Prepare site
         run: |
           mkdir _site
+          cp -R assets _site/
           cp pr-chart-mobile.html _site/index.html
           cp pr-chart-mobile.html _site/pr-chart-mobile.html
           touch _site/.nojekyll
