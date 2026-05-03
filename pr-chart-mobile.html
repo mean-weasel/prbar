@@ -425,46 +425,6 @@
     white-space: nowrap;
   }
 
-  .repo-list {
-    display: grid;
-    gap: 9px;
-    padding: 0 24px 24px;
-  }
-
-  .repo-row {
-    display: grid;
-    grid-template-columns: 10px minmax(120px, 1fr) 34px;
-    align-items: center;
-    gap: 10px;
-    color: #dbe2eb;
-    font-size: 12px;
-    font-weight: 650;
-  }
-
-  .repo-swatch {
-    width: 8px;
-    height: 8px;
-    border-radius: 3px;
-  }
-
-  .repo-track {
-    height: 8px;
-    border-radius: 4px;
-    background: rgba(255,255,255,0.07);
-    overflow: hidden;
-  }
-
-  .repo-fill {
-    height: 100%;
-    border-radius: inherit;
-  }
-
-  .repo-count {
-    color: var(--muted);
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
-
   .refresh-strip {
     display: flex;
     align-items: center;
@@ -808,16 +768,6 @@
       grid-column: 1 / -1;
     }
 
-    .repo-list {
-      padding-left: 16px;
-      padding-right: 16px;
-    }
-
-    .repo-row {
-      grid-template-columns: 10px minmax(92px, 1fr) 30px;
-      gap: 8px;
-    }
-
     .section h2 {
       font-size: clamp(32px, 12vw, 48px);
     }
@@ -908,8 +858,6 @@
           <div class="chart-panel">
             <div class="chart" id="chart" aria-label="Merged pull request activity by week"></div>
           </div>
-
-          <div class="repo-list" id="repoList" aria-label="Repository breakdown"></div>
 
           <div class="refresh-strip">
             <span class="refresh-dot">Updated 2 minutes ago</span>
@@ -1017,22 +965,6 @@
     chart.appendChild(weekEl);
   });
 
-  const repoList = document.getElementById("repoList");
-  const repoTotals = repos
-    .map((repo) => ({ ...repo, total: repo.data.reduce((sum, value) => sum + value, 0) }))
-    .sort((a, b) => b.total - a.total);
-  const maxRepoTotal = Math.max(...repoTotals.map((repo) => repo.total));
-
-  repoTotals.slice(0, 5).forEach((repo) => {
-    const row = document.createElement("div");
-    row.className = "repo-row";
-    row.innerHTML = `
-      <span class="repo-swatch" style="background: ${repo.color}"></span>
-      <span class="repo-track"><span class="repo-fill" style="width: ${(repo.total / maxRepoTotal) * 100}%; background: ${repo.color}"></span></span>
-      <span class="repo-count">${repo.total}</span>
-    `;
-    repoList.appendChild(row);
-  });
 </script>
 </body>
 </html>
