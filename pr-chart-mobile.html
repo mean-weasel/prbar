@@ -383,21 +383,21 @@
   }
 
   .chart-panel {
-    padding: 20px 24px 18px;
+    padding: 22px 24px 20px;
   }
 
   .chart {
-    height: 192px;
+    height: 204px;
     display: grid;
     grid-template-columns: repeat(9, 1fr);
     gap: 7px;
     align-items: end;
-    border-bottom: 1px solid var(--line);
+    padding-bottom: 34px;
   }
 
   .week {
     min-width: 0;
-    height: 162px;
+    height: 150px;
     display: flex;
     align-items: end;
     position: relative;
@@ -416,7 +416,7 @@
 
   .week-label {
     position: absolute;
-    bottom: -25px;
+    bottom: -28px;
     left: 50%;
     transform: translateX(-50%) rotate(-32deg);
     color: #667085;
@@ -777,17 +777,6 @@
     }
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    .stack {
-      animation: grow 850ms cubic-bezier(.2,.8,.2,1) both;
-      transform-origin: bottom;
-    }
-  }
-
-  @keyframes grow {
-    from { transform: scaleY(0.24); }
-    to { transform: scaleY(1); }
-  }
 </style>
 </head>
 <body>
@@ -945,7 +934,6 @@
     const stack = document.createElement("div");
     stack.className = "stack";
     stack.style.height = `${Math.max(10, (totals[weekIndex] / maxTotal) * 100)}%`;
-    stack.style.animationDelay = `${weekIndex * 45}ms`;
 
     repos.forEach((repo) => {
       const value = repo.data[weekIndex];
