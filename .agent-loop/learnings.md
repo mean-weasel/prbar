@@ -16,3 +16,4 @@
 - Empty-state loops are good late-batch tasks because they improve UX without expanding scope into external dependencies.
 - Commit each loop for auditability and rollback, but open PRs for coherent batches of loops so review stays product-shaped instead of iteration-shaped.
 - Live-provider work is easiest to review when network construction, decoding, bucketing, and provider selection each land as separate tested loops.
+- After a batch PR merges, verify the PR's check rollup and record the exact pass/fail state before summarizing the loop; "merged" alone is not enough audit evidence.
