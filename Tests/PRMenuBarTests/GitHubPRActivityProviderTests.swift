@@ -40,6 +40,37 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     XCTAssertThrowsError(try provider.load(now: Date()))
   }
 
+  func testProviderFetchesAdditionalRepositoryDiscoveryPages() throws {
+    let firstPage = repositoryDiscoveryData(
+      repositories: (0..<100).map { index in
+        repositoryFixture(owner: "owner", name: "repo-\(index)", canPull: false)
+      }
+    )
+    let secondPage = repositoryDiscoveryData(
+      repositories: [
+        repositoryFixture(owner: "owner", name: "visible", canPull: true)
+      ]
+    )
+    let transport = FixtureGitHubAPITransport(
+      responses: [
+        firstPage,
+        secondPage,
+        mergedPullRequestData(mergedAt: "2026-04-26T12:00:00.000Z"),
+      ]
+    )
+    let provider = GitHubPRActivityProvider(
+      token: "token",
+      transport: transport,
+      bucketLabels: ["W1"]
+    )
+
+    let store = try provider.load(now: try date("2026-05-02T18:00:00Z"))
+
+    XCTAssertEqual(store.repositories.map(\.id), ["owner/visible"])
+    XCTAssertEqual(transport.capturedRequests[0].url?.query?.contains("page=1"), true)
+    XCTAssertEqual(transport.capturedRequests[1].url?.query?.contains("page=2"), true)
+  }
+
   func testProviderFetchesAdditionalMergedPullRequestPages() throws {
     let transport = FixtureGitHubAPITransport(
       responses: [
@@ -88,24 +119,29 @@ final class GitHubPRActivityProviderTests: XCTestCase {
   }
 
   private func repositoryDiscoveryData() -> Data {
-    Data(
-      """
-      [
-        {
-          "full_name": "owner/visible",
-          "name": "visible",
-          "owner": { "login": "owner" },
-          "permissions": { "pull": true }
-        },
-        {
-          "full_name": "owner/hidden",
-          "name": "hidden",
-          "owner": { "login": "owner" },
-          "permissions": { "pull": false }
-        }
+    repositoryDiscoveryData(
+      repositories: [
+        repositoryFixture(owner: "owner", name: "visible", canPull: true),
+        repositoryFixture(owner: "owner", name: "hidden", canPull: false),
       ]
-      """.utf8
     )
+  }
+
+  private func repositoryDiscoveryData(repositories: [String]) -> Data {
+    Data(
+      "[\(repositories.joined(separator: ","))]".utf8
+    )
+  }
+
+  private func repositoryFixture(owner: String, name: String, canPull: Bool) -> String {
+    """
+    {
+      "full_name": "\(owner)/\(name)",
+      "name": "\(name)",
+      "owner": { "login": "\(owner)" },
+      "permissions": { "pull": \(canPull) }
+    }
+    """
   }
 
   private func mergedPullRequestData(

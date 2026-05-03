@@ -13,12 +13,11 @@ struct GitHubPRActivityProvider: PRActivityProviding {
   var transport: GitHubAPITransport
   var bucketLabels: [String]
   var defaultWindow: ActivityWindow = .twoWeeks
+  private let repositoryPageSize = 100
   private let searchPageSize = 100
 
   func load(now: Date = Date()) throws -> PRActivityStore {
-    let request = try GitHubAPIRequest.userRepositories().urlRequest(token: token)
-    let data = try transport.data(for: request)
-    let repositories = try JSONDecoder().decode([GitHubRepository].self, from: data)
+    let repositories = try repositories()
     let pullableRepositories = repositories.filter(\.canPull)
     let activities = try pullableRepositories.map { repository in
       try activity(for: repository, now: now)
@@ -37,6 +36,26 @@ struct GitHubPRActivityProvider: PRActivityProviding {
       repositories: activities,
       refreshedAt: now
     )
+  }
+
+  private func repositories() throws -> [GitHubRepository] {
+    var page = 1
+    var repositories: [GitHubRepository] = []
+    var pageRepositories: [GitHubRepository]
+
+    repeat {
+      let request = try GitHubAPIRequest.userRepositories(
+        page: page,
+        perPage: repositoryPageSize
+      )
+      .urlRequest(token: token)
+      let data = try transport.data(for: request)
+      pageRepositories = try JSONDecoder().decode([GitHubRepository].self, from: data)
+      repositories.append(contentsOf: pageRepositories)
+      page += 1
+    } while pageRepositories.count == repositoryPageSize
+
+    return repositories
   }
 
   private func activity(for repository: GitHubRepository, now: Date) throws -> RepositoryActivity {
