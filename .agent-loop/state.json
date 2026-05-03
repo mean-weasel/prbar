@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 14,
+  "iteration": 15,
   "completed": [
     {
       "iteration": 1,
@@ -110,6 +110,12 @@
       "at": "2026-05-03T02:13:22Z",
       "summary": "Added a URLSession-backed GitHub API transport with HTTP status handling and URLProtocol-based tests.",
       "report": ".agent-loop/iterations/014-report.md"
+    },
+    {
+      "iteration": 15,
+      "at": "2026-05-03T02:14:09Z",
+      "summary": "Added provider factory selection so PR_MENU_BAR_GITHUB_TOKEN switches the app from sample data to the GitHub provider path.",
+      "report": ".agent-loop/iterations/015-report.md"
     }
   ],
   "open_findings": [
@@ -170,12 +176,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 14."
+    "make ci-local passed for iteration 15."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "A real transport now exists; the app still needs to select the GitHub provider when a token is configured.",
-    "next_focus": "Select GitHub provider from environment token."
+    "reason": "The app can select the GitHub provider; the provider still needs merged PR request construction to move beyond repo discovery.",
+    "next_focus": "Add merged pull request request construction."
   }
 }

@@ -3,14 +3,14 @@ import SwiftUI
 @main
 struct PRMenuBarApp: App {
   private let settingsStore = PRSettingsStore()
-  private let activityProvider: PRActivityProviding = StaticPRActivityProvider()
+  private let activityProvider: PRActivityProviding = PRActivityProviderFactory.make()
   private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
   @State private var store: PRActivityStore
   @State private var refreshError: String?
 
   init() {
     let settingsStore = PRSettingsStore()
-    let activityProvider = StaticPRActivityProvider()
+    let activityProvider = PRActivityProviderFactory.make()
     let sample = (try? activityProvider.load(now: Date())) ?? PRActivityStore.sample()
     _store = State(initialValue: settingsStore.load().map(sample.applying) ?? sample)
   }
