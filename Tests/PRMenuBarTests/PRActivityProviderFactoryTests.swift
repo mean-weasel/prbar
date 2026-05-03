@@ -16,4 +16,12 @@ final class PRActivityProviderFactoryTests: XCTestCase {
 
     XCTAssertTrue(provider is GitHubPRActivityProvider)
   }
+
+  func testFactoryUsesStaticProviderWithWhitespaceOnlyToken() {
+    let provider = PRActivityProviderFactory.make(
+      environment: [PRActivityProviderFactory.tokenEnvironmentKey: "   \n"]
+    )
+
+    XCTAssertTrue(provider is StaticPRActivityProvider)
+  }
 }

@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 23,
+  "iteration": 24,
   "completed": [
     {
       "iteration": 1,
@@ -164,6 +164,12 @@
       "at": "2026-05-03T02:24:05Z",
       "summary": "Accepted GitHub merged_at timestamps with and without fractional seconds.",
       "report": ".agent-loop/iterations/023-report.md"
+    },
+    {
+      "iteration": 24,
+      "at": "2026-05-03T02:24:50Z",
+      "summary": "Trimmed environment tokens before provider selection so whitespace-only tokens keep the sample provider path.",
+      "report": ".agent-loop/iterations/024-report.md"
     }
   ],
   "open_findings": [
@@ -224,12 +230,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 23."
+    "make ci-local passed for iteration 24."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "GitHub timestamp decoding is more robust; next useful polish is making provider selection resilient to whitespace-only environment tokens.",
-    "next_focus": "Trim environment tokens before selecting the GitHub provider."
+    "reason": "Provider selection is resilient to blank tokens; next useful work is documenting how to run the live GitHub-backed path locally.",
+    "next_focus": "Document live GitHub provider local usage."
   }
 }

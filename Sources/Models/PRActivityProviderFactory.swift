@@ -6,9 +6,13 @@ enum PRActivityProviderFactory {
   static func make(environment: [String: String] = ProcessInfo.processInfo.environment)
     -> PRActivityProviding
   {
-    guard let token = environment[tokenEnvironmentKey], token.isEmpty == false else {
+    guard
+      let rawToken = environment[tokenEnvironmentKey],
+      rawToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+    else {
       return StaticPRActivityProvider()
     }
+    let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
 
     return GitHubPRActivityProvider(
       token: token,
