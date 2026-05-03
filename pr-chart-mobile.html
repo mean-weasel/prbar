@@ -3,291 +3,1036 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PR Activity</title>
+<title>PR Menu Bar</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    color-scheme: dark;
+    --bg: #08090b;
+    --bg-soft: #0d1116;
+    --surface: rgba(19, 23, 30, 0.82);
+    --surface-strong: #141922;
+    --line: rgba(148, 163, 184, 0.18);
+    --line-strong: rgba(148, 163, 184, 0.32);
+    --text: #f5f7fb;
+    --muted: #9aa4b2;
+    --quiet: #687386;
+    --cyan: #55d7ff;
+    --green: #62e59f;
+    --violet: #a78bfa;
+    --amber: #f8c56b;
+    --shadow: 0 28px 90px rgba(0, 0, 0, 0.46);
+    --radius: 8px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    background: var(--bg);
+    scroll-behavior: smooth;
+  }
+
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #0a0a0a;
-    color: #e5e5e5;
-    width: 440px;
-    padding: 32px 24px;
-  }
-  h1 { font-size: 24px; font-weight: 700; margin-bottom: 2px; }
-  .subtitle { color: #737373; font-size: 13px; margin-bottom: 24px; }
-  .highlight { color: #a78bfa; font-weight: 600; }
-
-  /* Summary row */
-  .stats { display: flex; gap: 8px; margin-bottom: 24px; }
-  .stat {
-    flex: 1; background: #141414; border: 1px solid #262626;
-    border-radius: 10px; padding: 12px; text-align: center;
-  }
-  .stat-val { font-size: 22px; font-weight: 700; }
-  .stat-lbl { font-size: 10px; color: #737373; margin-top: 2px; }
-
-  /* Chart */
-  .chart-wrap { margin-bottom: 24px; }
-  .chart { display: flex; align-items: flex-end; gap: 6px; height: 200px; position: relative; padding-bottom: 28px; }
-  .chart::before {
-    content: ''; position: absolute; left: 0; right: 0; bottom: 28px;
-    border-top: 1px solid #262626;
-  }
-  .col { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; height: 100%; }
-  .stack {
-    width: 100%; display: flex; flex-direction: column-reverse;
-    position: absolute; bottom: 28px; border-radius: 4px 4px 0 0; overflow: hidden;
-  }
-  .seg { width: 100%; }
-  .wk-label {
-    position: absolute; bottom: 0; font-size: 10px; color: #525252;
-    white-space: nowrap; transform: rotate(-35deg); transform-origin: top right;
-  }
-  .wk-total {
-    position: absolute; font-size: 11px; font-weight: 600; color: #d4d4d4;
+    margin: 0;
+    min-width: 320px;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at 76% 18%, rgba(85, 215, 255, 0.14), transparent 26rem),
+      linear-gradient(180deg, #090b0f 0%, #08090b 54%, #0b0d11 100%);
+    color: var(--text);
+    letter-spacing: 0;
   }
 
-  /* Legend */
-  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 20px; }
-  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #a3a3a3; }
-  .dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-  /* Repo breakdown */
-  .section-title { font-size: 13px; font-weight: 600; color: #737373; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .repo-row {
-    display: flex; align-items: center; padding: 7px 0;
-    border-bottom: 1px solid #1a1a1a; font-size: 13px;
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
   }
-  .repo-row:last-child { border-bottom: none; }
-  .repo-name { flex: 1; font-weight: 500; }
-  .repo-bar-wrap { width: 180px; height: 14px; background: #1a1a1a; border-radius: 3px; margin: 0 10px; overflow: hidden; display: flex; }
-  .repo-bar { height: 100%; border-radius: 3px; }
-  .repo-count { width: 36px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .tag {
-    font-size: 9px; padding: 1px 5px; border-radius: 3px; margin-left: 5px;
-    vertical-align: middle;
-  }
-  .tag-org { background: #1e1b4b; color: #a78bfa; }
-  .tag-per { background: #052e16; color: #4ade80; }
 
-  /* Sparklines */
-  .spark-section { margin-top: 20px; }
-  .spark-row {
-    display: flex; align-items: center; padding: 5px 0; font-size: 12px;
+  .page-shell {
+    overflow: hidden;
   }
-  .spark-name { width: 110px; color: #a3a3a3; font-size: 11px; }
-  .spark-cells { display: flex; gap: 2px; flex: 1; }
-  .spark-cell {
-    flex: 1; height: 18px; border-radius: 2px; position: relative;
+
+  .site-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    background: rgba(8, 9, 11, 0.72);
+    backdrop-filter: blur(18px);
   }
-  .spark-val {
-    position: absolute; inset: 0; display: flex; align-items: center;
-    justify-content: center; font-size: 8px; color: rgba(255,255,255,0.7);
+
+  .nav {
+    width: min(1120px, calc(100% - 40px));
+    height: 68px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    padding: 6px;
+    border: 1px solid var(--line-strong);
+    border-radius: 7px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.02));
+  }
+
+  .brand-mark span {
+    border-radius: 2px;
+    background: var(--quiet);
+  }
+
+  .brand-mark span:nth-child(1),
+  .brand-mark span:nth-child(4),
+  .brand-mark span:nth-child(7) { background: var(--cyan); }
+  .brand-mark span:nth-child(2),
+  .brand-mark span:nth-child(5) { background: var(--violet); }
+  .brand-mark span:nth-child(3),
+  .brand-mark span:nth-child(6),
+  .brand-mark span:nth-child(8) { background: var(--green); }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    color: var(--muted);
+    font-size: 13px;
     font-weight: 600;
+  }
+
+  .nav-links a {
+    transition: color 160ms ease;
+  }
+
+  .nav-links a:hover {
+    color: var(--text);
+  }
+
+  .nav-cta,
+  .primary-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    border: 1px solid rgba(85, 215, 255, 0.32);
+    border-radius: 7px;
+    background: linear-gradient(180deg, rgba(85, 215, 255, 0.18), rgba(85, 215, 255, 0.08));
+    color: #e9fbff;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset;
+    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+  }
+
+  .nav-cta {
+    padding: 0 14px;
+  }
+
+  .primary-cta {
+    min-height: 46px;
+    padding: 0 18px;
+  }
+
+  .nav-cta:hover,
+  .primary-cta:hover {
+    transform: translateY(-1px);
+    border-color: rgba(85, 215, 255, 0.6);
+    background: linear-gradient(180deg, rgba(85, 215, 255, 0.24), rgba(85, 215, 255, 0.12));
+  }
+
+  .hero {
+    width: min(1120px, calc(100% - 40px));
+    min-height: clamp(760px, 100svh, 920px);
+    margin: 0 auto;
+    padding: 150px 0 82px;
+    display: grid;
+    grid-template-columns: minmax(0, 0.88fr) minmax(420px, 1.12fr);
+    align-items: center;
+    gap: 68px;
+  }
+
+  .hero-copy {
+    max-width: 560px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(58px, 8.4vw, 118px);
+    line-height: 0.9;
+    font-weight: 780;
+    letter-spacing: 0;
+  }
+
+  .hero-copy p {
+    margin: 28px 0 0;
+    max-width: 510px;
+    color: var(--muted);
+    font-size: clamp(18px, 2vw, 22px);
+    line-height: 1.48;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 34px;
+    flex-wrap: wrap;
+  }
+
+  .secondary-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 46px;
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .secondary-link svg {
+    width: 16px;
+    height: 16px;
+    margin-left: 7px;
+  }
+
+  .hero-note {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 34px;
+    color: var(--quiet);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .hero-note::before {
+    content: "";
+    width: 42px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+  }
+
+  .product-stage {
+    position: relative;
+    min-height: 560px;
+    display: grid;
+    place-items: center;
+  }
+
+  .menu-bar {
+    position: absolute;
+    top: 44px;
+    left: 50%;
+    width: min(620px, 100%);
+    height: 42px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px 0 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    background: rgba(235, 239, 245, 0.08);
+    box-shadow: 0 18px 70px rgba(0,0,0,0.35);
+    backdrop-filter: blur(18px);
+  }
+
+  .traffic {
+    display: flex;
+    gap: 7px;
+  }
+
+  .traffic span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #475569;
+  }
+
+  .traffic span:nth-child(1) { background: #ff6b65; }
+  .traffic span:nth-child(2) { background: #f8c56b; }
+  .traffic span:nth-child(3) { background: #62e59f; }
+
+  .bar-items {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #c4cad3;
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .bar-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #f7fbff;
+  }
+
+  .bar-icon::before {
+    content: "";
+    width: 7px;
+    height: 17px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--green), var(--cyan));
+    box-shadow: 9px 5px 0 -1px var(--violet), 18px -3px 0 -1px var(--amber);
+  }
+
+  .popover {
+    position: relative;
+    width: min(438px, 100%);
+    margin-top: 80px;
+    border: 1px solid rgba(202, 213, 225, 0.2);
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(22, 27, 36, 0.94), rgba(12, 15, 20, 0.96));
+    box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    overflow: hidden;
+  }
+
+  .popover::before {
+    content: "";
+    position: absolute;
+    top: -9px;
+    right: 38px;
+    width: 16px;
+    height: 16px;
+    transform: rotate(45deg);
+    border-left: 1px solid rgba(202, 213, 225, 0.2);
+    border-top: 1px solid rgba(202, 213, 225, 0.2);
+    background: #171c25;
+  }
+
+  .popover-header {
+    position: relative;
+    padding: 24px 24px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .popover-title-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .popover h2 {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.1;
+    font-weight: 760;
+  }
+
+  .source-state {
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 750;
+  }
+
+  .date-line {
+    margin-top: 6px;
+    color: var(--quiet);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .mini-stat {
+    padding: 12px 10px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: rgba(255,255,255,0.035);
+  }
+
+  .mini-stat strong {
+    display: block;
+    font-size: 20px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mini-stat span {
+    display: block;
+    margin-top: 6px;
+    color: var(--quiet);
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .chart-panel {
+    padding: 20px 24px 18px;
+  }
+
+  .chart {
+    height: 192px;
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 7px;
+    align-items: end;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .week {
+    min-width: 0;
+    height: 162px;
+    display: flex;
+    align-items: end;
+    position: relative;
+  }
+
+  .stack {
+    width: 100%;
+    display: flex;
+    flex-direction: column-reverse;
+    overflow: hidden;
+    border-radius: 4px 4px 0 0;
+    background: rgba(255,255,255,0.04);
+  }
+
+  .seg { width: 100%; }
+
+  .week-label {
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-32deg);
+    color: #667085;
+    font-size: 9px;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  .repo-list {
+    display: grid;
+    gap: 9px;
+    padding: 0 24px 24px;
+  }
+
+  .repo-row {
+    display: grid;
+    grid-template-columns: minmax(108px, 1fr) 128px 34px;
+    align-items: center;
+    gap: 10px;
+    color: #dbe2eb;
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .repo-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .repo-track {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.07);
+    overflow: hidden;
+  }
+
+  .repo-fill {
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  .repo-count {
+    color: var(--muted);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .refresh-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--line);
+    color: var(--quiet);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .refresh-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #b5bfcc;
+  }
+
+  .refresh-dot::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 18px rgba(98, 229, 159, 0.8);
+  }
+
+  .section {
+    width: min(1120px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 96px 0;
+  }
+
+  .section-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(260px, 0.48fr);
+    gap: 56px;
+    align-items: end;
+    margin-bottom: 34px;
+  }
+
+  .section h2 {
+    margin: 0;
+    font-size: clamp(34px, 5vw, 60px);
+    line-height: 0.98;
+    font-weight: 770;
+  }
+
+  .section-heading p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .feature-card {
+    min-height: 218px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.035);
+  }
+
+  .feature-icon {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 36px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    color: var(--cyan);
+    background: rgba(255,255,255,0.035);
+  }
+
+  .feature-icon svg {
+    width: 19px;
+    height: 19px;
+    stroke-width: 2;
+  }
+
+  .feature-card h3 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.2;
+  }
+
+  .feature-card p {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .setup {
+    display: grid;
+    grid-template-columns: minmax(0, 0.88fr) minmax(320px, 0.72fr);
+    gap: 58px;
+    align-items: center;
+    border-top: 1px solid var(--line);
+  }
+
+  .setup-copy h2 {
+    margin-bottom: 22px;
+  }
+
+  .setup-copy p {
+    margin: 0;
+    max-width: 580px;
+    color: var(--muted);
+    font-size: 17px;
+    line-height: 1.65;
+  }
+
+  .setup-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 30px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .setup-list li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #dbe2eb;
+    font-size: 14px;
+    font-weight: 650;
+  }
+
+  .check {
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 6px;
+    background: rgba(98, 229, 159, 0.13);
+    color: var(--green);
+  }
+
+  .check svg {
+    width: 13px;
+    height: 13px;
+    stroke-width: 3;
+  }
+
+  .terminal {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #0c1016;
+    box-shadow: 0 22px 70px rgba(0,0,0,0.28);
+    overflow: hidden;
+  }
+
+  .terminal-top {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .terminal-top span {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #334155;
+  }
+
+  .terminal-top span:nth-child(1) { background: #ff6b65; }
+  .terminal-top span:nth-child(2) { background: #f8c56b; }
+  .terminal-top span:nth-child(3) { background: #62e59f; }
+
+  .terminal pre {
+    margin: 0;
+    padding: 22px;
+    overflow: auto;
+    color: #cbd5e1;
+    font: 13px/1.7 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+
+  .terminal .prompt { color: var(--green); }
+  .terminal .var { color: var(--cyan); }
+  .terminal .comment { color: #667085; }
+
+  .footer {
+    width: min(1120px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 28px 0 44px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--quiet);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  @media (max-width: 900px) {
+    .nav {
+      width: min(680px, calc(100% - 28px));
+    }
+
+    .nav-links a {
+      display: none;
+    }
+
+    .hero {
+      width: min(680px, calc(100% - 28px));
+      min-height: auto;
+      padding: 116px 0 64px;
+      grid-template-columns: 1fr;
+      gap: 42px;
+    }
+
+    h1 {
+      font-size: clamp(56px, 17vw, 96px);
+    }
+
+    .product-stage {
+      min-height: 520px;
+    }
+
+    .section,
+    .footer {
+      width: min(680px, calc(100% - 28px));
+    }
+
+    .section {
+      padding: 72px 0;
+    }
+
+    .section-heading,
+    .setup {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .feature-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .nav,
+    .hero,
+    .section,
+    .footer {
+      width: calc(100% - 40px);
+    }
+
+    .nav {
+      height: 62px;
+    }
+
+    .brand span:last-child {
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nav-cta {
+      min-height: 36px;
+      padding: 0 11px;
+      font-size: 12px;
+    }
+
+    .hero {
+      padding-top: 98px;
+    }
+
+    .hero-copy p {
+      font-size: 17px;
+      max-width: 330px;
+    }
+
+    .primary-cta,
+    .secondary-link {
+      width: 100%;
+    }
+
+    .hero-note {
+      align-items: flex-start;
+      line-height: 1.45;
+      display: block;
+      max-width: 310px;
+    }
+
+    .hero-note::before {
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .menu-bar {
+      left: 0;
+      top: 18px;
+      height: 38px;
+      width: min(100%, 330px);
+      transform: none;
+    }
+
+    .bar-items span:not(.bar-icon) {
+      display: none;
+    }
+
+    .product-stage {
+      min-height: 470px;
+      width: 100%;
+      overflow: hidden;
+      place-items: start;
+    }
+
+    .popover {
+      margin-top: 54px;
+      width: min(100%, 330px);
+      justify-self: start;
+    }
+
+    .popover-header,
+    .chart-panel {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    .stat-row {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .mini-stat:last-child {
+      grid-column: 1 / -1;
+    }
+
+    .repo-list {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    .repo-row {
+      grid-template-columns: minmax(86px, 1fr) 92px 30px;
+      gap: 8px;
+    }
+
+    .section h2 {
+      font-size: clamp(32px, 12vw, 48px);
+    }
+
+    .footer {
+      flex-direction: column;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .stack {
+      animation: grow 850ms cubic-bezier(.2,.8,.2,1) both;
+      transform-origin: bottom;
+    }
+  }
+
+  @keyframes grow {
+    from { transform: scaleY(0.24); }
+    to { transform: scaleY(1); }
   }
 </style>
 </head>
 <body>
+<div class="page-shell">
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="#">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </span>
+        <span>PR Menu Bar</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#setup">Setup</a>
+        <a class="nav-cta" href="#demo">View sample page</a>
+      </div>
+    </nav>
+  </header>
 
-<h1>PR Activity</h1>
-<p class="subtitle">Mar 2 – May 2, 2026 · <span class="highlight">1,618 PRs merged</span></p>
+  <main>
+    <section class="hero" id="demo">
+      <div class="hero-copy">
+        <h1>PR Menu Bar</h1>
+        <p>See merged pull requests without leaving your desktop. A tiny macOS menu bar app for watching team and personal PR activity across repositories.</p>
+        <div class="hero-actions">
+          <a class="primary-cta" href="#setup">View sample page</a>
+          <a class="secondary-link" href="#features">
+            How it works
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+        <div class="hero-note">Sample mode by default. Live GitHub data when you provide a token.</div>
+      </div>
 
-<div class="stats">
-  <div class="stat">
-    <div class="stat-val" style="color:#818cf8">1,329</div>
-    <div class="stat-lbl">mean-weasel</div>
-  </div>
-  <div class="stat">
-    <div class="stat-val" style="color:#4ade80">289</div>
-    <div class="stat-lbl">neonwatty</div>
-  </div>
-  <div class="stat">
-    <div class="stat-val" style="color:#f59e0b">462</div>
-    <div class="stat-lbl">peak week</div>
-  </div>
-</div>
+      <div class="product-stage" aria-label="PR Menu Bar app preview">
+        <div class="menu-bar" aria-hidden="true">
+          <div class="traffic"><span></span><span></span><span></span></div>
+          <div class="bar-items">
+            <span>Finder</span>
+            <span>File</span>
+            <span>Edit</span>
+          </div>
+          <div class="bar-items">
+            <span class="bar-icon">1,618</span>
+            <span>10:42 AM</span>
+          </div>
+        </div>
 
-<div class="chart-wrap">
-  <div class="chart" id="chart"></div>
-</div>
+        <article class="popover">
+          <div class="popover-header">
+            <div class="popover-title-row">
+              <div>
+                <h2>PR Activity</h2>
+                <div class="date-line">Mar 2 - May 2, 2026</div>
+              </div>
+              <div class="source-state">GitHub data</div>
+            </div>
+            <div class="stat-row">
+              <div class="mini-stat"><strong style="color: var(--cyan)">1,329</strong><span>team PRs</span></div>
+              <div class="mini-stat"><strong style="color: var(--green)">289</strong><span>personal</span></div>
+              <div class="mini-stat"><strong style="color: var(--amber)">462</strong><span>peak week</span></div>
+            </div>
+          </div>
 
-<div class="legend" id="legend"></div>
+          <div class="chart-panel">
+            <div class="chart" id="chart" aria-label="Merged pull request activity by week"></div>
+          </div>
 
-<div class="section-title">By repository</div>
-<div id="repoList"></div>
+          <div class="repo-list" id="repoList" aria-label="Repository breakdown"></div>
 
-<div class="spark-section">
-  <div class="section-title" style="margin-bottom:8px">Weekly heatmap</div>
-  <div id="heatmap"></div>
+          <div class="refresh-strip">
+            <span class="refresh-dot">Updated 2 minutes ago</span>
+            <span>Refreshes every 15 minutes</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="section-heading">
+        <h2>Small surface, useful signal.</h2>
+        <p>PR Menu Bar keeps the activity view close to the work without becoming another dashboard to maintain.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5m5 14V9m5 10V3m5 16v-7" stroke="currentColor" stroke-linecap="round"/></svg>
+          </div>
+          <h3>GitHub-backed refresh</h3>
+          <p>Fetch merged pull requests across repositories and keep the last useful activity visible between refreshes.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-linecap="round"/><path d="M7 7v10" stroke="currentColor" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Repository breakdown</h3>
+          <p>Scan the weekly shape of work, then drop into the repositories that are carrying most of the movement.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v8l5 3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="8" stroke="currentColor"/></svg>
+          </div>
+          <h3>Failure-aware updates</h3>
+          <p>Refresh errors do not wipe the view. Rate-limit and token issues are surfaced without hiding the previous data.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section setup" id="setup">
+      <div class="setup-copy">
+        <h2>Works as a prototype, stays honest about data.</h2>
+        <p>Use sample mode to explore the app. Add a GitHub token in the launch environment when you want live repository activity.</p>
+        <ul class="setup-list">
+          <li><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Live data when you provide a token</li>
+          <li><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Sample mode when you do not</li>
+        </ul>
+      </div>
+
+      <div class="terminal" aria-label="Launch command">
+        <div class="terminal-top"><span></span><span></span><span></span></div>
+        <pre><span class="comment"># run with live GitHub data</span>
+<span class="prompt">$</span> <span class="var">PR_MENU_BAR_GITHUB_TOKEN</span>=github_pat_xxx make run
+
+<span class="comment"># run local checks</span>
+<span class="prompt">$</span> make ci-local</pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>PR Menu Bar</span>
+    <span>macOS menu bar prototype for merged pull request activity</span>
+  </footer>
 </div>
 
 <script>
-const weeks = ['03/02','03/09','03/16','03/23','03/30','04/06','04/13','04/20','04/27'];
-const repos = [
-  { name: 'deckchecker',         org: 'mean-weasel', color: '#818cf8', data: [0,13,75,42,53,23,69,45,111] },
-  { name: 'seatify',             org: 'mean-weasel', color: '#c084fc', data: [15,16,34,35,20,22,113,40,79] },
-  { name: 'issuectl',            org: 'mean-weasel', color: '#6366f1', data: [0,0,0,0,0,51,57,69,53] },
-  { name: 'bleep-that-shit',     org: 'mean-weasel', color: '#a78bfa', data: [30,41,42,33,48,21,41,31,5] },
-  { name: 'issuectl-ios',        org: 'mean-weasel', color: '#4f46e5', data: [0,0,0,0,0,0,0,2,0] },
-  { name: 'RedditReminder',      org: 'neonwatty',   color: '#4ade80', data: [0,0,0,0,0,0,0,11,84] },
-  { name: 'nav-map',             org: 'neonwatty',   color: '#34d399', data: [0,0,35,3,0,1,1,0,42] },
-  { name: 'fleet',               org: 'neonwatty',   color: '#22d3ee', data: [0,0,0,0,0,10,7,0,30] },
-  { name: 'session-search',      org: 'neonwatty',   color: '#2dd4bf', data: [0,0,0,0,0,0,0,7,37] },
-  { name: 'playwright-dashboard', org: 'neonwatty',  color: '#a3e635', data: [0,0,0,0,0,0,0,0,20] },
-  { name: 'CCSwitcher-Codex',    org: 'neonwatty',   color: '#86efac', data: [0,0,0,0,0,0,0,0,1] },
-];
+  const weeks = ["03/02", "03/09", "03/16", "03/23", "03/30", "04/06", "04/13", "04/20", "04/27"];
+  const repos = [
+    { name: "deckchecker", color: "#55d7ff", data: [0, 13, 75, 42, 53, 23, 69, 45, 111] },
+    { name: "seatify", color: "#a78bfa", data: [15, 16, 34, 35, 20, 22, 113, 40, 79] },
+    { name: "issuectl", color: "#6c7cff", data: [0, 0, 0, 0, 0, 51, 57, 69, 53] },
+    { name: "RedditReminder", color: "#62e59f", data: [0, 0, 0, 0, 0, 0, 0, 11, 84] },
+    { name: "fleet", color: "#f8c56b", data: [0, 0, 0, 0, 0, 10, 7, 0, 30] }
+  ];
 
-const weekTotals = weeks.map(function(_, wi) {
-  return repos.reduce(function(s, r) { return s + r.data[wi]; }, 0);
-});
-const maxTotal = Math.max.apply(null, weekTotals);
-const maxRepo = Math.max.apply(null, repos.map(function(r) {
-  return r.data.reduce(function(a, b) { return a + b; }, 0);
-}));
+  const totals = weeks.map((_, weekIndex) => repos.reduce((sum, repo) => sum + repo.data[weekIndex], 0));
+  const maxTotal = Math.max(...totals);
+  const chart = document.getElementById("chart");
 
-// Chart
-const chart = document.getElementById('chart');
-weeks.forEach(function(wk, wi) {
-  const col = document.createElement('div');
-  col.className = 'col';
+  weeks.forEach((week, weekIndex) => {
+    const weekEl = document.createElement("div");
+    weekEl.className = "week";
 
-  const stack = document.createElement('div');
-  stack.className = 'stack';
-  const totalH = (weekTotals[wi] / maxTotal) * 160;
+    const stack = document.createElement("div");
+    stack.className = "stack";
+    stack.style.height = `${Math.max(10, (totals[weekIndex] / maxTotal) * 100)}%`;
+    stack.style.animationDelay = `${weekIndex * 45}ms`;
 
-  repos.forEach(function(r) {
-    if (r.data[wi] === 0) return;
-    const seg = document.createElement('div');
-    seg.className = 'seg';
-    seg.style.height = ((r.data[wi] / weekTotals[wi]) * totalH) + 'px';
-    seg.style.background = r.color;
-    stack.appendChild(seg);
+    repos.forEach((repo) => {
+      const value = repo.data[weekIndex];
+      if (!value) return;
+      const seg = document.createElement("div");
+      seg.className = "seg";
+      seg.style.height = `${(value / totals[weekIndex]) * 100}%`;
+      seg.style.background = repo.color;
+      stack.appendChild(seg);
+    });
+
+    const label = document.createElement("span");
+    label.className = "week-label";
+    label.textContent = week;
+
+    weekEl.append(stack, label);
+    chart.appendChild(weekEl);
   });
 
-  stack.style.height = totalH + 'px';
-  col.appendChild(stack);
+  const repoList = document.getElementById("repoList");
+  const repoTotals = repos
+    .map((repo) => ({ ...repo, total: repo.data.reduce((sum, value) => sum + value, 0) }))
+    .sort((a, b) => b.total - a.total);
+  const maxRepoTotal = Math.max(...repoTotals.map((repo) => repo.total));
 
-  const lbl = document.createElement('div');
-  lbl.className = 'wk-label';
-  lbl.textContent = wk;
-  col.appendChild(lbl);
-
-  const tot = document.createElement('div');
-  tot.className = 'wk-total';
-  tot.textContent = weekTotals[wi];
-  tot.style.bottom = (totalH + 36) + 'px';
-  col.appendChild(tot);
-
-  chart.appendChild(col);
-});
-
-// Legend
-const legend = document.getElementById('legend');
-repos.forEach(function(r) {
-  const item = document.createElement('div');
-  item.className = 'leg';
-  const dot = document.createElement('div');
-  dot.className = 'dot';
-  dot.style.background = r.color;
-  item.appendChild(dot);
-  item.appendChild(document.createTextNode(r.name));
-  legend.appendChild(item);
-});
-
-// Repo list sorted by total
-const sorted = repos.slice().sort(function(a, b) {
-  var ta = a.data.reduce(function(s, v) { return s + v; }, 0);
-  var tb = b.data.reduce(function(s, v) { return s + v; }, 0);
-  return tb - ta;
-});
-
-const repoList = document.getElementById('repoList');
-sorted.forEach(function(r) {
-  var total = r.data.reduce(function(s, v) { return s + v; }, 0);
-  var row = document.createElement('div');
-  row.className = 'repo-row';
-
-  var name = document.createElement('span');
-  name.className = 'repo-name';
-  name.appendChild(document.createTextNode(r.name));
-  var tag = document.createElement('span');
-  tag.className = r.org === 'mean-weasel' ? 'tag tag-org' : 'tag tag-per';
-  tag.textContent = r.org === 'mean-weasel' ? 'org' : 'me';
-  name.appendChild(tag);
-  row.appendChild(name);
-
-  var barWrap = document.createElement('div');
-  barWrap.className = 'repo-bar-wrap';
-  var bar = document.createElement('div');
-  bar.className = 'repo-bar';
-  bar.style.width = ((total / maxRepo) * 100) + '%';
-  bar.style.background = r.color;
-  barWrap.appendChild(bar);
-  row.appendChild(barWrap);
-
-  var count = document.createElement('span');
-  count.className = 'repo-count';
-  count.textContent = total;
-  row.appendChild(count);
-
-  repoList.appendChild(row);
-});
-
-// Heatmap
-var heatmap = document.getElementById('heatmap');
-var allMax = Math.max.apply(null, repos.map(function(r) { return Math.max.apply(null, r.data); }));
-
-// Week header
-var headerRow = document.createElement('div');
-headerRow.className = 'spark-row';
-var spacer = document.createElement('div');
-spacer.className = 'spark-name';
-headerRow.appendChild(spacer);
-var headerCells = document.createElement('div');
-headerCells.className = 'spark-cells';
-weeks.forEach(function(w) {
-  var cell = document.createElement('div');
-  cell.style.flex = '1';
-  cell.style.textAlign = 'center';
-  cell.style.fontSize = '9px';
-  cell.style.color = '#525252';
-  cell.textContent = w;
-  headerCells.appendChild(cell);
-});
-headerRow.appendChild(headerCells);
-heatmap.appendChild(headerRow);
-
-sorted.forEach(function(r) {
-  var rMax = Math.max.apply(null, r.data);
-  if (rMax === 0) return;
-  var row = document.createElement('div');
-  row.className = 'spark-row';
-
-  var nm = document.createElement('div');
-  nm.className = 'spark-name';
-  nm.textContent = r.name;
-  row.appendChild(nm);
-
-  var cells = document.createElement('div');
-  cells.className = 'spark-cells';
-  r.data.forEach(function(v) {
-    var cell = document.createElement('div');
-    cell.className = 'spark-cell';
-    var opacity = v === 0 ? 0.05 : 0.15 + (v / allMax) * 0.85;
-    cell.style.background = r.color;
-    cell.style.opacity = opacity;
-    if (v > 0) {
-      var val = document.createElement('div');
-      val.className = 'spark-val';
-      val.textContent = v;
-      cell.appendChild(val);
-    }
-    cells.appendChild(cell);
+  repoTotals.slice(0, 5).forEach((repo) => {
+    const row = document.createElement("div");
+    row.className = "repo-row";
+    row.innerHTML = `
+      <span class="repo-name">${repo.name}</span>
+      <span class="repo-track"><span class="repo-fill" style="width: ${(repo.total / maxRepoTotal) * 100}%; background: ${repo.color}"></span></span>
+      <span class="repo-count">${repo.total}</span>
+    `;
+    repoList.appendChild(row);
   });
-  row.appendChild(cells);
-
-  heatmap.appendChild(row);
-});
 </script>
 </body>
 </html>
