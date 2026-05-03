@@ -19,6 +19,7 @@ struct ActivityChartView: View {
             repositories: store.includedRepositories,
             bucketIndex: index,
             window: store.window,
+            bin: store.bin,
             isSelected: selectedBucketIndex == index
           )
           .contentShape(Rectangle())
@@ -39,6 +40,7 @@ private struct ActivityChartColumn: View {
   var repositories: [RepositoryActivity]
   var bucketIndex: Int
   var window: ActivityWindow
+  var bin: ActivityBin
   var isSelected: Bool
 
   var body: some View {
@@ -70,13 +72,13 @@ private struct ActivityChartColumn: View {
   }
 
   private var repositoriesWithValues: [RepositoryActivity] {
-    repositories.filter { $0.visibleCounts(for: window)[bucketIndex] > 0 }
+    repositories.filter { $0.visibleCounts(for: window, bin: bin)[bucketIndex] > 0 }
   }
 
   private func segmentHeight(for repository: RepositoryActivity, in availableHeight: CGFloat)
     -> CGFloat
   {
-    let value = repository.visibleCounts(for: window)[bucketIndex]
+    let value = repository.visibleCounts(for: window, bin: bin)[bucketIndex]
     return CGFloat(value) / CGFloat(maxTotal) * max(availableHeight - 28, 1)
   }
 }
