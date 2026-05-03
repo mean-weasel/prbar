@@ -31,6 +31,8 @@ PR_MENU_BAR_GITHUB_TOKEN=github_pat_xxx make run
 The token needs repository read access for the repositories you want to track. Missing
 or blank tokens keep the app on sample data. OAuth, keychain storage, signing,
 notarization, and distribution are intentionally out of scope for this prototype.
+In-app GitHub sign-in and credential storage remain an open product decision; the
+environment-token path is the supported live-data path for now.
 
 The live provider currently discovers repositories with pull access, fetches merged pull
 requests through GitHub Search, paginates high-volume result sets, and preserves the last

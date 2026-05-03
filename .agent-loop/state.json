@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 45,
+  "iteration": 46,
   "completed": [
     {
       "iteration": 1,
@@ -296,6 +296,12 @@
       "at": "2026-05-03T02:57:37Z",
       "summary": "Replaced ad hoc GitHub provider URL query assertions with a URLComponents-backed query helper.",
       "report": ".agent-loop/iterations/045-report.md"
+    },
+    {
+      "iteration": 46,
+      "at": "2026-05-03T02:58:30Z",
+      "summary": "Documented that in-app GitHub sign-in and credential storage remain open product decisions while the environment-token path is supported.",
+      "report": ".agent-loop/iterations/046-report.md"
     }
   ],
   "open_findings": [
@@ -308,18 +314,6 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-034",
-      "title": "Document open product decision for in-app GitHub auth",
-      "kind": "product",
-      "impact": 2,
-      "confidence": 4,
-      "evidence": 4,
-      "effort": 1,
-      "risk": 4,
-      "score": 26,
-      "verification": "State/report update plus make ci-local"
-    },
-    {
       "id": "T-035",
       "title": "Close batch budget and prepare PR",
       "kind": "reliability",
@@ -330,6 +324,18 @@
       "risk": 4,
       "score": 27,
       "verification": "Final make ci-local, push branch, open PR"
+    },
+    {
+      "id": "T-036",
+      "title": "Design in-app GitHub auth and credential storage",
+      "kind": "product",
+      "impact": 4,
+      "confidence": 3,
+      "evidence": 4,
+      "effort": 4,
+      "risk": 3,
+      "score": 24,
+      "verification": "Design note and product decision before implementation"
     }
   ],
   "blocked": [],
@@ -344,12 +350,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 45."
+    "make ci-local passed for iteration 46."
   ],
   "judge": {
-    "continue": true,
-    "confidence": 0.81,
-    "reason": "Provider request tests are less brittle; with one loop left, the next useful task is documenting the remaining GitHub auth product decision and closing the batch.",
-    "next_focus": "Document open product decision for in-app GitHub auth."
+    "continue": false,
+    "confidence": 0.86,
+    "reason": "The requested 20-loop batch is complete and verified. Remaining work is a product decision about in-app GitHub auth and credential storage.",
+    "next_focus": "Open a coherent source-status and refresh reliability PR for iterations 27-46."
   }
 }
