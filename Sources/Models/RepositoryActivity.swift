@@ -6,7 +6,37 @@ struct RepositoryActivity: Codable, Identifiable, Equatable {
   var name: String
   var colorHex: String
   var weeklyCounts: [Int]
+  var dailyCounts: [Int]
   var isIncluded: Bool
+
+  init(
+    id: String,
+    owner: String,
+    name: String,
+    colorHex: String,
+    weeklyCounts: [Int],
+    dailyCounts: [Int] = [],
+    isIncluded: Bool
+  ) {
+    self.id = id
+    self.owner = owner
+    self.name = name
+    self.colorHex = colorHex
+    self.weeklyCounts = weeklyCounts
+    self.dailyCounts = dailyCounts
+    self.isIncluded = isIncluded
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    owner = try container.decode(String.self, forKey: .owner)
+    name = try container.decode(String.self, forKey: .name)
+    colorHex = try container.decode(String.self, forKey: .colorHex)
+    weeklyCounts = try container.decode([Int].self, forKey: .weeklyCounts)
+    dailyCounts = try container.decodeIfPresent([Int].self, forKey: .dailyCounts) ?? []
+    isIncluded = try container.decode(Bool.self, forKey: .isIncluded)
+  }
 
   var total: Int {
     guard isIncluded else {
@@ -20,8 +50,20 @@ struct RepositoryActivity: Codable, Identifiable, Equatable {
   }
 
   func visibleCounts(for window: ActivityWindow, bin: ActivityBin = .week) -> [Int] {
-    Array(weeklyCounts.suffix(window.visibleBucketCount))
-      .groupedTotals(size: bin.sourceBucketGroupSize)
+    switch bin {
+    case .day:
+      guard dailyCounts.isEmpty == false else {
+        return Array(weeklyCounts.suffix(window.visibleBucketCount))
+      }
+      return Array(dailyCounts.suffix(window.dayCount))
+    case .week:
+      return Array(weeklyCounts.suffix(window.visibleBucketCount))
+    case .month:
+      guard dailyCounts.isEmpty == false else {
+        return Array(weeklyCounts.suffix(window.visibleBucketCount)).groupedTotals(size: 4)
+      }
+      return [Array(dailyCounts.suffix(window.dayCount)).reduce(0, +)]
+    }
   }
 
   func visibleTotal(for window: ActivityWindow, bin: ActivityBin = .week) -> Int {
@@ -29,6 +71,18 @@ struct RepositoryActivity: Codable, Identifiable, Equatable {
       return 0
     }
     return visibleCounts(for: window, bin: bin).reduce(0, +)
+  }
+}
+
+extension RepositoryActivity {
+  fileprivate enum CodingKeys: String, CodingKey {
+    case id
+    case owner
+    case name
+    case colorHex
+    case weeklyCounts
+    case dailyCounts
+    case isIncluded
   }
 }
 
@@ -134,4 +188,18 @@ extension RepositoryActivity {
       isIncluded: true
     ),
   ]
+}
+
+extension RepositoryActivity {
+  func withDistributedDailyCounts() -> RepositoryActivity {
+    var copy = self
+    copy.dailyCounts = weeklyCounts.flatMap { weeklyCount in
+      let base = weeklyCount / 7
+      let remainder = weeklyCount % 7
+      return (0..<7).map { day in
+        base + (day >= 7 - remainder ? 1 : 0)
+      }
+    }
+    return copy
+  }
 }

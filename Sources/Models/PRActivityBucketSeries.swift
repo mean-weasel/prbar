@@ -21,10 +21,34 @@ struct PRActivityBucketSeries: Equatable {
     )
   }
 
+  static func daily(
+    mergedDates: [Date],
+    bucketCount: Int,
+    now: Date,
+    calendar: Calendar = .prActivity
+  ) -> PRActivityBucketSeries {
+    let starts = dayStarts(bucketCount: bucketCount, now: now, calendar: calendar)
+    let counts = starts.map { start in
+      let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
+      return mergedDates.filter { $0 >= start && $0 < end }.count
+    }
+    return PRActivityBucketSeries(
+      labels: starts.map { Self.label(for: $0) },
+      counts: counts
+    )
+  }
+
   private static func weekStarts(bucketCount: Int, now: Date, calendar: Calendar) -> [Date] {
     let currentWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
     return (0..<bucketCount).reversed().compactMap { offset in
       calendar.date(byAdding: .weekOfYear, value: -offset, to: currentWeek)
+    }
+  }
+
+  private static func dayStarts(bucketCount: Int, now: Date, calendar: Calendar) -> [Date] {
+    let currentDay = calendar.startOfDay(for: now)
+    return (0..<bucketCount).reversed().compactMap { offset in
+      calendar.date(byAdding: .day, value: -offset, to: currentDay)
     }
   }
 
