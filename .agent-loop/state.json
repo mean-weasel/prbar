@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 16,
+  "iteration": 17,
   "completed": [
     {
       "iteration": 1,
@@ -122,6 +122,12 @@
       "at": "2026-05-03T02:15:03Z",
       "summary": "Added GitHub merged pull request search request construction with date range query coverage.",
       "report": ".agent-loop/iterations/016-report.md"
+    },
+    {
+      "iteration": 17,
+      "at": "2026-05-03T02:16:34Z",
+      "summary": "Added decoding for GitHub merged pull request search results, including merged_at date validation.",
+      "report": ".agent-loop/iterations/017-report.md"
     }
   ],
   "open_findings": [
@@ -182,12 +188,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 16."
+    "make ci-local passed for iteration 17."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "Merged PR request construction is covered; the provider still needs search result decoding before bucketed counts can be populated.",
-    "next_focus": "Decode GitHub merged pull request search results."
+    "reason": "Search result decoding is covered; the provider still needs deterministic week bucketing for merged PR dates.",
+    "next_focus": "Add weekly bucketing for merged pull request dates."
   }
 }
