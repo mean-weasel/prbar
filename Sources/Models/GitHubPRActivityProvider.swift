@@ -4,41 +4,116 @@ protocol GitHubAPITransport {
   func data(for request: URLRequest) throws -> Data
 }
 
+enum GitHubPRActivityProviderError: Error, Equatable {
+  case incompleteSearchResults(repositoryID: String)
+}
+
 struct GitHubPRActivityProvider: PRActivityProviding {
   var token: String
   var transport: GitHubAPITransport
   var bucketLabels: [String]
   var defaultWindow: ActivityWindow = .twoWeeks
+  private let searchPageSize = 100
 
   func load(now: Date = Date()) throws -> PRActivityStore {
     let request = try GitHubAPIRequest.userRepositories().urlRequest(token: token)
     let data = try transport.data(for: request)
     let repositories = try JSONDecoder().decode([GitHubRepository].self, from: data)
-    let activities =
-      repositories
-      .filter(\.canPull)
-      .map { $0.activity(bucketCount: bucketLabels.count) }
+    let pullableRepositories = repositories.filter(\.canPull)
+    let activities = try pullableRepositories.map { repository in
+      try activity(for: repository, now: now)
+    }
+    let labels = PRActivityBucketSeries.weekly(
+      mergedDates: [],
+      bucketCount: bucketLabels.count,
+      now: now
+    )
+    .labels
 
     return PRActivityStore(
-      bucketLabels: bucketLabels,
+      bucketLabels: labels,
       window: defaultWindow,
       refreshInterval: .daily,
       repositories: activities,
       refreshedAt: now
     )
   }
+
+  private func activity(for repository: GitHubRepository, now: Date) throws -> RepositoryActivity {
+    let since = startDate(now: now)
+    let mergedPullRequests = try mergedPullRequests(
+      repositoryID: repository.fullName,
+      since: since,
+      until: now
+    )
+    let series = PRActivityBucketSeries.weekly(
+      mergedDates: mergedPullRequests.map(\.mergedAt),
+      bucketCount: bucketLabels.count,
+      now: now
+    )
+    var activity = repository.activity(bucketCount: bucketLabels.count)
+    activity.weeklyCounts = series.counts
+    return activity
+  }
+
+  private func mergedPullRequests(repositoryID: String, since: Date, until: Date) throws
+    -> [GitHubMergedPullRequest]
+  {
+    var page = 1
+    var items: [GitHubMergedPullRequest] = []
+    var totalCount = 0
+
+    repeat {
+      let request = try GitHubAPIRequest.mergedPullRequests(
+        repositoryID: repositoryID,
+        since: since,
+        until: until,
+        page: page,
+        perPage: searchPageSize
+      )
+      .urlRequest(token: token)
+      let data = try transport.data(for: request)
+      let response = try JSONDecoder().decode(
+        GitHubMergedPullRequestSearchResponse.self,
+        from: data
+      )
+      guard response.incompleteResults == false else {
+        throw GitHubPRActivityProviderError.incompleteSearchResults(repositoryID: repositoryID)
+      }
+      totalCount = response.totalCount
+      items.append(contentsOf: response.items)
+      page += 1
+    } while items.count < totalCount
+
+    return items
+  }
+
+  private func startDate(now: Date) -> Date {
+    Calendar.prActivity.date(
+      byAdding: .weekOfYear,
+      value: -bucketLabels.count,
+      to: now
+    ) ?? now
+  }
 }
 
 final class FixtureGitHubAPITransport: GitHubAPITransport {
-  var data: Data
+  var responses: [Data]
   private(set) var capturedRequests: [URLRequest] = []
 
   init(data: Data) {
-    self.data = data
+    responses = [data]
+  }
+
+  init(responses: [Data]) {
+    self.responses = responses
   }
 
   func data(for request: URLRequest) throws -> Data {
     capturedRequests.append(request)
-    return data
+    guard responses.isEmpty == false else {
+      return Data()
+    }
+    return responses.removeFirst()
   }
 }

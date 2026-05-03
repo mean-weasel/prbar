@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 13,
+  "iteration": 26,
   "completed": [
     {
       "iteration": 1,
@@ -104,15 +104,87 @@
       "at": "2026-05-03T02:11:37Z",
       "summary": "Added user-visible refresh failure state so manual and scheduled refresh errors keep previous activity with an explanatory banner.",
       "report": ".agent-loop/iterations/013-report.md"
+    },
+    {
+      "iteration": 14,
+      "at": "2026-05-03T02:13:22Z",
+      "summary": "Added a URLSession-backed GitHub API transport with HTTP status handling and URLProtocol-based tests.",
+      "report": ".agent-loop/iterations/014-report.md"
+    },
+    {
+      "iteration": 15,
+      "at": "2026-05-03T02:14:09Z",
+      "summary": "Added provider factory selection so PR_MENU_BAR_GITHUB_TOKEN switches the app from sample data to the GitHub provider path.",
+      "report": ".agent-loop/iterations/015-report.md"
+    },
+    {
+      "iteration": 16,
+      "at": "2026-05-03T02:15:03Z",
+      "summary": "Added GitHub merged pull request search request construction with date range query coverage.",
+      "report": ".agent-loop/iterations/016-report.md"
+    },
+    {
+      "iteration": 17,
+      "at": "2026-05-03T02:16:34Z",
+      "summary": "Added decoding for GitHub merged pull request search results, including merged_at date validation.",
+      "report": ".agent-loop/iterations/017-report.md"
+    },
+    {
+      "iteration": 18,
+      "at": "2026-05-03T02:17:31Z",
+      "summary": "Added deterministic Sunday-start weekly bucket generation and merged PR date counting.",
+      "report": ".agent-loop/iterations/018-report.md"
+    },
+    {
+      "iteration": 19,
+      "at": "2026-05-03T02:18:58Z",
+      "summary": "Updated the GitHub provider to fetch merged PR search results per discovered repo and populate weekly activity counts.",
+      "report": ".agent-loop/iterations/019-report.md"
+    },
+    {
+      "iteration": 20,
+      "at": "2026-05-03T02:19:48Z",
+      "summary": "Decoded GitHub search pagination metadata so over-limit merged PR result sets can be detected.",
+      "report": ".agent-loop/iterations/020-report.md"
+    },
+    {
+      "iteration": 21,
+      "at": "2026-05-03T02:22:17Z",
+      "summary": "Fetched additional GitHub search pages for high-volume repositories when total_count exceeds the first page.",
+      "report": ".agent-loop/iterations/021-report.md"
+    },
+    {
+      "iteration": 22,
+      "at": "2026-05-03T02:23:11Z",
+      "summary": "Rejected incomplete GitHub merged PR search responses so partial activity data is surfaced as a refresh failure.",
+      "report": ".agent-loop/iterations/022-report.md"
+    },
+    {
+      "iteration": 23,
+      "at": "2026-05-03T02:24:05Z",
+      "summary": "Accepted GitHub merged_at timestamps with and without fractional seconds.",
+      "report": ".agent-loop/iterations/023-report.md"
+    },
+    {
+      "iteration": 24,
+      "at": "2026-05-03T02:24:50Z",
+      "summary": "Trimmed environment tokens before provider selection so whitespace-only tokens keep the sample provider path.",
+      "report": ".agent-loop/iterations/024-report.md"
+    },
+    {
+      "iteration": 25,
+      "at": "2026-05-03T02:25:45Z",
+      "summary": "Documented local usage for the live GitHub-backed provider path and its current scope.",
+      "report": ".agent-loop/iterations/025-report.md"
+    },
+    {
+      "iteration": 26,
+      "at": "2026-05-03T02:26:42Z",
+      "summary": "Added explicit GitHub request timeouts and recorded loop learnings for the live-provider batch.",
+      "report": ".agent-loop/iterations/026-report.md"
     }
   ],
   "open_findings": [
-    {
-      "id": "F-001",
-      "kind": "product",
-      "severity": "medium",
-      "text": "The app still does not fetch PR history from GitHub, though provider boundaries now exist."
-    },
     {
       "id": "F-004",
       "kind": "reliability",
@@ -120,36 +192,36 @@
       "text": "Settings persistence does not yet handle repository IDs disappearing from future fetched data beyond excluding unknown IDs."
     },
     {
-      "id": "F-006",
-      "kind": "feature",
+      "id": "F-007",
+      "kind": "product",
       "severity": "medium",
-      "text": "The documented GitHub integration plan is not yet implemented in a real provider path."
+      "text": "Live GitHub mode is selected only by environment token; there is not yet in-app configuration or credential storage."
     }
   ],
   "candidate_tasks": [
     {
-      "id": "T-013",
-      "title": "Wire scheduled refresh into menu bar app lifecycle",
-      "kind": "feature",
-      "impact": 5,
-      "confidence": 4,
-      "evidence": 4,
-      "effort": 3,
-      "risk": 4,
-      "score": 38,
-      "verification": "Provider unit tests plus make ci-local"
-    },
-    {
-      "id": "T-008",
-      "title": "Add scheduled refresh trigger for daily auto-refresh",
+      "id": "T-021",
+      "title": "Add visible data-source status for sample vs GitHub mode",
       "kind": "feature",
       "impact": 4,
       "confidence": 4,
       "evidence": 4,
+      "effort": 2,
+      "risk": 4,
+      "score": 34,
+      "verification": "View/model tests plus make ci-local"
+    },
+    {
+      "id": "T-022",
+      "title": "Reconcile stale repository filters after GitHub repo removal",
+      "kind": "feature",
+      "impact": 4,
+      "confidence": 3,
+      "evidence": 4,
       "effort": 3,
       "risk": 4,
-      "score": 32,
-      "verification": "Refresh policy tests plus app build"
+      "score": 29,
+      "verification": "Settings/store reconciliation tests plus make ci-local"
     }
   ],
   "blocked": [],
@@ -164,12 +236,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 13."
+    "make ci-local passed for iteration 26."
   ],
   "judge": {
-    "continue": true,
-    "confidence": 0.83,
-    "reason": "Refresh failures now surface in the popover; the remaining GitHub provider gap is a real URLSession transport behind the existing protocol.",
-    "next_focus": "Add URLSession-backed GitHub transport."
+    "continue": false,
+    "confidence": 0.88,
+    "reason": "The requested 20-iteration continuation is complete. Valuable follow-up tasks remain, but the loop budget is exhausted.",
+    "next_focus": "Open a coherent PR for the live GitHub provider batch."
   }
 }

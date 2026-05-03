@@ -15,3 +15,4 @@
 - For a fixed user-requested loop count, stop-state should distinguish "batch complete" from "no valuable work remains".
 - Empty-state loops are good late-batch tasks because they improve UX without expanding scope into external dependencies.
 - Commit each loop for auditability and rollback, but open PRs for coherent batches of loops so review stays product-shaped instead of iteration-shaped.
+- Live-provider work is easiest to review when network construction, decoding, bucketing, and provider selection each land as separate tested loops.
