@@ -73,6 +73,10 @@ final class PRActivityStoreTests: XCTestCase {
 
     XCTAssertEqual(store.visibleBucketLabels.count, 7)
     XCTAssertEqual(store.bucketTotals.count, 7)
+    XCTAssertEqual(
+      store.repositories.first?.visibleCounts(for: store.window, bin: store.bin).count,
+      7
+    )
     XCTAssertEqual(store.totalPullRequests, 462)
   }
 
