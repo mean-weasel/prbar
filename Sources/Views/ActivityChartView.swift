@@ -10,25 +10,44 @@ struct ActivityChartView: View {
         .font(.caption)
         .foregroundStyle(.secondary)
 
-      HStack(alignment: .bottom, spacing: 8) {
-        ForEach(Array(store.visibleBucketLabels.enumerated()), id: \.offset) { index, label in
-          ActivityChartColumn(
-            label: label,
-            total: store.bucketTotals[index],
-            maxTotal: store.maxBucketTotal,
-            repositories: store.includedRepositories,
-            bucketIndex: index,
-            window: store.window,
-            bin: store.bin,
-            isSelected: selectedBucketIndex == index
-          )
-          .contentShape(Rectangle())
-          .onTapGesture {
-            selectedBucketIndex = index
+      ScrollView(.horizontal) {
+        HStack(alignment: .bottom, spacing: columnSpacing) {
+          ForEach(Array(store.visibleBucketLabels.enumerated()), id: \.offset) { index, label in
+            ActivityChartColumn(
+              label: label,
+              total: store.bucketTotals[index],
+              maxTotal: store.maxBucketTotal,
+              repositories: store.includedRepositories,
+              bucketIndex: index,
+              window: store.window,
+              bin: store.bin,
+              isSelected: selectedBucketIndex == index
+            )
+            .frame(width: columnWidth)
+            .contentShape(Rectangle())
+            .onTapGesture {
+              selectedBucketIndex = index
+            }
           }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
       }
       .frame(height: 150)
+    }
+  }
+
+  private var columnSpacing: CGFloat {
+    store.bin == .day ? 4 : 8
+  }
+
+  private var columnWidth: CGFloat {
+    switch store.bin {
+    case .day:
+      return 28
+    case .week:
+      return 84
+    case .month:
+      return 140
     }
   }
 }
