@@ -2,12 +2,33 @@ import SwiftUI
 
 struct PRSettingsView: View {
   @Binding var store: PRActivityStore
+  var dataSource: PRActivityDataSource
 
   var body: some View {
     VStack(alignment: .leading, spacing: 14) {
+      connectionStatus
       controls
       repositoryList
     }
+  }
+
+  private var connectionStatus: some View {
+    HStack(alignment: .top, spacing: 10) {
+      Image(systemName: dataSource.systemImage)
+        .foregroundStyle(dataSource == .github ? .green : .secondary)
+        .frame(width: 18)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(dataSource.connectionTitle)
+          .font(.subheadline.weight(.semibold))
+        Text(dataSource.connectionDetail)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+    }
+    .padding(10)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
   }
 
   private var controls: some View {
