@@ -28,6 +28,7 @@ final class GitHubPRActivityProviderTests: XCTestCase {
       "Bearer token"
     )
     XCTAssertEqual(transport.capturedRequests.last?.url?.path, "/search/issues")
+    XCTAssertEqual(transport.capturedRequests.last?.url?.query?.contains("per_page=100"), true)
   }
 
   func testProviderRejectsInvalidRepositoryPayload() {

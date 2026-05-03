@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 42,
+  "iteration": 43,
   "completed": [
     {
       "iteration": 1,
@@ -278,6 +278,12 @@
       "at": "2026-05-03T02:55:07Z",
       "summary": "Recorded audit-loop learnings for SwiftUI app initialization, provider selection reuse, pagination guards, and refresh UX coverage.",
       "report": ".agent-loop/iterations/042-report.md"
+    },
+    {
+      "iteration": 43,
+      "at": "2026-05-03T02:55:52Z",
+      "summary": "Added request-level coverage that GitHub merged PR search requests use the intended page size.",
+      "report": ".agent-loop/iterations/043-report.md"
     }
   ],
   "open_findings": [
@@ -290,18 +296,6 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-031",
-      "title": "Add GitHub provider search page-size request coverage",
-      "kind": "reliability",
-      "impact": 2,
-      "confidence": 4,
-      "evidence": 3,
-      "effort": 1,
-      "risk": 4,
-      "score": 25,
-      "verification": "Provider request test plus make ci-local"
-    },
-    {
       "id": "T-032",
       "title": "Add repository discovery page-size request coverage",
       "kind": "reliability",
@@ -312,6 +306,18 @@
       "risk": 4,
       "score": 25,
       "verification": "Provider request test plus make ci-local"
+    },
+    {
+      "id": "T-033",
+      "title": "Add request query helper to provider tests",
+      "kind": "reliability",
+      "impact": 2,
+      "confidence": 3,
+      "evidence": 3,
+      "effort": 1,
+      "risk": 4,
+      "score": 23,
+      "verification": "Provider tests plus make ci-local"
     }
   ],
   "blocked": [],
@@ -326,12 +332,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 42."
+    "make ci-local passed for iteration 43."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.82,
-    "reason": "Batch learnings are recorded; next useful provider task is verifying search requests carry the intended page size.",
-    "next_focus": "Add GitHub provider search page-size request coverage."
+    "reason": "Merged PR search page sizing is covered; next useful provider task is covering repository discovery page sizing.",
+    "next_focus": "Add repository discovery page-size request coverage."
   }
 }
