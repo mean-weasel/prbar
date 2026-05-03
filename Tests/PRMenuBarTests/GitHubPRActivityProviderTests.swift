@@ -71,6 +71,26 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     XCTAssertEqual(transport.capturedRequests[1].url?.query?.contains("page=2"), true)
   }
 
+  func testProviderSkipsSearchWhenNoRepositoriesArePullable() throws {
+    let transport = FixtureGitHubAPITransport(
+      data: repositoryDiscoveryData(
+        repositories: [
+          repositoryFixture(owner: "owner", name: "hidden", canPull: false)
+        ]
+      )
+    )
+    let provider = GitHubPRActivityProvider(
+      token: "token",
+      transport: transport,
+      bucketLabels: ["W1"]
+    )
+
+    let store = try provider.load(now: try date("2026-05-02T18:00:00Z"))
+
+    XCTAssertTrue(store.repositories.isEmpty)
+    XCTAssertEqual(transport.capturedRequests.count, 1)
+  }
+
   func testProviderFetchesAdditionalMergedPullRequestPages() throws {
     let transport = FixtureGitHubAPITransport(
       responses: [
