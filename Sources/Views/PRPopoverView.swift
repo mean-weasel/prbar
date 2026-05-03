@@ -10,8 +10,14 @@ struct PRPopoverView: View {
       header
       controls
       summary
-      ActivityChartView(store: store, selectedBucketIndex: selectedBucketBinding)
-      BucketDetailView(store: store, bucketIndex: safeSelectedBucketIndex)
+      if store.hasVisibleActivity {
+        ActivityChartView(store: store, selectedBucketIndex: selectedBucketBinding)
+        BucketDetailView(store: store, bucketIndex: safeSelectedBucketIndex)
+      } else {
+        EmptyActivityView {
+          store.includeAllRepositories()
+        }
+      }
       repositoryList
       footer
     }
@@ -163,6 +169,28 @@ private struct BucketDetailView: View {
       }
     }
     .padding(10)
+    .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+  }
+}
+
+private struct EmptyActivityView: View {
+  var onIncludeAll: () -> Void
+
+  var body: some View {
+    VStack(spacing: 10) {
+      Image(systemName: "chart.bar.xaxis")
+        .font(.title2)
+        .foregroundStyle(.secondary)
+      Text("No PR activity in this view")
+        .font(.subheadline.weight(.semibold))
+      Text("Include repositories or choose a wider time window.")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      Button("Include all repositories", action: onIncludeAll)
+        .buttonStyle(.bordered)
+    }
+    .frame(maxWidth: .infinity)
+    .padding(.vertical, 18)
     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
   }
 }

@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 5,
+  "iteration": 6,
   "completed": [
     {
       "iteration": 1,
@@ -56,6 +56,12 @@
       "at": "2026-05-03T01:19:10Z",
       "summary": "Added persisted refresh interval settings, refresh policy tests, and provider-backed manual refresh behavior.",
       "report": ".agent-loop/iterations/005-report.md"
+    },
+    {
+      "iteration": 6,
+      "at": "2026-05-03T01:20:15Z",
+      "summary": "Added an empty activity state and recovery action when all repositories are excluded or no visible activity remains.",
+      "report": ".agent-loop/iterations/006-report.md"
     }
   ],
   "open_findings": [
@@ -70,20 +76,38 @@
       "kind": "reliability",
       "severity": "low",
       "text": "Settings persistence does not yet handle repository IDs disappearing from future fetched data beyond excluding unknown IDs."
+    },
+    {
+      "id": "F-005",
+      "kind": "product",
+      "severity": "medium",
+      "text": "Real GitHub refresh still needs product decisions for authentication, repository discovery, and API rate-limit behavior."
     }
   ],
   "candidate_tasks": [
     {
-      "id": "T-006",
-      "title": "Add empty and all-repos-excluded states",
-      "kind": "ux",
-      "impact": 3,
-      "confidence": 5,
+      "id": "T-007",
+      "title": "Design GitHub authentication and repository discovery flow",
+      "kind": "product",
+      "impact": 5,
+      "confidence": 3,
+      "evidence": 3,
+      "effort": 2,
+      "risk": 3,
+      "score": 27,
+      "verification": "Documented decision plus provider-level test plan"
+    },
+    {
+      "id": "T-008",
+      "title": "Add scheduled refresh trigger for daily auto-refresh",
+      "kind": "feature",
+      "impact": 4,
+      "confidence": 4,
       "evidence": 4,
-      "effort": 4,
-      "risk": 5,
-      "score": 36,
-      "verification": "Model tests plus make ci-local"
+      "effort": 3,
+      "risk": 4,
+      "score": 32,
+      "verification": "Refresh policy tests plus app build"
     }
   ],
   "blocked": [],
@@ -98,12 +122,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 5 after wrapping two SwiftUI pickers in a container."
+    "make ci-local passed for iteration 6."
   ],
   "judge": {
-    "continue": true,
-    "confidence": 0.72,
-    "reason": "A clear UX edge case remains: excluding all repositories leaves an empty chart/detail surface.",
-    "next_focus": "Add empty and all-repos-excluded states."
+    "continue": false,
+    "confidence": 0.78,
+    "reason": "The requested five-loop batch is complete; the next highest-value work is real GitHub integration and scheduled refresh behavior, which need product and authentication decisions.",
+    "next_focus": "Decide GitHub auth, repository discovery, and refresh scheduling approach."
   }
 }

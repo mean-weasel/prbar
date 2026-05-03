@@ -35,6 +35,18 @@ struct PRActivityStore {
     max(bucketTotals.max() ?? 0, 1)
   }
 
+  var hasVisibleActivity: Bool {
+    totalPullRequests > 0
+  }
+
+  mutating func includeAllRepositories() {
+    repositories = repositories.map { repository in
+      var updated = repository
+      updated.isIncluded = true
+      return updated
+    }
+  }
+
   func bucketBreakdown(at index: Int) -> [RepositoryBucketValue] {
     guard visibleBucketLabels.indices.contains(index) else {
       return []

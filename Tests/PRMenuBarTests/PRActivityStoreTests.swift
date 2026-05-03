@@ -78,4 +78,20 @@ final class PRActivityStoreTests: XCTestCase {
     XCTAssertEqual(breakdown.first?.value, 111)
     XCTAssertFalse(breakdown.contains { $0.value == 0 })
   }
+
+  func testIncludeAllRepositoriesRecoversVisibleActivity() {
+    var store = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    store.repositories = store.repositories.map { repository in
+      var updated = repository
+      updated.isIncluded = false
+      return updated
+    }
+
+    XCTAssertFalse(store.hasVisibleActivity)
+
+    store.includeAllRepositories()
+
+    XCTAssertTrue(store.hasVisibleActivity)
+    XCTAssertEqual(store.activeRepositoryCount, 11)
+  }
 }

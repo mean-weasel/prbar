@@ -12,3 +12,5 @@
 - Small UI iterations are easier to judge when paired with a model-level test for the data shown in the UI.
 - A provider boundary can be useful before real credentials/API work; it gives the loop a testable next step without blocking on external services.
 - SwiftUI `some View` edits are prone to small composition mistakes; fast local build verification catches them before they become loop-state noise.
+- For a fixed user-requested loop count, stop-state should distinguish "batch complete" from "no valuable work remains".
+- Empty-state loops are good late-batch tasks because they improve UX without expanding scope into external dependencies.
