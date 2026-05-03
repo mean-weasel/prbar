@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 12,
+  "iteration": 13,
   "completed": [
     {
       "iteration": 1,
@@ -98,6 +98,12 @@
       "at": "2026-05-03T02:10:22Z",
       "summary": "Added a refresh coordinator and wired scheduled daily refresh checks into the menu bar popover lifecycle.",
       "report": ".agent-loop/iterations/012-report.md"
+    },
+    {
+      "iteration": 13,
+      "at": "2026-05-03T02:11:37Z",
+      "summary": "Added user-visible refresh failure state so manual and scheduled refresh errors keep previous activity with an explanatory banner.",
+      "report": ".agent-loop/iterations/013-report.md"
     }
   ],
   "open_findings": [
@@ -158,12 +164,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 12."
+    "make ci-local passed for iteration 13."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "Scheduled refresh is wired; the app still needs provider error state instead of silent stale data on refresh failure.",
-    "next_focus": "Expose refresh failure state in the popover."
+    "reason": "Refresh failures now surface in the popover; the remaining GitHub provider gap is a real URLSession transport behind the existing protocol.",
+    "next_focus": "Add URLSession-backed GitHub transport."
   }
 }

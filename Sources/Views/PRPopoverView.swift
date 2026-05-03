@@ -2,12 +2,16 @@ import SwiftUI
 
 struct PRPopoverView: View {
   @Binding var store: PRActivityStore
+  var refreshError: String?
   var onRefresh: () -> Void
   @State private var selectedBucketIndex = 0
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
       header
+      if let refreshError {
+        RefreshErrorView(message: refreshError)
+      }
       controls
       summary
       if store.hasVisibleActivity {
@@ -191,6 +195,23 @@ private struct EmptyActivityView: View {
     }
     .frame(maxWidth: .infinity)
     .padding(.vertical, 18)
+    .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+  }
+}
+
+private struct RefreshErrorView: View {
+  var message: String
+
+  var body: some View {
+    HStack(spacing: 8) {
+      Image(systemName: "exclamationmark.triangle")
+        .foregroundStyle(.orange)
+      Text(message)
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      Spacer()
+    }
+    .padding(10)
     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
   }
 }

@@ -6,6 +6,7 @@ struct PRMenuBarApp: App {
   private let activityProvider: PRActivityProviding = StaticPRActivityProvider()
   private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
   @State private var store: PRActivityStore
+  @State private var refreshError: String?
 
   init() {
     let settingsStore = PRSettingsStore()
@@ -16,7 +17,7 @@ struct PRMenuBarApp: App {
 
   var body: some Scene {
     MenuBarExtra {
-      PRPopoverView(store: $store) {
+      PRPopoverView(store: $store, refreshError: refreshError) {
         refresh(now: Date())
       }
       .frame(width: 460)
@@ -37,13 +38,24 @@ struct PRMenuBarApp: App {
 
   private func refresh(now: Date) {
     let refresher = PRActivityRefresher(provider: activityProvider)
-    store = (try? refresher.refresh(current: store, now: now)) ?? store
+    do {
+      store = try refresher.refresh(current: store, now: now)
+      refreshError = nil
+    } catch {
+      refreshError = "Refresh failed. Keeping the previous activity."
+    }
   }
 
   private func refreshIfDue(now: Date) {
     let refresher = PRActivityRefresher(provider: activityProvider)
-    if let refreshed = try? refresher.refreshIfDue(current: store, now: now) {
+    do {
+      guard let refreshed = try refresher.refreshIfDue(current: store, now: now) else {
+        return
+      }
       store = refreshed
+      refreshError = nil
+    } catch {
+      refreshError = "Scheduled refresh failed. Keeping the previous activity."
     }
   }
 }

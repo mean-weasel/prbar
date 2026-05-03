@@ -37,6 +37,19 @@ final class PRActivityRefresherTests: XCTestCase {
     XCTAssertNil(refreshed)
   }
 
+  func testRefreshIfDuePropagatesProviderErrorsWhenDue() {
+    var current = PRActivityStore.sample(now: Date(timeIntervalSince1970: 0))
+    current.refreshInterval = .daily
+    let refresher = PRActivityRefresher(provider: FailingPRActivityProvider())
+
+    XCTAssertThrowsError(
+      try refresher.refreshIfDue(
+        current: current,
+        now: Date(timeIntervalSince1970: 86_400)
+      )
+    )
+  }
+
   private func jsonData(repositoryID: String) throws -> Data {
     let parts = repositoryID.split(separator: "/")
     let owner = String(parts[0])
@@ -58,5 +71,15 @@ final class PRActivityRefresherTests: XCTestCase {
       }
       """
     return Data(json.utf8)
+  }
+}
+
+private struct FailingPRActivityProvider: PRActivityProviding {
+  func load(now: Date) throws -> PRActivityStore {
+    throw FixtureError.failure
+  }
+
+  enum FixtureError: Error {
+    case failure
   }
 }
