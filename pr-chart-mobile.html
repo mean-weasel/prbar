@@ -433,7 +433,7 @@
 
   .repo-row {
     display: grid;
-    grid-template-columns: minmax(108px, 1fr) 128px 34px;
+    grid-template-columns: 10px minmax(120px, 1fr) 34px;
     align-items: center;
     gap: 10px;
     color: #dbe2eb;
@@ -441,10 +441,10 @@
     font-weight: 650;
   }
 
-  .repo-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .repo-swatch {
+    width: 8px;
+    height: 8px;
+    border-radius: 3px;
   }
 
   .repo-track {
@@ -814,7 +814,7 @@
     }
 
     .repo-row {
-      grid-template-columns: minmax(86px, 1fr) 92px 30px;
+      grid-template-columns: 10px minmax(92px, 1fr) 30px;
       gap: 8px;
     }
 
@@ -979,11 +979,11 @@
 <script>
   const weeks = ["03/02", "03/09", "03/16", "03/23", "03/30", "04/06", "04/13", "04/20", "04/27"];
   const repos = [
-    { name: "deckchecker", color: "#55d7ff", data: [0, 13, 75, 42, 53, 23, 69, 45, 111] },
-    { name: "seatify", color: "#a78bfa", data: [15, 16, 34, 35, 20, 22, 113, 40, 79] },
-    { name: "issuectl", color: "#6c7cff", data: [0, 0, 0, 0, 0, 51, 57, 69, 53] },
-    { name: "RedditReminder", color: "#62e59f", data: [0, 0, 0, 0, 0, 0, 0, 11, 84] },
-    { name: "fleet", color: "#f8c56b", data: [0, 0, 0, 0, 0, 10, 7, 0, 30] }
+    { color: "#55d7ff", data: [0, 13, 75, 42, 53, 23, 69, 45, 111] },
+    { color: "#a78bfa", data: [15, 16, 34, 35, 20, 22, 113, 40, 79] },
+    { color: "#6c7cff", data: [0, 0, 0, 0, 0, 51, 57, 69, 53] },
+    { color: "#62e59f", data: [0, 0, 0, 0, 0, 0, 0, 11, 84] },
+    { color: "#f8c56b", data: [0, 0, 0, 0, 0, 10, 7, 0, 30] }
   ];
 
   const totals = weeks.map((_, weekIndex) => repos.reduce((sum, repo) => sum + repo.data[weekIndex], 0));
@@ -1027,7 +1027,7 @@
     const row = document.createElement("div");
     row.className = "repo-row";
     row.innerHTML = `
-      <span class="repo-name">${repo.name}</span>
+      <span class="repo-swatch" style="background: ${repo.color}"></span>
       <span class="repo-track"><span class="repo-fill" style="width: ${(repo.total / maxRepoTotal) * 100}%; background: ${repo.color}"></span></span>
       <span class="repo-count">${repo.total}</span>
     `;
