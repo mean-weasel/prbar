@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 31,
+  "iteration": 32,
   "completed": [
     {
       "iteration": 1,
@@ -212,6 +212,12 @@
       "at": "2026-05-03T02:43:34Z",
       "summary": "Decoded GitHub rate-limit reset headers into HTTP transport errors.",
       "report": ".agent-loop/iterations/031-report.md"
+    },
+    {
+      "iteration": 32,
+      "at": "2026-05-03T02:44:41Z",
+      "summary": "Formatted refresh failures with GitHub rate-limit reset times when available.",
+      "report": ".agent-loop/iterations/032-report.md"
     }
   ],
   "open_findings": [
@@ -260,12 +266,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 31 after repairing SwiftFormat access-level guidance."
+    "make ci-local passed for iteration 32 after repairing SwiftFormat pattern-binding guidance."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.88,
-    "reason": "HTTP errors now retain rate-limit reset metadata; next useful UX work is converting rate-limit failures into a clearer refresh banner.",
-    "next_focus": "Show rate-limit reset time in refresh errors."
+    "reason": "Rate-limit failures now produce clearer refresh copy; next useful UX work is showing the next scheduled refresh time.",
+    "next_focus": "Show next scheduled refresh time in the footer."
   }
 }

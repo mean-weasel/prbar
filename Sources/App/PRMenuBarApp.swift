@@ -48,7 +48,7 @@ struct PRMenuBarApp: App {
       store = try refresher.refresh(current: store, now: now)
       refreshError = nil
     } catch {
-      refreshError = "Refresh failed. Keeping the previous activity."
+      refreshError = RefreshFailureMessage.manual(error: error)
     }
   }
 
@@ -61,7 +61,7 @@ struct PRMenuBarApp: App {
       store = refreshed
       refreshError = nil
     } catch {
-      refreshError = "Scheduled refresh failed. Keeping the previous activity."
+      refreshError = RefreshFailureMessage.scheduled(error: error)
     }
   }
 }
