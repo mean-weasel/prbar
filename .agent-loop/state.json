@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 44,
+  "iteration": 45,
   "completed": [
     {
       "iteration": 1,
@@ -290,6 +290,12 @@
       "at": "2026-05-03T02:56:44Z",
       "summary": "Added request-level coverage that GitHub repository discovery requests use the intended page size.",
       "report": ".agent-loop/iterations/044-report.md"
+    },
+    {
+      "iteration": 45,
+      "at": "2026-05-03T02:57:37Z",
+      "summary": "Replaced ad hoc GitHub provider URL query assertions with a URLComponents-backed query helper.",
+      "report": ".agent-loop/iterations/045-report.md"
     }
   ],
   "open_findings": [
@@ -302,18 +308,6 @@
   ],
   "candidate_tasks": [
     {
-      "id": "T-033",
-      "title": "Add request query helper to provider tests",
-      "kind": "reliability",
-      "impact": 2,
-      "confidence": 3,
-      "evidence": 3,
-      "effort": 1,
-      "risk": 4,
-      "score": 23,
-      "verification": "Provider tests plus make ci-local"
-    },
-    {
       "id": "T-034",
       "title": "Document open product decision for in-app GitHub auth",
       "kind": "product",
@@ -324,6 +318,18 @@
       "risk": 4,
       "score": 26,
       "verification": "State/report update plus make ci-local"
+    },
+    {
+      "id": "T-035",
+      "title": "Close batch budget and prepare PR",
+      "kind": "reliability",
+      "impact": 2,
+      "confidence": 4,
+      "evidence": 4,
+      "effort": 1,
+      "risk": 4,
+      "score": 27,
+      "verification": "Final make ci-local, push branch, open PR"
     }
   ],
   "blocked": [],
@@ -338,12 +344,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 44."
+    "make ci-local passed for iteration 45."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.81,
-    "reason": "Both provider request page sizes are now covered; next useful test cleanup is reducing ad hoc URL query assertions.",
-    "next_focus": "Add request query helper to provider tests."
+    "reason": "Provider request tests are less brittle; with one loop left, the next useful task is documenting the remaining GitHub auth product decision and closing the batch.",
+    "next_focus": "Document open product decision for in-app GitHub auth."
   }
 }

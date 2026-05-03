@@ -23,13 +23,13 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     XCTAssertEqual(store.bucketLabels, ["04/12", "04/19", "04/26"])
     XCTAssertEqual(store.refreshedAt, try date("2026-05-02T18:00:00Z"))
     XCTAssertEqual(transport.capturedRequests.count, 2)
-    XCTAssertEqual(transport.capturedRequests.first?.url?.query?.contains("per_page=100"), true)
+    XCTAssertEqual(queryValue("per_page", in: transport.capturedRequests[0]), "100")
     XCTAssertEqual(
       transport.capturedRequests.first?.value(forHTTPHeaderField: "Authorization"),
       "Bearer token"
     )
     XCTAssertEqual(transport.capturedRequests.last?.url?.path, "/search/issues")
-    XCTAssertEqual(transport.capturedRequests.last?.url?.query?.contains("per_page=100"), true)
+    XCTAssertEqual(queryValue("per_page", in: transport.capturedRequests[1]), "100")
   }
 
   func testProviderRejectsInvalidRepositoryPayload() {
@@ -69,8 +69,8 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     let store = try provider.load(now: try date("2026-05-02T18:00:00Z"))
 
     XCTAssertEqual(store.repositories.map(\.id), ["owner/visible"])
-    XCTAssertEqual(transport.capturedRequests[0].url?.query?.contains("page=1"), true)
-    XCTAssertEqual(transport.capturedRequests[1].url?.query?.contains("page=2"), true)
+    XCTAssertEqual(queryValue("page", in: transport.capturedRequests[0]), "1")
+    XCTAssertEqual(queryValue("page", in: transport.capturedRequests[1]), "2")
   }
 
   func testProviderSkipsSearchWhenNoRepositoriesArePullable() throws {
@@ -111,8 +111,8 @@ final class GitHubPRActivityProviderTests: XCTestCase {
 
     XCTAssertEqual(store.repositories.first?.weeklyCounts, [2])
     XCTAssertEqual(transport.capturedRequests.count, 3)
-    XCTAssertTrue(transport.capturedRequests[1].url?.query?.contains("page=1") ?? false)
-    XCTAssertTrue(transport.capturedRequests[2].url?.query?.contains("page=2") ?? false)
+    XCTAssertEqual(queryValue("page", in: transport.capturedRequests[1]), "1")
+    XCTAssertEqual(queryValue("page", in: transport.capturedRequests[2]), "2")
   }
 
   func testProviderStopsMergedPullRequestPaginationOnEmptyPage() throws {
@@ -223,5 +223,15 @@ final class GitHubPRActivityProviderTests: XCTestCase {
 
   private func date(_ text: String) throws -> Date {
     try XCTUnwrap(ISO8601DateFormatter().date(from: text))
+  }
+
+  private func queryValue(_ name: String, in request: URLRequest) -> String? {
+    guard
+      let url = request.url,
+      let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+    else {
+      return nil
+    }
+    return components.queryItems?.first { $0.name == name }?.value
   }
 }
