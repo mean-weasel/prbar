@@ -19,15 +19,27 @@ struct RepositoryActivity: Codable, Identifiable, Equatable {
     "\(owner)/\(name)"
   }
 
-  func visibleCounts(for window: ActivityWindow) -> [Int] {
+  func visibleCounts(for window: ActivityWindow, bin: ActivityBin = .week) -> [Int] {
     Array(weeklyCounts.suffix(window.visibleBucketCount))
+      .groupedTotals(size: bin.sourceBucketGroupSize)
   }
 
-  func visibleTotal(for window: ActivityWindow) -> Int {
+  func visibleTotal(for window: ActivityWindow, bin: ActivityBin = .week) -> Int {
     guard isIncluded else {
       return 0
     }
-    return visibleCounts(for: window).reduce(0, +)
+    return visibleCounts(for: window, bin: bin).reduce(0, +)
+  }
+}
+
+extension Array where Element == Int {
+  func groupedTotals(size: Int) -> [Int] {
+    guard size > 1 else {
+      return self
+    }
+    return stride(from: 0, to: count, by: size).map { start in
+      self[start..<Swift.min(start + size, count)].reduce(0, +)
+    }
   }
 }
 

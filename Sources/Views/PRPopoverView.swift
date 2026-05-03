@@ -60,6 +60,13 @@ struct PRPopoverView: View {
       }
       .pickerStyle(.segmented)
 
+      Picker("Bins", selection: $store.bin) {
+        ForEach(ActivityBin.allCases) { bin in
+          Text(bin.rawValue).tag(bin)
+        }
+      }
+      .pickerStyle(.segmented)
+
       Picker("Refresh", selection: $store.refreshInterval) {
         ForEach(AutoRefreshInterval.allCases) { interval in
           Text(interval.rawValue).tag(interval)
@@ -83,7 +90,7 @@ struct PRPopoverView: View {
         .font(.caption)
         .foregroundStyle(.secondary)
       ForEach($store.repositories) { $repository in
-        RepositoryActivityRow(repository: $repository, window: store.window)
+        RepositoryActivityRow(repository: $repository, window: store.window, bin: store.bin)
       }
     }
   }
@@ -143,6 +150,7 @@ private struct MetricTile: View {
 private struct RepositoryActivityRow: View {
   @Binding var repository: RepositoryActivity
   var window: ActivityWindow
+  var bin: ActivityBin
 
   var body: some View {
     Toggle(isOn: $repository.isIncluded) {
@@ -158,7 +166,7 @@ private struct RepositoryActivityRow: View {
             .foregroundStyle(.secondary)
         }
         Spacer()
-        Text("\(repository.visibleTotal(for: window))")
+        Text("\(repository.visibleTotal(for: window, bin: bin))")
           .font(.subheadline.monospacedDigit().weight(.semibold))
       }
     }
