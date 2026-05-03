@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 6,
+  "iteration": 10,
   "completed": [
     {
       "iteration": 1,
@@ -62,6 +62,30 @@
       "at": "2026-05-03T01:20:15Z",
       "summary": "Added an empty activity state and recovery action when all repositories are excluded or no visible activity remains.",
       "report": ".agent-loop/iterations/006-report.md"
+    },
+    {
+      "iteration": 7,
+      "at": "2026-05-03T02:04:20Z",
+      "summary": "Documented the conservative GitHub integration plan for environment-token auth, repository discovery, activity fetching, and rate-limit-safe refresh behavior.",
+      "report": ".agent-loop/iterations/007-report.md"
+    },
+    {
+      "iteration": 8,
+      "at": "2026-05-03T02:05:36Z",
+      "summary": "Added a GitHub API request builder for authenticated repository discovery requests with focused unit tests.",
+      "report": ".agent-loop/iterations/008-report.md"
+    },
+    {
+      "iteration": 9,
+      "at": "2026-05-03T02:06:30Z",
+      "summary": "Added GitHub repository decoding and mapping into RepositoryActivity values with deterministic colors and default empty buckets.",
+      "report": ".agent-loop/iterations/009-report.md"
+    },
+    {
+      "iteration": 10,
+      "at": "2026-05-03T02:07:44Z",
+      "summary": "Added a fixture-backed GitHub activity provider skeleton that discovers pullable repositories through an injectable transport.",
+      "report": ".agent-loop/iterations/010-report.md"
     }
   ],
   "open_findings": [
@@ -78,24 +102,24 @@
       "text": "Settings persistence does not yet handle repository IDs disappearing from future fetched data beyond excluding unknown IDs."
     },
     {
-      "id": "F-005",
-      "kind": "product",
+      "id": "F-006",
+      "kind": "feature",
       "severity": "medium",
-      "text": "Real GitHub refresh still needs product decisions for authentication, repository discovery, and API rate-limit behavior."
+      "text": "The documented GitHub integration plan is not yet implemented in a real provider path."
     }
   ],
   "candidate_tasks": [
     {
-      "id": "T-007",
-      "title": "Design GitHub authentication and repository discovery flow",
-      "kind": "product",
+      "id": "T-012",
+      "title": "Add settings reconciliation for discovered and removed repositories",
+      "kind": "feature",
       "impact": 5,
-      "confidence": 3,
-      "evidence": 3,
-      "effort": 2,
-      "risk": 3,
-      "score": 27,
-      "verification": "Documented decision plus provider-level test plan"
+      "confidence": 4,
+      "evidence": 4,
+      "effort": 3,
+      "risk": 4,
+      "score": 38,
+      "verification": "Provider unit tests plus make ci-local"
     },
     {
       "id": "T-008",
@@ -122,12 +146,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 6."
+    "make ci-local passed for iteration 10."
   ],
   "judge": {
-    "continue": false,
-    "confidence": 0.78,
-    "reason": "The requested five-loop batch is complete; the next highest-value work is real GitHub integration and scheduled refresh behavior, which need product and authentication decisions.",
-    "next_focus": "Decide GitHub auth, repository discovery, and refresh scheduling approach."
+    "continue": true,
+    "confidence": 0.83,
+    "reason": "The provider skeleton can load discovered repositories; settings reconciliation is now the highest-value correctness gap.",
+    "next_focus": "Add settings reconciliation for discovered and removed repositories."
   }
 }
