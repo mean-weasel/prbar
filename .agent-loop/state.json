@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 13,
+  "iteration": 14,
   "completed": [
     {
       "iteration": 1,
@@ -104,6 +104,12 @@
       "at": "2026-05-03T02:11:37Z",
       "summary": "Added user-visible refresh failure state so manual and scheduled refresh errors keep previous activity with an explanatory banner.",
       "report": ".agent-loop/iterations/013-report.md"
+    },
+    {
+      "iteration": 14,
+      "at": "2026-05-03T02:13:22Z",
+      "summary": "Added a URLSession-backed GitHub API transport with HTTP status handling and URLProtocol-based tests.",
+      "report": ".agent-loop/iterations/014-report.md"
     }
   ],
   "open_findings": [
@@ -164,12 +170,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 13."
+    "make ci-local passed for iteration 14."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "Refresh failures now surface in the popover; the remaining GitHub provider gap is a real URLSession transport behind the existing protocol.",
-    "next_focus": "Add URLSession-backed GitHub transport."
+    "reason": "A real transport now exists; the app still needs to select the GitHub provider when a token is configured.",
+    "next_focus": "Select GitHub provider from environment token."
   }
 }
