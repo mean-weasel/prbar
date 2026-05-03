@@ -25,7 +25,7 @@
       "max_consecutive_repairs": 2
     }
   },
-  "iteration": 11,
+  "iteration": 12,
   "completed": [
     {
       "iteration": 1,
@@ -92,6 +92,12 @@
       "at": "2026-05-03T02:09:22Z",
       "summary": "Persisted known repository IDs so settings preserve exclusions for known repos while keeping newly discovered repos included by default.",
       "report": ".agent-loop/iterations/011-report.md"
+    },
+    {
+      "iteration": 12,
+      "at": "2026-05-03T02:10:22Z",
+      "summary": "Added a refresh coordinator and wired scheduled daily refresh checks into the menu bar popover lifecycle.",
+      "report": ".agent-loop/iterations/012-report.md"
     }
   ],
   "open_findings": [
@@ -152,12 +158,12 @@
     }
   ],
   "last_verification": [
-    "make ci-local passed for iteration 11."
+    "make ci-local passed for iteration 12."
   ],
   "judge": {
     "continue": true,
     "confidence": 0.83,
-    "reason": "Repository reconciliation now handles discovered repositories; scheduled refresh remains a user-visible gap with existing policy tests.",
-    "next_focus": "Wire scheduled refresh into menu bar app lifecycle."
+    "reason": "Scheduled refresh is wired; the app still needs provider error state instead of silent stale data on refresh failure.",
+    "next_focus": "Expose refresh failure state in the popover."
   }
 }
