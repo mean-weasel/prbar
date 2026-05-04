@@ -26,7 +26,7 @@ final class RefreshPolicyTests: XCTestCase {
   }
 
   func testDailyRefreshIsDueWhenLocalDayChangesBeforeOneDay() throws {
-    let policy = RefreshPolicy(interval: .daily)
+    let policy = RefreshPolicy(interval: .daily, calendar: .prActivityPhoenix)
 
     XCTAssertTrue(
       policy.isRefreshDue(
@@ -37,7 +37,7 @@ final class RefreshPolicyTests: XCTestCase {
   }
 
   func testDailyRefreshIsNotDueBeforeOneDayOnSameLocalDay() throws {
-    let policy = RefreshPolicy(interval: .daily)
+    let policy = RefreshPolicy(interval: .daily, calendar: .prActivityPhoenix)
 
     XCTAssertFalse(
       policy.isRefreshDue(
@@ -48,7 +48,7 @@ final class RefreshPolicyTests: XCTestCase {
   }
 
   func testDailyRefreshReportsNextLocalDayStart() throws {
-    let policy = RefreshPolicy(interval: .daily)
+    let policy = RefreshPolicy(interval: .daily, calendar: .prActivityPhoenix)
 
     XCTAssertEqual(
       policy.nextRefreshDate(lastRefreshedAt: try date("2026-05-04T20:00:00Z")),
@@ -64,5 +64,14 @@ final class RefreshPolicyTests: XCTestCase {
 
   private func date(_ text: String) throws -> Date {
     try XCTUnwrap(ISO8601DateFormatter().date(from: text))
+  }
+}
+
+extension Calendar {
+  fileprivate static var prActivityPhoenix: Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.firstWeekday = 1
+    calendar.timeZone = TimeZone(identifier: "America/Phoenix") ?? .gmt
+    return calendar
   }
 }
