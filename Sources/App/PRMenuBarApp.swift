@@ -10,12 +10,20 @@ struct PRMenuBarApp: App {
   @State private var isRefreshing = false
 
   init() {
+    let now = Date()
     let settingsStore = PRSettingsStore()
     let providerSelection = PRActivityProviderFactory.makeSelection()
     self.settingsStore = settingsStore
     self.providerSelection = providerSelection
-    let sample = (try? providerSelection.provider.load(now: Date())) ?? PRActivityStore.sample()
-    _store = State(initialValue: settingsStore.load().map(sample.applying) ?? sample)
+    let initialState = PRInitialActivityState.load(providerSelection: providerSelection, now: now)
+    PRInitialActivityStateDump.writeIfRequested(
+      state: initialState,
+      dataSource: providerSelection.dataSource
+    )
+    let initial = initialState.store
+
+    _store = State(initialValue: settingsStore.load().map(initial.applying) ?? initial)
+    _refreshError = State(initialValue: initialState.refreshError)
   }
 
   var body: some Scene {

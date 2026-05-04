@@ -25,23 +25,34 @@ final class RefreshPolicyTests: XCTestCase {
     )
   }
 
-  func testDailyRefreshIsNotDueBeforeOneDay() {
+  func testDailyRefreshIsDueWhenLocalDayChangesBeforeOneDay() throws {
     let policy = RefreshPolicy(interval: .daily)
 
-    XCTAssertFalse(
+    XCTAssertTrue(
       policy.isRefreshDue(
-        lastRefreshedAt: Date(timeIntervalSince1970: 0),
-        now: Date(timeIntervalSince1970: 86_399)
+        lastRefreshedAt: try date("2026-05-04T05:30:00Z"),
+        now: try date("2026-05-04T07:15:00Z")
       )
     )
   }
 
-  func testDailyRefreshReportsNextRefreshDate() {
+  func testDailyRefreshIsNotDueBeforeOneDayOnSameLocalDay() throws {
+    let policy = RefreshPolicy(interval: .daily)
+
+    XCTAssertFalse(
+      policy.isRefreshDue(
+        lastRefreshedAt: try date("2026-05-04T08:00:00Z"),
+        now: try date("2026-05-04T20:00:00Z")
+      )
+    )
+  }
+
+  func testDailyRefreshReportsNextLocalDayStart() throws {
     let policy = RefreshPolicy(interval: .daily)
 
     XCTAssertEqual(
-      policy.nextRefreshDate(lastRefreshedAt: Date(timeIntervalSince1970: 0)),
-      Date(timeIntervalSince1970: 86_400)
+      policy.nextRefreshDate(lastRefreshedAt: try date("2026-05-04T20:00:00Z")),
+      try date("2026-05-05T07:00:00Z")
     )
   }
 
@@ -49,5 +60,9 @@ final class RefreshPolicyTests: XCTestCase {
     let policy = RefreshPolicy(interval: .manual)
 
     XCTAssertNil(policy.nextRefreshDate(lastRefreshedAt: Date(timeIntervalSince1970: 0)))
+  }
+
+  private func date(_ text: String) throws -> Date {
+    try XCTUnwrap(ISO8601DateFormatter().date(from: text))
   }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-struct PRActivityStore {
+struct PRActivityStore: Codable {
   var bucketLabels: [String]
   var dailyBucketLabels: [String]
   var window: ActivityWindow
@@ -151,6 +151,34 @@ struct PRActivityStore {
       refreshInterval: .daily,
       repositories: RepositoryActivity.samples.map { $0.withDistributedDailyCounts() },
       refreshedAt: now
+    )
+  }
+
+  static func empty(
+    now: Date = Date(),
+    refreshedAt: Date = .distantPast,
+    calendar: Calendar = .prActivity
+  ) -> PRActivityStore {
+    PRActivityStore(
+      bucketLabels: PRActivityBucketSeries.weekly(
+        mergedDates: [],
+        bucketCount: 9,
+        now: now,
+        calendar: calendar
+      )
+      .labels,
+      dailyBucketLabels: PRActivityBucketSeries.daily(
+        mergedDates: [],
+        bucketCount: 30,
+        now: now,
+        calendar: calendar
+      )
+      .labels,
+      window: .oneWeek,
+      bin: .day,
+      refreshInterval: .daily,
+      repositories: [],
+      refreshedAt: refreshedAt
     )
   }
 }

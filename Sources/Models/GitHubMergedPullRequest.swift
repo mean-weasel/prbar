@@ -32,10 +32,12 @@ struct GitHubMergedPullRequestSearchResponse: Decodable, Equatable {
 
 struct GitHubMergedPullRequest: Decodable, Equatable {
   var title: String
+  var repositoryID: String
   var mergedAt: Date
 
   private enum CodingKeys: String, CodingKey {
     case title
+    case repositoryURL = "repository_url"
     case pullRequest = "pull_request"
   }
 
@@ -46,6 +48,8 @@ struct GitHubMergedPullRequest: Decodable, Equatable {
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     title = try container.decode(String.self, forKey: .title)
+    let repositoryURL = try container.decode(String.self, forKey: .repositoryURL)
+    repositoryID = try Self.repositoryID(from: repositoryURL)
     let pullRequest = try container.nestedContainer(
       keyedBy: PullRequestKeys.self,
       forKey: .pullRequest
@@ -61,14 +65,30 @@ struct GitHubMergedPullRequest: Decodable, Equatable {
     self.mergedAt = mergedAt
   }
 
-  init(title: String, mergedAt: Date) {
+  init(title: String, repositoryID: String, mergedAt: Date) {
     self.title = title
+    self.repositoryID = repositoryID
     self.mergedAt = mergedAt
+  }
+
+  private static func repositoryID(from repositoryURL: String) throws -> String {
+    guard let url = URL(string: repositoryURL) else {
+      throw DecodingError.dataCorrupted(
+        DecodingError.Context(codingPath: [], debugDescription: "Invalid repository_url")
+      )
+    }
+    let parts = url.pathComponents.suffix(2)
+    guard parts.count == 2 else {
+      throw DecodingError.dataCorrupted(
+        DecodingError.Context(codingPath: [], debugDescription: "Invalid repository_url")
+      )
+    }
+    return parts.joined(separator: "/")
   }
 }
 
 extension ISO8601DateFormatter {
-  fileprivate static func githubDate(from text: String) -> Date? {
+  static func githubDate(from text: String) -> Date? {
     githubWithFractionalSeconds.date(from: text) ?? githubWithoutFractionalSeconds.date(from: text)
   }
 

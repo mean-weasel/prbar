@@ -7,7 +7,9 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     let transport = FixtureGitHubAPITransport(
       responses: [
         repositoryDiscoveryData(),
-        mergedPullRequestData(mergedAt: "2026-04-26T12:00:00.000Z"),
+        authenticatedUserData(),
+        organizationsData(),
+        graphQLMergedPullRequestData(mergedAt: "2026-04-26T12:00:00.000Z"),
       ]
     )
     let provider = GitHubPRActivityProvider(
@@ -26,14 +28,16 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     XCTAssertEqual(store.window, .oneWeek)
     XCTAssertEqual(store.bin, .day)
     XCTAssertEqual(store.refreshedAt, try date("2026-05-02T18:00:00Z"))
-    XCTAssertEqual(transport.capturedRequests.count, 2)
+    XCTAssertEqual(transport.capturedRequests.count, 4)
     XCTAssertEqual(queryValue("per_page", in: transport.capturedRequests[0]), "100")
     XCTAssertEqual(
       transport.capturedRequests.first?.value(forHTTPHeaderField: "Authorization"),
       "Bearer token"
     )
-    XCTAssertEqual(transport.capturedRequests.last?.url?.path, "/search/issues")
-    XCTAssertEqual(queryValue("per_page", in: transport.capturedRequests[1]), "100")
+    XCTAssertEqual(transport.capturedRequests[1].url?.path, "/user")
+    XCTAssertEqual(transport.capturedRequests[2].url?.path, "/user/orgs")
+    XCTAssertEqual(transport.capturedRequests[3].url?.path, "/graphql")
+    XCTAssertEqual(transport.capturedRequests[3].httpMethod, "POST")
   }
 
   func testProviderRejectsInvalidRepositoryPayload() {
@@ -61,7 +65,9 @@ final class GitHubPRActivityProviderTests: XCTestCase {
       responses: [
         firstPage,
         secondPage,
-        mergedPullRequestData(mergedAt: "2026-04-26T12:00:00.000Z"),
+        authenticatedUserData(),
+        organizationsData(),
+        graphQLMergedPullRequestData(mergedAt: "2026-04-26T12:00:00.000Z"),
       ]
     )
     let provider = GitHubPRActivityProvider(
@@ -101,8 +107,14 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     let transport = FixtureGitHubAPITransport(
       responses: [
         repositoryDiscoveryData(),
-        mergedPullRequestData(totalCount: 2, mergedAt: "2026-04-26T12:00:00.000Z"),
-        mergedPullRequestData(totalCount: 2, mergedAt: "2026-04-27T12:00:00.000Z"),
+        authenticatedUserData(),
+        organizationsData(),
+        graphQLMergedPullRequestData(
+          mergedAt: "2026-04-26T12:00:00.000Z",
+          hasNextPage: true,
+          endCursor: "cursor-1"
+        ),
+        graphQLMergedPullRequestData(mergedAt: "2026-04-27T12:00:00.000Z"),
       ]
     )
     let provider = GitHubPRActivityProvider(
@@ -114,17 +126,20 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     let store = try provider.load(now: try date("2026-05-02T18:00:00Z"))
 
     XCTAssertEqual(store.repositories.first?.weeklyCounts, [2])
-    XCTAssertEqual(transport.capturedRequests.count, 3)
-    XCTAssertEqual(queryValue("page", in: transport.capturedRequests[1]), "1")
-    XCTAssertEqual(queryValue("page", in: transport.capturedRequests[2]), "2")
+    XCTAssertEqual(transport.capturedRequests.count, 5)
+    XCTAssertTrue(bodyString(in: transport.capturedRequests[4])?.contains("cursor-1") == true)
   }
 
-  func testProviderStopsMergedPullRequestPaginationOnEmptyPage() throws {
+  func testProviderFiltersMergedPullRequestsByMerger() throws {
     let transport = FixtureGitHubAPITransport(
       responses: [
         repositoryDiscoveryData(),
-        mergedPullRequestData(totalCount: 2, mergedAt: "2026-04-26T12:00:00.000Z"),
-        emptyMergedPullRequestData(totalCount: 2),
+        authenticatedUserData(),
+        organizationsData(),
+        graphQLMergedPullRequestData(
+          mergedAt: "2026-04-26T12:00:00.000Z",
+          mergedBy: "someone-else"
+        ),
       ]
     )
     let provider = GitHubPRActivityProvider(
@@ -135,19 +150,16 @@ final class GitHubPRActivityProviderTests: XCTestCase {
 
     let store = try provider.load(now: try date("2026-05-02T18:00:00Z"))
 
-    XCTAssertEqual(store.repositories.first?.weeklyCounts, [1])
-    XCTAssertEqual(transport.capturedRequests.count, 3)
+    XCTAssertEqual(store.repositories.first?.weeklyCounts, [0])
   }
 
-  func testProviderRejectsIncompleteMergedPullRequestSearchResults() throws {
+  func testProviderRejectsGraphQLErrors() throws {
     let transport = FixtureGitHubAPITransport(
       responses: [
         repositoryDiscoveryData(),
-        mergedPullRequestData(
-          totalCount: 1,
-          incompleteResults: true,
-          mergedAt: "2026-04-26T12:00:00.000Z"
-        ),
+        authenticatedUserData(),
+        organizationsData(),
+        graphQLErrorData(message: "Search failed"),
       ]
     )
     let provider = GitHubPRActivityProvider(
@@ -159,7 +171,7 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     XCTAssertThrowsError(try provider.load(now: try date("2026-05-02T18:00:00Z"))) { error in
       XCTAssertEqual(
         error as? GitHubPRActivityProviderError,
-        .incompleteSearchResults(repositoryID: "owner/visible")
+        .graphQL("Search failed")
       )
     }
   }
@@ -190,36 +202,52 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     """
   }
 
-  private func mergedPullRequestData(
-    totalCount: Int = 1,
-    incompleteResults: Bool = false,
-    mergedAt: String
+  private func authenticatedUserData(login: String = "owner") -> Data {
+    Data(#"{ "login": "\#(login)" }"#.utf8)
+  }
+
+  private func organizationsData(logins: [String] = []) -> Data {
+    Data("[\(logins.map { #"{ "login": "\#($0)" }"# }.joined(separator: ","))]".utf8)
+  }
+
+  private func graphQLMergedPullRequestData(
+    mergedAt: String,
+    mergedBy: String = "owner",
+    hasNextPage: Bool = false,
+    endCursor: String? = nil
   ) -> Data {
-    Data(
+    let cursor = endCursor.map { #""\#($0)""# } ?? "null"
+    return Data(
       """
       {
-        "total_count": \(totalCount),
-        "incomplete_results": \(incompleteResults),
-        "items": [
-          {
-            "title": "Merged",
-            "pull_request": {
-              "merged_at": "\(mergedAt)"
-            }
+        "data": {
+          "search": {
+            "pageInfo": {
+              "hasNextPage": \(hasNextPage),
+              "endCursor": \(cursor)
+            },
+            "nodes": [
+              {
+                "title": "Merged",
+                "mergedAt": "\(mergedAt)",
+                "mergedBy": { "login": "\(mergedBy)" },
+                "repository": { "nameWithOwner": "owner/visible" }
+              }
+            ]
           }
-        ]
+        }
       }
       """.utf8
     )
   }
 
-  private func emptyMergedPullRequestData(totalCount: Int) -> Data {
+  private func graphQLErrorData(message: String) -> Data {
     Data(
       """
       {
-        "total_count": \(totalCount),
-        "incomplete_results": false,
-        "items": []
+        "errors": [
+          { "message": "\(message)" }
+        ]
       }
       """.utf8
     )
@@ -237,5 +265,9 @@ final class GitHubPRActivityProviderTests: XCTestCase {
       return nil
     }
     return components.queryItems?.first { $0.name == name }?.value
+  }
+
+  private func bodyString(in request: URLRequest) -> String? {
+    request.httpBody.flatMap { String(data: $0, encoding: .utf8) }
   }
 }

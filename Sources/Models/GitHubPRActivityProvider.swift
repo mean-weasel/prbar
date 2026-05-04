@@ -5,7 +5,7 @@ protocol GitHubAPITransport {
 }
 
 enum GitHubPRActivityProviderError: Error, Equatable {
-  case incompleteSearchResults(repositoryID: String)
+  case graphQL(String)
 }
 
 struct GitHubPRActivityProvider: PRActivityProviding {
@@ -15,14 +15,34 @@ struct GitHubPRActivityProvider: PRActivityProviding {
   var defaultWindow: ActivityWindow = .oneWeek
   private let dailyBucketCount = 30
   private let repositoryPageSize = 100
-  private let searchPageSize = 100
+  private let graphQLPageSize = 100
 
   func load(now: Date = Date()) throws -> PRActivityStore {
     let repositories = try repositories()
     let pullableRepositories = repositories.filter(\.canPull)
-    let activities = try pullableRepositories.map { repository in
-      try activity(for: repository, now: now)
+    guard pullableRepositories.isEmpty == false else {
+      return store(activities: [], now: now)
     }
+    let authenticatedUser = try authenticatedUser()
+    let searchOwners = try searchOwners(authenticatedUser: authenticatedUser)
+    let since = startDate(now: now)
+    let mergedPullRequestsByRepository = try mergedPullRequestsByRepository(
+      owners: searchOwners,
+      mergedBy: authenticatedUser.login,
+      since: since,
+      until: now
+    )
+    let activities = pullableRepositories.map { repository in
+      activity(
+        for: repository,
+        mergedPullRequests: mergedPullRequestsByRepository[repository.fullName] ?? [],
+        now: now
+      )
+    }
+    return store(activities: activities, now: now)
+  }
+
+  private func store(activities: [RepositoryActivity], now: Date) -> PRActivityStore {
     let labels = PRActivityBucketSeries.weekly(
       mergedDates: [],
       bucketCount: bucketLabels.count,
@@ -47,6 +67,33 @@ struct GitHubPRActivityProvider: PRActivityProviding {
     )
   }
 
+  private func authenticatedUser() throws -> GitHubAuthenticatedUser {
+    let request = try GitHubAPIRequest.authenticatedUser().urlRequest(token: token)
+    let data = try transport.data(for: request)
+    return try JSONDecoder().decode(GitHubAuthenticatedUser.self, from: data)
+  }
+
+  private func organizations() throws -> [GitHubOrganization] {
+    let request = try GitHubAPIRequest.userOrganizations().urlRequest(token: token)
+    let data = try transport.data(for: request)
+    return try JSONDecoder().decode([GitHubOrganization].self, from: data)
+  }
+
+  private func searchOwners(authenticatedUser: GitHubAuthenticatedUser) throws
+    -> [GitHubSearchOwner]
+  {
+    let userOwner = GitHubSearchOwner(kind: .user, login: authenticatedUser.login)
+    let organizationOwners = try organizations().map {
+      GitHubSearchOwner(kind: .org, login: $0.login)
+    }
+    return ([userOwner] + organizationOwners).sorted {
+      if $0.kind.rawValue == $1.kind.rawValue {
+        return $0.login < $1.login
+      }
+      return $0.kind.rawValue < $1.kind.rawValue
+    }
+  }
+
   private func repositories() throws -> [GitHubRepository] {
     var page = 1
     var repositories: [GitHubRepository] = []
@@ -67,13 +114,11 @@ struct GitHubPRActivityProvider: PRActivityProviding {
     return repositories
   }
 
-  private func activity(for repository: GitHubRepository, now: Date) throws -> RepositoryActivity {
-    let since = startDate(now: now)
-    let mergedPullRequests = try mergedPullRequests(
-      repositoryID: repository.fullName,
-      since: since,
-      until: now
-    )
+  private func activity(
+    for repository: GitHubRepository,
+    mergedPullRequests: [GitHubMergedPullRequest],
+    now: Date
+  ) -> RepositoryActivity {
     let series = PRActivityBucketSeries.weekly(
       mergedDates: mergedPullRequests.map(\.mergedAt),
       bucketCount: bucketLabels.count,
@@ -93,37 +138,62 @@ struct GitHubPRActivityProvider: PRActivityProviding {
     return activity
   }
 
-  private func mergedPullRequests(repositoryID: String, since: Date, until: Date) throws
-    -> [GitHubMergedPullRequest]
-  {
-    var page = 1
+  private func mergedPullRequestsByRepository(
+    owners: [GitHubSearchOwner],
+    mergedBy: String,
+    since: Date,
+    until: Date
+  ) throws -> [String: [GitHubMergedPullRequest]] {
+    var grouped: [String: [GitHubMergedPullRequest]] = [:]
+    for owner in owners {
+      for pullRequest in try mergedPullRequests(
+        owner: owner,
+        mergedBy: mergedBy,
+        since: since,
+        until: until
+      ) {
+        grouped[pullRequest.repositoryID, default: []].append(pullRequest)
+      }
+    }
+    return grouped
+  }
+
+  private func mergedPullRequests(
+    owner: GitHubSearchOwner,
+    mergedBy: String,
+    since: Date,
+    until: Date
+  ) throws -> [GitHubMergedPullRequest] {
+    var after: String?
     var items: [GitHubMergedPullRequest] = []
-    var totalCount = 0
+    var hasNextPage = false
 
     repeat {
-      let request = try GitHubAPIRequest.mergedPullRequests(
-        repositoryID: repositoryID,
+      let request = try GitHubGraphQLSearch.mergedPullRequestsRequest(
+        token: token,
+        owner: owner,
+        mergedBy: mergedBy,
         since: since,
         until: until,
-        page: page,
-        perPage: searchPageSize
+        first: graphQLPageSize,
+        after: after
       )
-      .urlRequest(token: token)
       let data = try transport.data(for: request)
-      let response = try JSONDecoder().decode(
-        GitHubMergedPullRequestSearchResponse.self,
-        from: data
+      let response = try JSONDecoder().decode(GitHubGraphQLSearchResponse.self, from: data)
+      if let errorMessage = response.errorMessage {
+        throw GitHubPRActivityProviderError.graphQL(errorMessage)
+      }
+      guard let search = response.search else {
+        throw GitHubPRActivityProviderError.graphQL("Missing search data")
+      }
+      items.append(
+        contentsOf: search.nodes
+          .filter { $0.mergedBy?.login == mergedBy }
+          .map { $0.mergedPullRequest() }
       )
-      guard response.incompleteResults == false else {
-        throw GitHubPRActivityProviderError.incompleteSearchResults(repositoryID: repositoryID)
-      }
-      totalCount = response.totalCount
-      guard response.items.isEmpty == false else {
-        break
-      }
-      items.append(contentsOf: response.items)
-      page += 1
-    } while items.count < totalCount
+      hasNextPage = search.pageInfo.hasNextPage
+      after = search.pageInfo.endCursor
+    } while hasNextPage && after != nil
 
     return items
   }
