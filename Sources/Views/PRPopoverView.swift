@@ -32,8 +32,16 @@ struct PRPopoverView: View {
         .foregroundStyle(.secondary)
       }
       Spacer()
-      Button(isRefreshing ? "Refreshing..." : "Refresh") {
+      Button {
         onRefresh()
+      } label: {
+        HStack(spacing: 6) {
+          if isRefreshing {
+            ProgressView()
+              .controlSize(.small)
+          }
+          Text(isRefreshing ? "Refreshing" : "Refresh")
+        }
       }
       .buttonStyle(.bordered)
       .disabled(isRefreshing)

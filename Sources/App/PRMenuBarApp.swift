@@ -8,6 +8,7 @@ struct PRMenuBarApp: App {
   @State private var store: PRActivityStore
   @State private var refreshError: String?
   @State private var isRefreshing = false
+  @State private var refreshGeneration = 0
 
   init() {
     let now = Date()
@@ -53,19 +54,7 @@ struct PRMenuBarApp: App {
   }
 
   private func refresh(now: Date) {
-    guard beginRefresh() else {
-      return
-    }
-    defer {
-      isRefreshing = false
-    }
-    let refresher = PRActivityRefresher(provider: providerSelection.provider)
-    do {
-      store = try refresher.refresh(current: store, now: now)
-      refreshError = nil
-    } catch {
-      refreshError = RefreshFailureMessage.manual(error: error)
-    }
+    refresh(now: now, failureMessage: RefreshFailureMessage.manual)
   }
 
   private func refreshIfDue(now: Date) {
@@ -73,18 +62,36 @@ struct PRMenuBarApp: App {
     guard policy.isRefreshDue(lastRefreshedAt: store.refreshedAt, now: now) else {
       return
     }
+    refresh(now: now, failureMessage: RefreshFailureMessage.scheduled)
+  }
+
+  private func refresh(now: Date, failureMessage: @escaping (Error) -> String) {
     guard beginRefresh() else {
       return
     }
-    defer {
-      isRefreshing = false
-    }
     let refresher = PRActivityRefresher(provider: providerSelection.provider)
-    do {
-      store = try refresher.refresh(current: store, now: now)
-      refreshError = nil
-    } catch {
-      refreshError = RefreshFailureMessage.scheduled(error: error)
+    let currentStore = store
+    refreshGeneration += 1
+    let generation = refreshGeneration
+
+    DispatchQueue.global(qos: .userInitiated).async {
+      let result = Result {
+        try refresher.refresh(current: currentStore, now: now)
+      }
+
+      DispatchQueue.main.async {
+        guard generation == refreshGeneration else {
+          return
+        }
+        isRefreshing = false
+        switch result {
+        case .success(let refreshedStore):
+          store = refreshedStore
+          refreshError = nil
+        case .failure(let error):
+          refreshError = failureMessage(error)
+        }
+      }
     }
   }
 
