@@ -3,7 +3,7 @@ SCHEME := PRMenuBar
 DESTINATION := platform=macOS
 DERIVED_DATA := build
 
-.PHONY: generate format-check file-size-check build test app-smoke ci-local clean
+.PHONY: generate format-check file-size-check build test coverage-report app-smoke ci-local clean
 
 generate:
 	xcodegen generate
@@ -33,7 +33,11 @@ test: generate
 		-destination '$(DESTINATION)' \
 		-derivedDataPath $(DERIVED_DATA) \
 		CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO \
+		-enableCodeCoverage YES \
 		-resultBundlePath TestResults.xcresult
+
+coverage-report:
+	xcrun xccov view --report TestResults.xcresult
 
 app-smoke: generate
 	xcodebuild build \
@@ -44,8 +48,9 @@ app-smoke: generate
 		-derivedDataPath $(DERIVED_DATA) \
 		CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO
 	test -d "$(DERIVED_DATA)/Build/Products/Release/PRMenuBar.app"
+	./scripts/app-smoke.sh "$(DERIVED_DATA)/Build/Products/Release/PRMenuBar.app"
 
-ci-local: format-check file-size-check build test app-smoke
+ci-local: format-check file-size-check build test coverage-report app-smoke
 
 clean:
 	rm -rf $(DERIVED_DATA) TestResults.xcresult $(PROJECT)

@@ -12,6 +12,7 @@ final class GitHubMergedPullRequestTests: XCTestCase {
         "items": [
           {
             "title": "Ship provider",
+            "repository_url": "https://api.github.com/repos/owner/repo",
             "pull_request": {
               "merged_at": "2026-05-01T12:34:56.000Z"
             }
@@ -31,6 +32,7 @@ final class GitHubMergedPullRequestTests: XCTestCase {
     XCTAssertFalse(response.incompleteResults)
     XCTAssertFalse(response.needsPagination(perPage: 100))
     XCTAssertEqual(response.items.first?.title, "Ship provider")
+    XCTAssertEqual(response.items.first?.repositoryID, "owner/repo")
     XCTAssertEqual(response.items.first?.mergedAt, Date(timeIntervalSince1970: 1_777_638_896))
   }
 
@@ -50,6 +52,7 @@ final class GitHubMergedPullRequestTests: XCTestCase {
         "items": [
           {
             "title": "Ship provider",
+            "repository_url": "https://api.github.com/repos/owner/repo",
             "pull_request": {
               "merged_at": "2026-05-01T12:34:56Z"
             }
@@ -74,6 +77,7 @@ final class GitHubMergedPullRequestTests: XCTestCase {
         "items": [
           {
             "title": "Bad date",
+            "repository_url": "https://api.github.com/repos/owner/repo",
             "pull_request": {
               "merged_at": "not-a-date"
             }

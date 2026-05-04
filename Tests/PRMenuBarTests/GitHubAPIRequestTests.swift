@@ -51,7 +51,28 @@ final class GitHubAPIRequestTests: XCTestCase {
     let components = URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)
     let queryItems = components?.queryItems ?? []
     let query = Dictionary(uniqueKeysWithValues: queryItems.map { ($0.name, $0.value) })
-    XCTAssertEqual(query["q"], "repo:owner/repo is:pr is:merged merged:1970-01-01..1970-01-02")
+    XCTAssertEqual(query["q"], "repo:owner/repo is:pr is:merged merged:1970-01-01..1970-01-03")
+    XCTAssertEqual(query["sort"], "updated")
+    XCTAssertEqual(query["order"], "desc")
+    XCTAssertEqual(query["per_page"], "25")
+    XCTAssertEqual(query["page"], "3")
+  }
+
+  func testOwnerMergedPullRequestsRequestUsesSearchQuery() throws {
+    let request = try GitHubAPIRequest.mergedPullRequests(
+      owner: "owner",
+      since: Date(timeIntervalSince1970: 0),
+      until: Date(timeIntervalSince1970: 86_400),
+      page: 3,
+      perPage: 25
+    )
+    .urlRequest(token: "token")
+
+    XCTAssertEqual(request.url?.path, "/search/issues")
+    let components = URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)
+    let queryItems = components?.queryItems ?? []
+    let query = Dictionary(uniqueKeysWithValues: queryItems.map { ($0.name, $0.value) })
+    XCTAssertEqual(query["q"], "user:owner is:pr is:merged merged:1970-01-01..1970-01-03")
     XCTAssertEqual(query["sort"], "updated")
     XCTAssertEqual(query["order"], "desc")
     XCTAssertEqual(query["per_page"], "25")

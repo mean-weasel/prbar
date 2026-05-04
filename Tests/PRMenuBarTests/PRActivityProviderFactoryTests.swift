@@ -37,4 +37,17 @@ final class PRActivityProviderFactoryTests: XCTestCase {
     XCTAssertTrue(selection.provider is StaticPRActivityProvider)
     XCTAssertEqual(selection.dataSource, .sample)
   }
+
+  func testFactoryUsesFixtureProviderBeforeGitHubToken() throws {
+    let selection = PRActivityProviderFactory.makeSelection(
+      environment: [
+        PRActivityProviderFactory.fixturePathEnvironmentKey: " /tmp/pr-fixture.json ",
+        PRActivityProviderFactory.tokenEnvironmentKey: "token",
+      ]
+    )
+
+    let provider = try XCTUnwrap(selection.provider as? FilePRActivityProvider)
+    XCTAssertEqual(provider.path, "/tmp/pr-fixture.json")
+    XCTAssertEqual(selection.dataSource, .github)
+  }
 }

@@ -29,15 +29,16 @@ final class PRActivityRefresherTests: XCTestCase {
 
   func testRefreshIfDueReturnsNilWhenPolicyIsNotDue() throws {
     var current = PRActivityStore.sample(
-      now: Date(timeIntervalSince1970: 0),
+      now: try date("2026-05-04T08:00:00Z"),
       calendar: .prActivityUTC
     )
+    current.refreshedAt = try date("2026-05-04T08:00:00Z")
     current.refreshInterval = .daily
     let refresher = PRActivityRefresher(provider: StaticPRActivityProvider())
 
     let refreshed = try refresher.refreshIfDue(
       current: current,
-      now: Date(timeIntervalSince1970: 86_399)
+      now: try date("2026-05-04T20:00:00Z")
     )
 
     XCTAssertNil(refreshed)
@@ -64,22 +65,26 @@ final class PRActivityRefresherTests: XCTestCase {
     let owner = String(parts[0])
     let name = String(parts[1])
     let json = """
-      {
-        "bucketLabels": ["W1", "W2"],
-        "defaultWindow": "2 weeks",
-        "repositories": [
-          {
-            "id": "\(repositoryID)",
-            "owner": "\(owner)",
-            "name": "\(name)",
-            "colorHex": "#ffffff",
-            "weeklyCounts": [1, 2],
-            "isIncluded": true
-          }
-        ]
-      }
+        {
+          "bucketLabels": ["W1", "W2"],
+          "defaultWindow": "2 weeks",
+          "repositories": [
+            {
+              "id": "\(repositoryID)",
+              "owner": "\(owner)",
+              "name": "\(name)",
+              "colorHex": "#ffffff",
+              "weeklyCounts": [1, 2],
+              "isIncluded": true
+            }
+          ]
+        }
       """
     return Data(json.utf8)
+  }
+
+  private func date(_ text: String) throws -> Date {
+    try XCTUnwrap(ISO8601DateFormatter().date(from: text))
   }
 }
 

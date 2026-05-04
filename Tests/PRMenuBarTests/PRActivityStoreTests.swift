@@ -18,6 +18,36 @@ final class PRActivityStoreTests: XCTestCase {
     XCTAssertEqual(store.bucketTotals, [62, 64, 65, 66, 66, 69, 70])
   }
 
+  func testEmptyStoreHasCurrentBucketsWithoutSampleCounts() throws {
+    let store = PRActivityStore.empty(
+      now: try date("2026-05-04T20:00:00Z"),
+      calendar: .prActivityUTC
+    )
+
+    XCTAssertEqual(store.window, .oneWeek)
+    XCTAssertEqual(store.bin, .day)
+    XCTAssertEqual(store.totalPullRequests, 0)
+    XCTAssertEqual(store.activeRepositoryCount, 0)
+    XCTAssertEqual(store.bucketTotals, [0, 0, 0, 0, 0, 0, 0])
+    XCTAssertEqual(store.visibleBucketLabels.last, "05/04")
+    XCTAssertEqual(store.refreshedAt, .distantPast)
+  }
+
+  func testEmptyStoreRefreshIsDueImmediately() throws {
+    let store = PRActivityStore.empty(
+      now: try date("2026-05-04T20:00:00Z"),
+      calendar: .prActivityUTC
+    )
+    let policy = RefreshPolicy(interval: store.refreshInterval)
+
+    XCTAssertTrue(
+      policy.isRefreshDue(
+        lastRefreshedAt: store.refreshedAt,
+        now: try date("2026-05-04T20:00:01Z")
+      )
+    )
+  }
+
   func testExcludedRepositoryDoesNotContributeToTotals() {
     let repositories = [
       RepositoryActivity(
@@ -224,5 +254,9 @@ final class PRActivityStoreTests: XCTestCase {
 
     XCTAssertTrue(store.hasVisibleActivity)
     XCTAssertEqual(store.activeRepositoryCount, 10)
+  }
+
+  private func date(_ text: String) throws -> Date {
+    try XCTUnwrap(ISO8601DateFormatter().date(from: text))
   }
 }

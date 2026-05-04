@@ -14,6 +14,9 @@ struct JSONPRActivityProvider: PRActivityProviding {
   var data: Data
 
   func load(now: Date = Date()) throws -> PRActivityStore {
+    if let store = try? JSONDecoder().decode(PRActivityStore.self, from: data) {
+      return store
+    }
     let payload = try JSONDecoder().decode(PRActivityPayload.self, from: data)
     return PRActivityStore(
       bucketLabels: payload.bucketLabels,
@@ -23,6 +26,15 @@ struct JSONPRActivityProvider: PRActivityProviding {
       repositories: payload.repositories,
       refreshedAt: now
     )
+  }
+}
+
+struct FilePRActivityProvider: PRActivityProviding {
+  var path: String
+
+  func load(now: Date = Date()) throws -> PRActivityStore {
+    let url = URL(fileURLWithPath: path)
+    return try JSONPRActivityProvider(data: Data(contentsOf: url)).load(now: now)
   }
 }
 

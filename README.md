@@ -35,9 +35,10 @@ In-app GitHub sign-in and credential storage remain an open product decision; th
 environment-token path is the supported live-data path for now.
 
 The live provider currently discovers repositories with pull access, fetches merged pull
-requests through GitHub Search, paginates high-volume result sets, and preserves the last
-visible activity if a refresh fails. The popover header shows whether the app is using
-sample data or GitHub data.
+requests through GitHub GraphQL search, filters them to PRs merged by the authenticated
+user, paginates high-volume result sets, and preserves the last visible activity if a
+refresh fails. The popover header shows whether the app is using sample data or GitHub
+data.
 
 Manual refresh is available from the popover and is disabled while a refresh is already
 running. Scheduled refreshes use the selected refresh interval, show the next eligible

@@ -45,6 +45,14 @@ struct GitHubAPIRequest: Equatable {
     )
   }
 
+  static func authenticatedUser() -> GitHubAPIRequest {
+    GitHubAPIRequest(path: "/user")
+  }
+
+  static func userOrganizations() -> GitHubAPIRequest {
+    GitHubAPIRequest(path: "/user/orgs")
+  }
+
   static func mergedPullRequests(
     repositoryID: String,
     since: Date,
@@ -52,11 +60,47 @@ struct GitHubAPIRequest: Equatable {
     page: Int = 1,
     perPage: Int = 100
   ) -> GitHubAPIRequest {
+    // GitHub Search API treats the end date as exclusive when using date-only
+    // format, so add one day to include PRs merged on the `until` date itself.
+    let inclusiveUntil =
+      Calendar(identifier: .gregorian).date(
+        byAdding: .day, value: 1, to: until
+      ) ?? until
     let query = [
       "repo:\(repositoryID)",
       "is:pr",
       "is:merged",
-      "merged:\(Self.dateString(since))..\(Self.dateString(until))",
+      "merged:\(Self.dateString(since))..\(Self.dateString(inclusiveUntil))",
+    ].joined(separator: " ")
+
+    return GitHubAPIRequest(
+      path: "/search/issues",
+      queryItems: [
+        URLQueryItem(name: "q", value: query),
+        URLQueryItem(name: "sort", value: "updated"),
+        URLQueryItem(name: "order", value: "desc"),
+        URLQueryItem(name: "per_page", value: "\(perPage)"),
+        URLQueryItem(name: "page", value: "\(page)"),
+      ]
+    )
+  }
+
+  static func mergedPullRequests(
+    owner: String,
+    since: Date,
+    until: Date,
+    page: Int = 1,
+    perPage: Int = 100
+  ) -> GitHubAPIRequest {
+    let inclusiveUntil =
+      Calendar(identifier: .gregorian).date(
+        byAdding: .day, value: 1, to: until
+      ) ?? until
+    let query = [
+      "user:\(owner)",
+      "is:pr",
+      "is:merged",
+      "merged:\(Self.dateString(since))..\(Self.dateString(inclusiveUntil))",
     ].joined(separator: " ")
 
     return GitHubAPIRequest(
