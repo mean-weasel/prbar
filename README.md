@@ -7,7 +7,7 @@ The current repo foundation is intentionally small:
 - SwiftUI menu bar app scaffolded with XcodeGen.
 - Unit tests for the first domain model.
 - CI checks for formatting, build, tests, app smoke, and Swift file size.
-- `pr-chart-mobile.html` retained as scratchwork/reference input.
+- `pr-chart-mobile.html` is the source for the GitHub Pages landing page, deployed by `.github/workflows/pages.yml`.
 
 ## Local Development
 
@@ -22,7 +22,16 @@ make ci-local
 ## Live GitHub Data
 
 The app uses sample data by default. To run the current GitHub-backed provider path,
-launch it with a personal access token in the environment:
+launch it with a personal access token in the environment.
+
+If you have the GitHub CLI installed and authenticated (`gh auth login`):
+
+```bash
+make run-live
+```
+
+This reads the token via `gh auth token` and forwards it to the app. The equivalent
+direct form is:
 
 ```bash
 PR_MENU_BAR_GITHUB_TOKEN=github_pat_xxx make run
