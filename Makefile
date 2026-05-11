@@ -51,7 +51,7 @@ app-smoke: generate
 	test -d "$(DERIVED_DATA)/Build/Products/Release/PRMenuBar.app"
 	./scripts/app-smoke.sh "$(DERIVED_DATA)/Build/Products/Release/PRMenuBar.app"
 
-# Direct exec (not `open`) so env vars propagate to ProcessInfo.processInfo.environment.
+# Direct exec, not `open` — LaunchServices runs .app bundles under launchd, which strips caller env (see PRActivityProviderFactory.swift).
 run: build
 	@test -x "$(APP_BINARY)" || { echo "error: $(APP_BINARY) not found after build" >&2; exit 1; }
 	@pkill -fx "$(APP_BINARY)" 2>/dev/null || true
