@@ -1,13 +1,28 @@
 # PR Menu Bar
 
-A macOS menu bar prototype for tracking pull request activity over a configurable time window.
+See merged PRs without leaving your desktop.
 
-The current repo foundation is intentionally small:
+PR Menu Bar is a tiny macOS menu bar app for watching merged pull request activity across team and personal GitHub repositories. It is intentionally lightweight: sample data out of the box, live GitHub data when launched with a token, repository breakdowns, and refresh behavior that keeps the last useful view visible instead of blanking out on failure.
+
+Landing page: https://neonwatty.github.io/prbar/
+
+![PR Menu Bar social preview](assets/social-preview.png)
+
+## Features
+
+- Watch merged pull request activity from the macOS menu bar.
+- Scan activity over a configurable time window.
+- Break activity down by repository.
+- Use sample data immediately, or provide a GitHub token for live data.
+- Keep the previous activity visible when refreshes fail.
+
+## Current Shape
 
 - SwiftUI menu bar app scaffolded with XcodeGen.
-- Unit tests for the first domain model.
+- Unit tests for the domain model and GitHub provider path.
 - CI checks for formatting, build, tests, app smoke, and Swift file size.
 - `pr-chart-mobile.html` is the source for the GitHub Pages landing page, deployed by `.github/workflows/pages.yml`.
+- `Docs/Marketing.md` contains reusable launch copy, positioning, CTAs, and asset references.
 
 ## Local Development
 
@@ -53,6 +68,14 @@ Manual refresh is available from the popover and is disabled while a refresh is 
 running. Scheduled refreshes use the selected refresh interval, show the next eligible
 refresh time in the footer, and keep the previous activity on failure. GitHub rate-limit
 failures include the reset time when GitHub sends one.
+
+## Marketing Materials
+
+- Landing page source: `pr-chart-mobile.html`
+- Copy kit: `Docs/Marketing.md`
+- Product video: `assets/pr-menu.mp4`
+- Social preview image: `assets/social-preview.png`
+- Favicon: `assets/favicon.svg`
 
 ## Guardrails
 

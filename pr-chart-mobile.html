@@ -4,37 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PR Menu Bar - macOS pull request activity tracker</title>
-<meta name="description" content="PR Menu Bar is a tiny macOS menu bar app for watching merged pull request activity across team and personal repositories.">
+<meta name="description" content="PR Menu Bar is a tiny macOS menu bar app for watching merged pull request activity across team and personal GitHub repositories.">
 <meta name="theme-color" content="#08090b">
-<link rel="canonical" href="https://neonwatty.github.io/pr-menu-bar-test/">
+<link rel="canonical" href="https://neonwatty.github.io/prbar/">
 <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://neonwatty.github.io/pr-menu-bar-test/">
+<meta property="og:url" content="https://neonwatty.github.io/prbar/">
 <meta property="og:title" content="PR Menu Bar">
-<meta property="og:description" content="A tiny macOS menu bar app for watching merged pull request activity across repositories.">
-<meta property="og:image" content="https://neonwatty.github.io/pr-menu-bar-test/assets/social-preview.png">
+<meta property="og:description" content="See merged pull requests without leaving your desktop.">
+<meta property="og:image" content="https://neonwatty.github.io/prbar/assets/social-preview.png">
 <meta property="og:image:alt" content="PR Menu Bar landing page preview with a pull request activity chart.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="PR Menu Bar">
 <meta name="twitter:description" content="See merged pull requests without leaving your desktop.">
-<meta name="twitter:image" content="https://neonwatty.github.io/pr-menu-bar-test/assets/social-preview.png">
+<meta name="twitter:image" content="https://neonwatty.github.io/prbar/assets/social-preview.png">
 <style>
   :root {
     color-scheme: dark;
     --bg: #08090b;
-    --bg-soft: #0d1116;
-    --surface: rgba(19, 23, 30, 0.82);
-    --surface-strong: #141922;
+    --bg-2: #0b0f14;
+    --panel: rgba(18, 23, 31, 0.78);
+    --panel-2: rgba(255, 255, 255, 0.04);
     --line: rgba(148, 163, 184, 0.18);
-    --line-strong: rgba(148, 163, 184, 0.32);
+    --line-strong: rgba(148, 163, 184, 0.34);
     --text: #f5f7fb;
-    --muted: #9aa4b2;
+    --muted: #9aa5b5;
     --quiet: #687386;
     --cyan: #55d7ff;
     --green: #62e59f;
     --violet: #a78bfa;
+    --blue: #6c7cff;
     --amber: #f8c56b;
-    --shadow: 0 28px 90px rgba(0, 0, 0, 0.46);
+    --shadow: 0 30px 90px rgba(0, 0, 0, 0.44);
     --radius: 8px;
   }
 
@@ -50,8 +51,8 @@
     min-width: 320px;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background:
-      radial-gradient(circle at 76% 18%, rgba(85, 215, 255, 0.14), transparent 26rem),
-      linear-gradient(180deg, #090b0f 0%, #08090b 54%, #0b0d11 100%);
+      linear-gradient(120deg, rgba(85, 215, 255, 0.09), transparent 30rem) no-repeat,
+      linear-gradient(180deg, #08090b 0%, #08090b 34%, #0b0f14 100%);
     color: var(--text);
     letter-spacing: 0;
   }
@@ -72,19 +73,23 @@
 
   .site-header {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    inset: 0 0 auto;
     z-index: 20;
     border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-    background: rgba(8, 9, 11, 0.72);
+    background: rgba(8, 9, 11, 0.76);
     backdrop-filter: blur(18px);
   }
 
-  .nav {
+  .nav,
+  .section,
+  .hero,
+  .footer {
     width: min(1120px, calc(100% - 40px));
+    margin-inline: auto;
+  }
+
+  .nav {
     height: 68px;
-    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -96,7 +101,7 @@
     align-items: center;
     gap: 10px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 760;
   }
 
   .brand-mark {
@@ -128,10 +133,10 @@
   .nav-links {
     display: flex;
     align-items: center;
-    gap: 26px;
+    gap: 25px;
     color: var(--muted);
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 680;
   }
 
   .nav-links a {
@@ -142,112 +147,104 @@
     color: var(--text);
   }
 
-  .github-link {
+  .button,
+  .text-link {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    justify-content: center;
+    min-height: 42px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 760;
   }
 
+  .button {
+    gap: 8px;
+    padding: 0 15px;
+    border: 1px solid rgba(85, 215, 255, 0.36);
+    background: linear-gradient(180deg, rgba(85, 215, 255, 0.18), rgba(85, 215, 255, 0.08));
+    color: #e9fbff;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset;
+    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+  }
+
+  .button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(85, 215, 255, 0.62);
+    background: linear-gradient(180deg, rgba(85, 215, 255, 0.24), rgba(85, 215, 255, 0.12));
+  }
+
+  .button svg,
+  .text-link svg,
   .github-link svg {
     width: 16px;
     height: 16px;
     flex: 0 0 auto;
   }
 
-  .nav-cta,
-  .primary-cta {
+  .text-link {
+    gap: 7px;
+    color: #d7dee8;
+  }
+
+  .github-link {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    min-height: 40px;
-    border: 1px solid rgba(85, 215, 255, 0.32);
-    border-radius: 7px;
-    background: linear-gradient(180deg, rgba(85, 215, 255, 0.18), rgba(85, 215, 255, 0.08));
-    color: #e9fbff;
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset;
-    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-  }
-
-  .nav-cta {
-    padding: 0 14px;
-  }
-
-  .primary-cta {
-    min-height: 46px;
-    padding: 0 18px;
-  }
-
-  .nav-cta:hover,
-  .primary-cta:hover {
-    transform: translateY(-1px);
-    border-color: rgba(85, 215, 255, 0.6);
-    background: linear-gradient(180deg, rgba(85, 215, 255, 0.24), rgba(85, 215, 255, 0.12));
+    gap: 7px;
   }
 
   .hero {
-    width: min(1120px, calc(100% - 40px));
-    min-height: clamp(760px, 100svh, 920px);
-    margin: 0 auto;
-    padding: 150px 0 82px;
+    min-height: clamp(790px, 100svh, 940px);
+    padding: 146px 0 92px;
     display: grid;
-    grid-template-columns: minmax(0, 0.88fr) minmax(420px, 1.12fr);
+    grid-template-columns: minmax(0, 0.88fr) minmax(430px, 1.12fr);
     align-items: center;
-    gap: 68px;
+    gap: 70px;
   }
 
   .hero-copy {
     max-width: 560px;
   }
 
+  h1,
+  h2,
+  h3,
+  p {
+    margin-top: 0;
+  }
+
   h1 {
-    margin: 0;
-    font-size: clamp(58px, 8.4vw, 118px);
+    margin-bottom: 0;
+    font-size: clamp(58px, 8.4vw, 116px);
     line-height: 0.9;
-    font-weight: 780;
+    font-weight: 800;
     letter-spacing: 0;
   }
 
   .hero-copy p {
     margin: 28px 0 0;
-    max-width: 510px;
+    max-width: 520px;
     color: var(--muted);
     font-size: clamp(18px, 2vw, 22px);
-    line-height: 1.48;
+    line-height: 1.5;
   }
 
   .hero-actions {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 15px;
     margin-top: 34px;
     flex-wrap: wrap;
-  }
-
-  .secondary-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: 46px;
-    color: #cbd5e1;
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  .secondary-link svg {
-    width: 16px;
-    height: 16px;
-    margin-left: 7px;
   }
 
   .hero-note {
     display: flex;
     gap: 12px;
     align-items: center;
-    margin-top: 34px;
+    margin-top: 32px;
     color: var(--quiet);
     font-size: 12px;
-    font-weight: 650;
+    font-weight: 680;
   }
 
   .hero-note::before {
@@ -259,240 +256,83 @@
 
   .product-stage {
     position: relative;
-    min-height: 560px;
+    min-height: 610px;
     display: grid;
     place-items: center;
   }
 
+  .product-stage::before {
+    content: "";
+    position: absolute;
+    inset: 84px 0 auto auto;
+    width: min(520px, 84%);
+    height: 360px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 8px;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px) 0 0 / 42px 42px,
+      linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    opacity: 0.78;
+  }
+
   .product-video {
+    position: relative;
+    z-index: 2;
     width: min(520px, 100%);
     max-height: 620px;
-    border: 1px solid rgba(202, 213, 225, 0.2);
+    border: 1px solid rgba(202, 213, 225, 0.22);
     border-radius: 8px;
     background: #05070a;
     box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,0.04) inset;
     object-fit: contain;
   }
 
-  .menu-bar {
+  .floating-stat {
     position: absolute;
-    top: 44px;
-    left: 50%;
-    width: min(620px, 100%);
-    height: 42px;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 14px 0 16px;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 8px;
-    background: rgba(235, 239, 245, 0.08);
-    box-shadow: 0 18px 70px rgba(0,0,0,0.35);
-    backdrop-filter: blur(18px);
-  }
-
-  .traffic {
-    display: flex;
-    gap: 7px;
-  }
-
-  .traffic span {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #475569;
-  }
-
-  .traffic span:nth-child(1) { background: #ff6b65; }
-  .traffic span:nth-child(2) { background: #f8c56b; }
-  .traffic span:nth-child(3) { background: #62e59f; }
-
-  .bar-items {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: #c4cad3;
-    font-size: 12px;
-    font-weight: 650;
-  }
-
-  .bar-icon {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: #f7fbff;
-  }
-
-  .bar-icon::before {
-    content: "";
-    width: 7px;
-    height: 17px;
-    border-radius: 2px;
-    background: linear-gradient(180deg, var(--green), var(--cyan));
-    box-shadow: 9px 5px 0 -1px var(--violet), 18px -3px 0 -1px var(--amber);
-  }
-
-  .popover {
-    position: relative;
-    width: min(438px, 100%);
-    margin-top: 80px;
-    border: 1px solid rgba(202, 213, 225, 0.2);
-    border-radius: 8px;
-    background: linear-gradient(180deg, rgba(22, 27, 36, 0.94), rgba(12, 15, 20, 0.96));
-    box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,0.04) inset;
-    overflow: hidden;
-  }
-
-  .popover::before {
-    content: "";
-    position: absolute;
-    top: -9px;
-    right: 38px;
-    width: 16px;
-    height: 16px;
-    transform: rotate(45deg);
-    border-left: 1px solid rgba(202, 213, 225, 0.2);
-    border-top: 1px solid rgba(202, 213, 225, 0.2);
-    background: #171c25;
-  }
-
-  .popover-header {
-    position: relative;
-    padding: 24px 24px 18px;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .popover-title-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 18px;
-  }
-
-  .popover h2 {
-    margin: 0;
-    font-size: 22px;
-    line-height: 1.1;
-    font-weight: 760;
-  }
-
-  .source-state {
-    color: var(--green);
-    font-size: 11px;
-    font-weight: 750;
-  }
-
-  .date-line {
-    margin-top: 6px;
-    color: var(--quiet);
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  .stat-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-top: 18px;
-  }
-
-  .mini-stat {
-    padding: 12px 10px;
+    z-index: 3;
+    right: 0;
+    bottom: 74px;
+    width: 202px;
+    padding: 14px;
     border: 1px solid var(--line);
-    border-radius: 7px;
-    background: rgba(255,255,255,0.035);
+    border-radius: 8px;
+    background: rgba(13, 17, 23, 0.88);
+    box-shadow: 0 24px 70px rgba(0,0,0,0.38);
+    backdrop-filter: blur(16px);
   }
 
-  .mini-stat strong {
+  .floating-stat strong {
     display: block;
-    font-size: 20px;
+    font-size: 30px;
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
 
-  .mini-stat span {
+  .floating-stat span {
     display: block;
     margin-top: 6px;
     color: var(--quiet);
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 720;
   }
 
-  .chart-panel {
-    padding: 22px 24px 20px;
-  }
-
-  .chart {
-    height: 204px;
+  .spark {
+    height: 44px;
+    margin-top: 13px;
     display: grid;
     grid-template-columns: repeat(9, 1fr);
-    gap: 7px;
     align-items: end;
-    padding-bottom: 34px;
+    gap: 4px;
   }
 
-  .week {
-    min-width: 0;
-    height: 150px;
-    display: flex;
-    align-items: end;
-    position: relative;
-  }
-
-  .stack {
-    width: 100%;
-    display: flex;
-    flex-direction: column-reverse;
-    overflow: hidden;
-    border-radius: 4px 4px 0 0;
-    background: rgba(255,255,255,0.04);
-  }
-
-  .seg { width: 100%; }
-
-  .week-label {
-    position: absolute;
-    bottom: -28px;
-    left: 50%;
-    transform: translateX(-50%) rotate(-32deg);
-    color: #667085;
-    font-size: 9px;
-    font-weight: 650;
-    white-space: nowrap;
-  }
-
-  .refresh-strip {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 14px 18px;
-    border-top: 1px solid var(--line);
-    color: var(--quiet);
-    font-size: 11px;
-    font-weight: 700;
-  }
-
-  .refresh-dot {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    color: #b5bfcc;
-  }
-
-  .refresh-dot::before {
-    content: "";
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 18px rgba(98, 229, 159, 0.8);
+  .spark i {
+    display: block;
+    border-radius: 3px 3px 0 0;
+    background: linear-gradient(180deg, var(--green), var(--cyan));
   }
 
   .section {
-    width: min(1120px, calc(100% - 40px));
-    margin: 0 auto;
-    padding: 96px 0;
+    padding: 92px 0;
   }
 
   .section-heading {
@@ -504,17 +344,19 @@
   }
 
   .section h2 {
-    margin: 0;
-    font-size: clamp(34px, 5vw, 60px);
+    margin-bottom: 0;
+    font-size: clamp(34px, 5vw, 58px);
     line-height: 0.98;
-    font-weight: 770;
+    font-weight: 790;
+    letter-spacing: 0;
   }
 
-  .section-heading p {
-    margin: 0;
+  .section-heading p,
+  .split-copy p {
+    margin-bottom: 0;
     color: var(--muted);
     font-size: 16px;
-    line-height: 1.6;
+    line-height: 1.62;
   }
 
   .feature-grid {
@@ -523,12 +365,16 @@
     gap: 14px;
   }
 
-  .feature-card {
-    min-height: 218px;
-    padding: 24px;
+  .feature-card,
+  .copy-card {
     border: 1px solid var(--line);
     border-radius: 8px;
-    background: rgba(255,255,255,0.035);
+    background: var(--panel-2);
+  }
+
+  .feature-card {
+    min-height: 232px;
+    padding: 24px;
   }
 
   .feature-icon {
@@ -549,84 +395,33 @@
     stroke-width: 2;
   }
 
-  .feature-card h3 {
-    margin: 0;
+  .feature-card h3,
+  .copy-card h3 {
+    margin-bottom: 0;
     font-size: 18px;
     line-height: 1.2;
   }
 
-  .feature-card p {
+  .feature-card p,
+  .copy-card p {
     margin: 12px 0 0;
     color: var(--muted);
     font-size: 14px;
-    line-height: 1.55;
+    line-height: 1.56;
   }
 
-  .app-grid {
+  .split {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  .app-card {
-    display: flex;
-    flex-direction: column;
-    min-height: 232px;
-    padding: 24px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: rgba(255,255,255,0.035);
-  }
-
-  .app-card h3 {
-    margin: 0;
-    font-size: 22px;
-    line-height: 1.1;
-  }
-
-  .app-card p {
-    margin: 14px 0 0;
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  .app-card .github-link {
-    width: fit-content;
-    margin-top: auto;
-    color: #dbeafe;
-    font-size: 13px;
-    font-weight: 760;
-  }
-
-  .app-card .github-link:hover {
-    color: var(--text);
-  }
-
-  .setup {
-    display: grid;
-    grid-template-columns: minmax(0, 0.88fr) minmax(320px, 0.72fr);
+    grid-template-columns: minmax(0, 0.9fr) minmax(340px, 0.72fr);
     gap: 58px;
     align-items: center;
     border-top: 1px solid var(--line);
   }
 
-  .setup-copy h2 {
-    margin-bottom: 22px;
-  }
-
-  .setup-copy p {
-    margin: 0;
-    max-width: 580px;
-    color: var(--muted);
-    font-size: 17px;
-    line-height: 1.65;
-  }
-
   .setup-list {
     display: grid;
     gap: 12px;
-    margin-top: 30px;
+    margin: 30px 0 0;
     padding: 0;
     list-style: none;
   }
@@ -637,7 +432,7 @@
     gap: 12px;
     color: #dbe2eb;
     font-size: 14px;
-    font-weight: 650;
+    font-weight: 680;
   }
 
   .check {
@@ -690,16 +485,41 @@
     padding: 22px;
     overflow: auto;
     color: #cbd5e1;
-    font: 13px/1.7 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font: 13px/1.72 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   }
 
   .terminal .prompt { color: var(--green); }
   .terminal .var { color: var(--cyan); }
   .terminal .comment { color: #667085; }
 
+  .copy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .copy-card {
+    min-height: 208px;
+    padding: 22px;
+  }
+
+  .copy-card code {
+    display: inline-block;
+    margin-top: 18px;
+    color: #dbeafe;
+    font: 12px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    overflow-wrap: anywhere;
+  }
+
+  .material-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 30px;
+  }
+
   .footer {
-    width: min(1120px, calc(100% - 40px));
-    margin: 0 auto;
     padding: 28px 0 44px;
     display: flex;
     justify-content: space-between;
@@ -707,7 +527,7 @@
     border-top: 1px solid var(--line);
     color: var(--quiet);
     font-size: 12px;
-    font-weight: 650;
+    font-weight: 680;
   }
 
   .footer a {
@@ -719,19 +539,35 @@
     color: var(--text);
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+
+    .button,
+    .nav-links a,
+    .footer a {
+      transition: none;
+    }
+
+    .button:hover {
+      transform: none;
+    }
+  }
+
   @media (max-width: 900px) {
-    .nav {
+    .nav,
+    .hero,
+    .section,
+    .footer {
       width: min(680px, calc(100% - 28px));
     }
 
-    .nav-links a {
+    .nav-links a:not(.button) {
       display: none;
     }
 
     .hero {
-      width: min(680px, calc(100% - 28px));
       min-height: auto;
-      padding: 116px 0 64px;
+      padding: 116px 0 66px;
       grid-template-columns: 1fr;
       gap: 42px;
     }
@@ -741,12 +577,14 @@
     }
 
     .product-stage {
-      min-height: 520px;
+      min-height: 560px;
+      place-items: start;
     }
 
-    .section,
-    .footer {
-      width: min(680px, calc(100% - 28px));
+    .floating-stat {
+      right: auto;
+      left: 18px;
+      bottom: 22px;
     }
 
     .section {
@@ -754,16 +592,13 @@
     }
 
     .section-heading,
-    .setup {
+    .split {
       grid-template-columns: 1fr;
       gap: 24px;
     }
 
-    .feature-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .app-grid {
+    .feature-grid,
+    .copy-grid {
       grid-template-columns: 1fr;
     }
   }
@@ -787,7 +622,7 @@
       white-space: nowrap;
     }
 
-    .nav-cta {
+    .nav .button {
       min-height: 36px;
       padding: 0 11px;
       font-size: 12px;
@@ -802,16 +637,15 @@
       max-width: 330px;
     }
 
-    .primary-cta,
-    .secondary-link {
+    .hero-actions .button,
+    .hero-actions .text-link {
       width: 100%;
     }
 
     .hero-note {
-      align-items: flex-start;
-      line-height: 1.45;
       display: block;
       max-width: 310px;
+      line-height: 1.45;
     }
 
     .hero-note::before {
@@ -819,23 +653,15 @@
       margin-bottom: 12px;
     }
 
-    .menu-bar {
-      left: 0;
-      top: 18px;
-      height: 38px;
-      width: min(100%, 330px);
-      transform: none;
-    }
-
-    .bar-items span:not(.bar-icon) {
-      display: none;
-    }
-
     .product-stage {
-      min-height: 470px;
-      width: 100%;
+      min-height: 500px;
       overflow: hidden;
-      place-items: start;
+    }
+
+    .product-stage::before {
+      inset: 54px auto auto 0;
+      width: 330px;
+      height: 300px;
     }
 
     .product-video {
@@ -843,37 +669,23 @@
       max-height: 520px;
     }
 
-    .popover {
-      margin-top: 54px;
-      width: min(100%, 330px);
-      justify-self: start;
-    }
-
-    .popover-header,
-    .chart-panel {
-      padding-left: 16px;
-      padding-right: 16px;
-    }
-
-    .stat-row {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .mini-stat:last-child {
-      grid-column: 1 / -1;
+    .floating-stat {
+      left: 12px;
+      bottom: 8px;
+      width: min(260px, calc(100% - 24px));
     }
 
     .section h2 {
-      max-width: 300px;
-      font-size: 28px;
+      max-width: 330px;
+      font-size: 30px;
       overflow-wrap: break-word;
     }
 
     .section-heading p,
+    .split-copy p,
     .feature-card p,
-    .app-card p,
-    .setup-copy p {
-      max-width: 300px;
+    .copy-card p {
+      max-width: 330px;
       overflow-wrap: break-word;
     }
 
@@ -881,7 +693,6 @@
       flex-direction: column;
     }
   }
-
 </style>
 </head>
 <body>
@@ -896,15 +707,14 @@
       </a>
       <div class="nav-links">
         <a href="#features">Features</a>
-        <a href="#apps">More apps</a>
         <a href="#setup">Setup</a>
-        <a class="github-link" href="https://github.com/neonwatty/pr-menu-bar-test" target="_blank" rel="noopener noreferrer" aria-label="Open the PR Menu Bar GitHub repository">
+        <a href="#materials">Materials</a>
+        <a class="button github-link" href="https://github.com/neonwatty/prbar" target="_blank" rel="noopener noreferrer" aria-label="Open the PR Menu Bar GitHub repository">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 2C6.48 2 2 6.58 2 12.23c0 4.52 2.87 8.35 6.84 9.71.5.09.68-.22.68-.49v-1.9c-2.78.62-3.37-1.22-3.37-1.22-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.56 2.35 1.11 2.92.85.09-.67.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 6.94c.85 0 1.7.12 2.5.34 1.9-1.33 2.74-1.05 2.74-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.94.68 1.9v2.81c0 .27.18.59.69.49A10.15 10.15 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z"/>
           </svg>
           GitHub
         </a>
-        <a class="nav-cta" href="#demo">View sample page</a>
       </div>
     </nav>
   </header>
@@ -915,34 +725,40 @@
         <h1>PR Menu Bar</h1>
         <p>See merged pull requests without leaving your desktop. A tiny macOS menu bar app for watching team and personal PR activity across repositories.</p>
         <div class="hero-actions">
-          <a class="primary-cta" href="#setup">View sample page</a>
-          <a class="secondary-link" href="#features">
-            How it works
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </a>
-          <a class="secondary-link github-link" href="https://github.com/neonwatty/pr-menu-bar-test" target="_blank" rel="noopener noreferrer">
+          <a class="button github-link" href="https://github.com/neonwatty/prbar" target="_blank" rel="noopener noreferrer">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M12 2C6.48 2 2 6.58 2 12.23c0 4.52 2.87 8.35 6.84 9.71.5.09.68-.22.68-.49v-1.9c-2.78.62-3.37-1.22-3.37-1.22-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.56 2.35 1.11 2.92.85.09-.67.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 6.94c.85 0 1.7.12 2.5.34 1.9-1.33 2.74-1.05 2.74-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.94.68 1.9v2.81c0 .27.18.59.69.49A10.15 10.15 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z"/>
             </svg>
             View on GitHub
+          </a>
+          <a class="text-link" href="#setup">
+            Run locally
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </a>
         </div>
         <div class="hero-note">Sample mode by default. Live GitHub data when you provide a token.</div>
       </div>
 
       <div class="product-stage" aria-label="PR Menu Bar app preview">
-        <video class="product-video" muted autoplay playsinline preload="auto" poster="assets/social-preview.png">
-          <source src="assets/pr-menu.mp4" type="video/mp4" />
+        <video class="product-video" muted autoplay loop playsinline preload="auto" poster="assets/social-preview.png">
+          <source src="assets/pr-menu.mp4" type="video/mp4">
         </video>
+        <div class="floating-stat" aria-label="Activity preview">
+          <strong>1,329</strong>
+          <span>Merged PRs in sample data</span>
+          <div class="spark" aria-hidden="true">
+            <i style="height: 18%"></i><i style="height: 22%"></i><i style="height: 64%"></i><i style="height: 48%"></i><i style="height: 52%"></i><i style="height: 36%"></i><i style="height: 92%"></i><i style="height: 58%"></i><i style="height: 100%"></i>
+          </div>
+        </div>
       </div>
     </section>
 
     <section class="section" id="features">
       <div class="section-heading">
         <h2>Small surface, useful signal.</h2>
-        <p>PR Menu Bar keeps the activity view close to the work without becoming another dashboard to maintain.</p>
+        <p>PR Menu Bar keeps the activity view close to the work without becoming another dashboard to open, tune, or maintain.</p>
       </div>
       <div class="feature-grid">
         <article class="feature-card">
@@ -957,54 +773,26 @@
             <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-linecap="round"/><path d="M7 7v10" stroke="currentColor" stroke-linecap="round"/></svg>
           </div>
           <h3>Repository breakdown</h3>
-          <p>Scan the weekly shape of work, then drop into the repositories that are carrying most of the movement.</p>
+          <p>Scan the weekly shape of work, then drop into the repositories carrying most of the movement.</p>
         </article>
         <article class="feature-card">
           <div class="feature-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v8l5 3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="8" stroke="currentColor"/></svg>
           </div>
           <h3>Failure-aware updates</h3>
-          <p>Refresh errors do not wipe the view. Rate-limit and token issues are surfaced without hiding the previous data.</p>
+          <p>Refresh errors do not wipe the view. Rate-limit and token issues are surfaced without hiding previous data.</p>
         </article>
       </div>
     </section>
 
-    <section class="section" id="apps">
-      <div class="section-heading">
-        <h2>More Mac tools in the same lane.</h2>
-        <p>Related projects for keeping local development work close to the desktop.</p>
-      </div>
-      <div class="app-grid">
-        <article class="app-card">
-          <h3>session-search</h3>
-          <p>A macOS menu bar app for full-text searching Claude Code session history.</p>
-          <a class="github-link" href="https://github.com/neonwatty/session-search" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 2C6.48 2 2 6.58 2 12.23c0 4.52 2.87 8.35 6.84 9.71.5.09.68-.22.68-.49v-1.9c-2.78.62-3.37-1.22-3.37-1.22-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.56 2.35 1.11 2.92.85.09-.67.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 6.94c.85 0 1.7.12 2.5.34 1.9-1.33 2.74-1.05 2.74-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.94.68 1.9v2.81c0 .27.18.59.69.49A10.15 10.15 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z"/>
-            </svg>
-            View on GitHub
-          </a>
-        </article>
-        <article class="app-card">
-          <h3>fleet</h3>
-          <p>A lightweight Mac-focused CLI for distributing Claude Code instances and dev server tunnels across a local fleet.</p>
-          <a class="github-link" href="https://github.com/neonwatty/fleet" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 2C6.48 2 2 6.58 2 12.23c0 4.52 2.87 8.35 6.84 9.71.5.09.68-.22.68-.49v-1.9c-2.78.62-3.37-1.22-3.37-1.22-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.56 2.35 1.11 2.92.85.09-.67.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 6.94c.85 0 1.7.12 2.5.34 1.9-1.33 2.74-1.05 2.74-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.94.68 1.9v2.81c0 .27.18.59.69.49A10.15 10.15 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z"/>
-            </svg>
-            View on GitHub
-          </a>
-        </article>
-      </div>
-    </section>
-
-    <section class="section setup" id="setup">
-      <div class="setup-copy">
-        <h2>Works as a prototype, stays honest about data.</h2>
-        <p>Use sample mode to explore the app. Add a GitHub token in the launch environment when you want live repository activity.</p>
+    <section class="section split" id="setup">
+      <div class="split-copy">
+        <h2>Prototype-friendly, honest about data.</h2>
+        <p>Use sample mode to explore the app immediately. Add a GitHub token in the launch environment when you want live repository activity.</p>
         <ul class="setup-list">
           <li><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Live data when you provide a token</li>
           <li><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Sample mode when you do not</li>
+          <li><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Local checks through the existing Makefile</li>
         </ul>
       </div>
 
@@ -1017,54 +805,45 @@
 <span class="prompt">$</span> make ci-local</pre>
       </div>
     </section>
+
+    <section class="section" id="materials">
+      <div class="section-heading">
+        <h2>Marketing materials ready to reuse.</h2>
+        <p>The repo now carries a lightweight copy kit alongside the page, so descriptions, launch blurbs, and link previews stay consistent.</p>
+      </div>
+      <div class="copy-grid">
+        <article class="copy-card">
+          <h3>One-line pitch</h3>
+          <p>PR Menu Bar is a tiny macOS menu bar app for watching merged pull request activity across GitHub repositories.</p>
+          <code>See merged PRs without leaving your desktop.</code>
+        </article>
+        <article class="copy-card">
+          <h3>Launch blurb</h3>
+          <p>A compact desktop signal for developers who want repository activity nearby without turning it into another dashboard.</p>
+          <code>Sample mode first. Token-backed GitHub data when needed.</code>
+        </article>
+        <article class="copy-card">
+          <h3>Social assets</h3>
+          <p>Use the existing preview image, favicon, and product video for GitHub Pages, release posts, and README embeds.</p>
+          <code>assets/social-preview.png</code>
+        </article>
+      </div>
+      <div class="material-actions">
+        <a class="button" href="./Docs/Marketing.md">Open copy kit</a>
+        <a class="text-link github-link" href="https://github.com/neonwatty/prbar" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.58 2 12.23c0 4.52 2.87 8.35 6.84 9.71.5.09.68-.22.68-.49v-1.9c-2.78.62-3.37-1.22-3.37-1.22-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.56 2.35 1.11 2.92.85.09-.67.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 6.94c.85 0 1.7.12 2.5.34 1.9-1.33 2.74-1.05 2.74-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.94.68 1.9v2.81c0 .27.18.59.69.49A10.15 10.15 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z"/>
+          </svg>
+          View repository
+        </a>
+      </div>
+    </section>
   </main>
 
   <footer class="footer">
     <span>PR Menu Bar</span>
-    <span><a class="github-link" href="https://github.com/neonwatty/pr-menu-bar-test" target="_blank" rel="noopener noreferrer">View project on GitHub</a></span>
+    <span><a class="github-link" href="https://github.com/neonwatty/prbar" target="_blank" rel="noopener noreferrer">View project on GitHub</a></span>
   </footer>
 </div>
-
-<script>
-  const weeks = ["03/02", "03/09", "03/16", "03/23", "03/30", "04/06", "04/13", "04/20", "04/27"];
-  const repos = [
-    { color: "#55d7ff", data: [0, 13, 75, 42, 53, 23, 69, 45, 111] },
-    { color: "#a78bfa", data: [15, 16, 34, 35, 20, 22, 113, 40, 79] },
-    { color: "#6c7cff", data: [0, 0, 0, 0, 0, 51, 57, 69, 53] },
-    { color: "#62e59f", data: [0, 0, 0, 0, 0, 0, 0, 11, 84] },
-    { color: "#f8c56b", data: [0, 0, 0, 0, 0, 10, 7, 0, 30] }
-  ];
-
-  const totals = weeks.map((_, weekIndex) => repos.reduce((sum, repo) => sum + repo.data[weekIndex], 0));
-  const maxTotal = Math.max(...totals);
-  const chart = document.getElementById("chart");
-
-  weeks.forEach((week, weekIndex) => {
-    const weekEl = document.createElement("div");
-    weekEl.className = "week";
-
-    const stack = document.createElement("div");
-    stack.className = "stack";
-    stack.style.height = `${Math.max(10, (totals[weekIndex] / maxTotal) * 100)}%`;
-
-    repos.forEach((repo) => {
-      const value = repo.data[weekIndex];
-      if (!value) return;
-      const seg = document.createElement("div");
-      seg.className = "seg";
-      seg.style.height = `${(value / totals[weekIndex]) * 100}%`;
-      seg.style.background = repo.color;
-      stack.appendChild(seg);
-    });
-
-    const label = document.createElement("span");
-    label.className = "week-label";
-    label.textContent = week;
-
-    weekEl.append(stack, label);
-    chart.appendChild(weekEl);
-  });
-
-</script>
 </body>
 </html>

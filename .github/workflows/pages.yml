@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - assets/**
+      - Docs/Marketing.md
       - index.html
       - pr-chart-mobile.html
       - .github/workflows/pages.yml
@@ -38,6 +39,8 @@ jobs:
         run: |
           mkdir _site
           cp -R assets _site/
+          mkdir -p _site/Docs
+          cp Docs/Marketing.md _site/Docs/Marketing.md
           cp pr-chart-mobile.html _site/index.html
           cp pr-chart-mobile.html _site/pr-chart-mobile.html
           touch _site/.nojekyll
