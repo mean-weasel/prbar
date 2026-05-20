@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Sample-data path: no token, no fixture — the StaticPRActivityProvider runs.
+# Sample-data path: no token, no fixture, no gh fallback — the
+# StaticPRActivityProvider runs.
 source "$(dirname "$0")/_lib.sh"
 
-smoke_launch
+smoke_launch PR_MENU_BAR_DISABLE_GH_AUTH=1
 smoke_wait_for_dump
 
 smoke_assert_contains '"dataSourceTitle" : "Sample Data"' "no env → sample data"

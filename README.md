@@ -36,8 +36,9 @@ make ci-local
 
 ## Live GitHub Data
 
-The app uses sample data by default. To run the current GitHub-backed provider path,
-launch it with a personal access token in the environment.
+The app uses sample data when it cannot find GitHub credentials. For live data, it
+first checks `PR_MENU_BAR_GITHUB_TOKEN`, then falls back to your authenticated
+GitHub CLI token from `gh auth token`.
 
 If you have the GitHub CLI installed and authenticated (`gh auth login`):
 
@@ -45,8 +46,9 @@ If you have the GitHub CLI installed and authenticated (`gh auth login`):
 make run-live
 ```
 
-This reads the token via `gh auth token` and forwards it to the app. The equivalent
-direct form is:
+The app also tries common GitHub CLI install paths when launched normally from
+macOS, so an already-authenticated `gh` install can connect without an environment
+variable. The equivalent explicit token form is:
 
 ```bash
 PR_MENU_BAR_GITHUB_TOKEN=github_pat_xxx make run
