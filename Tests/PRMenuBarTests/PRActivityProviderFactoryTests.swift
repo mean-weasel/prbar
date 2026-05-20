@@ -4,7 +4,10 @@ import XCTest
 
 final class PRActivityProviderFactoryTests: XCTestCase {
   func testFactoryUsesStaticProviderWithoutToken() {
-    let selection = PRActivityProviderFactory.makeSelection(environment: [:])
+    let selection = PRActivityProviderFactory.makeSelection(
+      environment: [:],
+      gitHubCLIToken: { _ in nil }
+    )
 
     XCTAssertTrue(selection.provider is StaticPRActivityProvider)
     XCTAssertEqual(selection.dataSource, .sample)
@@ -31,11 +34,42 @@ final class PRActivityProviderFactoryTests: XCTestCase {
 
   func testFactoryUsesStaticProviderWithWhitespaceOnlyToken() {
     let selection = PRActivityProviderFactory.makeSelection(
-      environment: [PRActivityProviderFactory.tokenEnvironmentKey: "   \n"]
+      environment: [PRActivityProviderFactory.tokenEnvironmentKey: "   \n"],
+      gitHubCLIToken: { _ in nil }
     )
 
     XCTAssertTrue(selection.provider is StaticPRActivityProvider)
     XCTAssertEqual(selection.dataSource, .sample)
+  }
+
+  func testFactoryUsesGitHubCLITokenWhenEnvironmentTokenIsMissing() throws {
+    let selection = PRActivityProviderFactory.makeSelection(
+      environment: [:],
+      gitHubCLIToken: { _ in "cli-token" }
+    )
+    let provider = try XCTUnwrap(selection.provider as? GitHubPRActivityProvider)
+
+    XCTAssertEqual(provider.token, "cli-token")
+    XCTAssertEqual(selection.dataSource, .github)
+  }
+
+  func testFactoryPrefersEnvironmentTokenBeforeGitHubCLIToken() throws {
+    let selection = PRActivityProviderFactory.makeSelection(
+      environment: [PRActivityProviderFactory.tokenEnvironmentKey: "env-token"],
+      gitHubCLIToken: { _ in "cli-token" }
+    )
+    let provider = try XCTUnwrap(selection.provider as? GitHubPRActivityProvider)
+
+    XCTAssertEqual(provider.token, "env-token")
+    XCTAssertEqual(selection.dataSource, .github)
+  }
+
+  func testGitHubCLITokenResolverCanBeDisabled() {
+    let token = GitHubCLITokenResolver.token(
+      environment: [GitHubCLITokenResolver.disabledEnvironmentKey: "1"]
+    )
+
+    XCTAssertNil(token)
   }
 
   func testFactoryUsesFixtureProviderBeforeGitHubToken() throws {
@@ -43,7 +77,8 @@ final class PRActivityProviderFactoryTests: XCTestCase {
       environment: [
         PRActivityProviderFactory.fixturePathEnvironmentKey: " /tmp/pr-fixture.json ",
         PRActivityProviderFactory.tokenEnvironmentKey: "token",
-      ]
+      ],
+      gitHubCLIToken: { _ in "cli-token" }
     )
 
     let provider = try XCTUnwrap(selection.provider as? FilePRActivityProvider)

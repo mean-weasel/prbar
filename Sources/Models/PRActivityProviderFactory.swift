@@ -13,6 +13,13 @@ enum PRActivityProviderFactory {
   static func makeSelection(environment: [String: String] = ProcessInfo.processInfo.environment)
     -> PRActivityProviderSelection
   {
+    makeSelection(environment: environment, gitHubCLIToken: GitHubCLITokenResolver.token)
+  }
+
+  static func makeSelection(
+    environment: [String: String],
+    gitHubCLIToken: ([String: String]) -> String?
+  ) -> PRActivityProviderSelection {
     if let fixturePath = environment[fixturePathEnvironmentKey],
       fixturePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
     {
@@ -24,16 +31,13 @@ enum PRActivityProviderFactory {
       )
     }
 
-    guard
-      let rawToken = environment[tokenEnvironmentKey],
-      rawToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+    guard let token = resolvedToken(environment: environment, gitHubCLIToken: gitHubCLIToken)
     else {
       return PRActivityProviderSelection(
         provider: StaticPRActivityProvider(),
         dataSource: .sample
       )
     }
-    let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
 
     return PRActivityProviderSelection(
       provider: GitHubPRActivityProvider(
@@ -43,5 +47,21 @@ enum PRActivityProviderFactory {
       ),
       dataSource: .github
     )
+  }
+
+  private static func resolvedToken(
+    environment: [String: String],
+    gitHubCLIToken: ([String: String]) -> String?
+  ) -> String? {
+    if let rawToken = environment[tokenEnvironmentKey] {
+      let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
+      if token.isEmpty == false {
+        return token
+      }
+    }
+
+    return gitHubCLIToken(environment)?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+      .nonEmpty
   }
 }

@@ -6,8 +6,10 @@ of scope until the local product loop proves the provider and refresh behavior.
 
 ## Authentication
 
-- Read the token from `PR_MENU_BAR_GITHUB_TOKEN` for local development.
-- Treat a missing token as a recoverable configuration state and keep sample data usable.
+- Read the token from `PR_MENU_BAR_GITHUB_TOKEN` when explicitly supplied.
+- Fall back to `gh auth token` so normal local app launches can connect when the
+  GitHub CLI is already authenticated.
+- Treat missing credentials as a recoverable configuration state and keep sample data usable.
 - Send authenticated requests with `Authorization: Bearer <token>`.
 - Keep token persistence out of the app model for now; later UI can choose keychain storage.
 

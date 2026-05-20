@@ -788,10 +788,10 @@
     <section class="section split" id="setup">
       <div class="split-copy">
         <h2>Prototype-friendly, honest about data.</h2>
-        <p>Use sample mode to explore the app immediately. Add a GitHub token in the launch environment when you want live repository activity.</p>
+        <p>Use sample mode to explore the app immediately. Sign in with the GitHub CLI or add a GitHub token in the launch environment when you want live repository activity.</p>
         <ul class="setup-list">
-          <li><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Live data when you provide a token</li>
-          <li><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Sample mode when you do not</li>
+          <li><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Live data from gh auth or a token</li>
+          <li><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Sample mode when neither is available</li>
           <li><span class="check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Local checks through the existing Makefile</li>
         </ul>
       </div>
@@ -799,7 +799,8 @@
       <div class="terminal" aria-label="Launch command">
         <div class="terminal-top"><span></span><span></span><span></span></div>
         <pre><span class="comment"># run with live GitHub data</span>
-<span class="prompt">$</span> <span class="var">PR_MENU_BAR_GITHUB_TOKEN</span>=github_pat_xxx make run
+<span class="prompt">$</span> gh auth login
+<span class="prompt">$</span> make run
 
 <span class="comment"># run local checks</span>
 <span class="prompt">$</span> make ci-local</pre>

@@ -34,9 +34,9 @@ enum PRActivityDataSource: Equatable {
   var connectionDetail: String {
     switch self {
     case .sample:
-      "Using sample data. Launch with PR_MENU_BAR_GITHUB_TOKEN to load live GitHub activity."
+      "Using sample data. Sign in with gh or launch with PR_MENU_BAR_GITHUB_TOKEN for live GitHub activity."
     case .github:
-      "Using live GitHub data from PR_MENU_BAR_GITHUB_TOKEN."
+      "Using live GitHub data from PR_MENU_BAR_GITHUB_TOKEN or gh auth."
     }
   }
 }
