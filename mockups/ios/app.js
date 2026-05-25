@@ -463,7 +463,7 @@ function renderCards() {
         <strong>${escapeHtml(source.title)}</strong>
         <p>${escapeHtml(source.caption)}</p>
       </section>
-      ${state.privateShareWarning ? `<section class="empty-state"><strong>Private details warning</strong><p>Review private repository details before sharing this card.</p></section>` : ""}
+      ${state.privateShareWarning ? renderPrivateShareWarning() : ""}
       ${renderShareCard(source)}
       <section class="card-actions">
         <button class="secondary-action" type="button" data-action="flip-card">${state.cardSide === "front" ? "Show Releases" : "Show Card"}</button>
@@ -528,6 +528,15 @@ function renderShareCard(source) {
         <span style="height: 30%"></span><span style="height: 64%"></span><span style="height: 46%"></span><span style="height: 80%"></span><span style="height: 58%"></span><span style="height: 92%"></span>
       </div>
       <footer><span>${draft.showHandle ? "@neonwatty" : "handle hidden"}</span><span>${escapeHtml(repoLine)}</span></footer>
+    </section>
+  `;
+}
+
+function renderPrivateShareWarning() {
+  return `
+    <section class="status-banner warning">
+      <strong>Private details warning</strong>
+      <p>This card may include private repo names or release details. Review the back side and privacy settings before sharing.</p>
     </section>
   `;
 }
@@ -825,6 +834,9 @@ app.addEventListener("click", (event) => {
     render();
   }
   if (action === "open-sheet") {
+    if (target.dataset.sheet === "share" && includedRepos().some((repo) => repo.visibility === "private") && state.cardDraft.showRepos) {
+      state.privateShareWarning = true;
+    }
     state.activeSheet = target.dataset.sheet;
     render();
   }
@@ -983,10 +995,24 @@ function renderRepoSearchEmpty() {
 
 function renderPrivacySetup() {
   return `
-    <section class="screen stack auth-screen">
-      <section class="empty-state">
+    <section class="screen stack">
+      <section class="section-title">
+        <div><p class="microcopy">Privacy defaults</p><h1>Decide what leaves the app</h1></div>
+      </section>
+      <section class="status-banner warning">
         <strong>Private details warning</strong>
-        <p>Choose privacy defaults before sharing cards.</p>
+        <p>Private repo names, PR titles, release notes, exact counts, org names, and links can reveal work. PRBar should ask before exporting them.</p>
+      </section>
+      <section class="toggle-list">
+        ${toggle("showRepos", "Show repo names on cards")}
+        ${toggle("showHandle", "Show GitHub handle")}
+        ${toggle("exactCounts", "Use exact counts")}
+        ${toggle("showPrivateLabels", "Show private labels")}
+      </section>
+      <section class="ios-list">
+        <p><span>Local cache</span><strong>Clearable</strong></p>
+        <p><span>GitHub token</span><strong>Keychain</strong></p>
+        <p><span>Analytics</span><strong>Off in prototype</strong></p>
       </section>
       <button class="primary-action" type="button" data-action="continue-privacy">Continue</button>
     </section>
