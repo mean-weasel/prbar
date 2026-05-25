@@ -26,6 +26,7 @@ const releases = [
     title: "GitHub auth fallback",
     tag: "v1.4.0",
     date: "2026-05-24",
+    source: "release",
     notes: "Connects GitHub auth fallback, improves live data startup behavior, and preserves the last useful activity view.",
     url: "https://github.com/neonwatty/prbar/releases/tag/v1.4.0"
   },
@@ -35,8 +36,19 @@ const releases = [
     title: "Pages deployment cleanup",
     tag: "v1.3.0",
     date: "2026-05-22",
+    source: "release",
     notes: "Updates GitHub Pages Actions, refreshes the landing page, and keeps the public preview current.",
     url: "https://github.com/neonwatty/prbar/releases/tag/v1.3.0"
+  },
+  {
+    id: "tag-launch-100",
+    repoId: "launch-kit",
+    title: "Tagged v1.0.0",
+    tag: "v1.0.0",
+    date: "2026-05-21",
+    source: "tag",
+    notes: "Generated from merged PRs around this tag: release smoke harness and launch notes template.",
+    url: "https://github.com/neonwatty/launch-kit/releases/tag/v1.0.0"
   },
   {
     id: "rel-launch-092",
@@ -44,8 +56,19 @@ const releases = [
     title: "Smoke test expansion",
     tag: "v0.9.2",
     date: "2026-05-18",
+    source: "release",
     notes: "Expands release smoke coverage and adds a clearer fixture baseline for launch checks.",
     url: "https://github.com/neonwatty/launch-kit/releases/tag/v0.9.2"
+  },
+  {
+    id: "tag-prbar-121",
+    repoId: "prbar",
+    title: "Tagged v1.2.1",
+    tag: "v1.2.1",
+    date: "2026-05-16",
+    source: "tag",
+    notes: "No GitHub Release notes found. PRBar summarized merged PRs around this tag.",
+    url: "https://github.com/neonwatty/prbar/releases/tag/v1.2.1"
   },
   {
     id: "rel-client-210",
@@ -53,6 +76,7 @@ const releases = [
     title: "Webhook reliability update",
     tag: "v2.1.0",
     date: "2026-05-14",
+    source: "release",
     notes: "Hardens webhook signature checks and adds clearer retry handling for customer integrations.",
     url: "https://github.com/example/client-api/releases/tag/v2.1.0"
   },
@@ -62,6 +86,7 @@ const releases = [
     title: "Release card docs",
     tag: "v0.5.0",
     date: "2026-05-10",
+    source: "release",
     notes: "Adds documentation for creating proof-of-work cards from release metadata.",
     url: "https://github.com/neonwatty/docs-site/releases/tag/v0.5.0"
   }
@@ -254,6 +279,7 @@ function applyInitialRoute() {
   const side = params.get("side");
   const sheet = params.get("sheet");
   const repo = params.get("repo");
+  const release = params.get("release");
   const privateWarning = params.get("private-warning");
 
   const authRoutes = {
@@ -287,6 +313,10 @@ function applyInitialRoute() {
   if (repoFor(repo)) {
     state.activeTab = "prs";
     state.selectedPrRepoId = repo;
+  }
+  if (releases.some((item) => item.id === release)) {
+    state.activeTab = "releases";
+    state.selectedReleaseId = release;
   }
   if (side === "back") state.cardSide = "back";
   if (sheet === "edit" || sheet === "share") state.activeSheet = sheet;
@@ -440,7 +470,7 @@ function renderReleases() {
   if (!release) {
     return `
       <section class="screen stack">
-        <section class="empty-state"><strong>No GitHub Releases in selected repos</strong><p>Include more repositories to see releases.</p></section>
+        <section class="empty-state"><strong>No shipping moments in selected repos</strong><p>Include more repositories to see GitHub Releases and tagged versions.</p></section>
         <button class="primary-action" type="button" data-action="open-more" data-screen="repos">Manage repos</button>
       </section>
     `;
@@ -449,33 +479,61 @@ function renderReleases() {
   return `
     <section class="screen stack">
       <section class="section-title">
-        <div><p class="microcopy">GitHub Releases</p><h1>Imported releases</h1></div>
+        <div><p class="microcopy">Releases</p><h1>Shipping moments</h1></div>
         <button class="small-button" type="button" data-action="open-more" data-screen="repos">${includedRepos().length} repos</button>
       </section>
       <section class="release-focus">
-        <p class="microcopy">Selected release</p>
+        <p class="microcopy">Selected ${release.source === "tag" ? "tag" : "release"}</p>
         <h2>${escapeHtml(release.tag)} ${escapeHtml(release.title)}</h2>
-        <p>${escapeHtml(repo.name)} · ${formatDate(release.date)} · ${escapeHtml(repo.visibility)}</p>
+        <p>${escapeHtml(repo.name)} · ${formatDate(release.date)} · ${escapeHtml(repo.visibility)} · ${release.source === "tag" ? "generated from PRs" : "official release notes"}</p>
       </section>
-      <section class="release-list" aria-label="GitHub release list">
-        ${releaseList.map((item) => {
-          const itemRepo = repoFor(item.repoId);
-          return `
-            <button type="button" class="release-row ${item.id === release.id ? "is-selected" : ""}" data-action="select-release" data-release-id="${item.id}">
-              <span><strong>${escapeHtml(item.tag)} ${escapeHtml(item.title)}</strong><small>${escapeHtml(itemRepo.name)} · ${formatDate(item.date)} · ${escapeHtml(item.notes)}</small></span>
-              ${item.id === release.id ? "<em>Selected</em>" : ""}
-            </button>
-          `;
-        }).join("")}
-      </section>
+      ${renderReleaseTimeline(releaseList, release.id)}
       <section class="notes-panel">
-        <strong>Original release notes</strong>
+        <strong>${release.source === "tag" ? "Generated tag summary" : "Original release notes"}</strong>
         <p>${escapeHtml(release.notes)}</p>
       </section>
-      <button class="primary-action" type="button" data-action="make-release-card" data-release-id="${release.id}">Make Release Card</button>
+      <button class="primary-action" type="button" data-action="make-release-card" data-release-id="${release.id}">Share ${release.source === "tag" ? "Tag" : "Release"}</button>
       <button class="secondary-action" type="button" data-action="open-github">Open on GitHub</button>
-      <button class="secondary-action" type="button" data-action="copy-notes">Copy release notes</button>
+      <button class="secondary-action" type="button" data-action="copy-notes">Copy notes</button>
     </section>
+  `;
+}
+
+function renderReleaseTimeline(releaseList, selectedId) {
+  const groups = groupReleasesByDate(releaseList);
+  return `
+    <section class="release-list" aria-label="Shipping moments timeline">
+      ${groups.map(([label, items]) => `
+        <div class="release-group">
+          <p class="microcopy">${label}</p>
+          ${items.map((item) => renderReleaseRow(item, selectedId)).join("")}
+        </div>
+      `).join("")}
+    </section>
+  `;
+}
+
+function groupReleasesByDate(releaseList) {
+  const groups = new Map();
+  releaseList.forEach((release) => {
+    const label = release.date >= "2026-05-19" ? "This week" : release.date >= "2026-05-01" ? "Earlier in May" : "Older";
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(release);
+  });
+  return [...groups.entries()];
+}
+
+function renderReleaseRow(item, selectedId) {
+  const itemRepo = repoFor(item.repoId);
+  const sourceLabel = item.source === "tag" ? "Tag" : "Release";
+  return `
+    <button type="button" class="release-row ${item.id === selectedId ? "is-selected" : ""}" data-action="select-release" data-release-id="${item.id}">
+      <span>
+        <strong>${escapeHtml(item.tag)} ${escapeHtml(item.title)}</strong>
+        <small>${escapeHtml(itemRepo.name)} · ${formatDate(item.date)} · ${escapeHtml(item.notes)}</small>
+      </span>
+      <em class="source-badge ${item.source === "tag" ? "is-tag" : ""}">${sourceLabel}</em>
+    </button>
   `;
 }
 
@@ -509,7 +567,7 @@ function cardSource() {
       type: "release",
       title: `${release.tag} ${release.title}`,
       metric: release.tag,
-      caption: `${repo.name} · ${formatDate(release.date)} · GitHub Release`,
+      caption: `${repo.name} · ${formatDate(release.date)} · ${release.source === "tag" ? "Tagged version" : "GitHub Release"}`,
       repoNames: [repo.name],
       count: 1,
       notes: release.notes
@@ -563,7 +621,7 @@ function renderShareCard(source) {
   return `
     <section class="share-card ${draft.theme}">
       <div>
-        <p class="microcopy">${source.type === "release" ? "GitHub Release" : `This ${state.range}`}</p>
+          <p class="microcopy">${source.type === "release" ? "Shipping moment" : `This ${state.range}`}</p>
         <h2>${escapeHtml(title)}</h2>
         <p>${escapeHtml(source.caption)}</p>
       </div>

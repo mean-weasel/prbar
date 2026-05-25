@@ -12,7 +12,7 @@ The prototype should validate this loop:
 
 1. Check merged PRs in PRs.
 2. Inspect PRs for totals, repo distribution, and recent PRs.
-3. Browse actual GitHub Releases from included repositories.
+3. Browse date-grouped shipping moments from included repositories.
 4. Adjust included repositories through More > Repos.
 5. Create a share card from either PRs or a GitHub Release.
 6. Adjust card theme and privacy.
@@ -56,18 +56,21 @@ Behavior:
 
 ### Releases
 
-Releases should be based on actual GitHub Releases from fixture data.
+Releases should be a shipping-moments timeline based on actual GitHub Releases first, with tagged versions as a fallback when a repo tags versions without publishing GitHub Release notes.
 
 Behavior:
 
-- Shows releases only from included repositories.
-- Each release row includes repo, tag or version, date, title, and release notes preview.
-- Selecting a release shows its original release notes and actions.
-- Make Release Card opens Share with release metadata preloaded.
-- Open on GitHub can be a non-network prototype action that displays or copies the release URL.
-- Copy release notes can copy fixture release notes or show a copied state.
+- Shows shipping moments only from included repositories.
+- Groups moments by date, starting with recent weeks and earlier months.
+- Each row includes repo, tag or version, source badge, date, title, and notes preview.
+- Source badges distinguish GitHub Release from Tag.
+- Selecting a GitHub Release shows original release notes and actions.
+- Selecting a Tag shows a generated summary from related merged PRs and clearly labels it as generated.
+- Share Release/Tag opens Share with shipping-moment metadata preloaded.
+- Open on GitHub can be a non-network prototype action that displays or copies the release or tag URL.
+- Copy notes can copy fixture notes or show a copied state.
 
-The screen should not imply AI-generated release summaries as the primary source of truth. Future annotation can be hinted at as a later capability, but not treated as core v1 behavior.
+The screen should not imply generated tag summaries are official release notes. Future annotation can be hinted at as a later capability, but not treated as core v1 behavior.
 
 ### Share
 

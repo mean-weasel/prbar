@@ -13,7 +13,7 @@ Open `mockups/ios/index.html` in a browser to review:
 - More menu with Repos, Settings, Privacy, Sample Data, and About
 - PRs summary in Day / Week / Month ranges
 - PRs detail from included repos, with repo drill-down and distribution views
-- GitHub Releases from included repos
+- Shipping moments from included repos: GitHub Releases plus tagged versions
 - Repository inclusion controls
 - Share composer from PR or release sources
 - Front/back card flip, with release evidence aggregated on the back

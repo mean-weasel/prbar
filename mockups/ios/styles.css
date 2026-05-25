@@ -571,6 +571,11 @@ button {
 
 .release-list {
   display: grid;
+  gap: 12px;
+}
+
+.release-group {
+  display: grid;
   gap: 8px;
 }
 
@@ -609,6 +614,21 @@ button {
   font-size: 11px;
   font-style: normal;
   font-weight: 800;
+}
+
+.source-badge {
+  align-self: start;
+  min-width: 54px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  text-align: center;
+}
+
+.source-badge.is-tag {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .source-card {
