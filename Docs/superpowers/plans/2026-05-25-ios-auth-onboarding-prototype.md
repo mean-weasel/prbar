@@ -33,8 +33,8 @@ No production macOS app files should be touched in this pass.
 4. Repo setup: searchable grouped repo picker with public/private badges, select all/none, and an SSO-blocked example.
 5. Privacy defaults: card sharing defaults and private-detail warning.
 6. Sync screen: staged loading for account, organizations, repos, PRs, releases.
-7. Authenticated app: existing Activity / Releases / Cards / More flow, with improved native-iOS styling.
-8. Recoverable states: expired token, rate limit, partial sync, no repos, no activity, no releases, private export warning.
+7. Authenticated app: existing PRs / Releases / Share / More flow, with improved native-iOS styling.
+8. Recoverable states: expired token, rate limit, partial sync, no repos, no PRs, no releases, private export warning.
 
 ---
 
@@ -57,7 +57,7 @@ const requiredHtml = [
   "More menu",
   "GitHub Releases",
   "Repo inclusion",
-  "Cards from activity or GitHub Releases",
+  "Share from PRs or GitHub Releases",
   "GitHub sign-in",
   "First-run onboarding"
 ];
@@ -104,10 +104,10 @@ const requiredJs = [
   "renderSyncing",
   "renderAuthIssue",
   "renderEmptyState",
-  "renderActivity",
-  "renderActivity",
+  "renderPRs",
+  "renderPRs",
   "renderReleases",
-  "renderCards",
+  "renderShare",
   "renderCardBackEvidence",
   "renderEditSheet",
   "renderShareSheet",
@@ -130,7 +130,7 @@ const requiredJs = [
   "Share Back",
   "Share Both",
   "Copy Caption",
-  "Included repos power Activity, Releases, and Cards.",
+  "Included repos power PRs, Releases, and Share.",
   "day",
   "week",
   "month"
@@ -138,7 +138,7 @@ const requiredJs = [
 
 const requiredReadme = [
   "Interactive HTML prototype",
-  "Activity / Releases / Cards / More",
+  "PRs / Releases / Share / More",
   "First-run GitHub sign-in",
   "Permission rationale",
   "Repo setup",
@@ -166,7 +166,7 @@ Expected: failure mentioning `GitHub sign-in` or another newly added marker.
 In `mockups/ios/index.html`, update the intro paragraph and review list.
 
 ```html
-<p>Use the phone below like an app: sign in with GitHub, set repo and privacy defaults, switch ranges, browse GitHub Releases, create cards, and open More for secondary settings.</p>
+<p>Use the phone below like an app: sign in with GitHub, set repo and privacy defaults, switch ranges, browse GitHub Releases, create share, and open More for secondary settings.</p>
 ```
 
 Add these list items to the coverage list:
@@ -204,8 +204,8 @@ Additional review links:
 - `?auth=expired`
 - `?auth=rate-limit`
 - `?empty=no-repos`
-- `?empty=no-activity`
-- `?tab=cards&private-warning=true`
+- `?empty=no-PRs`
+- `?tab=share&private-warning=true`
 ```
 
 - [ ] **Step 5: Commit verifier/docs scaffold**
@@ -246,7 +246,7 @@ const state = {
   cardSide: "front",
   privateShareWarning: false,
   cardDraft: {
-    sourceType: "activity",
+    sourceType: "PRs",
     sourceId: null,
     theme: "clean",
     showRepos: true,
@@ -290,7 +290,7 @@ function applyInitialRoute() {
     state.authIssue = authIssue;
   }
 
-  if (empty === "no-repos" || empty === "no-activity" || empty === "no-releases") {
+  if (empty === "no-repos" || empty === "no-PRs" || empty === "no-releases") {
     state.emptyState = empty;
     state.authState = "authenticated";
     state.onboardingStep = "done";
@@ -300,7 +300,7 @@ function applyInitialRoute() {
   if (side === "back") state.cardSide = "back";
   if (sheet === "edit" || sheet === "share") state.activeSheet = sheet;
   if (privateWarning === "true") {
-    state.activeTab = "cards";
+    state.activeTab = "share";
     state.privateShareWarning = true;
   }
 }
@@ -316,10 +316,10 @@ function renderActiveScreen() {
   if (state.authState === "onboarding") return renderOnboarding();
   if (state.authState === "issue") return renderAuthIssue();
   if (state.emptyState) return renderEmptyState();
-  if (state.activeTab === "activity") return renderActivity();
-  if (state.activeTab === "activity") return renderActivity();
+  if (state.activeTab === "prs") return renderPRs();
+  if (state.activeTab === "prs") return renderPRs();
   if (state.activeTab === "releases") return renderReleases();
-  if (state.activeTab === "cards") return renderCards();
+  if (state.activeTab === "share") return renderShare();
   return renderMore();
 }
 ```
@@ -434,7 +434,7 @@ function renderWelcome() {
       <div class="auth-hero">
         <p class="microcopy">PRBar for iOS</p>
         <h1>Carry your shipping rhythm with you.</h1>
-        <p>Connect GitHub to see merged PRs, releases, and shareable proof-of-work cards from your selected repositories.</p>
+        <p>Connect GitHub to see merged PRs, releases, and shareable proof-of-work share from your selected repositories.</p>
       </div>
       <section class="permission-list">
         <p><strong>Read-only GitHub data</strong><span>PRs, repositories, releases, and account identity.</span></p>
@@ -460,7 +460,7 @@ function renderPermissionRationale() {
       <div class="auth-hero">
         <p class="microcopy">GitHub permissions</p>
         <h1>Choose exactly what PRBar can read.</h1>
-        <p>PRBar uses read-only access to calculate your activity and find releases. Private repo names and release notes stay hidden from shared cards unless you opt in.</p>
+        <p>PRBar uses read-only access to calculate your PRs and find releases. Private repo names and release notes stay hidden from shared share unless you opt in.</p>
       </div>
       <section class="ios-list">
         <p><span>Account identity</span><strong>Required</strong></p>
@@ -529,14 +529,14 @@ function renderSyncing() {
     <section class="auth-screen">
       <div class="auth-hero">
         <p class="microcopy">Initial sync</p>
-        <h1>Building your first activity view.</h1>
-        <p>PRBar is collecting selected repos, merged PRs, releases, and recent activity. Real sync should show partial progress and retry options.</p>
+        <h1>Building your first PRs view.</h1>
+        <p>PRBar is collecting selected repos, merged PRs, releases, and recent PRs. Real sync should show partial progress and retry options.</p>
       </div>
       <section class="sync-steps">
         <p class="is-complete"><span></span>Account loaded</p>
         <p class="is-complete"><span></span>Repositories selected</p>
         <p class="is-active"><span></span>Pull requests and releases syncing</p>
-        <p><span></span>Cards ready</p>
+        <p><span></span>Share card ready</p>
       </section>
       <button class="primary-action" type="button" data-action="finish-sync">View PRBar</button>
     </section>
@@ -694,7 +694,7 @@ function renderRepoSetup() {
       </section>
       <section class="status-banner">
         <strong>${selectedCount} selected</strong>
-        <p>Included repos power Activity, Releases, and Cards. Private repos are hidden from cards unless you allow them.</p>
+        <p>Included repos power PRs, Releases, and Share. Private repos are hidden from share unless you allow them.</p>
       </section>
       <input class="search-input" type="search" placeholder="Search repositories" value="${escapeHtml(state.repoSearch)}" data-action="repo-search">
       <section class="repo-list setup-repos">
@@ -825,7 +825,7 @@ function renderPrivacySetup() {
         <p>Private repo names, PR titles, release notes, exact counts, org names, and links can reveal work. PRBar should ask before exporting them.</p>
       </section>
       <section class="toggle-list">
-        ${toggle("showRepos", "Show repo names on cards")}
+        ${toggle("showRepos", "Show repo names on share")}
         ${toggle("showHandle", "Show GitHub handle")}
         ${toggle("exactCounts", "Use exact counts")}
         ${toggle("showPrivateLabels", "Show private labels")}
@@ -843,7 +843,7 @@ function renderPrivacySetup() {
 
 - [ ] **Step 2: Show private warning before share**
 
-In `renderCards()`, before `renderShareCard(source)`, add:
+In `renderShare()`, before `renderShareCard(source)`, add:
 
 ```js
 ${state.privateShareWarning ? renderPrivateShareWarning() : ""}
@@ -973,8 +973,8 @@ Add:
 ```js
 function renderEmptyState() {
   const states = {
-    "no-repos": ["No repositories selected", "Choose at least one repo to populate PR stats, releases, and cards.", "Choose repositories"],
-    "no-activity": ["No merged PRs yet", "Selected repos have no merged PRs in this range. Try Month or include more repos.", "Open Activity"],
+    "no-repos": ["No repositories selected", "Choose at least one repo to populate PR stats, releases, and share.", "Choose repositories"],
+    "no-PRs": ["No merged PRs yet", "Selected repos have no merged PRs in this range. Try Month or include more repos.", "Open PRs"],
     "no-releases": ["No GitHub releases found", "Selected repos may use tags without releases or have draft releases hidden.", "Open Releases"]
   };
   const [title, detail, actionLabel] = states[state.emptyState];
@@ -1001,7 +1001,7 @@ if (action === "resolve-empty") {
     state.activeTab = "releases";
     state.emptyState = null;
   } else {
-    state.activeTab = "activity";
+    state.activeTab = "prs";
     state.emptyState = null;
   }
   render();
@@ -1010,10 +1010,10 @@ if (action === "resolve-empty") {
 
 - [ ] **Step 3: Add stale data banner to dashboard**
 
-In `renderActivity()`, add under the range control:
+In `renderPRs()`, add under the range control:
 
 ```js
-${state.syncState === "stale" ? `<section class="status-banner"><strong>Last synced 18 minutes ago</strong><p>Showing cached GitHub activity. Pull to refresh in the native app.</p></section>` : ""}
+${state.syncState === "stale" ? `<section class="status-banner"><strong>Last synced 18 minutes ago</strong><p>Showing cached GitHub PRs. Pull to refresh in the native app.</p></section>` : ""}
 ```
 
 - [ ] **Step 4: Verify and commit**
@@ -1046,9 +1046,9 @@ Replace `navItems` with:
 
 ```js
 const navItems = [
-    ["activity", "Activity", "▥"],
+    ["prs", "PRs", "▥"],
   ["releases", "Releases", "◇"],
-  ["cards", "Cards", "▣"],
+  ["share", "Share", "▣"],
   ["more", "More", "•••"]
 ];
 ```
@@ -1144,7 +1144,7 @@ In another shell, capture:
 ```bash
 npx --yes playwright@1.52.0 screenshot --full-page --viewport-size=390,844 'http://localhost:4173/mockups/ios/?auth=signed-out' /tmp/prbar-ios-auth-welcome.png
 npx --yes playwright@1.52.0 screenshot --full-page --viewport-size=390,844 'http://localhost:4173/mockups/ios/?auth=repo-setup' /tmp/prbar-ios-repo-setup.png
-npx --yes playwright@1.52.0 screenshot --full-page --viewport-size=390,844 'http://localhost:4173/mockups/ios/?tab=cards&private-warning=true' /tmp/prbar-ios-private-share-warning.png
+npx --yes playwright@1.52.0 screenshot --full-page --viewport-size=390,844 'http://localhost:4173/mockups/ios/?tab=share&private-warning=true' /tmp/prbar-ios-private-share-warning.png
 ```
 
 Stop the server with `Ctrl-C`.
@@ -1194,9 +1194,9 @@ Add:
 | Expired token | `?auth=expired` |
 | Rate limit | `?auth=rate-limit` |
 | No repositories | `?empty=no-repos` |
-| No activity | `?empty=no-activity` |
+| No PRs | `?empty=no-PRs` |
 | No releases | `?empty=no-releases` |
-| Private share warning | `?tab=cards&private-warning=true` |
+| Private share warning | `?tab=share&private-warning=true` |
 ```
 
 - [ ] **Step 2: Add implementation notes to the design spec**
@@ -1264,10 +1264,10 @@ git commit -m "Document iOS auth prototype review states"
 - `?auth=privacy` shows share privacy defaults and private-detail warnings.
 - `?auth=syncing` shows staged initial sync progress.
 - `?auth=expired` and `?auth=rate-limit` show recoverable issue states with reconnect/cached-data paths.
-- `?empty=no-repos`, `?empty=no-activity`, and `?empty=no-releases` show distinct no-data states.
-- `?tab=cards&private-warning=true` shows a private-detail warning before sharing.
-- The authenticated Activity / Releases / Cards / More tabs still work.
-- The Cards front/back flow, Edit Card sheet, and Share Card sheet still work.
+- `?empty=no-repos`, `?empty=no-PRs`, and `?empty=no-releases` show distinct no-data states.
+- `?tab=share&private-warning=true` shows a private-detail warning before sharing.
+- The authenticated PRs / Releases / Share / More tabs still work.
+- The Share front/back flow, Edit Card sheet, and Share Card sheet still work.
 - The prototype looks less web-dashboard-like: native-ish tab behavior, cleaner header, grouped lists, fewer heavy borders, and bottom sheets with a grabber.
 - `npm run verify:ios-mockups` passes.
 - `node --check mockups/ios/app.js` passes.

@@ -73,11 +73,10 @@ const state = {
   syncState: "fresh",
   authIssue: null,
   emptyState: null,
-  activeTab: "activity",
+  activeTab: "prs",
   activeMoreScreen: null,
   activeSheet: null,
-  activityView: "summary",
-  selectedActivityRepoId: null,
+  selectedPrRepoId: null,
   range: "week",
   selectedReleaseId: "rel-prbar-140",
   repoSearch: "",
@@ -96,9 +95,9 @@ const state = {
 };
 
 const navItems = [
-  ["activity", "Activity", "▥"],
+  ["prs", "PRs", "▥"],
   ["releases", "Releases", "◇"],
-  ["cards", "Cards", "▣"],
+  ["share", "Share", "▣"],
   ["more", "More", "•••"]
 ];
 
@@ -198,7 +197,7 @@ function makeActivityCard() {
     sourceType: "activity",
     sourceId: null
   };
-  setTab("cards");
+  setTab("share");
 }
 
 function makeReleaseCard(id) {
@@ -211,7 +210,7 @@ function makeReleaseCard(id) {
     sourceType: "release",
     sourceId: id
   };
-  setTab("cards");
+  setTab("share");
 }
 
 function toggleRepo(id) {
@@ -254,7 +253,6 @@ function applyInitialRoute() {
   const tab = params.get("tab");
   const side = params.get("side");
   const sheet = params.get("sheet");
-  const activity = params.get("activity");
   const repo = params.get("repo");
   const privateWarning = params.get("private-warning");
 
@@ -283,11 +281,12 @@ function applyInitialRoute() {
     state.onboardingStep = "done";
   }
 
-  if (navItems.some(([id]) => id === tab)) state.activeTab = tab;
-  if (["summary", "repos", "distribution"].includes(activity)) state.activityView = activity;
+  const tabAliases = { activity: "prs", cards: "share" };
+  const requestedTab = tabAliases[tab] || tab;
+  if (navItems.some(([id]) => id === requestedTab)) state.activeTab = requestedTab;
   if (repoFor(repo)) {
-    state.activeTab = "activity";
-    state.selectedActivityRepoId = repo;
+    state.activeTab = "prs";
+    state.selectedPrRepoId = repo;
   }
   if (side === "back") state.cardSide = "back";
   if (sheet === "edit" || sheet === "share") state.activeSheet = sheet;
@@ -295,7 +294,7 @@ function applyInitialRoute() {
     state.privateShareWarning = true;
   }
   if (privateWarning === "true") {
-    state.activeTab = "cards";
+    state.activeTab = "share";
     state.privateShareWarning = true;
   }
 }
@@ -364,15 +363,15 @@ function renderActiveScreen() {
   if (state.authState === "issue") return renderAuthIssue();
   if (state.emptyState) return renderEmptyState();
   const staleBanner = renderStaleDataBanner();
-  if (state.activeTab === "activity") return staleBanner + renderActivity();
+  if (state.activeTab === "prs") return staleBanner + renderActivity();
   if (state.activeTab === "releases") return staleBanner + renderReleases();
-  if (state.activeTab === "cards") return staleBanner + renderCards();
+  if (state.activeTab === "share") return staleBanner + renderCards();
   return staleBanner + renderMore();
 }
 
 function renderRangeControl() {
   return `
-    <div class="segmented" aria-label="Activity range">
+    <div class="segmented" aria-label="PR range">
       ${ranges.map((range) => `
         <button type="button" class="${state.range === range ? "is-active" : ""}" data-action="range" data-range="${range}">
           ${range[0].toUpperCase()}${range.slice(1)}
@@ -386,51 +385,22 @@ function renderActivity() {
   const prs = rangePrs();
   const total = prs.length;
   const rangeLabel = state.range === "day" ? "Today" : state.range === "week" ? "This week" : "This month";
-  const selectedRepo = state.selectedActivityRepoId ? repoFor(state.selectedActivityRepoId) : null;
+  const selectedRepo = state.selectedPrRepoId ? repoFor(state.selectedPrRepoId) : null;
   const repoPrs = selectedRepo ? prs.filter((pr) => pr.repoId === selectedRepo.id) : [];
   return `
     <section class="screen stack">
       <section class="section-title">
-        <div><p class="microcopy">Activity</p><h1>${selectedRepo ? escapeHtml(selectedRepo.name) : "Shipping rhythm"}</h1></div>
+        <div><p class="microcopy">PRs</p><h1>${selectedRepo ? escapeHtml(selectedRepo.name) : "Shipping rhythm"}</h1></div>
         <button class="small-button" type="button" data-action="open-more" data-screen="repos">Repos</button>
       </section>
       ${renderRangeControl()}
       ${renderStaleDataBanner()}
-      <div class="segmented" aria-label="Activity view">
-        ${[
-          ["summary", "Summary"],
-          ["repos", "Repos"],
-          ["distribution", "Distribution"]
-        ].map(([view, label]) => `
-          <button type="button" class="${state.activityView === view ? "is-active" : ""}" data-action="activity-view" data-view="${view}">
-            ${label}
-          </button>
-        `).join("")}
-      </div>
-      ${selectedRepo ? renderActivityRepoDetail(selectedRepo, repoPrs) : renderActivityView(prs, total, rangeLabel)}
+      ${selectedRepo ? renderActivityRepoDetail(selectedRepo, repoPrs) : renderActivityOverview(prs, total, rangeLabel)}
     </section>
   `;
 }
 
-function renderActivityView(prs, total, rangeLabel) {
-  if (state.activityView === "repos") {
-    return `
-      <section class="section-title">
-        <div><p class="microcopy">By repository</p><h2>Tap a repo for PRs</h2></div>
-      </section>
-      ${renderRepoMix(prs, true)}
-      ${renderPrList(prs)}
-    `;
-  }
-  if (state.activityView === "distribution") {
-    return `
-      <section class="section-title">
-        <div><p class="microcopy">Distribution</p><h2>PRs across repos</h2></div>
-      </section>
-      ${renderChart(prs, "large")}
-      ${renderRepoMix(prs, true)}
-    `;
-  }
+function renderActivityOverview(prs, total, rangeLabel) {
   return `
       <section class="hero-metric">
         <p class="microcopy">${rangeLabel}</p>
@@ -444,15 +414,18 @@ function renderActivityView(prs, total, rangeLabel) {
           <div><strong>High-activity moment detected</strong><p>Best stretch in the current ${state.range}.</p></div>
         </section>
       ` : ""}
+      <section class="section-title compact-title">
+        <div><p class="microcopy">By repository</p><h2>Tap a repo for PRs</h2></div>
+      </section>
       ${renderRepoMix(prs, true)}
-      ${renderPrList(prs.slice(0, 4))}
+      ${renderPrList(prs)}
       <button class="primary-action" type="button" data-action="make-activity-card">Make Card</button>
   `;
 }
 
 function renderActivityRepoDetail(repo, prs) {
   return `
-    <button class="back-button" type="button" data-action="clear-activity-repo">‹ Activity</button>
+    <button class="back-button" type="button" data-action="clear-activity-repo">‹ PRs</button>
     <section class="hero-metric">
       <p class="microcopy">${escapeHtml(repo.visibility)} repository</p>
       <h1>${prs.length} merged</h1>
@@ -518,7 +491,7 @@ function renderCards() {
   return `
     <section class="screen stack">
       <section class="section-title">
-        <div><p class="microcopy">Cards</p><h1>Share proof of work</h1></div>
+        <div><p class="microcopy">Share</p><h1>Proof of work</h1></div>
       </section>
       <section class="source-card">
         <strong>${escapeHtml(source.title)}</strong>
@@ -730,7 +703,7 @@ function renderRepos() {
   return `
     <section class="screen stack">
       ${renderBackToMore()}
-      <section class="source-card"><strong>Included repos power Activity, Releases, and Cards.</strong><p>${includedRepos().length} of ${repositories.length} repositories included.</p></section>
+      <section class="source-card"><strong>Included repos power PRs, Releases, and Share.</strong><p>${includedRepos().length} of ${repositories.length} repositories included.</p></section>
       <input class="search-input" value="${escapeHtml(state.repoSearch)}" placeholder="Search repos" aria-label="Search repositories" data-action="repo-search">
       <section class="repo-list">
         ${visibleRepos.map((repo) => `
@@ -795,7 +768,7 @@ function renderAbout() {
   return `
     <section class="screen stack">
       ${renderBackToMore()}
-      <section class="source-card"><strong>PRBar iOS prototype</strong><p>A fixture-backed mobile prototype for checking shipping rhythm, browsing GitHub Releases, selecting repos, and creating proof-of-work cards.</p></section>
+      <section class="source-card"><strong>PRBar iOS prototype</strong><p>A fixture-backed mobile prototype for checking PR rhythm, browsing GitHub Releases, selecting repos, and sharing proof of work.</p></section>
       <section class="notes-panel"><strong>Not connected to GitHub yet</strong><p>This validates UX before native iOS implementation and real GitHub integration.</p></section>
     </section>
   `;
@@ -887,7 +860,7 @@ app.addEventListener("click", (event) => {
     state.authState = "authenticated";
     state.onboardingStep = "done";
     state.syncState = "fresh";
-    state.activeTab = "activity";
+    state.activeTab = "prs";
     render();
   }
   if (action === "reconnect-github") {
@@ -918,7 +891,7 @@ app.addEventListener("click", (event) => {
       state.activeTab = "releases";
       state.emptyState = null;
     } else {
-      state.activeTab = "activity";
+      state.activeTab = "prs";
       state.emptyState = null;
     }
     render();
@@ -928,17 +901,12 @@ app.addEventListener("click", (event) => {
     state.range = target.dataset.range;
     render();
   }
-  if (action === "activity-view") {
-    state.activityView = target.dataset.view;
-    state.selectedActivityRepoId = null;
-    render();
-  }
   if (action === "select-activity-repo") {
-    state.selectedActivityRepoId = target.dataset.repoId;
+    state.selectedPrRepoId = target.dataset.repoId;
     render();
   }
   if (action === "clear-activity-repo") {
-    state.selectedActivityRepoId = null;
+    state.selectedPrRepoId = null;
     render();
   }
   if (action === "make-activity-card") makeActivityCard();
@@ -1076,7 +1044,7 @@ function renderRepoSetup() {
       </section>
       <section class="status-banner">
         <strong>${selectedCount} selected</strong>
-        <p>Included repos power Activity, Releases, and Cards. Private repos are hidden from cards unless you allow them.</p>
+        <p>Included repos power PRs, Releases, and Share. Private repos are hidden from shared proof unless you allow them.</p>
       </section>
       <input class="search-input" type="search" placeholder="Search repositories" value="${escapeHtml(state.repoSearch)}" data-action="repo-search">
       <section class="repo-list setup-repos">
@@ -1151,7 +1119,7 @@ function renderSyncing() {
         <p class="is-complete"><span></span>Account loaded</p>
         <p class="is-complete"><span></span>Repositories selected</p>
         <p class="is-active"><span></span>Pull requests and releases syncing</p>
-        <p><span></span>Cards ready</p>
+        <p><span></span>Share card ready</p>
       </section>
       <button class="primary-action" type="button" data-action="finish-sync">View PRBar</button>
     </section>
@@ -1193,7 +1161,7 @@ function renderAuthIssue() {
 function renderEmptyState() {
   const states = {
     "no-repos": ["No repositories selected", "Choose at least one repo to populate PR stats, releases, and cards.", "Choose repositories"],
-    "no-activity": ["No merged PRs yet", "Selected repos have no merged PRs in this range. Try Month or include more repos.", "Open Activity"],
+    "no-activity": ["No merged PRs yet", "Selected repos have no merged PRs in this range. Try Month or include more repos.", "Open PRs"],
     "no-releases": ["No GitHub releases found", "Selected repos may use tags without releases or have draft releases hidden.", "Open Releases"]
   };
   const [title, detail, actionLabel] = states[state.emptyState];

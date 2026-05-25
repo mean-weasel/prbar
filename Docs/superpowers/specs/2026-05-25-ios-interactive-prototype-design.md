@@ -10,11 +10,11 @@ The prototype remains a UX artifact. It should use realistic fixture data, not r
 
 The prototype should validate this loop:
 
-1. Check PR activity in Activity.
-2. Inspect Activity for distribution and recent PRs.
+1. Check merged PRs in PRs.
+2. Inspect PRs for totals, repo distribution, and recent PRs.
 3. Browse actual GitHub Releases from included repositories.
 4. Adjust included repositories through More > Repos.
-5. Create a share card from either PR activity or a GitHub Release.
+5. Create a share card from either PRs or a GitHub Release.
 6. Adjust card theme and privacy.
 7. Preview the final proof-of-work card.
 
@@ -24,9 +24,9 @@ The interactive version should replace the current static screen board with a si
 
 Primary bottom navigation:
 
-- Activity
+- PRs
 - Releases
-- Cards
+- Share
 - More
 
 More menu:
@@ -41,15 +41,15 @@ Repos should live under More rather than in the primary nav. It is important, bu
 
 ## Screens
 
-### Activity
+### PRs
 
-Activity remains the default screen.
+PRs remains the default screen.
 
 Behavior:
 
 - Day / Week / Month range selector updates the headline metric, chart, repo mix, and recent PR list.
-- Make Card starts a card from the currently selected activity range.
-- A high-activity moment can appear when the selected range has enough activity.
+- Make Card starts a card from the currently selected PRs range.
+- A high-PRs moment can appear when the selected range has enough PRs.
 - Includes Summary, Repos, and Distribution views inside the tab.
 - Tapping a repo opens that repo's PR list for the selected range.
 - Reflects the currently included repositories.
@@ -63,26 +63,26 @@ Behavior:
 - Shows releases only from included repositories.
 - Each release row includes repo, tag or version, date, title, and release notes preview.
 - Selecting a release shows its original release notes and actions.
-- Make Release Card opens Cards with release metadata preloaded.
+- Make Release Card opens Share with release metadata preloaded.
 - Open on GitHub can be a non-network prototype action that displays or copies the release URL.
 - Copy release notes can copy fixture release notes or show a copied state.
 
 The screen should not imply AI-generated release summaries as the primary source of truth. Future annotation can be hinted at as a later capability, but not treated as core v1 behavior.
 
-### Cards
+### Share
 
-Cards is the share-card studio.
+Share is the proof-of-work studio.
 
 Behavior:
 
-- Can start from current activity range or selected release.
+- Can start from current PR range or selected release.
 - Theme picker changes the preview.
 - Privacy toggles affect repo names, handle visibility, exact counts, and private repo labels.
 - Share Preview shows the final card artifact in a dedicated preview state.
 
 Initial card sources:
 
-- Activity range
+- PRs range
 - GitHub Release
 
 Initial themes:
@@ -104,13 +104,13 @@ Behavior:
 
 ### Repos
 
-Repos controls the data boundary for Activity, Releases, and Cards.
+Repos controls the data boundary for PRs, Releases, and Share.
 
 Behavior:
 
 - Search filters repositories.
 - Include/exclude toggles update the app state.
-- Included repositories affect Activity, Releases, and Cards.
+- Included repositories affect PRs, Releases, and Share.
 - Include all restores all repositories.
 - Private repositories are clearly labeled.
 
@@ -142,7 +142,7 @@ Sample Data explains that the prototype is fixture-backed.
 
 Behavior:
 
-- Shows a short list of included fixture entities: repos, PRs, releases, and cards.
+- Shows a short list of included fixture entities: repos, PRs, releases, and share.
 - Provides reset demo data action.
 
 ### About
@@ -217,7 +217,7 @@ Use plain HTML, CSS, and vanilla JavaScript. Do not introduce React, Vite, or an
 Preferred file shape:
 
 - `mockups/ios/index.html`: app shell and semantic screen containers
-- `mockups/ios/styles.css`: mobile app layout, navigation, screens, cards, and responsive wrapper
+- `mockups/ios/styles.css`: mobile app layout, navigation, screens, share, and responsive wrapper
 - `mockups/ios/app.js`: fixture data, app state, render functions, and event handlers
 - `scripts/verify-ios-mockups.mjs`: update required checks for interactive prototype screens and copy
 
@@ -236,7 +236,7 @@ Manual interaction checks:
 
 - bottom navigation changes screens
 - More menu opens Repos, Settings, Privacy, Sample Data, and About
-- Day / Week / Month changes Activity
+- Day / Week / Month changes PRs
 - repo inclusion changes Releases
 - selecting a release updates release details
 - Make Release Card opens a release card draft

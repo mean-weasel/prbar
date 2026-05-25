@@ -18,7 +18,7 @@ const requiredHtml = [
   "More menu",
   "GitHub Releases",
   "Repo inclusion",
-  "Cards from activity or GitHub Releases",
+  "Share from PRs or GitHub Releases",
   "GitHub sign-in",
   "First-run onboarding"
 ];
@@ -67,7 +67,7 @@ const requiredJs = [
   "renderEmptyState",
   "renderActivity",
   "renderActivityRepoDetail",
-  "activityView",
+  "selectedPrRepoId",
   "select-activity-repo",
   "renderReleases",
   "renderCards",
@@ -93,7 +93,7 @@ const requiredJs = [
   "Share Back",
   "Share Both",
   "Copy Caption",
-  "Included repos power Activity, Releases, and Cards.",
+  "Included repos power PRs, Releases, and Share.",
   "day",
   "week",
   "month"
@@ -101,7 +101,7 @@ const requiredJs = [
 
 const requiredReadme = [
   "Interactive HTML prototype",
-  "Activity / Releases / Cards / More",
+  "PRs / Releases / Share / More",
   "First-run GitHub sign-in",
   "Permission rationale",
   "Repo setup",
