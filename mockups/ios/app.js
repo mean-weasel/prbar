@@ -68,6 +68,11 @@ const releases = [
 ];
 
 const state = {
+  authState: "authenticated",
+  onboardingStep: "done",
+  syncState: "fresh",
+  authIssue: null,
+  emptyState: null,
   activeTab: "today",
   activeMoreScreen: null,
   activeSheet: null,
@@ -76,6 +81,7 @@ const state = {
   repoSearch: "",
   toast: "",
   cardSide: "front",
+  privateShareWarning: false,
   cardDraft: {
     sourceType: "activity",
     sourceId: null,
@@ -228,12 +234,45 @@ function resetDemoData() {
 
 function applyInitialRoute() {
   const params = new URLSearchParams(window.location.search);
+  const auth = params.get("auth");
+  const empty = params.get("empty");
   const tab = params.get("tab");
   const side = params.get("side");
   const sheet = params.get("sheet");
+  const privateWarning = params.get("private-warning");
+
+  const authRoutes = {
+    "signed-out": ["signedOut", "welcome", "fresh", null],
+    permissions: ["onboarding", "permissions", "fresh", null],
+    connecting: ["onboarding", "connecting", "connecting", null],
+    "repo-setup": ["onboarding", "repos", "fresh", null],
+    privacy: ["onboarding", "privacy", "fresh", null],
+    syncing: ["onboarding", "syncing", "syncing", null],
+    expired: ["issue", "done", "stale", "expired"],
+    "rate-limit": ["issue", "done", "rateLimited", "rateLimit"]
+  };
+
+  if (authRoutes[auth]) {
+    const [authState, onboardingStep, syncState, authIssue] = authRoutes[auth];
+    state.authState = authState;
+    state.onboardingStep = onboardingStep;
+    state.syncState = syncState;
+    state.authIssue = authIssue;
+  }
+
+  if (empty === "no-repos" || empty === "no-activity" || empty === "no-releases") {
+    state.emptyState = empty;
+    state.authState = "authenticated";
+    state.onboardingStep = "done";
+  }
+
   if (navItems.some(([id]) => id === tab)) state.activeTab = tab;
   if (side === "back") state.cardSide = "back";
   if (sheet === "edit" || sheet === "share") state.activeSheet = sheet;
+  if (privateWarning === "true") {
+    state.activeTab = "cards";
+    state.privateShareWarning = true;
+  }
 }
 
 function render() {
@@ -245,7 +284,7 @@ function render() {
       </section>
       ${renderActiveSheet()}
       ${state.toast ? `<div class="toast">${escapeHtml(state.toast)}</div>` : ""}
-      ${renderBottomNav()}
+      ${state.authState === "authenticated" || state.authState === "issue" ? renderBottomNav() : ""}
     </div>
   `;
 }
@@ -291,6 +330,10 @@ function navIcon(id) {
 }
 
 function renderActiveScreen() {
+  if (state.authState === "signedOut") return renderWelcome();
+  if (state.authState === "onboarding") return renderOnboarding();
+  if (state.authState === "issue") return renderAuthIssue();
+  if (state.emptyState) return renderEmptyState();
   if (state.activeTab === "today") return renderToday();
   if (state.activeTab === "activity") return renderActivity();
   if (state.activeTab === "releases") return renderReleases();
@@ -408,6 +451,7 @@ function renderCards() {
         <strong>${escapeHtml(source.title)}</strong>
         <p>${escapeHtml(source.caption)}</p>
       </section>
+      ${state.privateShareWarning ? `<section class="empty-state"><strong>Private details warning</strong><p>Review private repository details before sharing this card.</p></section>` : ""}
       ${renderShareCard(source)}
       <section class="card-actions">
         <button class="secondary-action" type="button" data-action="flip-card">${state.cardSide === "front" ? "Show Releases" : "Show Card"}</button>
@@ -700,6 +744,48 @@ app.addEventListener("click", (event) => {
   const target = event.target.closest("[data-action]");
   if (!target) return;
   const action = target.dataset.action;
+  if (action === "start-github") {
+    state.authState = "onboarding";
+    state.onboardingStep = "permissions";
+    render();
+  }
+  if (action === "try-demo") {
+    state.authState = "authenticated";
+    state.onboardingStep = "done";
+    toast("Demo data loaded");
+  }
+  if (action === "continue-github") {
+    state.onboardingStep = "connecting";
+    state.syncState = "connecting";
+    render();
+  }
+  if (action === "oauth-success") {
+    state.onboardingStep = "repos";
+    state.syncState = "fresh";
+    render();
+  }
+  if (action === "continue-repos") {
+    state.onboardingStep = "privacy";
+    render();
+  }
+  if (action === "continue-privacy") {
+    state.onboardingStep = "syncing";
+    state.syncState = "syncing";
+    render();
+  }
+  if (action === "finish-sync") {
+    state.authState = "authenticated";
+    state.onboardingStep = "done";
+    state.syncState = "fresh";
+    state.activeTab = "today";
+    render();
+  }
+  if (action === "reconnect-github") {
+    state.authState = "onboarding";
+    state.onboardingStep = "permissions";
+    state.authIssue = null;
+    render();
+  }
   if (action === "nav") setTab(target.dataset.tab);
   if (action === "range") {
     state.range = target.dataset.range;
@@ -750,6 +836,119 @@ app.addEventListener("click", (event) => {
   }
   if (action === "reset-demo") resetDemoData();
 });
+
+function renderOnboarding() {
+  if (state.onboardingStep === "permissions") return renderPermissionRationale();
+  if (state.onboardingStep === "connecting") return renderConnecting();
+  if (state.onboardingStep === "repos") return renderRepoSetup();
+  if (state.onboardingStep === "privacy") return renderPrivacySetup();
+  if (state.onboardingStep === "syncing") return renderSyncing();
+  return renderWelcome();
+}
+
+function renderWelcome() {
+  return `
+    <section class="screen stack auth-screen">
+      <section class="empty-state">
+        <strong>GitHub sign-in</strong>
+        <p>Sign in with GitHub to start First-run onboarding, or load demo data.</p>
+      </section>
+      <button class="primary-action" type="button" data-action="start-github">Sign in with GitHub</button>
+      <button class="secondary-action" type="button" data-action="try-demo">Try Demo</button>
+    </section>
+  `;
+}
+
+function renderPermissionRationale() {
+  return `
+    <section class="screen stack auth-screen">
+      <section class="empty-state">
+        <strong>Continue to GitHub</strong>
+        <p>Permission rationale for read-only access before OAuth.</p>
+      </section>
+      <button class="primary-action" type="button" data-action="continue-github">Continue to GitHub</button>
+    </section>
+  `;
+}
+
+function renderConnecting() {
+  return `
+    <section class="screen stack auth-screen">
+      <section class="empty-state">
+        <strong>Connecting to GitHub</strong>
+        <p>Waiting for the OAuth callback.</p>
+      </section>
+      <button class="primary-action" type="button" data-action="oauth-success">Simulate GitHub Success</button>
+    </section>
+  `;
+}
+
+function renderRepoSetup() {
+  return `
+    <section class="screen stack auth-screen">
+      <section class="empty-state">
+        <strong>Choose repositories</strong>
+        <p>Authorize SSO for blocked private repositories when needed.</p>
+      </section>
+      <button class="primary-action" type="button" data-action="continue-repos">Continue</button>
+    </section>
+  `;
+}
+
+function renderPrivacySetup() {
+  return `
+    <section class="screen stack auth-screen">
+      <section class="empty-state">
+        <strong>Private details warning</strong>
+        <p>Choose privacy defaults before sharing cards.</p>
+      </section>
+      <button class="primary-action" type="button" data-action="continue-privacy">Continue</button>
+    </section>
+  `;
+}
+
+function renderSyncing() {
+  return `
+    <section class="screen stack auth-screen">
+      <section class="empty-state">
+        <strong>Last synced</strong>
+        <p>Syncing account, organizations, repositories, pull requests, and releases.</p>
+      </section>
+      <button class="primary-action" type="button" data-action="finish-sync">Finish Sync</button>
+    </section>
+  `;
+}
+
+function renderAuthIssue() {
+  const issue = state.authIssue === "rateLimit" ? "Rate limit" : "GitHub connection expired";
+  return `
+    <section class="screen stack">
+      <section class="empty-state">
+        <strong>${issue}</strong>
+        <p>Reconnect GitHub to refresh PRBar data.</p>
+      </section>
+      <button class="primary-action" type="button" data-action="reconnect-github">Reconnect GitHub</button>
+    </section>
+  `;
+}
+
+function renderEmptyState() {
+  const messages = {
+    "no-repos": ["No repositories selected", "Choose repositories to power Activity, Releases, and Cards."],
+    "no-activity": ["No activity yet", "Merged PRs will appear here after sync."],
+    "no-releases": ["No GitHub Releases", "Release cards need imported GitHub Releases."]
+  };
+  const [title, body] = messages[state.emptyState] || ["Nothing here yet", "Check back after syncing GitHub data."];
+  return `
+    <section class="screen stack">
+      <section class="empty-state">
+        <strong>${title}</strong>
+        <p>${body}</p>
+      </section>
+      <button class="primary-action" type="button" data-action="open-more" data-screen="repos">Manage repos</button>
+    </section>
+  `;
+}
 
 app.addEventListener("input", (event) => {
   if (event.target.dataset.action === "repo-search") {
