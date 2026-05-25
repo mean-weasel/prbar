@@ -94,11 +94,11 @@ const state = {
 };
 
 const navItems = [
-  ["today", "Today"],
-  ["activity", "Activity"],
-  ["releases", "Releases"],
-  ["cards", "Cards"],
-  ["more", "More"]
+  ["today", "Today", "●"],
+  ["activity", "Activity", "▥"],
+  ["releases", "Releases", "◇"],
+  ["cards", "Cards", "▣"],
+  ["more", "More", "•••"]
 ];
 
 const moreItems = [
@@ -307,43 +307,33 @@ function render() {
 }
 
 function renderHeader() {
-  const title = state.activeTab === "more" && state.activeMoreScreen
+  const authenticated = state.authState === "authenticated" || state.authState === "issue";
+  const activeTitle = state.activeTab === "more" && state.activeMoreScreen
     ? moreItems.find(([id]) => id === state.activeMoreScreen)?.[1]
     : navItems.find(([id]) => id === state.activeTab)?.[1];
+  const title = authenticated ? activeTitle : "Welcome";
   return `
-    <header class="app-header">
+    <header class="app-header native-header">
       <div>
-        <p class="microcopy">Connected as</p>
-        <strong>@neonwatty</strong>
+        <p class="microcopy">${authenticated ? "Connected as @neonwatty" : "PRBar"}</p>
+        <strong>${escapeHtml(title || "Welcome")}</strong>
       </div>
-      <div class="screen-heading">
-        <span>${escapeHtml(title || "PRBar")}</span>
-      </div>
+      ${authenticated ? `<button class="screen-heading" type="button" data-action="open-more" data-screen="settings" aria-label="Account settings">@</button>` : ""}
     </header>
   `;
 }
 
 function renderBottomNav() {
   return `
-    <nav class="bottom-nav" aria-label="Primary navigation">
-      ${navItems.map(([id, label]) => `
-        <button type="button" class="${state.activeTab === id ? "is-active" : ""}" data-action="nav" data-tab="${id}">
-          <span>${navIcon(id)}</span>
+    <nav class="bottom-nav native-tabbar" aria-label="bottom nav">
+      ${navItems.map(([id, label, icon]) => `
+        <button type="button" class="${state.activeTab === id ? "is-active" : ""}" data-action="nav" data-tab="${id}" aria-label="${label}" aria-current="${state.activeTab === id ? "page" : "false"}">
+          <span>${icon}</span>
           ${label}
         </button>
       `).join("")}
     </nav>
   `;
-}
-
-function navIcon(id) {
-  return {
-    today: "●",
-    activity: "▥",
-    releases: "◇",
-    cards: "▣",
-    more: "•••"
-  }[id];
 }
 
 function renderActiveScreen() {
@@ -575,6 +565,7 @@ function renderActiveSheet() {
   return `
     <section class="sheet-backdrop" data-action="close-sheet">
       <div class="bottom-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-grabber" aria-hidden="true"></div>
         ${content}
       </div>
     </section>

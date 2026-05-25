@@ -121,13 +121,38 @@ button {
   font-size: 15px;
 }
 
+.native-header {
+  min-height: 72px;
+  align-items: end;
+  padding-top: 22px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(217, 222, 231, 0.62);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.native-header .microcopy {
+  margin-bottom: 2px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.native-header strong {
+  display: block;
+  font-size: 22px;
+  line-height: 1.08;
+}
+
 .screen-heading {
   min-height: 30px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 999px;
+  background: var(--soft);
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
@@ -779,6 +804,14 @@ button {
   box-shadow: 0 -20px 60px rgba(16, 24, 40, 0.22);
 }
 
+.sheet-grabber {
+  justify-self: center;
+  width: 38px;
+  height: 5px;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
 .bottom-sheet header {
   display: flex;
   align-items: center;
@@ -851,9 +884,9 @@ button {
   line-height: 1;
 }
 
-.bottom-nav button.is-active {
-  background: var(--ink);
-  color: #fff;
+.native-tabbar button.is-active {
+  background: transparent;
+  color: var(--cyan);
 }
 
 .review-notes {
