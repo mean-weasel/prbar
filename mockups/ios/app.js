@@ -283,6 +283,9 @@ function applyInitialRoute() {
   if (navItems.some(([id]) => id === tab)) state.activeTab = tab;
   if (side === "back") state.cardSide = "back";
   if (sheet === "edit" || sheet === "share") state.activeSheet = sheet;
+  if (sheet === "share" && cardHasPrivateEvidence()) {
+    state.privateShareWarning = true;
+  }
   if (privateWarning === "true") {
     state.activeTab = "cards";
     state.privateShareWarning = true;
