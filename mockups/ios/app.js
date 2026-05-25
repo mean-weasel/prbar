@@ -834,7 +834,7 @@ app.addEventListener("click", (event) => {
     render();
   }
   if (action === "open-sheet") {
-    if (target.dataset.sheet === "share" && includedRepos().some((repo) => repo.visibility === "private") && state.cardDraft.showRepos) {
+    if (target.dataset.sheet === "share" && includedRepos().some((repo) => repo.visibility === "private")) {
       state.privateShareWarning = true;
     }
     state.activeSheet = target.dataset.sheet;
