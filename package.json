@@ -3,7 +3,8 @@
   "version": "0.0.0-semantically-released",
   "private": true,
   "scripts": {
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "verify:ios-mockups": "node scripts/verify-ios-mockups.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.3",
