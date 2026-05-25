@@ -171,12 +171,14 @@ function toast(message) {
 function setTab(tab) {
   state.activeTab = tab;
   state.activeMoreScreen = null;
+  state.emptyState = null;
   render();
 }
 
 function openMore(screen) {
   state.activeTab = "more";
   state.activeMoreScreen = screen;
+  state.emptyState = null;
   render();
 }
 
@@ -284,7 +286,7 @@ function render() {
       </section>
       ${renderActiveSheet()}
       ${state.toast ? `<div class="toast">${escapeHtml(state.toast)}</div>` : ""}
-      ${state.authState === "authenticated" || state.authState === "issue" ? renderBottomNav() : ""}
+      ${state.authState === "authenticated" ? renderBottomNav() : ""}
     </div>
   `;
 }
