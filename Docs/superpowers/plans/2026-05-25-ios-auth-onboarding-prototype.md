@@ -33,7 +33,7 @@ No production macOS app files should be touched in this pass.
 4. Repo setup: searchable grouped repo picker with public/private badges, select all/none, and an SSO-blocked example.
 5. Privacy defaults: card sharing defaults and private-detail warning.
 6. Sync screen: staged loading for account, organizations, repos, PRs, releases.
-7. Authenticated app: existing Today / Activity / Releases / Cards / More flow, with improved native-iOS styling.
+7. Authenticated app: existing Activity / Releases / Cards / More flow, with improved native-iOS styling.
 8. Recoverable states: expired token, rate limit, partial sync, no repos, no activity, no releases, private export warning.
 
 ---
@@ -104,7 +104,7 @@ const requiredJs = [
   "renderSyncing",
   "renderAuthIssue",
   "renderEmptyState",
-  "renderToday",
+  "renderActivity",
   "renderActivity",
   "renderReleases",
   "renderCards",
@@ -138,7 +138,7 @@ const requiredJs = [
 
 const requiredReadme = [
   "Interactive HTML prototype",
-  "Today / Activity / Releases / Cards / More",
+  "Activity / Releases / Cards / More",
   "First-run GitHub sign-in",
   "Permission rationale",
   "Repo setup",
@@ -316,7 +316,7 @@ function renderActiveScreen() {
   if (state.authState === "onboarding") return renderOnboarding();
   if (state.authState === "issue") return renderAuthIssue();
   if (state.emptyState) return renderEmptyState();
-  if (state.activeTab === "today") return renderToday();
+  if (state.activeTab === "activity") return renderActivity();
   if (state.activeTab === "activity") return renderActivity();
   if (state.activeTab === "releases") return renderReleases();
   if (state.activeTab === "cards") return renderCards();
@@ -1010,7 +1010,7 @@ if (action === "resolve-empty") {
 
 - [ ] **Step 3: Add stale data banner to dashboard**
 
-In `renderToday()`, add under the range control:
+In `renderActivity()`, add under the range control:
 
 ```js
 ${state.syncState === "stale" ? `<section class="status-banner"><strong>Last synced 18 minutes ago</strong><p>Showing cached GitHub activity. Pull to refresh in the native app.</p></section>` : ""}
@@ -1046,8 +1046,7 @@ Replace `navItems` with:
 
 ```js
 const navItems = [
-  ["today", "Today", "●"],
-  ["activity", "Activity", "▥"],
+    ["activity", "Activity", "▥"],
   ["releases", "Releases", "◇"],
   ["cards", "Cards", "▣"],
   ["more", "More", "•••"]
@@ -1267,7 +1266,7 @@ git commit -m "Document iOS auth prototype review states"
 - `?auth=expired` and `?auth=rate-limit` show recoverable issue states with reconnect/cached-data paths.
 - `?empty=no-repos`, `?empty=no-activity`, and `?empty=no-releases` show distinct no-data states.
 - `?tab=cards&private-warning=true` shows a private-detail warning before sharing.
-- The authenticated Today / Activity / Releases / Cards / More tabs still work.
+- The authenticated Activity / Releases / Cards / More tabs still work.
 - The Cards front/back flow, Edit Card sheet, and Share Card sheet still work.
 - The prototype looks less web-dashboard-like: native-ish tab behavior, cleaner header, grouped lists, fewer heavy borders, and bottom sheets with a grabber.
 - `npm run verify:ios-mockups` passes.

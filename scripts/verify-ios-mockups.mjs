@@ -65,8 +65,10 @@ const requiredJs = [
   "renderSyncing",
   "renderAuthIssue",
   "renderEmptyState",
-  "renderToday",
   "renderActivity",
+  "renderActivityRepoDetail",
+  "activityView",
+  "select-activity-repo",
   "renderReleases",
   "renderCards",
   "renderCardBackEvidence",
@@ -99,7 +101,7 @@ const requiredJs = [
 
 const requiredReadme = [
   "Interactive HTML prototype",
-  "Today / Activity / Releases / Cards / More",
+  "Activity / Releases / Cards / More",
   "First-run GitHub sign-in",
   "Permission rationale",
   "Repo setup",

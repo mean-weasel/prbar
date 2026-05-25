@@ -73,9 +73,11 @@ const state = {
   syncState: "fresh",
   authIssue: null,
   emptyState: null,
-  activeTab: "today",
+  activeTab: "activity",
   activeMoreScreen: null,
   activeSheet: null,
+  activityView: "summary",
+  selectedActivityRepoId: null,
   range: "week",
   selectedReleaseId: "rel-prbar-140",
   repoSearch: "",
@@ -94,7 +96,6 @@ const state = {
 };
 
 const navItems = [
-  ["today", "Today", "●"],
   ["activity", "Activity", "▥"],
   ["releases", "Releases", "◇"],
   ["cards", "Cards", "▣"],
@@ -253,6 +254,8 @@ function applyInitialRoute() {
   const tab = params.get("tab");
   const side = params.get("side");
   const sheet = params.get("sheet");
+  const activity = params.get("activity");
+  const repo = params.get("repo");
   const privateWarning = params.get("private-warning");
 
   const authRoutes = {
@@ -281,6 +284,11 @@ function applyInitialRoute() {
   }
 
   if (navItems.some(([id]) => id === tab)) state.activeTab = tab;
+  if (["summary", "repos", "distribution"].includes(activity)) state.activityView = activity;
+  if (repoFor(repo)) {
+    state.activeTab = "activity";
+    state.selectedActivityRepoId = repo;
+  }
   if (side === "back") state.cardSide = "back";
   if (sheet === "edit" || sheet === "share") state.activeSheet = sheet;
   if (sheet === "share" && cardHasPrivateEvidence()) {
@@ -356,7 +364,6 @@ function renderActiveScreen() {
   if (state.authState === "issue") return renderAuthIssue();
   if (state.emptyState) return renderEmptyState();
   const staleBanner = renderStaleDataBanner();
-  if (state.activeTab === "today") return renderToday();
   if (state.activeTab === "activity") return staleBanner + renderActivity();
   if (state.activeTab === "releases") return staleBanner + renderReleases();
   if (state.activeTab === "cards") return staleBanner + renderCards();
@@ -375,14 +382,56 @@ function renderRangeControl() {
   `;
 }
 
-function renderToday() {
+function renderActivity() {
   const prs = rangePrs();
   const total = prs.length;
   const rangeLabel = state.range === "day" ? "Today" : state.range === "week" ? "This week" : "This month";
+  const selectedRepo = state.selectedActivityRepoId ? repoFor(state.selectedActivityRepoId) : null;
+  const repoPrs = selectedRepo ? prs.filter((pr) => pr.repoId === selectedRepo.id) : [];
   return `
     <section class="screen stack">
+      <section class="section-title">
+        <div><p class="microcopy">Activity</p><h1>${selectedRepo ? escapeHtml(selectedRepo.name) : "Shipping rhythm"}</h1></div>
+        <button class="small-button" type="button" data-action="open-more" data-screen="repos">Repos</button>
+      </section>
       ${renderRangeControl()}
       ${renderStaleDataBanner()}
+      <div class="segmented" aria-label="Activity view">
+        ${[
+          ["summary", "Summary"],
+          ["repos", "Repos"],
+          ["distribution", "Distribution"]
+        ].map(([view, label]) => `
+          <button type="button" class="${state.activityView === view ? "is-active" : ""}" data-action="activity-view" data-view="${view}">
+            ${label}
+          </button>
+        `).join("")}
+      </div>
+      ${selectedRepo ? renderActivityRepoDetail(selectedRepo, repoPrs) : renderActivityView(prs, total, rangeLabel)}
+    </section>
+  `;
+}
+
+function renderActivityView(prs, total, rangeLabel) {
+  if (state.activityView === "repos") {
+    return `
+      <section class="section-title">
+        <div><p class="microcopy">By repository</p><h2>Tap a repo for PRs</h2></div>
+      </section>
+      ${renderRepoMix(prs, true)}
+      ${renderPrList(prs)}
+    `;
+  }
+  if (state.activityView === "distribution") {
+    return `
+      <section class="section-title">
+        <div><p class="microcopy">Distribution</p><h2>PRs across repos</h2></div>
+      </section>
+      ${renderChart(prs, "large")}
+      ${renderRepoMix(prs, true)}
+    `;
+  }
+  return `
       <section class="hero-metric">
         <p class="microcopy">${rangeLabel}</p>
         <h1>${total} merged</h1>
@@ -395,32 +444,28 @@ function renderToday() {
           <div><strong>High-activity moment detected</strong><p>Best stretch in the current ${state.range}.</p></div>
         </section>
       ` : ""}
-      ${renderRepoMix(prs)}
+      ${renderRepoMix(prs, true)}
       ${renderPrList(prs.slice(0, 4))}
       <button class="primary-action" type="button" data-action="make-activity-card">Make Card</button>
+  `;
+}
+
+function renderActivityRepoDetail(repo, prs) {
+  return `
+    <button class="back-button" type="button" data-action="clear-activity-repo">‹ Activity</button>
+    <section class="hero-metric">
+      <p class="microcopy">${escapeHtml(repo.visibility)} repository</p>
+      <h1>${prs.length} merged</h1>
+      <p>Pull requests merged in ${escapeHtml(repo.owner)}/${escapeHtml(repo.name)} for the selected ${state.range}.</p>
     </section>
+    ${renderChart(prs)}
+    ${renderPrList(prs)}
   `;
 }
 
 function renderStaleDataBanner() {
   if (state.syncState !== "stale") return "";
   return `<section class="status-banner"><strong>Last synced 18 minutes ago</strong><p>Showing cached GitHub activity. Pull to refresh in the native app.</p></section>`;
-}
-
-function renderActivity() {
-  const prs = rangePrs();
-  return `
-    <section class="screen stack">
-      ${renderRangeControl()}
-      <section class="section-title">
-        <div><p class="microcopy">Activity</p><h1>Repo distribution</h1></div>
-        <button class="small-button" type="button" data-action="open-more" data-screen="repos">Repos</button>
-      </section>
-      ${renderChart(prs, "large")}
-      ${renderRepoMix(prs)}
-      ${renderPrList(prs)}
-    </section>
-  `;
 }
 
 function renderReleases() {
@@ -765,12 +810,14 @@ function renderChart(prs, size = "") {
   return `<div class="chart ${size}">${heights.map((height) => `<span style="height:${height}%"></span>`).join("")}</div>`;
 }
 
-function renderRepoMix(prs) {
+function renderRepoMix(prs, interactive = false) {
   const counts = new Map();
   prs.forEach((pr) => counts.set(pr.repoId, (counts.get(pr.repoId) || 0) + 1));
   const rows = [...counts.entries()].map(([repoId, count]) => {
     const repo = repoFor(repoId);
-    return `<p><span><i style="background:${repo.color}"></i>${escapeHtml(repo.name)}</span><strong>${count}</strong></p>`;
+    const content = `<span><i style="background:${repo.color}"></i>${escapeHtml(repo.name)}</span><strong>${count}</strong>`;
+    if (!interactive) return `<p>${content}</p>`;
+    return `<button type="button" data-action="select-activity-repo" data-repo-id="${repo.id}">${content}</button>`;
   });
   return `<section class="repo-mix">${rows.join("") || "<p><span>No included activity</span><strong>0</strong></p>"}</section>`;
 }
@@ -840,7 +887,7 @@ app.addEventListener("click", (event) => {
     state.authState = "authenticated";
     state.onboardingStep = "done";
     state.syncState = "fresh";
-    state.activeTab = "today";
+    state.activeTab = "activity";
     render();
   }
   if (action === "reconnect-github") {
@@ -879,6 +926,19 @@ app.addEventListener("click", (event) => {
   if (action === "nav") setTab(target.dataset.tab);
   if (action === "range") {
     state.range = target.dataset.range;
+    render();
+  }
+  if (action === "activity-view") {
+    state.activityView = target.dataset.view;
+    state.selectedActivityRepoId = null;
+    render();
+  }
+  if (action === "select-activity-repo") {
+    state.selectedActivityRepoId = target.dataset.repoId;
+    render();
+  }
+  if (action === "clear-activity-repo") {
+    state.selectedActivityRepoId = null;
     render();
   }
   if (action === "make-activity-card") makeActivityCard();

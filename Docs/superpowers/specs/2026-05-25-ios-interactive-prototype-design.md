@@ -10,7 +10,7 @@ The prototype remains a UX artifact. It should use realistic fixture data, not r
 
 The prototype should validate this loop:
 
-1. Check PR activity on Today.
+1. Check PR activity in Activity.
 2. Inspect Activity for distribution and recent PRs.
 3. Browse actual GitHub Releases from included repositories.
 4. Adjust included repositories through More > Repos.
@@ -24,7 +24,6 @@ The interactive version should replace the current static screen board with a si
 
 Primary bottom navigation:
 
-- Today
 - Activity
 - Releases
 - Cards
@@ -42,24 +41,17 @@ Repos should live under More rather than in the primary nav. It is important, bu
 
 ## Screens
 
-### Today
+### Activity
 
-Today remains the default screen.
+Activity remains the default screen.
 
 Behavior:
 
 - Day / Week / Month range selector updates the headline metric, chart, repo mix, and recent PR list.
 - Make Card starts a card from the currently selected activity range.
 - A high-activity moment can appear when the selected range has enough activity.
-
-### Activity
-
-Activity provides a fuller view of merged PR distribution.
-
-Behavior:
-
-- Uses the same selected range model as Today.
-- Shows a larger chart, repo breakdown, and recent PRs.
+- Includes Summary, Repos, and Distribution views inside the tab.
+- Tapping a repo opens that repo's PR list for the selected range.
 - Reflects the currently included repositories.
 
 ### Releases
@@ -118,7 +110,7 @@ Behavior:
 
 - Search filters repositories.
 - Include/exclude toggles update the app state.
-- Included repositories affect Today, Activity, Releases, and Cards.
+- Included repositories affect Activity, Releases, and Cards.
 - Include all restores all repositories.
 - Private repositories are clearly labeled.
 
@@ -244,7 +236,7 @@ Manual interaction checks:
 
 - bottom navigation changes screens
 - More menu opens Repos, Settings, Privacy, Sample Data, and About
-- Day / Week / Month changes Today
+- Day / Week / Month changes Activity
 - repo inclusion changes Releases
 - selecting a release updates release details
 - Make Release Card opens a release card draft

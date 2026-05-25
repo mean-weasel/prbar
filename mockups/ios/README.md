@@ -4,15 +4,15 @@ Interactive HTML prototype for the approved PRBar iOS app direction.
 
 Open `mockups/ios/index.html` in a browser to review:
 
-- Bottom navigation for Today / Activity / Releases / Cards / More
+- Bottom navigation for Activity / Releases / Cards / More
 - First-run GitHub sign-in and demo mode
 - Permission rationale before OAuth
 - Repo setup with public/private visibility and SSO-blocked examples
 - Privacy defaults before sharing
 - Sync and recovery states for connecting, stale data, reconnect, rate limits, no repos, no PRs, and no releases
 - More menu with Repos, Settings, Privacy, Sample Data, and About
-- Today in Day / Week / Month ranges
-- Activity detail from included repos
+- Activity summary in Day / Week / Month ranges
+- Activity detail from included repos, with repo drill-down and distribution views
 - GitHub Releases from included repos
 - Repository inclusion controls
 - Cards composer from activity or release sources
@@ -41,3 +41,5 @@ Review links can open specific states with query parameters, for example `?tab=c
 | No activity | `?empty=no-activity` |
 | No releases | `?empty=no-releases` |
 | Private share warning | `?tab=cards&private-warning=true` |
+| Activity distribution | `?tab=activity&activity=distribution` |
+| Activity repo detail | `?tab=activity&repo=prbar` |
