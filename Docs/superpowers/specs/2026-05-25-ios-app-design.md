@@ -55,12 +55,13 @@ The app should remain useful even if the user never shares anything.
 
 ## Information Architecture
 
-The first concept uses five main areas:
+The first concept uses six main areas:
 
 - Today
 - Activity
 - Releases
 - Cards
+- Repos
 - Settings
 
 There should not be a dedicated Social tab in the first design. Social behavior lives in Cards and release artifacts. Later versions can evolve Cards into public profiles, card galleries, messaging, or discovery.
@@ -136,6 +137,20 @@ Core elements:
 - Copy release notes action
 
 The first mockup should keep Releases curated and static, but its mental model should be GitHub Releases first rather than AI-written recaps first. Later versions can allow users to annotate releases with context, lessons, launch notes, links, screenshots, or AI-assisted summaries in addition to the original release notes.
+
+### Repos
+
+Repos controls the data boundary for the app. It should mirror the macOS menu bar app's include/exclude mental model so users understand exactly which repositories contribute to Activity, Releases, and Cards.
+
+Core elements:
+
+- discovered GitHub repositories
+- search
+- include/exclude toggles
+- private repository indicators
+- repo color dots
+- Include all action
+- clear note that selected repos power stats, releases, and share cards
 
 ### Cards
 
@@ -222,7 +237,7 @@ The HTML prototype should be static, responsive, and screenshot-friendly. It sho
 
 Recommended mockup files:
 
-- an iPhone app shell showing Today, Activity, Releases, Cards, and Settings
+- an iPhone app shell showing Today, Activity, Releases, Cards, Repos, and Settings
 - share card previews for Clean, Terminal, and Hype themes
 - first-run and sample-data states
 - refresh, empty, and privacy-hidden states
@@ -243,13 +258,14 @@ The first HTML mockup set should include:
 4. Activity detail
 5. Releases
 6. Repo filter sheet
-7. Card entry point
-8. Card composer
-9. Card preview, Clean theme
-10. Card preview, Terminal theme
-11. Card preview, Hype theme
-12. Cards gallery
-13. Settings and auth
+7. Repo selection
+8. Card entry point
+9. Card composer
+10. Card preview, Clean theme
+11. Card preview, Terminal theme
+12. Card preview, Hype theme
+13. Cards gallery
+14. Settings and auth
 
 The first native implementation should wait until this mockup set has been reviewed.
 

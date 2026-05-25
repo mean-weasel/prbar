@@ -283,6 +283,7 @@ button {
 .settings-list,
 .release-hero,
 .release-note,
+.repo-selection,
 .auth-card,
 .empty-state,
 .refresh-error,
@@ -374,6 +375,7 @@ button {
 .cyan { background: var(--cyan); }
 .green { background: var(--green); }
 .amber { background: var(--amber); }
+.violet { background: var(--violet); }
 
 .primary-action,
 .secondary-action {
@@ -456,7 +458,8 @@ button {
 }
 
 .repo-sheet label,
-.composer-controls label {
+.composer-controls label,
+.repo-selection label {
   color: var(--muted);
   font-size: 13px;
 }
@@ -469,6 +472,7 @@ button {
 .card-entry,
 .release-hero,
 .release-note,
+.repo-selection,
 .auth-card,
 .empty-state,
 .refresh-error {
@@ -498,31 +502,115 @@ button {
 .release-list {
   display: grid;
   gap: 9px;
-  padding: 12px;
+}
+
+.release-filter {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.inline-button {
+  min-height: 30px;
+  padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 780;
 }
 
-.release-list label {
+.inline-button.is-active {
+  background: var(--ink);
+  color: #fff;
+}
+
+.release-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 8px;
-  align-items: start;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
   color: var(--ink);
+  text-align: left;
+}
+
+.release-row.is-selected {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.release-row strong,
+.release-row small {
+  display: block;
+}
+
+.release-row small {
+  margin-top: 4px;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.25;
 }
 
-.release-list span {
+.release-row em {
   color: var(--muted);
   font-size: 12px;
   font-weight: 760;
+  font-style: normal;
 }
 
 .release-note {
   margin-top: 12px;
   background: #f8fafc;
+}
+
+.repo-selection {
+  display: grid;
+  gap: 10px;
+  background: #fff;
+}
+
+.repo-selection p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.repo-selection input {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0 10px;
+}
+
+.repo-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.repo-selection label {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.repo-selection span {
+  color: var(--quiet);
+  font-size: 11px;
+  font-weight: 760;
 }
 
 .auth-card {

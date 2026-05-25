@@ -11,6 +11,7 @@ const requiredScreens = [
   "activity-detail",
   "releases",
   "repo-filter",
+  "repo-selection",
   "card-entry",
   "card-composer",
   "card-clean",
@@ -62,6 +63,8 @@ for (const range of requiredRanges) {
 assertIncludes(html, "Day / Week / Month", "approved range language");
 assertIncludes(html, "Share proof of work", "cards positioning");
 assertIncludes(html, "Make Release Card", "release card action");
+assertIncludes(html, "Open on GitHub", "release GitHub action");
+assertIncludes(html, "Included repos power Activity, Releases, and Cards.", "repo selection explanation");
 assertIncludes(html, "Hide private repos", "privacy default");
 
 console.log("iOS mockup verification passed");
