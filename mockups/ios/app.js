@@ -377,6 +377,7 @@ function renderToday() {
   return `
     <section class="screen stack">
       ${renderRangeControl()}
+      ${state.syncState === "stale" ? `<section class="status-banner"><strong>Last synced 18 minutes ago</strong><p>Showing cached GitHub activity. Pull to refresh in the native app.</p></section>` : ""}
       <section class="hero-metric">
         <p class="microcopy">${rangeLabel}</p>
         <h1>${total} merged</h1>
@@ -837,6 +838,25 @@ app.addEventListener("click", (event) => {
     state.authIssue = null;
     render();
   }
+  if (action === "use-cached-data") {
+    state.authState = "authenticated";
+    state.authIssue = null;
+    state.syncState = "stale";
+    toast("Showing cached data");
+  }
+  if (action === "resolve-empty") {
+    if (state.emptyState === "no-repos") {
+      state.authState = "onboarding";
+      state.onboardingStep = "repos";
+    } else if (state.emptyState === "no-releases") {
+      state.activeTab = "releases";
+      state.emptyState = null;
+    } else {
+      state.activeTab = "activity";
+      state.emptyState = null;
+    }
+    render();
+  }
   if (action === "nav") setTab(target.dataset.tab);
   if (action === "range") {
     state.range = target.dataset.range;
@@ -1060,32 +1080,49 @@ function renderSyncing() {
 }
 
 function renderAuthIssue() {
-  const issue = state.authIssue === "rateLimit" ? "Rate limit" : "GitHub connection expired";
+  const issue = state.authIssue === "rateLimit"
+    ? {
+        title: "Rate limit reached",
+        detail: "GitHub asked PRBar to slow down. Showing the last synced data until the retry window opens.",
+        action: "Retry Sync",
+        meta: "Rate limit"
+      }
+    : {
+        title: "Reconnect GitHub",
+        detail: "Your GitHub token expired or access was revoked. Reconnect to refresh PRs and releases.",
+        action: "Reconnect GitHub",
+        meta: "Authentication"
+      };
   return `
     <section class="screen stack">
-      <section class="empty-state">
-        <strong>${issue}</strong>
-        <p>Reconnect GitHub to refresh PRBar data.</p>
+      <section class="status-banner warning">
+        <strong>${issue.meta}</strong>
+        <p>Last synced 18 minutes ago</p>
       </section>
-      <button class="primary-action" type="button" data-action="reconnect-github">Reconnect GitHub</button>
+      <section class="empty-state recovery-state">
+        <strong>${issue.title}</strong>
+        <p>${issue.detail}</p>
+      </section>
+      <button class="primary-action" type="button" data-action="reconnect-github">${issue.action}</button>
+      <button class="secondary-action" type="button" data-action="use-cached-data">Use Cached Data</button>
     </section>
   `;
 }
 
 function renderEmptyState() {
-  const messages = {
-    "no-repos": ["No repositories selected", "Choose repositories to power Activity, Releases, and Cards."],
-    "no-activity": ["No activity yet", "Merged PRs will appear here after sync."],
-    "no-releases": ["No GitHub Releases", "Release cards need imported GitHub Releases."]
+  const states = {
+    "no-repos": ["No repositories selected", "Choose at least one repo to populate PR stats, releases, and cards.", "Choose repositories"],
+    "no-activity": ["No merged PRs yet", "Selected repos have no merged PRs in this range. Try Month or include more repos.", "Open Activity"],
+    "no-releases": ["No GitHub releases found", "Selected repos may use tags without releases or have draft releases hidden.", "Open Releases"]
   };
-  const [title, body] = messages[state.emptyState] || ["Nothing here yet", "Check back after syncing GitHub data."];
+  const [title, detail, actionLabel] = states[state.emptyState];
   return `
     <section class="screen stack">
-      <section class="empty-state">
+      <section class="empty-state recovery-state">
         <strong>${title}</strong>
-        <p>${body}</p>
+        <p>${detail}</p>
       </section>
-      <button class="primary-action" type="button" data-action="open-more" data-screen="repos">Manage repos</button>
+      <button class="primary-action" type="button" data-action="resolve-empty">${actionLabel}</button>
     </section>
   `;
 }

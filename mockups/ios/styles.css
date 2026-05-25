@@ -403,6 +403,16 @@ button {
   line-height: 1.4;
 }
 
+.recovery-state {
+  background: var(--soft);
+}
+
+.recovery-state strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
 .auth-screen {
   min-height: 100%;
   display: grid;
