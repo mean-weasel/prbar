@@ -14,7 +14,7 @@
         <p class="eyebrow">PRBar iOS concept</p>
         <h1 id="page-title">Mobile shipping rhythm and share cards</h1>
       </div>
-      <p class="header-copy">Static responsive mockups for the Day / Week / Month dashboard, card composer, and social share artifacts.</p>
+      <p class="header-copy">Static responsive mockups for the Day / Week / Month dashboard, release recaps, card composer, and social share artifacts.</p>
     </header>
 
     <nav class="screen-index" aria-label="Mockup screen index">
@@ -22,6 +22,7 @@
       <a href="#today-day">Today Day</a>
       <a href="#today-month">Today Month</a>
       <a href="#activity-detail">Activity</a>
+      <a href="#releases">Releases</a>
       <a href="#repo-filter">Repo Filter</a>
       <a href="#card-entry">Card Entry</a>
       <a href="#card-composer">Composer</a>
@@ -145,6 +146,35 @@
         </div>
       </article>
 
+      <article class="phone-frame" data-screen="releases">
+        <div class="phone-screen">
+          <header class="section-title">
+            <div>
+              <p class="microcopy">Releases</p>
+              <h2>Work recaps</h2>
+            </div>
+            <button class="small-button" type="button">Month</button>
+          </header>
+          <section id="releases" class="release-hero" data-required-screen="releases" aria-label="Releases screen">
+            <p class="microcopy">Suggested recap</p>
+            <h3>GitHub auth fallback</h3>
+            <p>4 merged PRs look like a release-ready update.</p>
+          </section>
+          <section class="release-list" aria-label="Release pull request selection">
+            <label><input type="checkbox" checked> Connect GitHub auth fallback <span>#39</span></label>
+            <label><input type="checkbox" checked> Update GitHub Pages actions <span>#38</span></label>
+            <label><input type="checkbox" checked> Expand app smoke coverage <span>#36</span></label>
+            <label><input type="checkbox"> Add landing page materials <span>#37</span></label>
+          </section>
+          <section class="release-note" aria-label="Draft release summary">
+            <strong>Draft summary</strong>
+            <p>Improved GitHub connection resilience, refreshed deployment automation, and expanded smoke coverage.</p>
+          </section>
+          <button class="primary-action" type="button">Make Release Card</button>
+          <button class="secondary-action compact" type="button">Copy release notes</button>
+        </div>
+      </article>
+
       <article class="phone-frame" data-screen="cards">
         <div class="phone-screen">
           <header class="section-title">
@@ -240,6 +270,10 @@
       <article id="activity-detail" data-required-screen="activity-detail">
         <h2>Activity detail</h2>
         <p>Larger chart, repo breakdown, recent PRs, and comparison to previous period.</p>
+      </article>
+      <article data-required-screen="releases">
+        <h2>Releases</h2>
+        <p>Suggested release recaps, included PR toggles, draft summary, and Make Release Card action.</p>
       </article>
       <article data-required-screen="repo-filter">
         <h2>Repo filter sheet</h2>

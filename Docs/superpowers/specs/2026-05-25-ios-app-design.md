@@ -55,14 +55,15 @@ The app should remain useful even if the user never shares anything.
 
 ## Information Architecture
 
-The first concept uses four main areas:
+The first concept uses five main areas:
 
 - Today
 - Activity
+- Releases
 - Cards
 - Settings
 
-There should not be a dedicated Social tab in the first design. Social behavior lives in Cards. Later versions can evolve Cards into public profiles, card galleries, releases, messaging, or discovery.
+There should not be a dedicated Social tab in the first design. Social behavior lives in Cards and release artifacts. Later versions can evolve Cards into public profiles, card galleries, messaging, or discovery.
 
 ## Range Model
 
@@ -119,6 +120,21 @@ Useful subviews:
 - Repos
 - PRs
 - Moments
+
+### Releases
+
+Releases turns merged PR activity into launch or update groupings. It answers what a burst of PRs amounted to, while Activity answers what happened and Cards answers how to share it.
+
+Core elements:
+
+- suggested release clusters from recent merged PRs
+- manual New Release Recap action
+- draft title and summary
+- included PR list with toggles
+- Copy release notes action
+- Make Release Card action
+
+The first mockup should keep Releases curated and static. Later versions can explore AI-assisted summaries, public launch posts, messaging opportunities, and profile publishing.
 
 ### Cards
 
@@ -204,7 +220,7 @@ The HTML prototype should be static, responsive, and screenshot-friendly. It sho
 
 Recommended mockup files:
 
-- an iPhone app shell showing Today, Activity, Cards, and Settings
+- an iPhone app shell showing Today, Activity, Releases, Cards, and Settings
 - share card previews for Clean, Terminal, and Hype themes
 - first-run and sample-data states
 - refresh, empty, and privacy-hidden states
@@ -223,14 +239,15 @@ The first HTML mockup set should include:
 2. Today, Day view
 3. Today, Month view
 4. Activity detail
-5. Repo filter sheet
-6. Card entry point
-7. Card composer
-8. Card preview, Clean theme
-9. Card preview, Terminal theme
-10. Card preview, Hype theme
-11. Cards gallery
-12. Settings and auth
+5. Releases
+6. Repo filter sheet
+7. Card entry point
+8. Card composer
+9. Card preview, Clean theme
+10. Card preview, Terminal theme
+11. Card preview, Hype theme
+12. Cards gallery
+13. Settings and auth
 
 The first native implementation should wait until this mockup set has been reviewed.
 
@@ -284,6 +301,7 @@ Before native iOS implementation, review and approve:
 
 - the HTML mockup package
 - the core Today flow
+- the Releases recap flow
 - the Card composer flow
 - at least three card themes
 - privacy defaults for shared cards
