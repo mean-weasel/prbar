@@ -408,18 +408,11 @@ function renderActivityOverview(prs, total, rangeLabel) {
         <p>${state.range === "day" ? "Work landed since morning." : state.range === "week" ? "+28% versus last week. Strong shipping rhythm." : "A strong month across selected repos."}</p>
       </section>
       ${renderChart(prs)}
-      ${total >= 3 ? `
-        <section class="moment">
-          <span></span>
-          <div><strong>High-activity moment detected</strong><p>Best stretch in the current ${state.range}.</p></div>
-        </section>
-      ` : ""}
       <section class="section-title compact-title">
-        <div><p class="microcopy">By repository</p><h2>Tap a repo for PRs</h2></div>
+        <div><p class="microcopy">Distribution by repo</p><h2>Tap a repo for PRs</h2></div>
       </section>
       ${renderRepoMix(prs, true)}
       ${renderPrList(prs)}
-      <button class="primary-action" type="button" data-action="make-activity-card">Make Card</button>
   `;
 }
 
@@ -786,9 +779,15 @@ function renderChart(prs, size = "") {
 function renderRepoMix(prs, interactive = false) {
   const counts = new Map();
   prs.forEach((pr) => counts.set(pr.repoId, (counts.get(pr.repoId) || 0) + 1));
+  const maxCount = Math.max(1, ...counts.values());
   const rows = [...counts.entries()].map(([repoId, count]) => {
     const repo = repoFor(repoId);
-    const content = `<span><i style="background:${repo.color}"></i>${escapeHtml(repo.name)}</span><strong>${count}</strong>`;
+    const width = Math.max(12, Math.round((count / maxCount) * 100));
+    const content = `
+      <span><i style="background:${repo.color}"></i>${escapeHtml(repo.name)}</span>
+      <b aria-hidden="true"><em style="width:${width}%; background:${repo.color}"></em></b>
+      <strong>${count}</strong>
+    `;
     if (!interactive) return `<p>${content}</p>`;
     return `<button type="button" data-action="select-activity-repo" data-repo-id="${repo.id}">${content}</button>`;
   });
