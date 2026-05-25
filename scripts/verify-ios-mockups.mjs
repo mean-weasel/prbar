@@ -18,7 +18,9 @@ const requiredHtml = [
   "More menu",
   "GitHub Releases",
   "Repo inclusion",
-  "Cards from activity or GitHub Releases"
+  "Cards from activity or GitHub Releases",
+  "GitHub sign-in",
+  "First-run onboarding"
 ];
 
 const requiredCss = [
@@ -34,7 +36,13 @@ const requiredCss = [
   ".evidence-list",
   ".card-actions",
   ".menu-list",
-  ".repo-list"
+  ".repo-list",
+  ".auth-screen",
+  ".ios-list",
+  ".status-banner",
+  ".native-tabbar",
+  ".permission-list",
+  ".sync-steps"
 ];
 
 const requiredJs = [
@@ -45,7 +53,18 @@ const requiredJs = [
   "activeMoreScreen",
   "activeSheet",
   "cardSide",
+  "authState",
+  "onboardingStep",
+  "syncState",
   "applyInitialRoute",
+  "renderWelcome",
+  "renderPermissionRationale",
+  "renderConnecting",
+  "renderRepoSetup",
+  "renderPrivacySetup",
+  "renderSyncing",
+  "renderAuthIssue",
+  "renderEmptyState",
   "renderToday",
   "renderActivity",
   "renderReleases",
@@ -55,6 +74,14 @@ const requiredJs = [
   "renderShareSheet",
   "renderMore",
   "renderRepos",
+  "Sign in with GitHub",
+  "Continue to GitHub",
+  "Choose repositories",
+  "Private details warning",
+  "Authorize SSO",
+  "Reconnect GitHub",
+  "Rate limit",
+  "Last synced",
   "Make Release Card",
   "Open on GitHub",
   "Copy release notes",
@@ -73,6 +100,11 @@ const requiredJs = [
 const requiredReadme = [
   "Interactive HTML prototype",
   "Today / Activity / Releases / Cards / More",
+  "First-run GitHub sign-in",
+  "Permission rationale",
+  "Repo setup",
+  "Privacy defaults",
+  "Sync and recovery states",
   "More menu with Repos, Settings, Privacy, Sample Data, and About",
   "fixture-backed",
   "Front/back card flip",
