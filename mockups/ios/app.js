@@ -307,11 +307,11 @@ function render() {
 }
 
 function renderHeader() {
-  const authenticated = state.authState === "authenticated" || state.authState === "issue";
+  const authenticated = state.authState === "authenticated";
   const activeTitle = state.activeTab === "more" && state.activeMoreScreen
     ? moreItems.find(([id]) => id === state.activeMoreScreen)?.[1]
     : navItems.find(([id]) => id === state.activeTab)?.[1];
-  const title = authenticated ? activeTitle : "Welcome";
+  const title = authenticated ? activeTitle : authHeaderTitle();
   return `
     <header class="app-header native-header">
       <div>
@@ -321,6 +321,20 @@ function renderHeader() {
       ${authenticated ? `<button class="screen-heading" type="button" data-action="open-more" data-screen="settings" aria-label="Account settings">@</button>` : ""}
     </header>
   `;
+}
+
+function authHeaderTitle() {
+  if (state.authState === "issue") {
+    return state.authIssue === "rateLimit" ? "Rate Limit" : "Reconnect";
+  }
+  return {
+    welcome: "Welcome",
+    permissions: "GitHub Access",
+    connecting: "Connecting",
+    repos: "Repositories",
+    privacy: "Privacy",
+    syncing: "Syncing"
+  }[state.onboardingStep] || "Welcome";
 }
 
 function renderBottomNav() {
