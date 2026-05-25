@@ -213,6 +213,10 @@ function makeReleaseCard(id) {
 
 function toggleRepo(id) {
   const repo = repoFor(id);
+  if (repo.access === "sso") {
+    toast("Authorize SSO before including this repo");
+    return;
+  }
   repo.included = !repo.included;
   const availableRelease = selectedRelease();
   state.selectedReleaseId = availableRelease?.id || null;
@@ -643,11 +647,11 @@ function renderRepos() {
       <input class="search-input" value="${escapeHtml(state.repoSearch)}" placeholder="Search repos" aria-label="Search repositories" data-action="repo-search">
       <section class="repo-list">
         ${visibleRepos.map((repo) => `
-          <label>
-            <input type="checkbox" ${repo.included ? "checked" : ""} data-action="toggle-repo" data-repo-id="${repo.id}">
+          <label class="${repo.access === "sso" ? "is-blocked" : ""}">
+            <input type="checkbox" ${repo.included ? "checked" : ""} ${repo.access === "sso" ? "disabled" : ""} data-action="toggle-repo" data-repo-id="${repo.id}">
             <i style="background:${repo.color}"></i>
             <span>${escapeHtml(repo.name)}</span>
-            <em>${escapeHtml(repo.visibility)}${repo.included ? "" : " · excluded"}</em>
+            <em>${repo.access === "sso" ? "SSO required" : `${escapeHtml(repo.visibility)}${repo.included ? "" : " · excluded"}`}</em>
           </label>
         `).join("")}
       </section>
@@ -844,7 +848,9 @@ app.addEventListener("click", (event) => {
   }
   if (action === "toggle-repo") toggleRepo(target.dataset.repoId);
   if (action === "include-all") {
-    repositories.forEach((repo) => repo.included = true);
+    repositories.forEach((repo) => {
+      repo.included = repo.access !== "sso";
+    });
     render();
   }
   if (action === "select-none") {
