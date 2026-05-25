@@ -351,11 +351,12 @@ function renderActiveScreen() {
   if (state.authState === "onboarding") return renderOnboarding();
   if (state.authState === "issue") return renderAuthIssue();
   if (state.emptyState) return renderEmptyState();
+  const staleBanner = renderStaleDataBanner();
   if (state.activeTab === "today") return renderToday();
-  if (state.activeTab === "activity") return renderActivity();
-  if (state.activeTab === "releases") return renderReleases();
-  if (state.activeTab === "cards") return renderCards();
-  return renderMore();
+  if (state.activeTab === "activity") return staleBanner + renderActivity();
+  if (state.activeTab === "releases") return staleBanner + renderReleases();
+  if (state.activeTab === "cards") return staleBanner + renderCards();
+  return staleBanner + renderMore();
 }
 
 function renderRangeControl() {
@@ -377,7 +378,7 @@ function renderToday() {
   return `
     <section class="screen stack">
       ${renderRangeControl()}
-      ${state.syncState === "stale" ? `<section class="status-banner"><strong>Last synced 18 minutes ago</strong><p>Showing cached GitHub activity. Pull to refresh in the native app.</p></section>` : ""}
+      ${renderStaleDataBanner()}
       <section class="hero-metric">
         <p class="microcopy">${rangeLabel}</p>
         <h1>${total} merged</h1>
@@ -395,6 +396,11 @@ function renderToday() {
       <button class="primary-action" type="button" data-action="make-activity-card">Make Card</button>
     </section>
   `;
+}
+
+function renderStaleDataBanner() {
+  if (state.syncState !== "stale") return "";
+  return `<section class="status-banner"><strong>Last synced 18 minutes ago</strong><p>Showing cached GitHub activity. Pull to refresh in the native app.</p></section>`;
 }
 
 function renderActivity() {
@@ -844,10 +850,18 @@ app.addEventListener("click", (event) => {
     state.syncState = "stale";
     toast("Showing cached data");
   }
+  if (action === "retry-sync") {
+    state.authState = "onboarding";
+    state.onboardingStep = "syncing";
+    state.authIssue = null;
+    state.syncState = "syncing";
+    render();
+  }
   if (action === "resolve-empty") {
     if (state.emptyState === "no-repos") {
       state.authState = "onboarding";
       state.onboardingStep = "repos";
+      state.emptyState = null;
     } else if (state.emptyState === "no-releases") {
       state.activeTab = "releases";
       state.emptyState = null;
@@ -1085,12 +1099,14 @@ function renderAuthIssue() {
         title: "Rate limit reached",
         detail: "GitHub asked PRBar to slow down. Showing the last synced data until the retry window opens.",
         action: "Retry Sync",
+        actionName: "retry-sync",
         meta: "Rate limit"
       }
     : {
         title: "Reconnect GitHub",
         detail: "Your GitHub token expired or access was revoked. Reconnect to refresh PRs and releases.",
         action: "Reconnect GitHub",
+        actionName: "reconnect-github",
         meta: "Authentication"
       };
   return `
@@ -1103,7 +1119,7 @@ function renderAuthIssue() {
         <strong>${issue.title}</strong>
         <p>${issue.detail}</p>
       </section>
-      <button class="primary-action" type="button" data-action="reconnect-github">${issue.action}</button>
+      <button class="primary-action" type="button" data-action="${issue.actionName}">${issue.action}</button>
       <button class="secondary-action" type="button" data-action="use-cached-data">Use Cached Data</button>
     </section>
   `;
