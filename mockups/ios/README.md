@@ -1,16 +1,17 @@
 # PRBar iOS Mockups
 
-Static HTML mockups for the approved PRBar iOS app direction.
+Interactive HTML prototype for the approved PRBar iOS app direction.
 
 Open `mockups/ios/index.html` in a browser to review:
 
+- Bottom navigation for Today / Activity / Releases / Cards / More
+- More menu with Repos, Settings, Privacy, Sample Data, and About
 - Today in Day / Week / Month ranges
-- Activity detail
-- GitHub Releases screen
-- Repository inclusion screen
-- Cards composer
+- Activity detail from included repos
+- GitHub Releases from included repos
+- Repository inclusion controls
+- Cards composer from activity or release sources
 - Clean, Terminal, Launch, Hype, and Minimal share-card themes
-- Settings and auth concepts
-- Required product states from the iOS design spec
+- Privacy controls that update the card preview
 
-These mockups are design artifacts. Native iOS implementation should wait until this package is reviewed.
+This prototype is fixture-backed and does not call GitHub. Native iOS implementation should wait until this package is reviewed.
