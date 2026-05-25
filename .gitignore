@@ -1,6 +1,7 @@
 .DS_Store
 .build/
 .swiftpm/
+.worktrees/
 node_modules/
 DerivedData/
 build/
