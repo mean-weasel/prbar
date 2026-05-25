@@ -37,6 +37,13 @@ final class GitHubAPIRequestTests: XCTestCase {
     XCTAssertEqual(request.timeoutInterval, 5)
   }
 
+  func testRequestCanSendConditionalValidator() throws {
+    let request = try GitHubAPIRequest.authenticatedUser()
+      .urlRequest(token: "token", eTag: #""abc123""#)
+
+    XCTAssertEqual(request.value(forHTTPHeaderField: "If-None-Match"), #""abc123""#)
+  }
+
   func testMergedPullRequestsRequestUsesSearchQuery() throws {
     let request = try GitHubAPIRequest.mergedPullRequests(
       repositoryID: "owner/repo",

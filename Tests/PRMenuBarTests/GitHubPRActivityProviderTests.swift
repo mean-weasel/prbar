@@ -2,7 +2,7 @@ import XCTest
 
 @testable import PRMenuBar
 
-final class GitHubPRActivityProviderTests: XCTestCase {
+final class GitHubPRActivityProviderTests: XCTestCase, GitHubPRActivityProviderTestHelpers {
   func testProviderLoadsPullableRepositoriesFromTransport() throws {
     let transport = FixtureGitHubAPITransport(
       responses: [
@@ -130,6 +130,102 @@ final class GitHubPRActivityProviderTests: XCTestCase {
     XCTAssertTrue(bodyString(in: transport.capturedRequests[4])?.contains("cursor-1") == true)
   }
 
+  func testProviderReusesDiscoveryWithinCacheDuration() throws {
+    let transport = FixtureGitHubAPITransport(
+      responses: [
+        repositoryDiscoveryData(),
+        authenticatedUserData(),
+        organizationsData(),
+        graphQLMergedPullRequestData(mergedAt: "2026-04-26T12:00:00.000Z"),
+        graphQLMergedPullRequestData(mergedAt: "2026-04-27T12:00:00.000Z"),
+      ]
+    )
+    let provider = GitHubPRActivityProvider(
+      token: "token",
+      transport: transport,
+      bucketLabels: ["W1"],
+      discoveryCacheDuration: 60
+    )
+
+    _ = try provider.load(now: try date("2026-05-02T18:00:00Z"))
+    let refreshed = try provider.load(now: try date("2026-05-02T18:00:30Z"))
+
+    XCTAssertEqual(refreshed.repositories.first?.weeklyCounts, [2])
+    XCTAssertEqual(transport.capturedRequests.count, 5)
+    XCTAssertEqual(transport.capturedRequests[4].url?.path, "/graphql")
+  }
+
+  func testProviderRediscoversRepositoriesAfterCacheDuration() throws {
+    let transport = FixtureGitHubAPITransport(
+      responses: [
+        repositoryDiscoveryData(),
+        authenticatedUserData(),
+        organizationsData(),
+        graphQLMergedPullRequestData(mergedAt: "2026-04-26T12:00:00.000Z"),
+        repositoryDiscoveryData(
+          repositories: [
+            repositoryFixture(owner: "owner", name: "new", canPull: true)
+          ]
+        ),
+        authenticatedUserData(),
+        organizationsData(),
+        graphQLMergedPullRequestData(mergedAt: "2026-04-27T12:00:00.000Z"),
+      ]
+    )
+    let provider = GitHubPRActivityProvider(
+      token: "token",
+      transport: transport,
+      bucketLabels: ["W1"],
+      discoveryCacheDuration: 60
+    )
+
+    _ = try provider.load(now: try date("2026-05-02T18:00:00Z"))
+    let refreshed = try provider.load(now: try date("2026-05-02T18:02:00Z"))
+
+    XCTAssertEqual(refreshed.repositories.map(\.id), ["owner/new"])
+    XCTAssertEqual(transport.capturedRequests.count, 8)
+    XCTAssertEqual(transport.capturedRequests[4].url?.path, "/user/repos")
+  }
+
+  func testProviderUsesConditionalDiscoveryRequestsAfterCacheDuration() throws {
+    let transport = FixtureGitHubAPITransport(
+      responses: [
+        GitHubAPIResponse(data: repositoryDiscoveryData(), eTag: #""repos-v1""#),
+        GitHubAPIResponse(data: authenticatedUserData(), eTag: #""user-v1""#),
+        GitHubAPIResponse(data: organizationsData(), eTag: #""orgs-v1""#),
+        GitHubAPIResponse(data: graphQLMergedPullRequestData(mergedAt: "2026-04-26T12:00:00.000Z")),
+        GitHubAPIResponse(data: Data(), eTag: #""repos-v1""#, statusCode: 304),
+        GitHubAPIResponse(data: Data(), eTag: #""user-v1""#, statusCode: 304),
+        GitHubAPIResponse(data: Data(), eTag: #""orgs-v1""#, statusCode: 304),
+        GitHubAPIResponse(data: graphQLMergedPullRequestData(mergedAt: "2026-04-27T12:00:00.000Z")),
+      ]
+    )
+    let provider = GitHubPRActivityProvider(
+      token: "token",
+      transport: transport,
+      bucketLabels: ["W1"],
+      discoveryCacheDuration: 60
+    )
+
+    _ = try provider.load(now: try date("2026-05-02T18:00:00Z"))
+    let refreshed = try provider.load(now: try date("2026-05-02T18:02:00Z"))
+
+    XCTAssertEqual(refreshed.repositories.map(\.id), ["owner/visible"])
+    XCTAssertEqual(transport.capturedRequests.count, 8)
+    XCTAssertEqual(
+      transport.capturedRequests[4].value(forHTTPHeaderField: "If-None-Match"),
+      #""repos-v1""#
+    )
+    XCTAssertEqual(
+      transport.capturedRequests[5].value(forHTTPHeaderField: "If-None-Match"),
+      #""user-v1""#
+    )
+    XCTAssertEqual(
+      transport.capturedRequests[6].value(forHTTPHeaderField: "If-None-Match"),
+      #""orgs-v1""#
+    )
+  }
+
   func testProviderFiltersMergedPullRequestsByMerger() throws {
     let transport = FixtureGitHubAPITransport(
       responses: [
@@ -174,100 +270,5 @@ final class GitHubPRActivityProviderTests: XCTestCase {
         .graphQL("Search failed")
       )
     }
-  }
-
-  private func repositoryDiscoveryData() -> Data {
-    repositoryDiscoveryData(
-      repositories: [
-        repositoryFixture(owner: "owner", name: "visible", canPull: true),
-        repositoryFixture(owner: "owner", name: "hidden", canPull: false),
-      ]
-    )
-  }
-
-  private func repositoryDiscoveryData(repositories: [String]) -> Data {
-    Data(
-      "[\(repositories.joined(separator: ","))]".utf8
-    )
-  }
-
-  private func repositoryFixture(owner: String, name: String, canPull: Bool) -> String {
-    """
-    {
-      "full_name": "\(owner)/\(name)",
-      "name": "\(name)",
-      "owner": { "login": "\(owner)" },
-      "permissions": { "pull": \(canPull) }
-    }
-    """
-  }
-
-  private func authenticatedUserData(login: String = "owner") -> Data {
-    Data(#"{ "login": "\#(login)" }"#.utf8)
-  }
-
-  private func organizationsData(logins: [String] = []) -> Data {
-    Data("[\(logins.map { #"{ "login": "\#($0)" }"# }.joined(separator: ","))]".utf8)
-  }
-
-  private func graphQLMergedPullRequestData(
-    mergedAt: String,
-    mergedBy: String = "owner",
-    hasNextPage: Bool = false,
-    endCursor: String? = nil
-  ) -> Data {
-    let cursor = endCursor.map { #""\#($0)""# } ?? "null"
-    return Data(
-      """
-      {
-        "data": {
-          "search": {
-            "pageInfo": {
-              "hasNextPage": \(hasNextPage),
-              "endCursor": \(cursor)
-            },
-            "nodes": [
-              {
-                "title": "Merged",
-                "mergedAt": "\(mergedAt)",
-                "mergedBy": { "login": "\(mergedBy)" },
-                "repository": { "nameWithOwner": "owner/visible" }
-              }
-            ]
-          }
-        }
-      }
-      """.utf8
-    )
-  }
-
-  private func graphQLErrorData(message: String) -> Data {
-    Data(
-      """
-      {
-        "errors": [
-          { "message": "\(message)" }
-        ]
-      }
-      """.utf8
-    )
-  }
-
-  private func date(_ text: String) throws -> Date {
-    try XCTUnwrap(ISO8601DateFormatter().date(from: text))
-  }
-
-  private func queryValue(_ name: String, in request: URLRequest) -> String? {
-    guard
-      let url = request.url,
-      let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-    else {
-      return nil
-    }
-    return components.queryItems?.first { $0.name == name }?.value
-  }
-
-  private func bodyString(in request: URLRequest) -> String? {
-    request.httpBody.flatMap { String(data: $0, encoding: .utf8) }
   }
 }

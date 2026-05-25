@@ -59,6 +59,7 @@ final class GitHubGraphQLSearchTests: XCTestCase {
             "pageInfo": { "hasNextPage": false, "endCursor": null },
             "nodes": [
               {
+                "id": "PR_kwDOExample",
                 "title": "Merged",
                 "mergedAt": "2026-05-04T07:30:00Z",
                 "mergedBy": { "login": "neonwatty" },
@@ -75,6 +76,7 @@ final class GitHubGraphQLSearchTests: XCTestCase {
     let pullRequest = try XCTUnwrap(response.search?.nodes.first)
 
     XCTAssertEqual(pullRequest.mergedBy?.login, "neonwatty")
+    XCTAssertEqual(pullRequest.id, "PR_kwDOExample")
     XCTAssertEqual(pullRequest.mergedPullRequest().repositoryID, "mean-weasel/deckchecker")
     XCTAssertEqual(pullRequest.mergedAt, try date("2026-05-04T07:30:00Z"))
   }

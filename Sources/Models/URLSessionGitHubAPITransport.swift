@@ -7,7 +7,7 @@ final class URLSessionGitHubAPITransport: GitHubAPITransport {
     self.session = session
   }
 
-  func data(for request: URLRequest) throws -> Data {
+  func response(for request: URLRequest) throws -> GitHubAPIResponse {
     let semaphore = DispatchSemaphore(value: 0)
     let box = URLSessionTransportResultBox()
 
@@ -26,6 +26,17 @@ final class URLSessionGitHubAPITransport: GitHubAPITransport {
         return
       }
 
+      if response.statusCode == 304 {
+        box.result = .success(
+          GitHubAPIResponse(
+            data: Data(),
+            eTag: response.value(forHTTPHeaderField: "ETag"),
+            statusCode: response.statusCode
+          )
+        )
+        return
+      }
+
       guard (200..<300).contains(response.statusCode) else {
         box.result = .failure(
           URLSessionGitHubAPITransportError.httpStatus(
@@ -36,12 +47,18 @@ final class URLSessionGitHubAPITransport: GitHubAPITransport {
         return
       }
 
-      box.result = .success(data ?? Data())
+      box.result = .success(
+        GitHubAPIResponse(
+          data: data ?? Data(),
+          eTag: response.value(forHTTPHeaderField: "ETag"),
+          statusCode: response.statusCode
+        )
+      )
     }
     .resume()
 
     semaphore.wait()
-    return try box.result?.get() ?? Data()
+    return try box.result?.get() ?? GitHubAPIResponse(data: Data())
   }
 }
 
@@ -51,7 +68,7 @@ enum URLSessionGitHubAPITransportError: Error, Equatable {
 }
 
 private final class URLSessionTransportResultBox {
-  var result: Result<Data, Error>?
+  var result: Result<GitHubAPIResponse, Error>?
 }
 
 extension HTTPURLResponse {

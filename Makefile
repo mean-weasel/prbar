@@ -4,7 +4,7 @@ DESTINATION := platform=macOS
 DERIVED_DATA := build
 APP_BINARY := $(DERIVED_DATA)/Build/Products/Debug/PRMenuBar.app/Contents/MacOS/PRMenuBar
 
-.PHONY: generate format-check file-size-check build test coverage-report app-smoke run run-live ci-local clean
+.PHONY: generate format-check file-size-check build test refresh-benchmark coverage-report app-smoke run run-live ci-local clean
 
 generate:
 	xcodegen generate
@@ -36,6 +36,9 @@ test: generate
 		CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO \
 		-enableCodeCoverage YES \
 		-resultBundlePath TestResults.xcresult
+
+refresh-benchmark:
+	./scripts/refresh-benchmark.sh
 
 coverage-report:
 	xcrun xccov view --report TestResults.xcresult

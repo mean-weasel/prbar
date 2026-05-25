@@ -55,6 +55,7 @@ enum GitHubGraphQLSearch {
         }
         nodes {
           ... on PullRequest {
+            id
             title
             mergedAt
             mergedBy {
@@ -140,12 +141,14 @@ struct GitHubGraphQLSearchResponse: Decodable {
   }
 
   struct PullRequest: Decodable {
+    var id: String
     var title: String
     var mergedAt: Date
     var mergedBy: User?
     var repository: Repository
 
     private enum CodingKeys: String, CodingKey {
+      case id
       case title
       case mergedAt
       case mergedBy
@@ -154,6 +157,7 @@ struct GitHubGraphQLSearchResponse: Decodable {
 
     init(from decoder: Decoder) throws {
       let container = try decoder.container(keyedBy: CodingKeys.self)
+      id = try container.decode(String.self, forKey: .id)
       title = try container.decode(String.self, forKey: .title)
       let mergedAtText = try container.decode(String.self, forKey: .mergedAt)
       guard let mergedAt = ISO8601DateFormatter.githubDate(from: mergedAtText) else {
@@ -170,6 +174,7 @@ struct GitHubGraphQLSearchResponse: Decodable {
 
     func mergedPullRequest() -> GitHubMergedPullRequest {
       GitHubMergedPullRequest(
+        id: id,
         title: title,
         repositoryID: repository.nameWithOwner,
         mergedAt: mergedAt
