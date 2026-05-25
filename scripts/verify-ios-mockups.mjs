@@ -28,6 +28,11 @@ const requiredCss = [
   ".share-card.launch",
   ".share-card.hype",
   ".share-card.minimal",
+  ".sheet-backdrop",
+  ".bottom-sheet",
+  ".card-back",
+  ".evidence-list",
+  ".card-actions",
   ".menu-list",
   ".repo-list"
 ];
@@ -38,15 +43,27 @@ const requiredJs = [
   "const releases",
   "activeTab",
   "activeMoreScreen",
+  "activeSheet",
+  "cardSide",
+  "applyInitialRoute",
   "renderToday",
   "renderActivity",
   "renderReleases",
   "renderCards",
+  "renderCardBackEvidence",
+  "renderEditSheet",
+  "renderShareSheet",
   "renderMore",
   "renderRepos",
   "Make Release Card",
   "Open on GitHub",
   "Copy release notes",
+  "Edit Card",
+  "Share Card",
+  "Share Front",
+  "Share Back",
+  "Share Both",
+  "Copy Caption",
   "Included repos power Activity, Releases, and Cards.",
   "day",
   "week",
@@ -57,7 +74,9 @@ const requiredReadme = [
   "Interactive HTML prototype",
   "Today / Activity / Releases / Cards / More",
   "More menu with Repos, Settings, Privacy, Sample Data, and About",
-  "fixture-backed"
+  "fixture-backed",
+  "Front/back card flip",
+  "Share sheet"
 ];
 
 for (const item of requiredHtml) assertIncludes(html, item, "HTML prototype marker");

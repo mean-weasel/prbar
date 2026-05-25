@@ -70,10 +70,12 @@ const releases = [
 const state = {
   activeTab: "today",
   activeMoreScreen: null,
+  activeSheet: null,
   range: "week",
   selectedReleaseId: "rel-prbar-140",
   repoSearch: "",
   toast: "",
+  cardSide: "front",
   cardDraft: {
     sourceType: "activity",
     sourceId: null,
@@ -173,6 +175,8 @@ function openMore(screen) {
 }
 
 function makeActivityCard() {
+  state.activeSheet = null;
+  state.cardSide = "front";
   state.cardDraft = {
     ...state.cardDraft,
     sourceType: "activity",
@@ -183,6 +187,8 @@ function makeActivityCard() {
 
 function makeReleaseCard(id) {
   state.selectedReleaseId = id;
+  state.activeSheet = null;
+  state.cardSide = "front";
   state.cardDraft = {
     ...state.cardDraft,
     sourceType: "release",
@@ -205,6 +211,8 @@ function resetDemoData() {
   });
   state.repoSearch = "";
   state.range = "week";
+  state.activeSheet = null;
+  state.cardSide = "front";
   state.selectedReleaseId = "rel-prbar-140";
   state.cardDraft = {
     sourceType: "activity",
@@ -218,6 +226,16 @@ function resetDemoData() {
   toast("Demo data reset");
 }
 
+function applyInitialRoute() {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get("tab");
+  const side = params.get("side");
+  const sheet = params.get("sheet");
+  if (navItems.some(([id]) => id === tab)) state.activeTab = tab;
+  if (side === "back") state.cardSide = "back";
+  if (sheet === "edit" || sheet === "share") state.activeSheet = sheet;
+}
+
 function render() {
   app.innerHTML = `
     <div class="app-chrome">
@@ -225,6 +243,7 @@ function render() {
       <section class="app-content">
         ${renderActiveScreen()}
       </section>
+      ${renderActiveSheet()}
       ${state.toast ? `<div class="toast">${escapeHtml(state.toast)}</div>` : ""}
       ${renderBottomNav()}
     </div>
@@ -379,7 +398,6 @@ function renderReleases() {
 }
 
 function renderCards() {
-  const draft = state.cardDraft;
   const source = cardSource();
   return `
     <section class="screen stack">
@@ -390,21 +408,12 @@ function renderCards() {
         <strong>${escapeHtml(source.title)}</strong>
         <p>${escapeHtml(source.caption)}</p>
       </section>
-      <div class="theme-grid" aria-label="Card theme">
-        ${themes.map((theme) => `
-          <button type="button" class="${draft.theme === theme ? "is-active" : ""}" data-action="theme" data-theme="${theme}">
-            ${theme[0].toUpperCase()}${theme.slice(1)}
-          </button>
-        `).join("")}
-      </div>
       ${renderShareCard(source)}
-      <section class="toggle-list">
-        ${toggle("showRepos", "Show repo names")}
-        ${toggle("showHandle", "Show GitHub handle")}
-        ${toggle("exactCounts", "Use exact counts")}
-        ${toggle("showPrivateLabels", "Show private labels")}
+      <section class="card-actions">
+        <button class="secondary-action" type="button" data-action="flip-card">${state.cardSide === "front" ? "Show Releases" : "Show Card"}</button>
+        <button class="secondary-action" type="button" data-action="open-sheet" data-sheet="edit">Edit Card</button>
       </section>
-      <button class="primary-action" type="button" data-action="share-preview">Share Preview</button>
+      <button class="primary-action" type="button" data-action="open-sheet" data-sheet="share">Share Card</button>
     </section>
   `;
 }
@@ -437,6 +446,19 @@ function cardSource() {
 
 function renderShareCard(source) {
   const draft = state.cardDraft;
+  if (state.cardSide === "back") {
+    return `
+      <section class="share-card card-back ${draft.theme}">
+        <div>
+          <p class="microcopy">${source.type === "release" ? "Release evidence" : `${state.range} releases`}</p>
+          <h2>${source.type === "release" ? "What shipped" : "Release proof"}</h2>
+          <p>${source.type === "release" ? "Release notes and related pull requests from GitHub." : "GitHub releases from included repos, collected behind the share card."}</p>
+        </div>
+        ${renderCardBackEvidence(source)}
+        <footer><span>${draft.showHandle ? "@neonwatty" : "handle hidden"}</span><span>${state.cardSide === "back" ? "back side" : "front side"}</span></footer>
+      </section>
+    `;
+  }
   const title = draft.exactCounts ? source.metric : source.type === "activity" ? "many merged" : source.metric;
   const repoLine = draft.showRepos ? source.repoNames.join(" · ") : "repos hidden";
   return `
@@ -451,6 +473,84 @@ function renderShareCard(source) {
       </div>
       <footer><span>${draft.showHandle ? "@neonwatty" : "handle hidden"}</span><span>${escapeHtml(repoLine)}</span></footer>
     </section>
+  `;
+}
+
+function renderActiveSheet() {
+  if (!state.activeSheet) return "";
+  const content = state.activeSheet === "edit" ? renderEditSheet() : renderShareSheet();
+  return `
+    <section class="sheet-backdrop" data-action="close-sheet">
+      <div class="bottom-sheet" role="dialog" aria-modal="true">
+        ${content}
+      </div>
+    </section>
+  `;
+}
+
+function renderEditSheet() {
+  const draft = state.cardDraft;
+  return `
+    <header>
+      <div><p class="microcopy">Edit card</p><h2>Style and privacy</h2></div>
+      <button type="button" class="icon-button" data-action="close-sheet" aria-label="Close">×</button>
+    </header>
+    <div class="theme-grid" aria-label="Card theme">
+      ${themes.map((theme) => `
+        <button type="button" class="${draft.theme === theme ? "is-active" : ""}" data-action="theme" data-theme="${theme}">
+          ${theme[0].toUpperCase()}${theme.slice(1)}
+        </button>
+      `).join("")}
+    </div>
+    <section class="toggle-list sheet-toggles">
+      ${toggle("showRepos", "Show repo names")}
+      ${toggle("showHandle", "Show GitHub handle")}
+      ${toggle("exactCounts", "Use exact counts")}
+      ${toggle("showPrivateLabels", "Show private labels")}
+    </section>
+  `;
+}
+
+function renderShareSheet() {
+  return `
+    <header>
+      <div><p class="microcopy">Share card</p><h2>Choose output</h2></div>
+      <button type="button" class="icon-button" data-action="close-sheet" aria-label="Close">×</button>
+    </header>
+    <section class="share-options">
+      <button type="button" data-action="share-choice">Share Front</button>
+      <button type="button" data-action="share-choice">Share Back</button>
+      <button type="button" data-action="share-choice">Share Both</button>
+      <button type="button" data-action="share-choice">Copy Caption</button>
+      <button type="button" data-action="share-choice">Save Image</button>
+      <button type="button" data-action="share-choice">Message</button>
+    </section>
+  `;
+}
+
+function renderCardBackEvidence(source) {
+  if (source.type === "release") {
+    const release = releases.find((item) => item.id === state.cardDraft.sourceId) || selectedRelease();
+    const repo = repoFor(release.repoId);
+    const relatedPrs = pullRequests.filter((pr) => pr.repoId === release.repoId).slice(0, 3);
+    return `
+      <div class="evidence-list">
+        <strong>${escapeHtml(release.tag)} · ${escapeHtml(repo.name)}</strong>
+        <p>${escapeHtml(release.notes)}</p>
+        ${relatedPrs.map((pr) => `<span>${escapeHtml(pr.title)}</span>`).join("")}
+      </div>
+    `;
+  }
+  const releaseItems = releasesForIncludedRepos().slice(0, 4);
+  return `
+    <div class="evidence-list">
+      ${releaseItems.map((release) => {
+        const repo = repoFor(release.repoId);
+        return `
+          <span><strong>${escapeHtml(release.tag)}</strong> ${escapeHtml(release.title)} · ${escapeHtml(repo.name)}</span>
+        `;
+      }).join("")}
+    </div>
   `;
 }
 
@@ -613,7 +713,23 @@ app.addEventListener("click", (event) => {
   if (action === "make-release-card") makeReleaseCard(target.dataset.releaseId);
   if (action === "open-github") toast("GitHub URL ready");
   if (action === "copy-notes") toast("Release notes copied");
-  if (action === "share-preview") toast("Share preview ready");
+  if (action === "flip-card") {
+    state.cardSide = state.cardSide === "front" ? "back" : "front";
+    render();
+  }
+  if (action === "open-sheet") {
+    state.activeSheet = target.dataset.sheet;
+    render();
+  }
+  if (action === "close-sheet") {
+    if (target.classList.contains("sheet-backdrop") && event.target !== target) return;
+    state.activeSheet = null;
+    render();
+  }
+  if (action === "share-choice") {
+    state.activeSheet = null;
+    toast(`${target.textContent.trim()} ready`);
+  }
   if (action === "theme") {
     state.cardDraft.theme = target.dataset.theme;
     render();
@@ -642,4 +758,5 @@ app.addEventListener("input", (event) => {
   }
 });
 
+applyInitialRoute();
 render();
