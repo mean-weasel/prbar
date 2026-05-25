@@ -89,3 +89,7 @@ Placeholder scan:
 Scope check:
 
 - The plan does not include native iOS, real GitHub auth, real API calls, backend storage, public profiles, or AI summaries.
+
+## Follow-Up Auth Prototype Pass
+
+The next pass is tracked in `Docs/superpowers/plans/2026-05-25-ios-auth-onboarding-prototype.md`. It adds first-run GitHub sign-in, permission rationale, repo setup, privacy defaults, sync/recovery states, and native iOS polish before any SwiftUI implementation.

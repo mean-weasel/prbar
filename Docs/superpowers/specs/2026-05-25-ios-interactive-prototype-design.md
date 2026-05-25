@@ -208,6 +208,16 @@ Card draft fields:
 - theme
 - privacy settings
 
+## Auth And GitHub Integration Decisions
+
+- Model auth as a state machine: signed out, permission rationale, connecting, repo setup, privacy setup, syncing, authenticated, and recoverable issue.
+- Prefer GitHub App OAuth with least-privilege access and explicit private-repo opt-in.
+- Store tokens in Keychain in the native app.
+- Cache derived stats separately from raw private repo text where possible.
+- Treat private repo names, PR titles, release notes, exact counts, org names, and links as share-sensitive.
+- Key repositories by durable GitHub IDs in production, not owner/name.
+- Show last sync, stale cache, partial sync, rate limit, SSO, and reconnect states.
+
 ## Implementation Direction
 
 Use plain HTML, CSS, and vanilla JavaScript. Do not introduce React, Vite, or another frontend framework for this prototype.

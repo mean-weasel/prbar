@@ -25,16 +25,19 @@ This prototype is fixture-backed and does not call GitHub. Native iOS implementa
 
 Review links can open specific states with query parameters, for example `?tab=cards`, `?tab=cards&side=back`, or `?tab=cards&sheet=share`.
 
-Additional review links:
+## Prototype State Links
 
-- `?auth=signed-out`
-- `?auth=permissions`
-- `?auth=connecting`
-- `?auth=repo-setup`
-- `?auth=privacy`
-- `?auth=syncing`
-- `?auth=expired`
-- `?auth=rate-limit`
-- `?empty=no-repos`
-- `?empty=no-activity`
-- `?tab=cards&private-warning=true`
+| State | Link |
+| --- | --- |
+| Welcome | `?auth=signed-out` |
+| Permission rationale | `?auth=permissions` |
+| Connecting | `?auth=connecting` |
+| Repo setup | `?auth=repo-setup` |
+| Privacy defaults | `?auth=privacy` |
+| Initial sync | `?auth=syncing` |
+| Expired token | `?auth=expired` |
+| Rate limit | `?auth=rate-limit` |
+| No repositories | `?empty=no-repos` |
+| No activity | `?empty=no-activity` |
+| No releases | `?empty=no-releases` |
+| Private share warning | `?tab=cards&private-warning=true` |
