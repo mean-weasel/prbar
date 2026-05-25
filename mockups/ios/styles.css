@@ -368,10 +368,34 @@ button {
   color: #fff;
 }
 
+.primary-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .secondary-action {
   border: 1px solid var(--line);
   background: #fff;
   color: var(--ink);
+}
+
+.status-banner {
+  padding: 12px;
+  border: 1px solid #bae6fd;
+  border-radius: var(--radius);
+  background: #f0f9ff;
+}
+
+.status-banner strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.status-banner p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.38;
 }
 
 .auth-screen {
@@ -638,11 +662,42 @@ button {
   grid-template-columns: auto auto 1fr auto;
 }
 
+.repo-list label > span {
+  min-width: 0;
+}
+
 .repo-list em {
   color: var(--quiet);
   font-size: 11px;
   font-style: normal;
   font-weight: 800;
+}
+
+.setup-repos label {
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+}
+
+.setup-repos small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.setup-repos strong,
+.setup-repos small {
+  overflow-wrap: anywhere;
+}
+
+.setup-repos label.is-blocked {
+  opacity: 0.72;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+}
+
+.setup-repos .small-button {
+  padding-inline: 7px;
+  white-space: nowrap;
 }
 
 .search-input {

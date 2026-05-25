@@ -1,11 +1,11 @@
 const app = document.querySelector("[data-prototype-app]");
 
 const repositories = [
-  { id: "prbar", name: "prbar", visibility: "public", color: "#0ea5e9", included: true },
-  { id: "launch-kit", name: "launch-kit", visibility: "public", color: "#16a34a", included: true },
-  { id: "client-api", name: "client-api", visibility: "private", color: "#f59e0b", included: true },
-  { id: "docs-site", name: "docs-site", visibility: "public", color: "#7c3aed", included: false },
-  { id: "ops-console", name: "ops-console", visibility: "private", color: "#ef4444", included: false }
+  { id: "prbar", owner: "neonwatty", name: "prbar", visibility: "public", color: "#0ea5e9", included: true, recommended: true, access: "ready", reason: "Most active this week" },
+  { id: "launch-kit", owner: "neonwatty", name: "launch-kit", visibility: "public", color: "#16a34a", included: true, recommended: true, access: "ready", reason: "Recent releases" },
+  { id: "client-api", owner: "example", name: "client-api", visibility: "private", color: "#f59e0b", included: true, recommended: true, access: "ready", reason: "Private repo included" },
+  { id: "docs-site", owner: "neonwatty", name: "docs-site", visibility: "public", color: "#7c3aed", included: false, recommended: false, access: "ready", reason: "Documentation releases" },
+  { id: "ops-console", owner: "example", name: "ops-console", visibility: "private", color: "#ef4444", included: false, recommended: false, access: "sso", reason: "Needs SSO authorization" }
 ];
 
 const pullRequests = [
@@ -132,6 +132,12 @@ function prsForIncludedRepos() {
 function releasesForIncludedRepos() {
   const ids = includedRepoIds();
   return releases.filter((release) => ids.has(release.repoId));
+}
+
+function filteredRepos() {
+  const query = state.repoSearch.trim().toLowerCase();
+  if (!query) return repositories;
+  return repositories.filter((repo) => `${repo.owner}/${repo.name}`.toLowerCase().includes(query));
 }
 
 function selectedRelease() {
@@ -629,8 +635,7 @@ function moreDescription(id) {
 }
 
 function renderRepos() {
-  const search = state.repoSearch.trim().toLowerCase();
-  const visibleRepos = repositories.filter((repo) => repo.name.toLowerCase().includes(search));
+  const visibleRepos = filteredRepos();
   return `
     <section class="screen stack">
       ${renderBackToMore()}
@@ -842,6 +847,13 @@ app.addEventListener("click", (event) => {
     repositories.forEach((repo) => repo.included = true);
     render();
   }
+  if (action === "select-none") {
+    repositories.forEach((repo) => {
+      if (repo.access !== "sso") repo.included = false;
+    });
+    render();
+  }
+  if (action === "authorize-sso") toast("SSO authorization needed in GitHub");
   if (action === "privacy-toggle") {
     state.cardDraft[target.dataset.key] = target.checked;
     render();
@@ -917,13 +929,48 @@ function renderConnecting() {
 }
 
 function renderRepoSetup() {
+  const filtered = filteredRepos();
+  const selectedCount = includedRepos().length;
   return `
-    <section class="screen stack auth-screen">
-      <section class="empty-state">
-        <strong>Choose repositories</strong>
-        <p>Authorize SSO for blocked private repositories when needed.</p>
+    <section class="screen stack">
+      <section class="section-title">
+        <div><p class="microcopy">Repository setup</p><h1>Choose repositories</h1></div>
       </section>
-      <button class="primary-action" type="button" data-action="continue-repos">Continue</button>
+      <section class="status-banner">
+        <strong>${selectedCount} selected</strong>
+        <p>Included repos power Activity, Releases, and Cards. Private repos are hidden from cards unless you allow them.</p>
+      </section>
+      <input class="search-input" type="search" placeholder="Search repositories" value="${escapeHtml(state.repoSearch)}" data-action="repo-search">
+      <section class="repo-list setup-repos">
+        ${filtered.length ? filtered.map(renderRepoSetupRow).join("") : renderRepoSearchEmpty()}
+      </section>
+      <section class="card-actions">
+        <button class="secondary-action" type="button" data-action="select-none">Select None</button>
+        <button class="secondary-action" type="button" data-action="include-all">Include All</button>
+      </section>
+      <button class="primary-action" type="button" data-action="continue-repos" ${selectedCount ? "" : "disabled"}>Continue</button>
+    </section>
+  `;
+}
+
+function renderRepoSetupRow(repo) {
+  const blocked = repo.access === "sso";
+  return `
+    <label class="${blocked ? "is-blocked" : ""}">
+      <input type="checkbox" ${repo.included ? "checked" : ""} ${blocked ? "disabled" : ""} data-action="toggle-repo" data-repo-id="${repo.id}">
+      <i style="background:${repo.color}"></i>
+      <span><strong>${escapeHtml(repo.owner)}/${escapeHtml(repo.name)}</strong><small>${escapeHtml(repo.reason)}</small></span>
+      <em>${blocked ? "SSO" : repo.visibility}</em>
+      ${blocked ? `<button class="small-button" type="button" data-action="authorize-sso">Authorize SSO</button>` : ""}
+    </label>
+  `;
+}
+
+function renderRepoSearchEmpty() {
+  return `
+    <section class="empty-state">
+      <strong>No matching repositories</strong>
+      <p>Check the owner or repo name, or make sure GitHub access includes the organization.</p>
     </section>
   `;
 }
