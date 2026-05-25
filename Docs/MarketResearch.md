@@ -73,6 +73,62 @@ These terms better match the refined product core: connect GitHub Releases, sele
 - `GitHub Releases` and `release notes` give PRBar a concrete product artifact that searchers already understand. Use these for product pages and workflow pages.
 - `ai developer portfolio` has weak measured search volume today, but it is a good category to create because Reddit discussions show people actively exploring structured GitHub/developer identity.
 
+## Google Ads Keyword Planner Findings
+
+Google Ads Keyword Planner was checked on 2026-05-25 using United States, English, Google Search, and the May 2025 to April 2026 historical range. These numbers should replace the free API numbers when making SEO and paid-search decisions.
+
+### Seed Batch: Releases, Portfolios, And AI Coding Tools
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| claude code | 450,000 | 0% | +1,563% | Medium | $4.04 | $14.82 | Hottest obvious AI-coding term |
+| cursor ai | 110,000 | +49% | -18% | Medium | $3.18 | $15.00 | Very large tool/category term |
+| github copilot | 110,000 | +172% | +172% | Low | $2.80 | $12.30 | Mainstream AI-coding doorway |
+| ai coding tools | 5,400 | +50% | +179% | Low | $5.79 | $20.77 | Strong comparison/content keyword |
+| release notes | 5,400 | 0% | -17% | Low | $2.60 | $12.01 | Broad release content intent |
+| github releases | 2,400 | +24% | +125% | Low | $1.47 | $6.55 | Direct product-workflow fit |
+| github changelog | 2,400 | +50% | +238% | Low | $4.82 | $6.68 | Strong release/update fit |
+| github portfolio | 720 | 0% | -18% | Low | $2.31 | $8.07 | Career/proof-of-work fit |
+| github release notes | 260 | -18% | +23% | Low | — | — | Niche but exact fit |
+| developer portfolio | 210 | -19% | -35% | Low | $1.00 | $7.45 | Portfolio phrase, but weaker than GitHub-specific |
+
+### Seed Batch: Hiring, Founder, And Release Generator Terms
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| indie hackers | 3,600 | +52% | 0% | Low | $6.19 | $29.87 | Strong community/navigation term |
+| micro saas | 1,000 | -23% | 0% | Low | $2.53 | $15.99 | Founder niche still meaningful |
+| hire ai developers | 720 | +23% | -55% | Medium | $25.60 | $112.68 | Small volume, very high commercial intent |
+| build in public | 390 | 0% | -18% | Low | $6.51 | $22.27 | Useful community/content phrase |
+| product updates | 320 | -19% | -33% | Low | $8.21 | $46.69 | Release-note adjacent, commercial-ish |
+| ai developers for hire | 210 | 0% | -77% | Low | $26.25 | $172.39 | Recruiter/founder intent |
+| github releases api | 90 | 0% | -36% | Low | — | — | Developer implementation phrase |
+| release notes generator | 70 | 0% | -60% | Low | — | — | Tool intent, but small |
+| changelog generator | 30 | -20% | +33% | Low | $4.34 | $7.77 | Small, relevant utility phrase |
+| ai developer portfolio | 10 | 0% | 0% | Low | — | — | Category is not established in search yet |
+
+### Seed Batch: Vibe Coding And AI Coding Comparison
+
+Keyword Planner did not return `vibe coding`, `vibecoding`, `vibe coding tools`, `vibe coding app`, `vibe coding jobs`, `vibe coding reddit`, `vibe coded app`, or `vibe coding website` as provided-keyword rows. It returned broader AI-coding comparison ideas instead.
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| best ai for coding | 12,100 | 0% | 0% | Medium | $5.27 | $23.18 | Strong high-intent comparison term |
+| best coding ai | 5,400 | 0% | 0% | Medium | $6.16 | $25.14 | Same cluster, awkward phrasing but real demand |
+| best ai coding assistant | 1,000 | -33% | -63% | Medium | $5.87 | $26.79 | Tool comparison |
+| best ai for programming | 720 | 0% | -33% | Medium | $4.80 | $20.77 | Tool comparison |
+| ai code review tools | 590 | 0% | +125% | Low | $9.78 | $39.92 | Adjacent high-CPC devtool term |
+| best ai code generator | 480 | -18% | -56% | Medium | $5.38 | $23.56 | Tool comparison |
+| best ai for writing code | 480 | 0% | -19% | High | $4.96 | $23.52 | Paid-search competitive |
+
+### Keyword Planner Implications
+
+- Lead SEO with `GitHub Releases`, `release notes`, and `github changelog` for product pages because they map directly to the app's first job.
+- Use `Claude Code`, `Cursor AI`, `GitHub Copilot`, `AI coding tools`, and `best AI for coding` for content pages, comparisons, and workflow articles. These are traffic pools, not the product's literal category.
+- Treat `vibe coding` as social/category language rather than a dependable Google Ads keyword. It may still be excellent for Reddit, YouTube, X, and community posts.
+- `hire ai developers` and `ai developers for hire` are too expensive for casual paid search, but they validate a future recruiter-facing landing page.
+- `developer portfolio` is weaker than expected. `GitHub portfolio` and release-based proof pages are likely more specific and differentiated.
+
 ## Primary User Segments
 
 ### 1. AI-Native Indie Builders
@@ -405,6 +461,7 @@ This keeps the product useful before the network exists. It also fits the curren
 - Stack Overflow 2025 Developer Survey, AI section: https://survey.stackoverflow.co/2025/ai
 - GitHub Octoverse 2025: https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/
 - GitHub Universe 2024 press release: https://github.com/newsroom/press-releases/github-universe-2024
+- Google Ads Keyword Planner, Mean-Weasel LLC account, United States, English, Google Search, May 2025 to April 2026 historical range, checked 2026-05-25
 - Swarmia AI impact on PR metrics: https://help.swarmia.com/use-cases/measure-the-productivity-impact-of-ai-tools/ai-impact-on-pr-metrics
 - Swarmia GitHub reporting page: https://www.swarmia.com/github-reporting/
 - Vibe Coding SEO guide: https://gptprompts.ai/vibe-coding
