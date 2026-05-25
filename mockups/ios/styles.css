@@ -374,6 +374,95 @@ button {
   color: var(--ink);
 }
 
+.auth-screen {
+  min-height: 100%;
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  padding: 10px 0 24px;
+}
+
+.auth-hero {
+  display: grid;
+  gap: 10px;
+}
+
+.auth-hero h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.02;
+  font-weight: 820;
+}
+
+.auth-hero p:last-child {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.permission-list,
+.ios-list,
+.sync-steps {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.permission-list p,
+.ios-list p,
+.sync-steps p {
+  margin: 0;
+  padding: 13px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.permission-list p:first-child,
+.ios-list p:first-child,
+.sync-steps p:first-child {
+  border-top: 0;
+}
+
+.permission-list span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ios-list p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sync-steps p {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.sync-steps p span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--quiet);
+}
+
+.sync-steps p.is-complete span {
+  border-color: var(--green);
+  background: var(--green);
+}
+
+.sync-steps p.is-active span {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 5px rgba(14, 165, 233, 0.14);
+}
+
 .release-focus {
   background: #f0fdf4;
   border-color: #bbf7d0;

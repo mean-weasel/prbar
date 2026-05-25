@@ -766,6 +766,16 @@ app.addEventListener("click", (event) => {
     state.syncState = "fresh";
     render();
   }
+  if (action === "auth-back") {
+    state.onboardingStep = target.dataset.step;
+    state.authState = target.dataset.step === "welcome" ? "signedOut" : "onboarding";
+    render();
+  }
+  if (action === "auth-cancel") {
+    state.authState = "signedOut";
+    state.onboardingStep = "welcome";
+    toast("GitHub sign-in cancelled");
+  }
   if (action === "continue-repos") {
     state.onboardingStep = "privacy";
     render();
@@ -850,10 +860,16 @@ function renderOnboarding() {
 
 function renderWelcome() {
   return `
-    <section class="screen stack auth-screen">
-      <section class="empty-state">
-        <strong>GitHub sign-in</strong>
-        <p>Sign in with GitHub to start First-run onboarding, or load demo data.</p>
+    <section class="auth-screen">
+      <div class="auth-hero">
+        <p class="microcopy">PRBar for iOS</p>
+        <h1>Carry your shipping rhythm with you.</h1>
+        <p>Connect GitHub to see merged PRs, releases, and shareable proof-of-work cards from your selected repositories.</p>
+      </div>
+      <section class="permission-list">
+        <p><strong>Read-only GitHub data</strong><span>PRs, repositories, releases, and account identity.</span></p>
+        <p><strong>Private by default</strong><span>You choose which repos appear and what card details are exported.</span></p>
+        <p><strong>No write access</strong><span>The app does not create PRs, tags, releases, or comments.</span></p>
       </section>
       <button class="primary-action" type="button" data-action="start-github">Sign in with GitHub</button>
       <button class="secondary-action" type="button" data-action="try-demo">Try Demo</button>
@@ -863,10 +879,18 @@ function renderWelcome() {
 
 function renderPermissionRationale() {
   return `
-    <section class="screen stack auth-screen">
-      <section class="empty-state">
-        <strong>Continue to GitHub</strong>
-        <p>Permission rationale for read-only access before OAuth.</p>
+    <section class="auth-screen">
+      <button class="back-button" type="button" data-action="auth-back" data-step="welcome">Back</button>
+      <div class="auth-hero">
+        <p class="microcopy">GitHub permissions</p>
+        <h1>Choose exactly what PRBar can read.</h1>
+        <p>PRBar uses read-only access to calculate your activity and find releases. Private repo names and release notes stay hidden from shared cards unless you opt in.</p>
+      </div>
+      <section class="ios-list">
+        <p><span>Account identity</span><strong>Required</strong></p>
+        <p><span>Repository metadata</span><strong>Required</strong></p>
+        <p><span>Pull requests and releases</span><strong>Required</strong></p>
+        <p><span>Private repositories</span><strong>Optional</strong></p>
       </section>
       <button class="primary-action" type="button" data-action="continue-github">Continue to GitHub</button>
     </section>
@@ -875,12 +899,19 @@ function renderPermissionRationale() {
 
 function renderConnecting() {
   return `
-    <section class="screen stack auth-screen">
-      <section class="empty-state">
-        <strong>Connecting to GitHub</strong>
-        <p>Waiting for the OAuth callback.</p>
+    <section class="auth-screen">
+      <div class="auth-hero">
+        <p class="microcopy">Connecting</p>
+        <h1>Waiting for GitHub.</h1>
+        <p>This prototype simulates the OAuth return step. Production should handle cancel, denied scopes, expired device code, and network failure here.</p>
+      </div>
+      <section class="sync-steps">
+        <p class="is-complete"><span></span>Opened GitHub authorization</p>
+        <p class="is-active"><span></span>Waiting for account approval</p>
+        <p><span></span>Preparing repository setup</p>
       </section>
       <button class="primary-action" type="button" data-action="oauth-success">Simulate GitHub Success</button>
+      <button class="secondary-action" type="button" data-action="auth-cancel">Cancel</button>
     </section>
   `;
 }
@@ -911,12 +942,19 @@ function renderPrivacySetup() {
 
 function renderSyncing() {
   return `
-    <section class="screen stack auth-screen">
-      <section class="empty-state">
-        <strong>Last synced</strong>
-        <p>Syncing account, organizations, repositories, pull requests, and releases.</p>
+    <section class="auth-screen">
+      <div class="auth-hero">
+        <p class="microcopy">Initial sync</p>
+        <h1>Building your first activity view.</h1>
+        <p>PRBar is collecting selected repos, merged PRs, releases, and recent activity. Real sync should show partial progress and retry options.</p>
+      </div>
+      <section class="sync-steps">
+        <p class="is-complete"><span></span>Account loaded</p>
+        <p class="is-complete"><span></span>Repositories selected</p>
+        <p class="is-active"><span></span>Pull requests and releases syncing</p>
+        <p><span></span>Cards ready</p>
       </section>
-      <button class="primary-action" type="button" data-action="finish-sync">Finish Sync</button>
+      <button class="primary-action" type="button" data-action="finish-sync">View PRBar</button>
     </section>
   `;
 }
