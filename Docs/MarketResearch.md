@@ -67,7 +67,7 @@ These terms better match the refined product core: connect GitHub Releases, sele
 ### What The Keyword Data Suggests
 
 - The biggest traffic pool is not "PR analytics" or "release cards." It is AI coding tool/category traffic.
-- The hottest relevant terms are `cursor ai`, `claude code`, `github copilot`, and `vibe coding`.
+- The hottest relevant terms in the free snapshot are `cursor ai`, `claude code`, `github copilot`, and `vibe coding`; Google Ads later confirms the first three much more strongly than `vibe coding`.
 - High-CPC terms like `hire ai developers`, `developer productivity metrics`, `github analytics`, and `ai coding agents` signal buyer or employer intent even though volume is smaller.
 - `pull request analytics` is probably not the right primary SEO phrase for a consumer/social product. Use it in technical pages, not the homepage.
 - `GitHub Releases` and `release notes` give PRBar a concrete product artifact that searchers already understand. Use these for product pages and workflow pages.
@@ -129,6 +129,113 @@ Keyword Planner did not return `vibe coding`, `vibecoding`, `vibe coding tools`,
 - `hire ai developers` and `ai developers for hire` are too expensive for casual paid search, but they validate a future recruiter-facing landing page.
 - `developer portfolio` is weaker than expected. `GitHub portfolio` and release-based proof pages are likely more specific and differentiated.
 
+## Broader Audience Keyword Planner Findings
+
+The next pass widened the seed terms away from product artifacts and toward the people PRBar needs to reach: indie developers, side-project builders, AI-assisted coders, people trying to hire them, and teams talking about velocity. These terms are better for content strategy, subreddit targeting, newsletter topics, and launch language.
+
+### Indie Developer And Side-Project Demand
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| side project | 12,100 | 0% | -18% | Low | $1.50 | $3.50 | Biggest audience phrase; broad but useful |
+| solopreneur | 4,400 | -33% | -19% | Low | $4.28 | $22.72 | Adjacent founder identity |
+| indie hackers | 3,600 | +52% | 0% | Low | $6.19 | $29.87 | Community/navigation term with growth |
+| app ideas | 3,600 | 0% | 0% | Low | $1.41 | $8.06 | Early-stage builder intent |
+| indie developer | 1,300 | +140% | +50% | Low | $3.21 | $9.59 | Direct audience term, growing |
+| micro saas | 1,000 | -23% | 0% | Low | $2.53 | $15.99 | Monetization-focused builder niche |
+| saas ideas | 480 | 0% | -56% | Low | $0.81 | $11.96 | Idea-stage founder intent |
+| build in public | 390 | 0% | -18% | Low | $6.51 | $22.27 | Community/content phrase |
+| side project ideas | 50 | +425% | +425% | Low | — | — | Small but sharply growing |
+| solo developer | 50 | 0% | -22% | Low | — | — | Low search demand despite audience relevance |
+
+Implication: `side project`, `indie developer`, `indie hackers`, `micro saas`, and `app ideas` are better top-of-funnel targets than `developer portfolio`. PRBar should talk to builders who are already trying to ship, package, and show side projects.
+
+### AI-Assisted Builders And Hiring Demand
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| github copilot | 110,000 | +172% | +172% | Low | $2.80 | $12.30 | Mainstream AI coding doorway |
+| ai app builder | 9,900 | +22% | +311% | Medium | $7.92 | $30.32 | Strong no-code/AI-builder demand |
+| ai coding tools | 5,400 | +50% | +179% | Low | $5.79 | $20.77 | Strong comparison/content term |
+| ai code generator | 4,400 | 0% | -45% | Medium | $4.62 | $16.09 | Broad AI coding utility term |
+| ai development | 3,600 | +24% | -33% | Low | $4.82 | $18.40 | Service/category term |
+| ai development companies | 3,600 | +21% | -19% | Low | $22.46 | $132.00 | Commercial services intent |
+| ai developer | 2,400 | +26% | -33% | Medium | $5.98 | $30.82 | Identity/hiring term |
+| ai software development | 1,900 | -32% | -76% | Medium | $7.40 | $26.13 | Service intent, declining |
+| hire ai developer | 720 | +23% | -55% | Medium | $25.60 | $112.68 | Hiring intent, expensive |
+| ai assisted coding | 480 | +23% | +23% | Low | $5.44 | $18.40 | Direct fit for PRBar's audience |
+
+Keyword Planner did not surface `vibe coder`, `hire vibe coder`, `vibe coding developer`, `cursor developer`, or `claude code developer` as provided-keyword rows. That suggests "vibe coder" is likely social language before it is search language. For SEO, use AI coding and AI app builder phrases; for community posts, use vibe coding language.
+
+Implication: the strongest content lane is not "find vibe coders" yet. It is "AI-assisted builders are shipping more, but how do you evaluate and showcase real output?"
+
+### Velocity, PR, And Productivity Demand
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| dora metrics | 8,100 | 0% | 0% | Low | $1.41 | $10.14 | Large team/DevOps measurement term |
+| react developer tools | 2,900 | 0% | -33% | Low | $3.76 | $18.30 | Irrelevant suggestion; shows planner drift |
+| developer productivity | 320 | +53% | -64% | Low | $10.72 | $27.04 | Small but commercial/managerial |
+| dora metrics devops | 260 | 0% | -56% | Medium | $2.71 | $15.82 | Team analytics angle |
+| code review automation | 210 | +91% | -46% | Low | $8.15 | $29.66 | Relevant to AI/PR workflow content |
+| ship faster | 210 | +21% | -47% | Low | $1.88 | $13.98 | Messaging phrase with some demand |
+| engineering velocity | 50 | +25% | -55% | Low | — | — | Small, manager-oriented |
+| software delivery performance | 40 | 0% | -75% | Low | — | — | DevOps niche |
+| pr velocity | 20 | +50% | -25% | Low | — | — | Exists but too small to lead SEO |
+| github copilot productivity | 10 | 0% | 0% | Low | — | — | Good content phrase, not a demand center |
+
+Implication: "PR velocity" is conceptually relevant but too small as a head keyword. Use it in content and product copy, but aim SEO at `developer productivity`, `code review automation`, `DORA metrics`, `AI coding tools`, and tool-specific productivity hooks.
+
+## News And Trend Hooks To Piggyback
+
+These hooks are useful because they connect PRBar to ongoing conversations instead of only to static keywords.
+
+### AI Coding Agents Are Moving Work Into Pull Requests
+
+GitHub announced a Copilot coding agent in May 2025 that can work asynchronously and push commits to draft pull requests. That makes pull requests and release artifacts more important as the visible audit trail of AI-assisted work.
+
+PRBar content angle:
+
+- "When AI agents open PRs, your proof of work moves from commits to shipped releases."
+- "How to show what you actually shipped with Copilot, Codex, Claude Code, or Cursor."
+
+### Tool Rivalry Is Search-Hot
+
+Keyword Planner shows huge demand for `claude code`, `cursor ai`, `github copilot`, and `best ai for coding`. Recent comparison articles and surveys are covering Claude Code, Cursor, Codex, and Copilot as competing workflows.
+
+PRBar content angle:
+
+- "Claude Code vs Cursor vs Copilot: compare tools by what you shipped, not opinions."
+- "The AI coding tool scoreboard should be releases, not prompts."
+
+### Productivity Claims Need Proof
+
+News coverage around Nvidia claimed engineers were producing three times as much code after adopting an internal Cursor-like tool, with bug rates reportedly flat. That kind of claim creates a natural opening for independent builders to ask how they prove their own velocity.
+
+PRBar content angle:
+
+- "If AI makes you 3x faster, where is the receipt?"
+- "How indie developers can show AI-assisted shipping velocity without exposing private repos."
+
+### Vibe Coding Has A Backlash
+
+Recent coverage includes concerns that vibe coding can hurt open source, introduce security issues, or produce low-attention software. That backlash is useful because PRBar can position itself as a credibility layer: real repos, real releases, selected disclosure.
+
+PRBar content angle:
+
+- "Vibe coding needs receipts."
+- "A public shipping card beats a screenshot of your prompt history."
+- "How to show real AI-assisted work without oversharing private code."
+
+### Agentic PR Research Is Emerging
+
+Recent arXiv papers are studying AI-generated pull requests, agent adoption on GitHub, and task-level PR acceptance. This supports a more serious technical content lane around PR acceptance, review friction, release velocity, and human oversight.
+
+PRBar content angle:
+
+- "What AI-generated PRs mean for developer portfolios."
+- "PR acceptance is becoming a career signal for AI-assisted developers."
+
 ## Primary User Segments
 
 ### 1. AI-Native Indie Builders
@@ -160,9 +267,13 @@ Search phrases they are likely to use:
 - vibe coding tools
 - vibe coding apps
 - best AI for coding
+- side project
+- indie developer
 - Claude Code workflow
 - Cursor AI workflow
 - AI coding agents
+- ai app builder
+- ai assisted coding
 - micro saas ideas
 - build in public
 - GitHub portfolio
@@ -241,7 +352,7 @@ This is a secondary segment because enterprise engineering analytics is crowded.
 
 Actionable reasons to use PRBar:
 
-- Watch merged PR activity without a heavy dashboard.
+- Watch shipping activity without a heavy dashboard.
 - Understand whether AI-assisted work is producing real merged output.
 - Share weekly team shipping summaries.
 - Celebrate shipped work without stack-ranking developers.
@@ -287,7 +398,7 @@ These terms are culturally hot or search-hot enough to justify content even if P
 
 - `vibe coding`: category education, profiles, social proof, "what counts as shipping?"
 - `Claude Code`: workflow teardown, shareable "what I shipped with Claude Code" cards
-- `Cursor AI`: workflow comparison, builder stories, "Cursor to merged PR" examples
+- `Cursor AI`: workflow comparison, builder stories, "Cursor to shipped release" examples
 - `GitHub Copilot`: mainstream AI coding doorway, especially for professional developers
 - `AI coding agents`: emerging category with high CPC and strong future fit
 - `best AI for coding`: comparison intent; PRBar can publish "tools people actually ship with" angle
@@ -332,8 +443,8 @@ Promising page ideas:
 - What is a vibe coding portfolio?
 - How to prove AI coding work with GitHub PRs
 - Best vibe coding tools for builders who ship
-- Claude Code workflow examples from real merged PRs
-- Cursor AI workflow examples from real merged PRs
+- Claude Code workflow examples from real shipped releases
+- Cursor AI workflow examples from real shipped releases
 - AI developer portfolio: what recruiters should look for
 - GitHub analytics for indie hackers
 - GitHub Releases as proof of work
@@ -462,6 +573,12 @@ This keeps the product useful before the network exists. It also fits the curren
 - GitHub Octoverse 2025: https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/
 - GitHub Universe 2024 press release: https://github.com/newsroom/press-releases/github-universe-2024
 - Google Ads Keyword Planner, Mean-Weasel LLC account, United States, English, Google Search, May 2025 to April 2026 historical range, checked 2026-05-25
+- GitHub Copilot coding agent press release: https://github.com/newsroom/press-releases/coding-agent-for-github-copilot
+- Tom's Hardware on Nvidia internal AI coding productivity: https://www.tomshardware.com/tech-industry/artificial-intelligence/nvidia-now-produces-three-times-as-much-code-as-before-ai-specialized-version-of-cursor-is-being-used-by-over-30-000-nvidia-engineers-internally
+- PC Gamer on "Vibe Coding Kills Open Source": https://www.pcgamer.com/software/ai/vibe-coding-kills-open-source-claims-new-paper-as-its-authors-lament-the-lack-of-human-attention-towards-OSS-products/
+- AIDev paper on AI coding agents and GitHub PRs: https://arxiv.org/abs/2602.09185
+- Task-stratified PR acceptance paper: https://arxiv.org/abs/2602.08915
+- Agentic coding agents adoption paper: https://arxiv.org/abs/2601.18341
 - Swarmia AI impact on PR metrics: https://help.swarmia.com/use-cases/measure-the-productivity-impact-of-ai-tools/ai-impact-on-pr-metrics
 - Swarmia GitHub reporting page: https://www.swarmia.com/github-reporting/
 - Vibe Coding SEO guide: https://gptprompts.ai/vibe-coding
