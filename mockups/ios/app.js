@@ -191,6 +191,7 @@ function openMore(screen) {
 function makeActivityCard() {
   state.activeSheet = null;
   state.cardSide = "front";
+  state.privateShareWarning = false;
   state.cardDraft = {
     ...state.cardDraft,
     sourceType: "activity",
@@ -203,6 +204,7 @@ function makeReleaseCard(id) {
   state.selectedReleaseId = id;
   state.activeSheet = null;
   state.cardSide = "front";
+  state.privateShareWarning = false;
   state.cardDraft = {
     ...state.cardDraft,
     sourceType: "release",
@@ -463,7 +465,7 @@ function renderCards() {
         <strong>${escapeHtml(source.title)}</strong>
         <p>${escapeHtml(source.caption)}</p>
       </section>
-      ${state.privateShareWarning ? renderPrivateShareWarning() : ""}
+      ${state.privateShareWarning && cardHasPrivateEvidence() ? renderPrivateShareWarning() : ""}
       ${renderShareCard(source)}
       <section class="card-actions">
         <button class="secondary-action" type="button" data-action="flip-card">${state.cardSide === "front" ? "Show Releases" : "Show Card"}</button>
@@ -498,6 +500,22 @@ function cardSource() {
     count: prs.length,
     notes: "A visible proof-of-work snapshot from PRBar."
   };
+}
+
+function cardEvidenceRepos() {
+  if (state.cardDraft.sourceType === "release") {
+    const release = releases.find((item) => item.id === state.cardDraft.sourceId) || selectedRelease();
+    return release ? [repoFor(release.repoId)].filter(Boolean) : [];
+  }
+  const repoIds = new Set([
+    ...rangePrs().map((pr) => pr.repoId),
+    ...releasesForIncludedRepos().map((release) => release.repoId)
+  ]);
+  return [...repoIds].map(repoFor).filter(Boolean);
+}
+
+function cardHasPrivateEvidence() {
+  return cardEvidenceRepos().some((repo) => repo.visibility === "private");
 }
 
 function renderShareCard(source) {
@@ -834,7 +852,7 @@ app.addEventListener("click", (event) => {
     render();
   }
   if (action === "open-sheet") {
-    if (target.dataset.sheet === "share" && includedRepos().some((repo) => repo.visibility === "private")) {
+    if (target.dataset.sheet === "share" && cardHasPrivateEvidence()) {
       state.privateShareWarning = true;
     }
     state.activeSheet = target.dataset.sheet;
