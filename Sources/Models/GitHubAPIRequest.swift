@@ -7,7 +7,8 @@ struct GitHubAPIRequest: Equatable {
   func urlRequest(
     token: String,
     baseURL: URL = URL(string: "https://api.github.com")!,
-    timeoutInterval: TimeInterval = 20
+    timeoutInterval: TimeInterval = 20,
+    eTag: String? = nil
   ) throws
     -> URLRequest
   {
@@ -29,6 +30,9 @@ struct GitHubAPIRequest: Equatable {
     request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
     request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+    if let eTag {
+      request.setValue(eTag, forHTTPHeaderField: "If-None-Match")
+    }
     return request
   }
 

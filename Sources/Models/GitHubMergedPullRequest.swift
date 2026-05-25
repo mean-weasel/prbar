@@ -31,6 +31,7 @@ struct GitHubMergedPullRequestSearchResponse: Decodable, Equatable {
 }
 
 struct GitHubMergedPullRequest: Decodable, Equatable {
+  var id: String
   var title: String
   var repositoryID: String
   var mergedAt: Date
@@ -39,6 +40,7 @@ struct GitHubMergedPullRequest: Decodable, Equatable {
     case title
     case repositoryURL = "repository_url"
     case pullRequest = "pull_request"
+    case id
   }
 
   private enum PullRequestKeys: String, CodingKey {
@@ -63,9 +65,13 @@ struct GitHubMergedPullRequest: Decodable, Equatable {
       )
     }
     self.mergedAt = mergedAt
+    id =
+      try container.decodeIfPresent(String.self, forKey: .id)
+      ?? "\(repositoryID)#\(title)#\(mergedAt.timeIntervalSince1970)"
   }
 
-  init(title: String, repositoryID: String, mergedAt: Date) {
+  init(id: String, title: String, repositoryID: String, mergedAt: Date) {
+    self.id = id
     self.title = title
     self.repositoryID = repositoryID
     self.mergedAt = mergedAt

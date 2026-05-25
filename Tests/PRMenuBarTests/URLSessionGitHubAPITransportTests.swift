@@ -22,9 +22,60 @@ final class URLSessionGitHubAPITransportTests: XCTestCase {
     }
 
     let transport = URLSessionGitHubAPITransport(session: mockSession())
-    let data = try transport.data(for: URLRequest(url: URL(string: "https://example.test")!))
+    let response = try transport.response(
+      for: URLRequest(url: URL(string: "https://example.test")!)
+    )
 
-    XCTAssertEqual(String(data: data, encoding: .utf8), "[{\"full_name\":\"owner/repo\"}]")
+    XCTAssertEqual(
+      String(data: response.data, encoding: .utf8),
+      "[{\"full_name\":\"owner/repo\"}]"
+    )
+    XCTAssertEqual(response.statusCode, 200)
+  }
+
+  func testTransportReturnsETagMetadata() throws {
+    MockURLProtocol.handler = { request in
+      let response = try XCTUnwrap(
+        HTTPURLResponse(
+          url: try XCTUnwrap(request.url),
+          statusCode: 200,
+          httpVersion: nil,
+          headerFields: ["ETag": #""repos-v1""#]
+        )
+      )
+      return (response, Data("[]".utf8))
+    }
+
+    let transport = URLSessionGitHubAPITransport(session: mockSession())
+    let response = try transport.response(
+      for: URLRequest(url: URL(string: "https://example.test")!)
+    )
+
+    XCTAssertEqual(response.eTag, #""repos-v1""#)
+    XCTAssertEqual(response.statusCode, 200)
+  }
+
+  func testTransportTreatsNotModifiedAsSuccessfulMetadataResponse() throws {
+    MockURLProtocol.handler = { request in
+      let response = try XCTUnwrap(
+        HTTPURLResponse(
+          url: try XCTUnwrap(request.url),
+          statusCode: 304,
+          httpVersion: nil,
+          headerFields: ["ETag": #""repos-v1""#]
+        )
+      )
+      return (response, Data())
+    }
+
+    let transport = URLSessionGitHubAPITransport(session: mockSession())
+    let response = try transport.response(
+      for: URLRequest(url: URL(string: "https://example.test")!)
+    )
+
+    XCTAssertTrue(response.isNotModified)
+    XCTAssertEqual(response.eTag, #""repos-v1""#)
+    XCTAssertTrue(response.data.isEmpty)
   }
 
   func testTransportThrowsHTTPStatusErrors() {
