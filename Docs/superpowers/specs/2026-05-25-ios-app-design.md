@@ -2,12 +2,12 @@
 
 ## Purpose
 
-PRBar iOS extends the macOS menu bar app into a mobile companion for checking pull request activity on the road and turning meaningful shipping stats into polished share cards.
+PRBar iOS extends the macOS menu bar app into a mobile companion for checking pull request activity on the road and turning GitHub Releases into polished proof-of-work cards.
 
 The first iOS direction is a hybrid product:
 
-- a private, glanceable dashboard for personal PR stats
-- a share-card studio for public proof of work
+- a private, glanceable dashboard for personal PR and release activity
+- a share-card studio for public proof of work based on GitHub Releases
 
 The social layer starts with exportable visual artifacts rather than a feed, public profile, or social graph.
 
@@ -47,8 +47,8 @@ Avoid or use carefully:
 1. Open PRBar on iPhone.
 2. See current pull request activity in under five seconds.
 3. Tap into detail if needed.
-4. Notice a stat or moment worth sharing.
-5. Generate a polished card.
+4. Select a GitHub Release or notable shipping moment worth sharing.
+5. Generate a polished card from release notes and activity metadata.
 6. Save or share the card.
 
 The app should remain useful even if the user never shares anything.
@@ -123,18 +123,19 @@ Useful subviews:
 
 ### Releases
 
-Releases turns merged PR activity into launch or update groupings. It answers what a burst of PRs amounted to, while Activity answers what happened and Cards answers how to share it.
+Releases is the bridge from private GitHub activity to public proof of work. The first version should import actual GitHub Releases from the user's selected repositories, then help the user choose which release to turn into a polished card.
 
 Core elements:
 
-- suggested release clusters from recent merged PRs
-- manual New Release Recap action
-- draft title and summary
-- included PR list with toggles
-- Copy release notes action
+- repository selector for which repos are included
+- imported GitHub Releases from selected repositories
+- release title, tag, date, repo, and original release notes
+- privacy controls for repo names, exact dates, and private details
+- included PR or commit references when available from GitHub metadata
 - Make Release Card action
+- Copy release notes action
 
-The first mockup should keep Releases curated and static. Later versions can explore AI-assisted summaries, public launch posts, messaging opportunities, and profile publishing.
+The first mockup should keep Releases curated and static, but its mental model should be GitHub Releases first rather than AI-written recaps first. Later versions can allow users to annotate releases with context, lessons, launch notes, links, screenshots, or AI-assisted summaries in addition to the original release notes.
 
 ### Cards
 
@@ -171,6 +172,7 @@ Core elements:
 
 - GitHub connection
 - tracked repositories
+- release repository selection
 - default date range
 - refresh behavior
 - card privacy defaults
@@ -287,10 +289,10 @@ After the dashboard and card loop works, the product can expand toward:
 
 - public PRBar profiles
 - card galleries
-- release-style recaps
+- release cards from GitHub Releases
 - AI-written work summaries
 - messaging opportunities around high-velocity work
-- public launch posts based on merged PR clusters
+- public launch posts based on GitHub Releases
 - team or collaborator views
 
 These are intentionally out of scope for the first mockup pass.
@@ -301,7 +303,7 @@ Before native iOS implementation, review and approve:
 
 - the HTML mockup package
 - the core Today flow
-- the Releases recap flow
+- the GitHub Releases import and selection flow
 - the Card composer flow
 - at least three card themes
 - privacy defaults for shared cards

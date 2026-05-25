@@ -6,7 +6,7 @@ Open `mockups/ios/index.html` in a browser to review:
 
 - Today in Day / Week / Month ranges
 - Activity detail
-- Releases recap screen
+- GitHub Releases screen
 - Cards composer
 - Clean, Terminal, Launch, Hype, and Minimal share-card themes
 - Settings and auth concepts

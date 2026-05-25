@@ -4,9 +4,9 @@ Date: 2026-05-25
 
 ## Working Thesis
 
-PRBar can grow beyond a private PR activity tracker into a proof-of-work layer for AI-assisted builders: a place to quantify shipping rhythm, turn GitHub activity into credible share artifacts, and optionally make high-velocity developers discoverable to peers, recruiters, and teams.
+PRBar can grow beyond a private PR activity tracker into a proof-of-work layer for AI-assisted builders: a place to connect GitHub, choose which repositories count, turn GitHub Releases into credible share artifacts, and optionally make high-velocity developers discoverable to peers, recruiters, and teams.
 
-The strongest positioning is not "developer productivity analytics" in the enterprise sense. That market is crowded and team-manager oriented. The sharper wedge is "proof of shipped work for AI-native builders."
+The strongest positioning is not "developer productivity analytics" in the enterprise sense. That market is crowded and team-manager oriented. The sharper wedge is "shareable proof of shipped work, starting from GitHub Releases."
 
 ## Market Signals
 
@@ -43,12 +43,34 @@ The table below uses seodata.dev US keyword estimates collected on 2026-05-25. T
 | ai developer portfolio | 0 | $0.00 | 0.00 | Emerging concept, not established |
 | ship code faster | 0 | $0.00 | 0.00 | Messaging phrase, not SEO demand |
 
+### Release-Oriented Keyword Snapshot
+
+These terms better match the refined product core: connect GitHub Releases, select repos, and share proof of work. They are lower-volume than hot AI coding terms but much closer to the artifact PRBar can actually create.
+
+| Keyword | US monthly volume | CPC | Competition | Intent |
+| --- | ---: | ---: | ---: | --- |
+| release notes | 3,600 | $6.51 | 0.01 | Broad release documentation |
+| github releases | 1,300 | $9.88 | 0.01 | GitHub release workflow |
+| github changelog | 1,000 | $0.00 | 0.00 | GitHub/product update discovery |
+| product updates | 320 | $0.00 | 0.03 | Customer-facing update content |
+| app release notes | 260 | $9.52 | 0.01 | App/software release content |
+| github release notes | 210 | $0.00 | 0.00 | GitHub-specific release content |
+| software release notes | 210 | $10.62 | 0.11 | Professional release content |
+| shipping updates | 210 | $1.27 | 0.04 | Builder/founder update language |
+| github activity | 110 | $0.00 | 0.00 | GitHub history/activity |
+| release notes generator | 40 | $4.52 | 0.04 | Tool intent |
+| changelog generator | 40 | $0.00 | 0.02 | Tool intent |
+| automated release notes | 30 | $6.99 | 0.05 | Automation intent |
+| product changelog | 30 | $6.74 | 0.13 | SaaS/product update intent |
+| github repo analytics | 30 | $13.29 | 0.32 | Analytics/product intent |
+
 ### What The Keyword Data Suggests
 
-- The biggest traffic pool is not "PR analytics." It is AI coding tool/category traffic.
+- The biggest traffic pool is not "PR analytics" or "release cards." It is AI coding tool/category traffic.
 - The hottest relevant terms are `cursor ai`, `claude code`, `github copilot`, and `vibe coding`.
 - High-CPC terms like `hire ai developers`, `developer productivity metrics`, `github analytics`, and `ai coding agents` signal buyer or employer intent even though volume is smaller.
 - `pull request analytics` is probably not the right primary SEO phrase for a consumer/social product. Use it in technical pages, not the homepage.
+- `GitHub Releases` and `release notes` give PRBar a concrete product artifact that searchers already understand. Use these for product pages and workflow pages.
 - `ai developer portfolio` has weak measured search volume today, but it is a good category to create because Reddit discussions show people actively exploring structured GitHub/developer identity.
 
 ## Primary User Segments
@@ -60,7 +82,8 @@ These are solo developers, indie hackers, micro-SaaS founders, and side-project 
 Actionable reasons to use PRBar:
 
 - Show real shipping output instead of screenshots, claims, or token usage.
-- Create public proof of work for build-in-public posts.
+- Create public proof of work from GitHub Releases and release notes.
+- Choose which repos are included before anything becomes public.
 - Compare shipping rhythm across projects without opening GitHub.
 - Turn messy GitHub activity into a clean founder update.
 - Build credibility in communities skeptical of low-effort AI wrappers.
@@ -87,6 +110,9 @@ Search phrases they are likely to use:
 - micro saas ideas
 - build in public
 - GitHub portfolio
+- GitHub releases
+- release notes
+- product updates
 
 ### 2. High-Velocity Professional Developers
 
@@ -96,6 +122,7 @@ Actionable reasons to use PRBar:
 
 - Convert GitHub activity into a portfolio-like proof layer.
 - Preserve private repo confidentiality while showing aggregate momentum.
+- Select repos that represent public/professional work and exclude private/client repos.
 - Tell a better career story than contribution graphs or resumes.
 - Highlight recent velocity during job searches, consulting pitches, or internal reviews.
 - Distinguish "uses AI" from "ships reviewed, merged work."
@@ -113,6 +140,8 @@ Search phrases they are likely to use:
 - developer portfolio GitHub
 - GitHub portfolio
 - showcase GitHub projects
+- GitHub releases
+- GitHub release notes
 - AI developer portfolio
 - GitHub analytics portfolio
 - how to improve GitHub profile
@@ -127,6 +156,7 @@ Actionable reasons to use PRBar:
 - Find builders with recent, sustained shipping momentum.
 - Screen AI-native developers by shipped work, not self-description.
 - See normalized proof signals from GitHub activity.
+- Review real GitHub Releases rather than vague activity claims.
 - Ask better interview questions based on actual project/repo history.
 - Reduce reliance on resumes that flatten technical work into vague bullets.
 
@@ -147,6 +177,7 @@ Search phrases they are likely to use:
 - how to evaluate AI developers
 - developer proof of work
 - GitHub profile hiring
+- GitHub releases developer portfolio
 
 ### 4. Teams Adopting AI Coding Tools
 
@@ -174,6 +205,8 @@ Search phrases they are likely to use:
 - pull request analytics GitHub
 - AI coding metrics
 - AI impact on PR metrics
+- GitHub releases
+- release notes generator
 
 ## Keyword Clusters
 
@@ -247,6 +280,7 @@ Promising page ideas:
 - Cursor AI workflow examples from real merged PRs
 - AI developer portfolio: what recruiters should look for
 - GitHub analytics for indie hackers
+- GitHub Releases as proof of work
 - Pull request analytics for solo developers
 - Build-in-public metrics that do not feel cringe
 
@@ -275,10 +309,10 @@ These should be treated as directional, not canonical. Reddit member counts move
 
 | Tier | Who | Where To Find Them | Best First Offer | SEO Entry Points |
 | --- | --- | --- | --- | --- |
-| Tier 1 | AI-native indie builders | r/vibecoding, r/SideProject, r/microsaas, r/indiehackers, X build-in-public, Claude/Cursor communities | Generate a shareable shipping card from GitHub | `vibe coding`, `Claude Code workflow`, `Cursor AI workflow`, `best AI for coding`, `micro saas` |
-| Tier 2 | Developers building career proof | LinkedIn, GitHub README/profile searches, portfolio content, r/webdev, r/cscareerquestions-adjacent communities | Turn GitHub history into a proof-of-work profile | `GitHub portfolio`, `developer portfolio`, `showcase GitHub projects`, `proof of work developer` |
-| Tier 3 | Recruiters/founders hiring AI builders | LinkedIn, founder communities, HN hiring threads, startup communities | Search/verify builders by shipped work | `hire AI developers`, `AI developer portfolio`, `GitHub profile hiring` |
-| Tier 4 | Small teams adopting AI coding | engineering manager communities, DevOps/dev productivity threads, LinkedIn, GitHub analytics searches | Lightweight merged-PR visibility without enterprise analytics | `GitHub analytics`, `developer productivity metrics`, `AI coding metrics` |
+| Tier 1 | AI-native indie builders | r/vibecoding, r/SideProject, r/microsaas, r/indiehackers, X build-in-public, Claude/Cursor communities | Connect GitHub, pick repos, turn recent Releases into shareable proof cards | `vibe coding`, `Claude Code workflow`, `Cursor AI workflow`, `GitHub releases`, `micro saas` |
+| Tier 2 | Developers building career proof | LinkedIn, GitHub README/profile searches, portfolio content, r/webdev, r/cscareerquestions-adjacent communities | Turn selected repo Releases into a privacy-safe proof-of-work profile | `GitHub portfolio`, `developer portfolio`, `GitHub release notes`, `showcase GitHub projects` |
+| Tier 3 | Recruiters/founders hiring AI builders | LinkedIn, founder communities, HN hiring threads, startup communities | Review builders through real shipped releases and selected repo history | `hire AI developers`, `AI developer portfolio`, `GitHub profile hiring` |
+| Tier 4 | Small teams adopting AI coding | engineering manager communities, DevOps/dev productivity threads, LinkedIn, GitHub analytics searches | Lightweight release/activity visibility without enterprise analytics | `GitHub analytics`, `developer productivity metrics`, `AI coding metrics`, `release notes` |
 
 ## Content And Landing Page Ideas
 
@@ -286,25 +320,25 @@ These should be treated as directional, not canonical. Reddit member counts move
 
 - What is vibe coding, and how do you prove what shipped?
 - Vibe coding portfolios: how to turn AI-assisted work into credible proof
-- Claude Code workflows: from prompt to merged PR
-- Cursor AI workflows: how builders actually ship
+- Claude Code workflows: from prompt to GitHub Release
+- Cursor AI workflows: how builders actually ship releases
 - AI coding agents and the new proof-of-work problem
 
 ### High-Intent Pages
 
-- GitHub portfolio generator for AI-assisted developers
-- Developer proof-of-work profile from merged pull requests
+- GitHub Release cards for AI-assisted developers
+- Developer proof-of-work profile from GitHub Releases
 - GitHub analytics for indie hackers
-- Shareable build-in-public cards from GitHub activity
+- Shareable build-in-public cards from GitHub release notes
 - How recruiters can evaluate AI-native developers
 
 ### Community Posts
 
-- "I built a way to turn merged PRs into shareable proof-of-work cards"
+- "I built a way to turn GitHub Releases into shareable proof-of-work cards"
 - "Is GitHub still readable as a portfolio now that everyone uses AI?"
-- "I analyzed my last 30 days of AI-assisted coding. Here is what actually shipped."
-- "Token usage is not proof of work. Merged PRs are closer."
-- "Would you share a public shipping profile if private repo names stayed hidden?"
+- "I turned my last few GitHub Releases into a public shipping card."
+- "Token usage is not proof of work. GitHub Releases are closer."
+- "Would you share a public shipping profile if you could choose exactly which repos are included?"
 
 ## Competitive Landscape
 
@@ -350,20 +384,21 @@ Start with public/shareable profiles and cards, not a feed.
 The first useful web surface could be:
 
 1. Connect GitHub.
-2. Generate a private activity summary.
-3. Create a public "proof of work" card/profile with privacy controls.
-4. Share it on Reddit, X, LinkedIn, GitHub README, and portfolio sites.
-5. Later add discovery for builders, recruiters, and companies.
+2. Select which repositories are included.
+3. Import GitHub Releases from those repositories.
+4. Create a public "proof of work" card/profile from release notes with privacy controls.
+5. Share it on Reddit, X, LinkedIn, GitHub README, and portfolio sites.
+6. Later allow annotations, screenshots, launch context, discovery for builders, and recruiter/company views.
 
 This keeps the product useful before the network exists. It also fits the current iOS design direction where Cards are the social primitive.
 
 ## Recommended SEO Strategy
 
-1. Build the web app around one concrete artifact: a public "shipping proof" profile/card generated from GitHub.
+1. Build the web app around one concrete artifact: a public "shipping proof" profile/card generated from GitHub Releases in selected repos.
 2. Target `vibe coding` and AI tool keywords with educational content, not direct product pages. These are the top-of-funnel terms.
 3. Target `GitHub portfolio`, `developer portfolio`, and `hire AI developers` with product/commercial pages. These are closer to conversion.
 4. Use community posts to validate language before writing many pages. Reddit will reveal whether people prefer "proof of work," "shipping profile," "vibe coding portfolio," "AI developer portfolio," or another phrase.
-5. Avoid leading with `PR analytics` unless speaking to managers. Developers care more about shipping proof, momentum, and privacy-safe sharing.
+5. Avoid leading with `PR analytics` unless speaking to managers. Developers care more about GitHub Releases, shipping proof, momentum, and privacy-safe sharing.
 
 ## Sources
 
