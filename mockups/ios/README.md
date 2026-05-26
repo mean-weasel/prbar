@@ -46,3 +46,8 @@ Review links can open specific states with query parameters, for example `?tab=s
 | PR repo detail | `?tab=prs&repo=prbar` |
 | Releases calendar | `?tab=releases` |
 | Release detail | `?tab=releases&release=tag-launch-100` |
+
+## Native Mapping
+
+The reviewed HTML surfaces map to the SwiftUI implementation plan in
+`Docs/superpowers/plans/2026-05-26-ios-swiftui-implementation.md`.
