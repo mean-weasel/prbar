@@ -22,6 +22,24 @@ struct AuthIssue: Identifiable, Equatable {
   var message: String
 }
 
+struct GitHubConnection: Equatable {
+  enum Status: String, Equatable {
+    case signedOut
+    case connected
+  }
+
+  var status: Status
+  var user: GitHubUser?
+
+  static let signedOut = GitHubConnection(status: .signedOut, user: nil)
+}
+
+struct GitHubUser: Identifiable, Equatable {
+  var id: String { login }
+  var login: String
+  var displayName: String
+}
+
 struct Repository: Identifiable, Equatable {
   enum Visibility: String, CaseIterable, Codable {
     case `public`

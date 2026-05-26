@@ -6,6 +6,7 @@ cd "$ROOT_DIR"
 
 PROFILE="${IOS_UI_SMOKE_PROFILE:-pr}"
 destination="$(./scripts/ios-resolve-simulator-destination.sh)"
+TESTS=()
 case "$PROFILE" in
   fast) TESTS=("PRBarUITests/PRBarUITests/testTabsExposeReviewedPrototypeSurfaces") ;;
   pr) TESTS=("PRBarUITests/PRBarUITests/testTabsExposeReviewedPrototypeSurfaces" "PRBarUITests/PRBarUITests/testShareTabExplainsWorkCardExport") ;;
@@ -27,9 +28,11 @@ if [[ "$destination" != *"platform=iOS,"* ]]; then
   args+=("CODE_SIGNING_ALLOWED=${IOS_CODE_SIGNING_ALLOWED:-NO}")
 fi
 
-for test_id in "${TESTS[@]}"; do
-  args+=("-only-testing:$test_id")
-done
+if (( ${#TESTS[@]} > 0 )); then
+  for test_id in "${TESTS[@]}"; do
+    args+=("-only-testing:$test_id")
+  done
+fi
 
 ./scripts/ios-generate.sh
 rm -rf "${IOS_UI_SMOKE_RESULT_BUNDLE:-apple/UISmokeResults.xcresult}"

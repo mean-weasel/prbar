@@ -36,7 +36,7 @@ struct MoreView: View {
       .toolbar {
         ToolbarItem(placement: .topBarTrailing) {
           Button("Sign out") {
-            store.routeState = .signedOut
+            store.disconnectGitHub()
           }
         }
       }

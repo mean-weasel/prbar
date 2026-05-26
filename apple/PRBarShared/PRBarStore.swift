@@ -14,6 +14,7 @@ final class PRBarStore {
   var selectedReleaseID: ReleaseMoment.ID?
   var cardDraft: WorkCardDraft
   var routeState: AppRouteState
+  var githubConnection: GitHubConnection
 
   private static let fixtureCalendar: Calendar = {
     var calendar = Calendar(identifier: .gregorian)
@@ -32,7 +33,8 @@ final class PRBarStore {
     selectedRepositoryID: Repository.ID? = nil,
     selectedReleaseID: ReleaseMoment.ID? = "rel-prbar-140",
     cardDraft: WorkCardDraft = WorkCardDraft(source: .shippingSnapshot, theme: .clean, side: .publicSide, showRepos: true, showHandle: true, exactCounts: true, showPrivateLabels: false),
-    routeState: AppRouteState = .authenticated
+    routeState: AppRouteState = .authenticated,
+    githubConnection: GitHubConnection = GitHubConnection(status: .connected, user: GitHubUser(login: "neonwatty", displayName: "Neon Watty"))
   ) {
     self.repositories = repositories
     self.pullRequests = pullRequests
@@ -45,6 +47,7 @@ final class PRBarStore {
     self.selectedReleaseID = selectedReleaseID
     self.cardDraft = cardDraft
     self.routeState = routeState
+    self.githubConnection = githubConnection
   }
 
   static func sample() -> PRBarStore {
@@ -77,5 +80,29 @@ final class PRBarStore {
 
   var cardHasPrivateEvidence: Bool {
     includedRepositories.contains { $0.visibility == .private }
+  }
+
+  func connectGitHubForPrototype() {
+    githubConnection = GitHubConnection(status: .connected, user: GitHubUser(login: "neonwatty", displayName: "Neon Watty"))
+    repositories = repositories.map { repository in
+      var repository = repository
+      repository.included = repository.recommended && repository.visibility == .public && repository.access == .ready
+      return repository
+    }
+    routeState = .onboarding(.repositories)
+  }
+
+  func finishRepositorySetup() {
+    routeState = .authenticated
+  }
+
+  func disconnectGitHub() {
+    githubConnection = .signedOut
+    repositories = repositories.map { repository in
+      var repository = repository
+      repository.included = false
+      return repository
+    }
+    routeState = .signedOut
   }
 }

@@ -4,7 +4,7 @@ See merged PRs without leaving your desktop.
 
 PR Menu Bar is a tiny macOS menu bar app for watching merged pull request activity across team and personal GitHub repositories. It is intentionally lightweight: sample data out of the box, live GitHub data when launched with a token, repository breakdowns, and refresh behavior that keeps the last useful view visible instead of blanking out on failure.
 
-Landing page: https://neonwatty.github.io/prbar/
+Landing page: https://mean-weasel.github.io/prbar/
 
 ![PR Menu Bar social preview](assets/social-preview.png)
 

@@ -46,4 +46,4 @@ PR Menu Bar is a small macOS menu bar prototype for tracking merged pull request
 
 It is intentionally lightweight: sample data out of the box, live GitHub data when launched with a token, repository breakdowns, and refresh behavior that keeps the last useful view visible instead of blanking out on failure.
 
-Project: https://github.com/neonwatty/prbar
+Project: https://github.com/mean-weasel/prbar
