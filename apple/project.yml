@@ -1,0 +1,74 @@
+name: PRBar
+options:
+  bundleIdPrefix: com.neonwatty
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  PRBar:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - PRBar
+      - PRBarShared
+    info:
+      path: PRBar/Info.plist
+      properties:
+        CFBundleDisplayName: PRBar
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios
+      PRODUCT_NAME: PRBar
+      GENERATE_INFOPLIST_FILE: YES
+      CODE_SIGN_STYLE: Automatic
+  PRBarPreview:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - PRBar
+      - PRBarShared
+    info:
+      path: PRBarPreview-Info.plist
+      generate: true
+      properties:
+        CFBundleDisplayName: PRBar Preview
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.preview
+      PRODUCT_NAME: PRBarPreview
+      GENERATE_INFOPLIST_FILE: YES
+      CODE_SIGN_STYLE: Automatic
+  PRBarTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - PRBarTests
+    dependencies:
+      - target: PRBar
+    info:
+      path: PRBarTests-Info.plist
+      generate: true
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.tests
+      GENERATE_INFOPLIST_FILE: YES
+      TEST_HOST: "$(BUILT_PRODUCTS_DIR)/PRBar.app/PRBar"
+      BUNDLE_LOADER: "$(TEST_HOST)"
+schemes:
+  PRBar:
+    build:
+      targets:
+        PRBar: all
+    test:
+      targets:
+        - PRBarTests
+  PRBarPreview:
+    build:
+      targets:
+        PRBarPreview: all
