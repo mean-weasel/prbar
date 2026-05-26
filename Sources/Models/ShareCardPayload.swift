@@ -25,6 +25,35 @@ enum ShareCardPayload: Equatable {
       return "Privacy applied: private repository names are hidden before export."
     }
   }
+
+  var exportFilename: String {
+    switch self {
+    case .prActivity(let payload):
+      return "prbar-pr-card-\(Self.slug(payload.rangeLabel)).png"
+    case .release(let payload):
+      return "prbar-release-card-\(Self.slug(payload.repositoryDisplayName))-"
+        + "\(Self.slug(payload.headline)).png"
+    }
+  }
+
+  private static func slug(_ value: String) -> String {
+    let allowed = CharacterSet.alphanumerics
+    var result = ""
+    var previousWasSeparator = false
+
+    for scalar in value.lowercased().unicodeScalars {
+      if allowed.contains(scalar) {
+        result.unicodeScalars.append(scalar)
+        previousWasSeparator = false
+      } else if !previousWasSeparator {
+        result.append("-")
+        previousWasSeparator = true
+      }
+    }
+
+    let trimmed = result.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+    return trimmed.isEmpty ? "card" : trimmed
+  }
 }
 
 struct PRShareCardPayload: Equatable {

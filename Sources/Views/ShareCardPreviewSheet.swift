@@ -31,16 +31,22 @@ struct ShareCardPreviewSheet: View {
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
 
       HStack {
-        Button("Share") {
+        Button {
           share()
+        } label: {
+          Label("Share", systemImage: "square.and.arrow.up")
         }
         .buttonStyle(.borderedProminent)
-        Button("Copy Image") {
+        Button {
           copyImage()
+        } label: {
+          Label("Copy Image", systemImage: "doc.on.doc")
         }
         .buttonStyle(.bordered)
-        Button("Save PNG") {
+        Button {
           savePNG()
+        } label: {
+          Label("Save PNG", systemImage: "square.and.arrow.down")
         }
         .buttonStyle(.bordered)
       }
@@ -90,7 +96,7 @@ struct ShareCardPreviewSheet: View {
     }
     let panel = NSSavePanel()
     panel.allowedContentTypes = [.png]
-    panel.nameFieldStringValue = "prbar-card.png"
+    panel.nameFieldStringValue = payload.exportFilename
     if panel.runModal() == .OK, let url = panel.url {
       do {
         try data.write(to: url)
