@@ -90,8 +90,17 @@ Required GitHub repository secrets:
 - `MACOS_KEYCHAIN_PASSWORD`: Temporary CI keychain password.
 - `MACOS_DEVELOPER_ID_APPLICATION`: Full signing identity name, for example
   `Developer ID Application: Example, Inc. (TEAMID1234)`.
-- `APPLE_ID`: Apple ID email used for notarization.
 - `APPLE_TEAM_ID`: Apple Developer Team ID.
+
+Notarization can use either App Store Connect API key secrets:
+
+- `APP_STORE_CONNECT_API_KEY_ID`: App Store Connect API key ID.
+- `APP_STORE_CONNECT_API_ISSUER_ID`: App Store Connect issuer ID.
+- `APP_STORE_CONNECT_API_KEY_P8`: Private `.p8` key for that API key.
+
+Or Apple ID credentials:
+
+- `APPLE_ID`: Apple ID email used for notarization.
 - `APPLE_APP_SPECIFIC_PASSWORD`: App-specific password for notarization.
 
 Manual artifact rebuild for an existing release:

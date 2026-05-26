@@ -34,14 +34,26 @@ has_notary_profile() {
   [ -n "${PRBAR_NOTARY_KEYCHAIN_PROFILE:-}" ]
 }
 
+has_app_store_connect_api_key() {
+  [ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ] &&
+    [ -n "${APP_STORE_CONNECT_API_ISSUER_ID:-}" ] &&
+    [ -n "${APP_STORE_CONNECT_API_KEY_PATH:-}" ]
+}
+
 notarization_available() {
-  has_notary_profile || has_apple_id_notary_credentials
+  has_notary_profile || has_app_store_connect_api_key || has_apple_id_notary_credentials
 }
 
 submit_for_notarization() {
   if has_notary_profile; then
     xcrun notarytool submit "$NOTARY_ZIP" \
       --keychain-profile "$PRBAR_NOTARY_KEYCHAIN_PROFILE" \
+      --wait
+  elif has_app_store_connect_api_key; then
+    xcrun notarytool submit "$NOTARY_ZIP" \
+      --key "$APP_STORE_CONNECT_API_KEY_PATH" \
+      --key-id "$APP_STORE_CONNECT_API_KEY_ID" \
+      --issuer "$APP_STORE_CONNECT_API_ISSUER_ID" \
       --wait
   else
     xcrun notarytool submit "$NOTARY_ZIP" \
@@ -117,7 +129,7 @@ if [ -n "$SIGNING_IDENTITY" ] && notarization_available; then
   xcrun stapler validate "$STAGED_APP"
 elif [ "$REQUIRE_NOTARIZATION" = "1" ]; then
   echo "error: notarization required, but signing/notary configuration is incomplete." >&2
-  echo "Set PRBAR_SIGNING_IDENTITY plus either PRBAR_NOTARY_KEYCHAIN_PROFILE or APPLE_ID, APPLE_TEAM_ID, and APPLE_APP_SPECIFIC_PASSWORD." >&2
+  echo "Set PRBAR_SIGNING_IDENTITY plus PRBAR_NOTARY_KEYCHAIN_PROFILE, App Store Connect API key credentials, or APPLE_ID, APPLE_TEAM_ID, and APPLE_APP_SPECIFIC_PASSWORD." >&2
   exit 1
 else
   echo "warning: notarization skipped; artifact is for local validation only." >&2
