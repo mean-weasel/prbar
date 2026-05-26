@@ -27,6 +27,7 @@ enum PRActivityProviderFactory {
         provider: FilePRActivityProvider(
           path: fixturePath.trimmingCharacters(in: .whitespacesAndNewlines)
         ),
+        releaseProvider: SampleReleaseMomentProvider(),
         dataSource: .github
       )
     }
@@ -35,6 +36,7 @@ enum PRActivityProviderFactory {
     else {
       return PRActivityProviderSelection(
         provider: StaticPRActivityProvider(),
+        releaseProvider: SampleReleaseMomentProvider(),
         dataSource: .sample
       )
     }
@@ -44,6 +46,10 @@ enum PRActivityProviderFactory {
         token: token,
         transport: URLSessionGitHubAPITransport(),
         bucketLabels: PRActivityStore.sample().bucketLabels
+      ),
+      releaseProvider: GitHubReleaseMomentProvider(
+        token: token,
+        transport: URLSessionGitHubAPITransport()
       ),
       dataSource: .github
     )

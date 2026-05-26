@@ -7,6 +7,7 @@ final class PRInitialActivityStateTests: XCTestCase {
     let state = PRInitialActivityState.load(
       providerSelection: PRActivityProviderSelection(
         provider: FailingInitialProvider(),
+        releaseProvider: SampleReleaseMomentProvider(),
         dataSource: .github
       ),
       now: try date("2026-05-04T20:00:00Z")
@@ -24,6 +25,7 @@ final class PRInitialActivityStateTests: XCTestCase {
     let state = PRInitialActivityState.load(
       providerSelection: PRActivityProviderSelection(
         provider: FailingInitialProvider(),
+        releaseProvider: SampleReleaseMomentProvider(),
         dataSource: .sample
       ),
       now: try date("2026-05-04T20:00:00Z")
@@ -42,6 +44,7 @@ final class PRInitialActivityStateTests: XCTestCase {
     let state = PRInitialActivityState.load(
       providerSelection: PRActivityProviderSelection(
         provider: FixedInitialProvider(store: expected),
+        releaseProvider: SampleReleaseMomentProvider(),
         dataSource: .github
       ),
       now: try date("2026-05-04T20:00:00Z")

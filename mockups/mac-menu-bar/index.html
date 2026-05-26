@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRBar Mac Menu Bar Share Prototype</title>
+  <meta name="description" content="Interactive Mac menu bar prototype for PRBar release notes and fixed share cards.">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="page" aria-labelledby="page-title">
+    <section class="intro">
+      <h1 id="page-title">PRBar Mac menu bar prototype</h1>
+      <p>Activity and Releases each get a fixed share card flow with preview before export. No separate Share tab.</p>
+      <div class="prototype-controls" aria-label="Prototype review states">
+        <button type="button" data-scenario="default">Default</button>
+        <button type="button" data-scenario="tag">Tag fallback</button>
+        <button type="button" data-scenario="private">Private release</button>
+        <button type="button" data-scenario="empty">No releases</button>
+      </div>
+    </section>
+
+    <section class="stage" aria-label="Interactive Mac menu bar mockup">
+      <div class="desktop">
+        <div class="wallpaper" aria-hidden="true"></div>
+        <div class="menu-bar">
+          <div class="menu-left">
+            <strong>PRBar</strong>
+            <span>File</span>
+            <span>Edit</span>
+            <span>View</span>
+          </div>
+          <div class="menu-right">
+            <button id="menuButton" class="status-item" type="button" aria-label="PRBar status item">
+              <span class="status-bars" aria-hidden="true"><span></span></span>
+              <span data-status-title>28 PRs</span>
+            </button>
+            <span>Tue 9:42 AM</span>
+          </div>
+        </div>
+
+        <div id="app" class="popover" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -2,11 +2,16 @@ import SwiftUI
 
 struct PRPopoverView: View {
   @Binding var store: PRActivityStore
+  var releaseStore: ReleaseMomentStore = ReleaseMomentStore(releases: [])
+  var releaseRefreshState: ReleaseRefreshState = .idle
   var refreshError: String?
   var isRefreshing = false
   var dataSource: PRActivityDataSource = .sample
   var onRefresh: () -> Void
   @State private var selectedBucketIndex = Int.max
+  @State private var selectedTab = PopoverTab.activity
+  @State private var sharePayload: ShareCardPayload?
+  @State private var isShareSheetPresented = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
@@ -17,6 +22,11 @@ struct PRPopoverView: View {
       tabs
     }
     .padding(18)
+    .sheet(isPresented: $isShareSheetPresented) {
+      if let sharePayload {
+        ShareCardPreviewSheet(payload: sharePayload)
+      }
+    }
   }
 
   private var header: some View {
@@ -49,15 +59,28 @@ struct PRPopoverView: View {
   }
 
   private var tabs: some View {
-    TabView {
+    TabView(selection: $selectedTab) {
       activityTab
         .tabItem {
           Label("Activity", systemImage: "chart.bar.xaxis")
         }
+        .tag(PopoverTab.activity)
+      ReleasesView(
+        releaseStore: releaseStore,
+        refreshState: releaseRefreshState,
+        repositories: store.repositories,
+        onEditRepos: { selectedTab = .settings },
+        onShare: presentShareCard
+      )
+      .tabItem {
+        Label("Releases", systemImage: "shippingbox")
+      }
+      .tag(PopoverTab.releases)
       PRSettingsView(store: $store, dataSource: dataSource)
         .tabItem {
           Label("Settings", systemImage: "gearshape")
         }
+        .tag(PopoverTab.settings)
     }
     .frame(minHeight: 430)
   }
@@ -73,8 +96,18 @@ struct PRPopoverView: View {
           store.includeAllRepositories()
         }
       }
+      Button("Share PR Card") {
+        presentShareCard(.prActivity(ShareCardBuilder.prActivityPayload(store: store)))
+      }
+      .buttonStyle(.borderedProminent)
+      .disabled(store.hasVisibleActivity == false)
       footer
     }
+  }
+
+  private func presentShareCard(_ payload: ShareCardPayload) {
+    sharePayload = payload
+    isShareSheetPresented = true
   }
 
   private var summary: some View {
@@ -117,6 +150,12 @@ struct PRPopoverView: View {
       set: { selectedBucketIndex = $0 }
     )
   }
+}
+
+private enum PopoverTab {
+  case activity
+  case releases
+  case settings
 }
 
 private struct MetricTile: View {

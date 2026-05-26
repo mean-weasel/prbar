@@ -8,6 +8,7 @@ struct RepositoryActivity: Codable, Identifiable, Equatable {
   var weeklyCounts: [Int]
   var dailyCounts: [Int]
   var isIncluded: Bool
+  var isPrivate: Bool
 
   init(
     id: String,
@@ -16,7 +17,8 @@ struct RepositoryActivity: Codable, Identifiable, Equatable {
     colorHex: String,
     weeklyCounts: [Int],
     dailyCounts: [Int] = [],
-    isIncluded: Bool
+    isIncluded: Bool,
+    isPrivate: Bool = false
   ) {
     self.id = id
     self.owner = owner
@@ -25,6 +27,7 @@ struct RepositoryActivity: Codable, Identifiable, Equatable {
     self.weeklyCounts = weeklyCounts
     self.dailyCounts = dailyCounts
     self.isIncluded = isIncluded
+    self.isPrivate = isPrivate
   }
 
   init(from decoder: Decoder) throws {
@@ -36,6 +39,7 @@ struct RepositoryActivity: Codable, Identifiable, Equatable {
     weeklyCounts = try container.decode([Int].self, forKey: .weeklyCounts)
     dailyCounts = try container.decodeIfPresent([Int].self, forKey: .dailyCounts) ?? []
     isIncluded = try container.decode(Bool.self, forKey: .isIncluded)
+    isPrivate = try container.decodeIfPresent(Bool.self, forKey: .isPrivate) ?? false
   }
 
   var total: Int {
@@ -83,6 +87,7 @@ extension RepositoryActivity {
     case weeklyCounts
     case dailyCounts
     case isIncluded
+    case isPrivate
   }
 }
 

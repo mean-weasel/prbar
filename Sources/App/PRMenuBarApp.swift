@@ -6,6 +6,8 @@ struct PRMenuBarApp: App {
   private let providerSelection: PRActivityProviderSelection
   private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
   @State private var store: PRActivityStore
+  @State private var releaseStore: ReleaseMomentStore
+  @State private var releaseRefreshState: ReleaseRefreshState
   @State private var refreshError: String?
   @State private var isRefreshing = false
   @State private var refreshGeneration = 0
@@ -24,6 +26,8 @@ struct PRMenuBarApp: App {
     let initial = initialState.store
 
     _store = State(initialValue: settingsStore.load().map(initial.applying) ?? initial)
+    _releaseStore = State(initialValue: Self.initialReleaseStore(providerSelection, now: now))
+    _releaseRefreshState = State(initialValue: .idle)
     _refreshError = State(initialValue: initialState.refreshError)
   }
 
@@ -31,6 +35,8 @@ struct PRMenuBarApp: App {
     MenuBarExtra {
       PRPopoverView(
         store: $store,
+        releaseStore: releaseStore,
+        releaseRefreshState: releaseRefreshState,
         refreshError: refreshError,
         isRefreshing: isRefreshing,
         dataSource: providerSelection.dataSource
@@ -40,6 +46,7 @@ struct PRMenuBarApp: App {
       .frame(width: 460)
       .onAppear {
         refreshIfDue(now: Date())
+        refreshReleases(now: Date())
       }
       .onReceive(refreshTimer) { now in
         refreshIfDue(now: now)
@@ -75,8 +82,14 @@ struct PRMenuBarApp: App {
     let generation = refreshGeneration
 
     DispatchQueue.global(qos: .userInitiated).async {
-      let result = Result {
-        try refresher.refresh(current: currentStore, now: now)
+      let result = Result { try refresher.refresh(current: currentStore, now: now) }
+      let releaseResult = result.flatMap { refreshedStore in
+        Result {
+          try providerSelection.releaseProvider.fetchReleaseMoments(
+            repositories: refreshedStore.repositories,
+            now: now
+          )
+        }
       }
 
       DispatchQueue.main.async {
@@ -87,6 +100,13 @@ struct PRMenuBarApp: App {
         switch result {
         case .success(let refreshedStore):
           store = refreshedStore
+          switch releaseResult {
+          case .success(let releases):
+            releaseStore = ReleaseMomentStore(releases: releases)
+            releaseRefreshState = .idle
+          case .failure(let error):
+            releaseRefreshState = .failed(Self.releaseRefreshMessage(for: error))
+          }
           refreshError = nil
         case .failure(let error):
           refreshError = failureMessage(error)
@@ -101,5 +121,47 @@ struct PRMenuBarApp: App {
     }
     isRefreshing = true
     return true
+  }
+
+  private func refreshReleases(now: Date) {
+    let repositories = store.repositories
+    releaseRefreshState = .loading
+    DispatchQueue.global(qos: .utility).async {
+      let result = Result {
+        try providerSelection.releaseProvider.fetchReleaseMoments(
+          repositories: repositories,
+          now: now
+        )
+      }
+
+      DispatchQueue.main.async {
+        switch result {
+        case .success(let releases):
+          releaseStore = ReleaseMomentStore(releases: releases)
+          releaseRefreshState = .idle
+        case .failure(let error):
+          releaseRefreshState = .failed(Self.releaseRefreshMessage(for: error))
+        }
+      }
+    }
+  }
+
+  private static func initialReleaseStore(
+    _ providerSelection: PRActivityProviderSelection,
+    now: Date
+  ) -> ReleaseMomentStore {
+    guard providerSelection.dataSource == .sample else {
+      return ReleaseMomentStore(releases: [])
+    }
+    let releases =
+      try? providerSelection.releaseProvider.fetchReleaseMoments(
+        repositories: RepositoryActivity.samples,
+        now: now
+      )
+    return ReleaseMomentStore(releases: releases ?? [])
+  }
+
+  private static func releaseRefreshMessage(for error: Error) -> String {
+    "Could not load release notes: \(error.localizedDescription)"
   }
 }
