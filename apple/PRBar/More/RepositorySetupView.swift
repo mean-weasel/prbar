@@ -27,7 +27,7 @@ struct RepositorySetupView: View {
       }
       .padding(.vertical, 4)
     }
-    .navigationTitle("Repositories")
+    .navigationTitle("Repos")
   }
 }
 

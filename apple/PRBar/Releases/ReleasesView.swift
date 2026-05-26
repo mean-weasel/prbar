@@ -58,7 +58,7 @@ struct ReleasesView: View {
       Spacer()
 
       NavigationLink {
-        RepositorySetupView(repositories: store.includedRepositories)
+        RepositorySetupView(repositories: store.repositories)
       } label: {
         Label("\(store.includedRepositories.count) repos", systemImage: "folder")
           .labelStyle(.iconOnly)

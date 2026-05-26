@@ -67,7 +67,7 @@ struct PRsView: View {
       Spacer()
 
       NavigationLink {
-        RepositorySetupView(repositories: store.includedRepositories)
+        RepositorySetupView(repositories: store.repositories)
       } label: {
         Label("\(store.includedRepositories.count) repos", systemImage: "folder.badge.gearshape")
           .labelStyle(.iconOnly)
