@@ -14,16 +14,11 @@ targets:
     sources:
       - PRBar
       - PRBarShared
-    info:
-      path: PRBar/Info.plist
-      properties:
-        CFBundleDisplayName: PRBar
-        UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios
       PRODUCT_NAME: PRBar
-      GENERATE_INFOPLIST_FILE: YES
+      GENERATE_INFOPLIST_FILE: NO
+      INFOPLIST_FILE: PRBar/Info.plist
       CODE_SIGN_STYLE: Automatic
   PRBarPreview:
     type: application

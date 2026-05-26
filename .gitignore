@@ -14,3 +14,5 @@ xcuserdata/
 apple/PRBar.xcodeproj
 apple/build
 apple/TestResults.xcresult
+apple/PRBarPreview-Info.plist
+apple/PRBarTests-Info.plist
