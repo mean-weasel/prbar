@@ -28,6 +28,7 @@ struct CalendarStripView: View {
         .frame(maxWidth: .infinity)
       }
     }
+    .padding(.trailing, 12)
   }
 }
 
@@ -39,20 +40,21 @@ private struct CalendarDateButton: View {
 
   var body: some View {
     Button(action: action) {
-      ZStack(alignment: .topTrailing) {
-        Text("\(day.dayNumber)")
-          .font(.headline)
-          .monospacedDigit()
-          .frame(maxWidth: .infinity, minHeight: 56)
-
-        if day.count > 0 {
-          CalendarCountBadge(count: day.count, isSelected: isSelected)
-            .padding(4)
+      Text("\(day.dayNumber)")
+        .font(.headline)
+        .monospacedDigit()
+        .frame(maxWidth: .infinity, minHeight: 56)
+        .foregroundStyle(isSelected ? .white : .primary)
+        .background(isSelected ? PRBarTheme.accent : Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(alignment: .topTrailing) {
+          if day.count > 0 {
+            CalendarCountBadge(count: day.count, isSelected: isSelected)
+              .offset(x: 6, y: -7)
+          }
         }
-      }
-      .foregroundStyle(isSelected ? .white : .primary)
-      .background(isSelected ? PRBarTheme.accent : Color(.secondarySystemBackground))
-      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.top, 7)
+        .padding(.trailing, 8)
     }
     .buttonStyle(.plain)
     .accessibilityLabel(day.accessibilityLabel(isSelected: isSelected, countLabel: countLabel))
@@ -72,6 +74,14 @@ struct CalendarCountBadge: View {
       .padding(.horizontal, count > 9 ? 3 : 0)
       .background(isSelected ? Color.white : PRBarTheme.accent)
       .clipShape(Capsule())
+      .overlay {
+        Capsule()
+          .stroke(
+            isSelected ? PRBarTheme.accent.opacity(0.55) : Color(.systemBackground).opacity(0.75),
+            lineWidth: 1
+          )
+      }
+      .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
       .accessibilityHidden(true)
   }
 }

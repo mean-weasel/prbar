@@ -39,21 +39,22 @@ struct MonthHeatMapView: View {
         Button {
           selectedDate = day.date
         } label: {
-          ZStack(alignment: .topTrailing) {
-            Text("\(day.dayNumber)")
-              .font(.subheadline.weight(.semibold))
-              .monospacedDigit()
-              .frame(maxWidth: .infinity, minHeight: 44)
-
-            if day.count > 0 {
-              CalendarCountBadge(count: day.count, isSelected: isSelected)
-                .scaleEffect(0.88)
-                .padding(3)
+          Text("\(day.dayNumber)")
+            .font(.subheadline.weight(.semibold))
+            .monospacedDigit()
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .foregroundStyle(isSelected ? .white : .primary)
+            .background(tileColor(for: day))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay(alignment: .topTrailing) {
+              if day.count > 0 {
+                CalendarCountBadge(count: day.count, isSelected: isSelected)
+                  .scaleEffect(0.88)
+                  .offset(x: 5, y: -6)
+              }
             }
-          }
-          .foregroundStyle(isSelected ? .white : .primary)
-          .background(tileColor(for: day))
-          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .padding(.top, 6)
+            .padding(.trailing, 5)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(day.accessibilityLabel(isSelected: isSelected, countLabel: countLabel))
