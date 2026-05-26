@@ -10,6 +10,10 @@ struct RepoDistributionRow: Identifiable {
 struct RepoDistributionView: View {
   var rows: [RepoDistributionRow]
 
+  private var maxCount: Int {
+    max(rows.map(\.count).max() ?? 1, 1)
+  }
+
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       Text("Distribution by repo")
@@ -20,7 +24,7 @@ struct RepoDistributionView: View {
           NavigationLink(value: row.repository.id) {
             HStack(spacing: 12) {
               Circle()
-                .fill(color(from: row.repository.colorHex))
+                .fill(PRBarTheme.repositoryColor(row.repository.colorHex))
                 .frame(width: 10, height: 10)
 
               VStack(alignment: .leading, spacing: 2) {
@@ -29,6 +33,18 @@ struct RepoDistributionView: View {
                 Text(row.repository.owner)
                   .font(.caption)
                   .foregroundStyle(.secondary)
+
+                GeometryReader { proxy in
+                  Capsule()
+                    .fill(Color(.tertiarySystemFill))
+                    .overlay(alignment: .leading) {
+                      Capsule()
+                        .fill(PRBarTheme.repositoryColor(row.repository.colorHex).gradient)
+                        .frame(width: max(10, proxy.size.width * CGFloat(row.count) / CGFloat(maxCount)))
+                    }
+                }
+                .frame(height: 7)
+                .padding(.top, 4)
               }
 
               Spacer()
@@ -49,19 +65,6 @@ struct RepoDistributionView: View {
         }
       }
     }
-  }
-
-  private func color(from hex: String) -> Color {
-    let trimmed = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
-    guard let value = UInt64(trimmed, radix: 16) else {
-      return PRBarTheme.accent
-    }
-
-    return Color(
-      red: Double((value & 0xff0000) >> 16) / 255,
-      green: Double((value & 0x00ff00) >> 8) / 255,
-      blue: Double(value & 0x0000ff) / 255
-    )
   }
 }
 

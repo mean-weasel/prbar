@@ -21,9 +21,9 @@ struct WorkCardView: View {
       }
 
       HStack(alignment: .bottom, spacing: 8) {
-        ForEach(Array(barHeights.enumerated()), id: \.offset) { _, height in
+        ForEach(Array(barHeights.enumerated()), id: \.offset) { index, height in
           RoundedRectangle(cornerRadius: 4, style: .continuous)
-            .fill(PRBarTheme.accent.gradient)
+            .fill(PRBarTheme.chartPalette[index % PRBarTheme.chartPalette.count].gradient)
             .frame(height: height)
         }
       }

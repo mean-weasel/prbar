@@ -13,6 +13,29 @@ struct PRsView: View {
     pullRequests(on: store.selectedPRDate)
   }
 
+  private var chartDays: [DailyPRChartDay] {
+    calendarDays.map { day in
+      DailyPRChartDay(
+        day: day,
+        segments: store.includedRepositories.compactMap { repository in
+          let count = store.pullRequests.filter {
+            $0.repoID == repository.id && CalendarDay.isSameDay($0.mergedAt, day.date)
+          }.count
+
+          guard count > 0 else {
+            return nil
+          }
+
+          return DailyPRChartSegment(
+            repositoryID: repository.id,
+            count: count,
+            color: PRBarTheme.repositoryColor(repository.colorHex)
+          )
+        }
+      )
+    }
+  }
+
   private var repoRows: [RepoDistributionRow] {
     store.includedRepositories.map { repository in
       RepoDistributionRow(
@@ -36,7 +59,7 @@ struct PRsView: View {
 
           selectedDayMetric
 
-          DailyPRBarChart(days: calendarDays)
+          DailyPRBarChart(days: chartDays)
 
           RepoDistributionView(rows: repoRows)
 
@@ -150,8 +173,24 @@ struct PRsView: View {
   }
 }
 
+private struct DailyPRChartDay: Identifiable {
+  var day: CalendarDay
+  var segments: [DailyPRChartSegment]
+
+  var id: Date { day.date }
+  var count: Int { day.count }
+}
+
+private struct DailyPRChartSegment: Identifiable {
+  var repositoryID: Repository.ID
+  var count: Int
+  var color: Color
+
+  var id: Repository.ID { repositoryID }
+}
+
 private struct DailyPRBarChart: View {
-  var days: [CalendarDay]
+  var days: [DailyPRChartDay]
 
   private var maxCount: Int {
     max(days.map(\.count).max() ?? 1, 1)
@@ -165,11 +204,23 @@ private struct DailyPRBarChart: View {
       HStack(alignment: .bottom, spacing: 8) {
         ForEach(days) { day in
           VStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-              .fill(day.count > 0 ? PRBarTheme.accent : Color(.tertiarySystemFill))
-              .frame(height: CGFloat(max(day.count, 1)) / CGFloat(maxCount) * 72)
+            VStack(spacing: 2) {
+              if day.segments.isEmpty {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                  .fill(Color(.tertiarySystemFill))
+                  .frame(height: 8)
+              } else {
+                ForEach(day.segments) { segment in
+                  RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(segment.color.gradient)
+                    .frame(height: max(8, CGFloat(segment.count) / CGFloat(maxCount) * 72))
+                }
+              }
+            }
+            .frame(height: 76, alignment: .bottom)
+            .accessibilityLabel("\(day.count) merged pull requests on day \(day.day.dayNumber)")
 
-            Text("\(day.dayNumber)")
+            Text("\(day.day.dayNumber)")
               .font(.caption2)
               .foregroundStyle(.secondary)
               .monospacedDigit()
