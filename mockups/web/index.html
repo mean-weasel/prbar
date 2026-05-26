@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PRBar Web Mockup</title>
+    <meta
+      name="description"
+      content="PRBar turns PRs, releases, streaks, and repo momentum into proof cards, leaderboards, and AI builder profiles."
+    >
+    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="site-header" aria-label="Primary">
+      <a class="brand" href="#top" aria-label="PRBar home">
+        <span class="brand-mark" aria-hidden="true">PR</span>
+        <span>PRBar</span>
+      </a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#proof">Proof</a>
+        <a href="#boards">Boards</a>
+        <a href="#talent">Talent</a>
+        <a href="#apps">Apps</a>
+      </nav>
+      <a class="header-action" href="#connect">Claim your board</a>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-scene" aria-hidden="true">
+          <div class="scene-grid"></div>
+          <article class="floating-panel profile-panel">
+            <div class="panel-topline">
+              <div>
+                <strong>@maya.codes</strong>
+                <span>Claude Code / Cursor / iOS</span>
+              </div>
+              <b>#1 weekly</b>
+            </div>
+            <div class="metric-grid">
+              <div><strong>42</strong><span>PRs merged</span></div>
+              <div><strong>4</strong><span>releases made</span></div>
+              <div><strong>9</strong><span>day streak</span></div>
+              <div><strong>6</strong><span>repos</span></div>
+            </div>
+          </article>
+          <article class="floating-panel receipt-panel">
+            <span>Counts</span>
+            <strong>v1.4 shipped</strong>
+            <p>7 PRs merged / 3 repos / release card</p>
+          </article>
+          <article class="floating-panel token-panel">
+            <span>Does not count</span>
+            <strong>1.8M tokens used</strong>
+            <p>Spend is not proof.</p>
+          </article>
+        </div>
+
+        <div class="hero-content">
+          <p class="hero-label">Verified GitHub velocity for AI-native builders</p>
+          <h1 id="hero-title">Vibe coding needs receipts.</h1>
+          <p class="hero-lede">
+            <strong>Token usage does not count.</strong> Features shipped, PRs merged,
+            releases made, projects launched. Those are the things that matter.
+          </p>
+          <p class="hero-support">
+            PRBar turns real GitHub activity into public proof cards, high-vibe
+            leaderboards, and searchable AI builder profiles.
+          </p>
+          <div class="hero-actions" id="connect">
+            <a class="primary-action" href="#proof">Claim your board</a>
+            <a class="secondary-action" href="#talent">Scout builders</a>
+          </div>
+          <ul class="hero-proof" aria-label="Tracked proof signals">
+            <li>PRs merged</li>
+            <li>Releases made</li>
+            <li>Projects shipped</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="proof" class="proof-section section-pad" aria-labelledby="proof-title">
+        <div class="section-heading">
+          <span>Shipping Proof Network</span>
+          <h2 id="proof-title">A public profile built from work that landed.</h2>
+          <p>
+            Connect GitHub, choose which repos count, hide private details, and
+            publish artifacts that make side-project velocity visible.
+          </p>
+        </div>
+
+        <div class="proof-layout">
+          <article class="profile-card">
+            <div class="profile-header">
+              <div class="avatar">MC</div>
+              <div>
+                <h3>@maya.codes</h3>
+                <p>AI SaaS / mobile / launch sprints</p>
+              </div>
+              <span>Verified</span>
+            </div>
+            <div class="profile-stats">
+              <div><strong>118</strong><span>PRs quarter</span></div>
+              <div><strong>14</strong><span>releases</span></div>
+              <div><strong>11</strong><span>projects</span></div>
+            </div>
+            <div class="bar-chart" aria-label="Monthly shipping rhythm">
+              <span style="height: 32%"></span>
+              <span style="height: 58%"></span>
+              <span style="height: 44%"></span>
+              <span style="height: 78%"></span>
+              <span style="height: 64%"></span>
+              <span style="height: 92%"></span>
+            </div>
+            <div class="privacy-row">
+              <span>Private repo names hidden</span>
+              <span>6 repos selected</span>
+            </div>
+          </article>
+
+          <div class="proof-stack">
+            <article class="release-card">
+              <div>
+                <span>Release receipt</span>
+                <h3>SideProject Radar v2.1</h3>
+                <p>Feature shipped / 8 PRs merged / 2 repos / release notes imported.</p>
+              </div>
+              <button type="button" class="icon-button" aria-label="Share release">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12h10M13 6l6 6-6 6" /></svg>
+              </button>
+            </article>
+            <article class="release-card muted">
+              <div>
+                <span>Project card</span>
+                <h3>AI onboarding flow</h3>
+                <p>Launched from 3 selected repos with client names removed.</p>
+              </div>
+              <button type="button" class="icon-button" aria-label="Open project">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg>
+              </button>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="boards" class="boards-section section-pad" aria-labelledby="boards-title">
+        <div class="section-heading compact">
+          <span>High-Vibe Leaderboards</span>
+          <h2 id="boards-title">The leaderboard for builders who actually ship.</h2>
+          <p>Rank by PRs merged, releases made, active streaks, and project momentum.</p>
+        </div>
+
+        <div class="board-shell">
+          <div class="segmented" role="tablist" aria-label="Leaderboard range">
+            <button class="active" type="button" data-board="daily">Daily</button>
+            <button type="button" data-board="weekly">Weekly</button>
+            <button type="button" data-board="monthly">Monthly</button>
+          </div>
+          <div class="leaderboard" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="talent" class="talent-section section-pad" aria-labelledby="talent-title">
+        <div class="section-heading compact">
+          <span>AI Builder Talent Board</span>
+          <h2 id="talent-title">Find AI builders with receipts.</h2>
+          <p>
+            Search profiles by release history, repo focus, shipping cadence,
+            stack, AI tooling, and availability.
+          </p>
+        </div>
+
+        <div class="talent-controls" aria-label="Talent filters">
+          <button class="active" type="button" data-filter="all">All</button>
+          <button type="button" data-filter="available">Available</button>
+          <button type="button" data-filter="mobile">Mobile</button>
+          <button type="button" data-filter="saas">SaaS</button>
+        </div>
+        <div class="talent-grid" aria-live="polite"></div>
+      </section>
+
+      <section id="apps" class="apps-section section-pad" aria-labelledby="apps-title">
+        <div class="section-heading compact">
+          <span>PRBar app family</span>
+          <h2 id="apps-title">Private signal, public proof, everywhere you ship.</h2>
+        </div>
+
+        <div class="apps-grid">
+          <article>
+            <div class="app-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M8 17h8M6 7v10h12V7" /></svg>
+            </div>
+            <h3>Mac menu bar</h3>
+            <p>Ambient desktop signal for merged PR activity, repo mix, and shipping rhythm.</p>
+          </article>
+          <article>
+            <div class="app-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 15h2" /></svg>
+            </div>
+            <h3>iOS app</h3>
+            <p>Private dashboard and card studio for mobile proof-of-work sharing.</p>
+          </article>
+          <article>
+            <div class="app-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 9h16M8 13h3M8 16h8" /></svg>
+            </div>
+            <h3>Web profiles</h3>
+            <p>Public proof, leaderboards, and talent discovery powered by selected repos.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="final-cta" aria-labelledby="cta-title">
+        <h2 id="cta-title">Stop flexing tokens. Start showing shipped work.</h2>
+        <p>Claim a PRBar profile, select your repos, and make your next release visible.</p>
+        <a class="primary-action" href="#top">Claim your board</a>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
