@@ -68,9 +68,8 @@ PR_MENU_BAR_GITHUB_TOKEN=github_pat_xxx make run
 ```
 
 The token needs repository read access for the repositories you want to track. Missing
-or blank tokens keep the app on sample data. OAuth, keychain storage, Developer ID
-signing, notarization, and downloadable app distribution are intentionally out of scope
-for this prototype.
+or blank tokens keep the app on sample data. OAuth and keychain storage are
+intentionally out of scope for this prototype.
 In-app GitHub sign-in and credential storage remain an open product decision; the
 environment-token path is the supported live-data path for now.
 
@@ -96,9 +95,10 @@ failures include the reset time when GitHub sends one.
 ## Releases
 
 GitHub release notes are produced by semantic-release from conventional commit
-titles on `main`. See `Docs/ReleaseReadiness.md` for the current release candidate,
-bundle version, and the remaining Developer ID/notarization work needed before
-attaching a downloadable Mac app.
+titles on `main`. A release-artifact workflow can attach a signed and notarized
+`PRMenuBar-macOS.zip` when the Apple Developer ID and notarization secrets are
+configured. See `Docs/ReleaseReadiness.md` for the bundle version, packaging
+workflow, and required release secrets.
 
 ## Guardrails
 

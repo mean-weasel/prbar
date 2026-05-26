@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
-          if printf '%s\n' "$changed_files" | grep -Eq '^(Sources/|Tests/|project.yml|Makefile|\.github/workflows/(ci|auto-merge|release)\.yml$)'; then
+          if printf '%s\n' "$changed_files" | grep -Eq '^(Sources/|Tests/|project.yml|Makefile|\.github/workflows/(ci|auto-merge|release|release-artifact)\.yml$)'; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           elif printf '%s\n' "$changed_files" | grep -Eq '^scripts/' && printf '%s\n' "$changed_files" | grep -Ev '^scripts/ios-' | grep -Eq '^scripts/'; then
             echo "code=true" >> "$GITHUB_OUTPUT"
