@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 PROFILE="${IOS_UI_SMOKE_PROFILE:-pr}"
+destination="$(./scripts/ios-resolve-simulator-destination.sh)"
 case "$PROFILE" in
   fast) TESTS=("PRBarUITests/PRBarUITests/testTabsExposeReviewedPrototypeSurfaces") ;;
   pr) TESTS=("PRBarUITests/PRBarUITests/testTabsExposeReviewedPrototypeSurfaces" "PRBarUITests/PRBarUITests/testShareTabExplainsWorkCardExport") ;;
@@ -17,12 +18,12 @@ args=(
   -project apple/PRBar.xcodeproj
   -scheme "${IOS_SCHEME:-PRBar}"
   -configuration "${IOS_CONFIGURATION:-Debug}"
-  -destination "${IOS_DESTINATION:-platform=iOS Simulator,name=iPhone 16}"
+  -destination "$destination"
   -derivedDataPath apple/build
   -resultBundlePath "${IOS_UI_SMOKE_RESULT_BUNDLE:-apple/UISmokeResults.xcresult}"
 )
 
-if [[ "${IOS_DESTINATION:-}" != *"platform=iOS,"* ]]; then
+if [[ "$destination" != *"platform=iOS,"* ]]; then
   args+=("CODE_SIGNING_ALLOWED=${IOS_CODE_SIGNING_ALLOWED:-NO}")
 fi
 

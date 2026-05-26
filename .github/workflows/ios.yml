@@ -39,7 +39,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.3.app/Contents/Developer
+        run: |
+          if [ -d /Applications/Xcode_16.4.app ]; then
+            sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          else
+            sudo xcode-select -s /Applications/Xcode_16.3.app/Contents/Developer
+          fi
+          xcodebuild -version
       - name: Install xcodegen
         run: brew install xcodegen
       - name: Build
