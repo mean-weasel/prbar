@@ -34,6 +34,18 @@ make ci-local
 
 `make app-smoke` builds the app in Release mode and verifies the bundle exists.
 
+## iOS Prototype App
+
+The native iOS app lives under `apple/` and is generated with XcodeGen:
+
+```bash
+make ios-generate
+make ios-ci-local
+```
+
+The first implementation is fixture-backed and follows the reviewed HTML mockup in
+`mockups/ios/`.
+
 ## Live GitHub Data
 
 The app uses sample data when it cannot find GitHub credentials. For live data, it

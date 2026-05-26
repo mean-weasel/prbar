@@ -44,3 +44,23 @@ of scope until the local product loop proves the provider and refresh behavior.
 - Unit-test settings reconciliation when repositories are added or removed.
 - Unit-test scheduled refresh decisions without waiting for wall-clock time.
 - Keep `make ci-local` green after each implementation step.
+
+## iOS Preview Runner
+
+Physical iPhone preview testing uses a self-hosted macOS runner with labels
+`self-hosted`, `macOS`, `prbar-ios`, and `iphone-preview`.
+
+The runner Mac needs:
+
+- Xcode with iOS device support installed.
+- XcodeGen available on `PATH`.
+- A trusted, unlocked physical iPhone named `iPhone-preview`.
+- A signing identity visible to the GitHub Actions runner service.
+- The secret `IOS_DEVELOPMENT_TEAM` when the runner should pass an explicit Apple development team to `xcodebuild`.
+- The secret `IOS_PREVIEW_KEYCHAIN_PASSWORD` when the signing keychain must be unlocked non-interactively.
+- Automation Mode enabled without local authentication when available.
+
+Physical preview workflows are manual by default, run only the checked-out
+workflow ref, and share one concurrency group so the preview iPhone is not used
+by multiple jobs at the same time. Pull requests use simulator CI unless a
+maintainer explicitly dispatches the physical preview workflow.

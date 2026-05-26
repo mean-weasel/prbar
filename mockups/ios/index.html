@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRBar iOS Interactive Prototype</title>
+  <meta name="description" content="Interactive mobile HTML prototype for PRBar iOS.">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="prototype-page" aria-labelledby="page-title">
+    <section class="intro">
+      <p class="eyebrow">PRBar iOS prototype</p>
+      <h1 id="page-title">Interactive mobile app for shipping rhythm and proof of work</h1>
+      <p>Use the phone below like an app: sign in with GitHub, set repo and privacy defaults, switch ranges, browse GitHub Releases, create cards, and open More for secondary settings.</p>
+    </section>
+
+    <section class="prototype-stage" aria-label="Interactive PRBar iOS app">
+      <div class="phone-frame">
+        <div id="app" class="phone-screen" data-prototype-app></div>
+      </div>
+      <aside class="review-notes" aria-label="Prototype coverage">
+        <h2>Interactive Coverage</h2>
+        <ul>
+          <li>PRs / Releases / Share / More bottom nav</li>
+          <li data-review-marker="First-run onboarding">GitHub sign-in and first-run onboarding</li>
+          <li>Permission rationale before OAuth</li>
+          <li>Repo setup, privacy defaults, and sync states</li>
+          <li>Recovery states for reconnect, rate limits, private sharing, and empty data</li>
+          <li>More menu with Repos, Settings, Privacy, Sample Data, and About</li>
+          <li>Day / Week / Month range changes inside PRs</li>
+          <li>Repo drill-down and PR distribution inside PRs</li>
+          <li>Date-grouped shipping moments from GitHub Releases and tags</li>
+          <li>Repo inclusion updates app data</li>
+          <li>Work cards from PRs or GitHub Releases</li>
+          <li>Public/evidence card sides with release evidence</li>
+          <li>Style, privacy, and export sheets for image output</li>
+        </ul>
+      </aside>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

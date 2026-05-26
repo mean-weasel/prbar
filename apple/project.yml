@@ -1,0 +1,106 @@
+name: PRBar
+options:
+  bundleIdPrefix: com.neonwatty
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  PRBar:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - PRBar
+      - PRBarShared
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios
+      PRODUCT_NAME: PRBar
+      GENERATE_INFOPLIST_FILE: NO
+      INFOPLIST_FILE: PRBar/Info.plist
+      CODE_SIGN_STYLE: Automatic
+  PRBarPreview:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: PRBar
+        excludes:
+          - Info.plist
+      - PRBarShared
+    info:
+      path: PRBarPreview-Info.plist
+      generate: true
+      properties:
+        CFBundleDisplayName: PRBar Preview
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.preview
+      PRODUCT_NAME: PRBarPreview
+      GENERATE_INFOPLIST_FILE: YES
+      CODE_SIGN_STYLE: Automatic
+  PRBarTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - PRBarTests
+    dependencies:
+      - target: PRBar
+    info:
+      path: PRBarTests-Info.plist
+      generate: true
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.tests
+      GENERATE_INFOPLIST_FILE: YES
+      TEST_HOST: "$(BUILT_PRODUCTS_DIR)/PRBar.app/PRBar"
+      BUNDLE_LOADER: "$(TEST_HOST)"
+  PRBarUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS]
+    deploymentTarget: "18.0"
+    sources:
+      - PRBarUITests
+    dependencies:
+      - target: PRBar
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: PRBar
+        CODE_SIGN_STYLE: Automatic
+        BUNDLE_LOADER: ""
+  PRBarPreviewUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS]
+    deploymentTarget: "18.0"
+    sources:
+      - PRBarPreviewUITests
+    dependencies:
+      - target: PRBarPreview
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.preview.uitests
+        TEST_TARGET_NAME: PRBarPreview
+        CODE_SIGN_STYLE: Automatic
+        BUNDLE_LOADER: ""
+schemes:
+  PRBar:
+    build:
+      targets:
+        PRBar: all
+    test:
+      targets:
+        - PRBarTests
+        - PRBarUITests
+  PRBarPreview:
+    build:
+      targets:
+        PRBarPreview: all
+    test:
+      targets:
+        - PRBarPreviewUITests

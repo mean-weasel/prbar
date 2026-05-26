@@ -5,6 +5,7 @@ DERIVED_DATA := build
 APP_BINARY := $(DERIVED_DATA)/Build/Products/Debug/PRMenuBar.app/Contents/MacOS/PRMenuBar
 
 .PHONY: generate format-check file-size-check build test refresh-benchmark coverage-report app-smoke run run-live ci-local clean
+.PHONY: ios-generate ios-build ios-test ios-ui-smoke ios-ci-local
 
 generate:
 	xcodegen generate
@@ -77,6 +78,20 @@ run-live:
 	 PR_MENU_BAR_GITHUB_TOKEN="$$TOKEN" $(MAKE) run
 
 ci-local: format-check file-size-check build test coverage-report app-smoke
+
+ios-generate:
+	./scripts/ios-generate.sh
+
+ios-build:
+	./scripts/ios-build.sh
+
+ios-test:
+	./scripts/ios-test.sh
+
+ios-ui-smoke:
+	./scripts/ios-ui-smoke.sh
+
+ios-ci-local: ios-build ios-test ios-ui-smoke
 
 clean:
 	rm -rf $(DERIVED_DATA) TestResults.xcresult $(PROJECT)

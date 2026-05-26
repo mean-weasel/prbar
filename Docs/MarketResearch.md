@@ -1,0 +1,591 @@
+# PRBar Market And Keyword Research
+
+Date: 2026-05-25
+
+## Working Thesis
+
+PRBar can grow beyond a private PR activity tracker into a proof-of-work layer for AI-assisted builders: a place to connect GitHub, choose which repositories count, turn GitHub Releases into credible share artifacts, and optionally make high-velocity developers discoverable to peers, recruiters, and teams.
+
+The strongest positioning is not "developer productivity analytics" in the enterprise sense. That market is crowded and team-manager oriented. The sharper wedge is "shareable proof of shipped work, starting from GitHub Releases."
+
+## Market Signals
+
+- GitHub reported more than 180 million developers in 2025 and more than 36 million new developers joining in the prior year. It also reported 43.2 million pull requests merged per month, up 23% year over year.
+- Stack Overflow's 2025 Developer Survey found 84% of respondents use or plan to use AI tools in development, and 51% of professional developers use AI tools daily.
+- AI trust remains unresolved: Stack Overflow also found more developers distrust AI output accuracy than trust it. This makes "verified shipped work" more compelling than "I use AI a lot."
+- "Vibe coding" has moved from slang into a searchable category. Public keyword estimates vary: one SEO source estimates 110,000 monthly Google searches and 208,000 monthly Bing impressions as of April 2026, while seodata.dev reports 60,500 monthly US searches as of May 2026.
+- Existing engineering analytics tools such as Swarmia already measure AI-assisted PR metrics for teams. That validates the PR-level signal, but leaves room for a personal/social/recruiting product that developers control.
+
+## SEO Keyword Snapshot
+
+The table below uses seodata.dev US keyword estimates collected on 2026-05-25. Treat these as directional; free keyword datasets often disagree, but they are useful for prioritizing clusters.
+
+| Keyword | US monthly volume | CPC | Competition | Intent |
+| --- | ---: | ---: | ---: | --- |
+| cursor ai | 135,000 | $9.08 | 0.33 | Hot tool/category awareness |
+| claude code | 90,500 | $4.26 | 0.10 | Hot tool/category awareness |
+| github copilot | 74,000 | $5.80 | 0.16 | Established tool awareness |
+| vibe coding | 60,500 | $9.25 | 0.28 | Category awareness and education |
+| coding ai | 18,100 | $10.42 | 0.62 | Broad AI coding comparison |
+| best ai for coding | 8,100 | $16.89 | 0.59 | High-intent tool comparison |
+| indie hackers | 3,600 | $0.00 | 0.00 | Community/navigation |
+| ai code editor | 2,900 | $11.71 | 0.12 | Tool comparison |
+| ai coding tools | 2,400 | $13.14 | 0.35 | Tool comparison |
+| micro saas | 1,300 | $7.37 | 0.13 | Founder niche |
+| github portfolio | 880 | $11.73 | 0.05 | Portfolio/proof of work |
+| hire ai developers | 880 | $66.95 | 0.33 | Hiring/commercial intent |
+| ai coding agents | 720 | $19.83 | 0.45 | Emerging high-intent category |
+| developer portfolio | 390 | $3.24 | 0.06 | Portfolio/proof of work |
+| build in public | 390 | $0.00 | 0.00 | Community/narrative |
+| github analytics | 170 | $25.31 | 0.45 | Analytics/product intent |
+| developer productivity metrics | 140 | $28.09 | 0.54 | B2B/manager intent |
+| pull request analytics | 0 | $0.00 | 0.00 | Too niche as phrased |
+| ai developer portfolio | 0 | $0.00 | 0.00 | Emerging concept, not established |
+| ship code faster | 0 | $0.00 | 0.00 | Messaging phrase, not SEO demand |
+
+### Release-Oriented Keyword Snapshot
+
+These terms better match the refined product core: connect GitHub Releases, select repos, and share proof of work. They are lower-volume than hot AI coding terms but much closer to the artifact PRBar can actually create.
+
+| Keyword | US monthly volume | CPC | Competition | Intent |
+| --- | ---: | ---: | ---: | --- |
+| release notes | 3,600 | $6.51 | 0.01 | Broad release documentation |
+| github releases | 1,300 | $9.88 | 0.01 | GitHub release workflow |
+| github changelog | 1,000 | $0.00 | 0.00 | GitHub/product update discovery |
+| product updates | 320 | $0.00 | 0.03 | Customer-facing update content |
+| app release notes | 260 | $9.52 | 0.01 | App/software release content |
+| github release notes | 210 | $0.00 | 0.00 | GitHub-specific release content |
+| software release notes | 210 | $10.62 | 0.11 | Professional release content |
+| shipping updates | 210 | $1.27 | 0.04 | Builder/founder update language |
+| github activity | 110 | $0.00 | 0.00 | GitHub history/activity |
+| release notes generator | 40 | $4.52 | 0.04 | Tool intent |
+| changelog generator | 40 | $0.00 | 0.02 | Tool intent |
+| automated release notes | 30 | $6.99 | 0.05 | Automation intent |
+| product changelog | 30 | $6.74 | 0.13 | SaaS/product update intent |
+| github repo analytics | 30 | $13.29 | 0.32 | Analytics/product intent |
+
+### What The Keyword Data Suggests
+
+- The biggest traffic pool is not "PR analytics" or "release cards." It is AI coding tool/category traffic.
+- The hottest relevant terms in the free snapshot are `cursor ai`, `claude code`, `github copilot`, and `vibe coding`; Google Ads later confirms the first three much more strongly than `vibe coding`.
+- High-CPC terms like `hire ai developers`, `developer productivity metrics`, `github analytics`, and `ai coding agents` signal buyer or employer intent even though volume is smaller.
+- `pull request analytics` is probably not the right primary SEO phrase for a consumer/social product. Use it in technical pages, not the homepage.
+- `GitHub Releases` and `release notes` give PRBar a concrete product artifact that searchers already understand. Use these for product pages and workflow pages.
+- `ai developer portfolio` has weak measured search volume today, but it is a good category to create because Reddit discussions show people actively exploring structured GitHub/developer identity.
+
+## Google Ads Keyword Planner Findings
+
+Google Ads Keyword Planner was checked on 2026-05-25 using United States, English, Google Search, and the May 2025 to April 2026 historical range. These numbers should replace the free API numbers when making SEO and paid-search decisions.
+
+### Seed Batch: Releases, Portfolios, And AI Coding Tools
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| claude code | 450,000 | 0% | +1,563% | Medium | $4.04 | $14.82 | Hottest obvious AI-coding term |
+| cursor ai | 110,000 | +49% | -18% | Medium | $3.18 | $15.00 | Very large tool/category term |
+| github copilot | 110,000 | +172% | +172% | Low | $2.80 | $12.30 | Mainstream AI-coding doorway |
+| ai coding tools | 5,400 | +50% | +179% | Low | $5.79 | $20.77 | Strong comparison/content keyword |
+| release notes | 5,400 | 0% | -17% | Low | $2.60 | $12.01 | Broad release content intent |
+| github releases | 2,400 | +24% | +125% | Low | $1.47 | $6.55 | Direct product-workflow fit |
+| github changelog | 2,400 | +50% | +238% | Low | $4.82 | $6.68 | Strong release/update fit |
+| github portfolio | 720 | 0% | -18% | Low | $2.31 | $8.07 | Career/proof-of-work fit |
+| github release notes | 260 | -18% | +23% | Low | — | — | Niche but exact fit |
+| developer portfolio | 210 | -19% | -35% | Low | $1.00 | $7.45 | Portfolio phrase, but weaker than GitHub-specific |
+
+### Seed Batch: Hiring, Founder, And Release Generator Terms
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| indie hackers | 3,600 | +52% | 0% | Low | $6.19 | $29.87 | Strong community/navigation term |
+| micro saas | 1,000 | -23% | 0% | Low | $2.53 | $15.99 | Founder niche still meaningful |
+| hire ai developers | 720 | +23% | -55% | Medium | $25.60 | $112.68 | Small volume, very high commercial intent |
+| build in public | 390 | 0% | -18% | Low | $6.51 | $22.27 | Useful community/content phrase |
+| product updates | 320 | -19% | -33% | Low | $8.21 | $46.69 | Release-note adjacent, commercial-ish |
+| ai developers for hire | 210 | 0% | -77% | Low | $26.25 | $172.39 | Recruiter/founder intent |
+| github releases api | 90 | 0% | -36% | Low | — | — | Developer implementation phrase |
+| release notes generator | 70 | 0% | -60% | Low | — | — | Tool intent, but small |
+| changelog generator | 30 | -20% | +33% | Low | $4.34 | $7.77 | Small, relevant utility phrase |
+| ai developer portfolio | 10 | 0% | 0% | Low | — | — | Category is not established in search yet |
+
+### Seed Batch: Vibe Coding And AI Coding Comparison
+
+Keyword Planner did not return `vibe coding`, `vibecoding`, `vibe coding tools`, `vibe coding app`, `vibe coding jobs`, `vibe coding reddit`, `vibe coded app`, or `vibe coding website` as provided-keyword rows. It returned broader AI-coding comparison ideas instead.
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| best ai for coding | 12,100 | 0% | 0% | Medium | $5.27 | $23.18 | Strong high-intent comparison term |
+| best coding ai | 5,400 | 0% | 0% | Medium | $6.16 | $25.14 | Same cluster, awkward phrasing but real demand |
+| best ai coding assistant | 1,000 | -33% | -63% | Medium | $5.87 | $26.79 | Tool comparison |
+| best ai for programming | 720 | 0% | -33% | Medium | $4.80 | $20.77 | Tool comparison |
+| ai code review tools | 590 | 0% | +125% | Low | $9.78 | $39.92 | Adjacent high-CPC devtool term |
+| best ai code generator | 480 | -18% | -56% | Medium | $5.38 | $23.56 | Tool comparison |
+| best ai for writing code | 480 | 0% | -19% | High | $4.96 | $23.52 | Paid-search competitive |
+
+### Keyword Planner Implications
+
+- Lead SEO with `GitHub Releases`, `release notes`, and `github changelog` for product pages because they map directly to the app's first job.
+- Use `Claude Code`, `Cursor AI`, `GitHub Copilot`, `AI coding tools`, and `best AI for coding` for content pages, comparisons, and workflow articles. These are traffic pools, not the product's literal category.
+- Treat `vibe coding` as social/category language rather than a dependable Google Ads keyword. It may still be excellent for Reddit, YouTube, X, and community posts.
+- `hire ai developers` and `ai developers for hire` are too expensive for casual paid search, but they validate a future recruiter-facing landing page.
+- `developer portfolio` is weaker than expected. `GitHub portfolio` and release-based proof pages are likely more specific and differentiated.
+
+## Broader Audience Keyword Planner Findings
+
+The next pass widened the seed terms away from product artifacts and toward the people PRBar needs to reach: indie developers, side-project builders, AI-assisted coders, people trying to hire them, and teams talking about velocity. These terms are better for content strategy, subreddit targeting, newsletter topics, and launch language.
+
+### Indie Developer And Side-Project Demand
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| side project | 12,100 | 0% | -18% | Low | $1.50 | $3.50 | Biggest audience phrase; broad but useful |
+| solopreneur | 4,400 | -33% | -19% | Low | $4.28 | $22.72 | Adjacent founder identity |
+| indie hackers | 3,600 | +52% | 0% | Low | $6.19 | $29.87 | Community/navigation term with growth |
+| app ideas | 3,600 | 0% | 0% | Low | $1.41 | $8.06 | Early-stage builder intent |
+| indie developer | 1,300 | +140% | +50% | Low | $3.21 | $9.59 | Direct audience term, growing |
+| micro saas | 1,000 | -23% | 0% | Low | $2.53 | $15.99 | Monetization-focused builder niche |
+| saas ideas | 480 | 0% | -56% | Low | $0.81 | $11.96 | Idea-stage founder intent |
+| build in public | 390 | 0% | -18% | Low | $6.51 | $22.27 | Community/content phrase |
+| side project ideas | 50 | +425% | +425% | Low | — | — | Small but sharply growing |
+| solo developer | 50 | 0% | -22% | Low | — | — | Low search demand despite audience relevance |
+
+Implication: `side project`, `indie developer`, `indie hackers`, `micro saas`, and `app ideas` are better top-of-funnel targets than `developer portfolio`. PRBar should talk to builders who are already trying to ship, package, and show side projects.
+
+### AI-Assisted Builders And Hiring Demand
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| github copilot | 110,000 | +172% | +172% | Low | $2.80 | $12.30 | Mainstream AI coding doorway |
+| ai app builder | 9,900 | +22% | +311% | Medium | $7.92 | $30.32 | Strong no-code/AI-builder demand |
+| ai coding tools | 5,400 | +50% | +179% | Low | $5.79 | $20.77 | Strong comparison/content term |
+| ai code generator | 4,400 | 0% | -45% | Medium | $4.62 | $16.09 | Broad AI coding utility term |
+| ai development | 3,600 | +24% | -33% | Low | $4.82 | $18.40 | Service/category term |
+| ai development companies | 3,600 | +21% | -19% | Low | $22.46 | $132.00 | Commercial services intent |
+| ai developer | 2,400 | +26% | -33% | Medium | $5.98 | $30.82 | Identity/hiring term |
+| ai software development | 1,900 | -32% | -76% | Medium | $7.40 | $26.13 | Service intent, declining |
+| hire ai developer | 720 | +23% | -55% | Medium | $25.60 | $112.68 | Hiring intent, expensive |
+| ai assisted coding | 480 | +23% | +23% | Low | $5.44 | $18.40 | Direct fit for PRBar's audience |
+
+Keyword Planner did not surface `vibe coder`, `hire vibe coder`, `vibe coding developer`, `cursor developer`, or `claude code developer` as provided-keyword rows. That suggests "vibe coder" is likely social language before it is search language. For SEO, use AI coding and AI app builder phrases; for community posts, use vibe coding language.
+
+Implication: the strongest content lane is not "find vibe coders" yet. It is "AI-assisted builders are shipping more, but how do you evaluate and showcase real output?"
+
+### Velocity, PR, And Productivity Demand
+
+| Keyword | Avg. monthly searches | 3 month change | YoY change | Competition | Top page bid low | Top page bid high | Read |
+| --- | ---: | ---: | ---: | --- | ---: | ---: | --- |
+| dora metrics | 8,100 | 0% | 0% | Low | $1.41 | $10.14 | Large team/DevOps measurement term |
+| react developer tools | 2,900 | 0% | -33% | Low | $3.76 | $18.30 | Irrelevant suggestion; shows planner drift |
+| developer productivity | 320 | +53% | -64% | Low | $10.72 | $27.04 | Small but commercial/managerial |
+| dora metrics devops | 260 | 0% | -56% | Medium | $2.71 | $15.82 | Team analytics angle |
+| code review automation | 210 | +91% | -46% | Low | $8.15 | $29.66 | Relevant to AI/PR workflow content |
+| ship faster | 210 | +21% | -47% | Low | $1.88 | $13.98 | Messaging phrase with some demand |
+| engineering velocity | 50 | +25% | -55% | Low | — | — | Small, manager-oriented |
+| software delivery performance | 40 | 0% | -75% | Low | — | — | DevOps niche |
+| pr velocity | 20 | +50% | -25% | Low | — | — | Exists but too small to lead SEO |
+| github copilot productivity | 10 | 0% | 0% | Low | — | — | Good content phrase, not a demand center |
+
+Implication: "PR velocity" is conceptually relevant but too small as a head keyword. Use it in content and product copy, but aim SEO at `developer productivity`, `code review automation`, `DORA metrics`, `AI coding tools`, and tool-specific productivity hooks.
+
+## News And Trend Hooks To Piggyback
+
+These hooks are useful because they connect PRBar to ongoing conversations instead of only to static keywords.
+
+### AI Coding Agents Are Moving Work Into Pull Requests
+
+GitHub announced a Copilot coding agent in May 2025 that can work asynchronously and push commits to draft pull requests. That makes pull requests and release artifacts more important as the visible audit trail of AI-assisted work.
+
+PRBar content angle:
+
+- "When AI agents open PRs, your proof of work moves from commits to shipped releases."
+- "How to show what you actually shipped with Copilot, Codex, Claude Code, or Cursor."
+
+### Tool Rivalry Is Search-Hot
+
+Keyword Planner shows huge demand for `claude code`, `cursor ai`, `github copilot`, and `best ai for coding`. Recent comparison articles and surveys are covering Claude Code, Cursor, Codex, and Copilot as competing workflows.
+
+PRBar content angle:
+
+- "Claude Code vs Cursor vs Copilot: compare tools by what you shipped, not opinions."
+- "The AI coding tool scoreboard should be releases, not prompts."
+
+### Productivity Claims Need Proof
+
+News coverage around Nvidia claimed engineers were producing three times as much code after adopting an internal Cursor-like tool, with bug rates reportedly flat. That kind of claim creates a natural opening for independent builders to ask how they prove their own velocity.
+
+PRBar content angle:
+
+- "If AI makes you 3x faster, where is the receipt?"
+- "How indie developers can show AI-assisted shipping velocity without exposing private repos."
+
+### Vibe Coding Has A Backlash
+
+Recent coverage includes concerns that vibe coding can hurt open source, introduce security issues, or produce low-attention software. That backlash is useful because PRBar can position itself as a credibility layer: real repos, real releases, selected disclosure.
+
+PRBar content angle:
+
+- "Vibe coding needs receipts."
+- "A public shipping card beats a screenshot of your prompt history."
+- "How to show real AI-assisted work without oversharing private code."
+
+### Agentic PR Research Is Emerging
+
+Recent arXiv papers are studying AI-generated pull requests, agent adoption on GitHub, and task-level PR acceptance. This supports a more serious technical content lane around PR acceptance, review friction, release velocity, and human oversight.
+
+PRBar content angle:
+
+- "What AI-generated PRs mean for developer portfolios."
+- "PR acceptance is becoming a career signal for AI-assisted developers."
+
+## Primary User Segments
+
+### 1. AI-Native Indie Builders
+
+These are solo developers, indie hackers, micro-SaaS founders, and side-project builders using Claude Code, Cursor, Codex, Copilot, Windsurf, v0, Lovable, Replit, or Bolt.
+
+Actionable reasons to use PRBar:
+
+- Show real shipping output instead of screenshots, claims, or token usage.
+- Create public proof of work from GitHub Releases and release notes.
+- Choose which repos are included before anything becomes public.
+- Compare shipping rhythm across projects without opening GitHub.
+- Turn messy GitHub activity into a clean founder update.
+- Build credibility in communities skeptical of low-effort AI wrappers.
+
+Likely channels:
+
+- r/vibecoding
+- r/SideProject
+- r/indiehackers
+- r/microsaas
+- r/SaaS
+- Product Hunt
+- X/Twitter build-in-public circles
+- Hacker News "Show HN"
+
+Search phrases they are likely to use:
+
+- vibe coding tools
+- vibe coding apps
+- best AI for coding
+- side project
+- indie developer
+- Claude Code workflow
+- Cursor AI workflow
+- AI coding agents
+- ai app builder
+- ai assisted coding
+- micro saas ideas
+- build in public
+- GitHub portfolio
+- GitHub releases
+- release notes
+- product updates
+
+### 2. High-Velocity Professional Developers
+
+These are engineers who want a portable record of shipped work, especially if much of their impact is hidden in private repos.
+
+Actionable reasons to use PRBar:
+
+- Convert GitHub activity into a portfolio-like proof layer.
+- Preserve private repo confidentiality while showing aggregate momentum.
+- Select repos that represent public/professional work and exclude private/client repos.
+- Tell a better career story than contribution graphs or resumes.
+- Highlight recent velocity during job searches, consulting pitches, or internal reviews.
+- Distinguish "uses AI" from "ships reviewed, merged work."
+
+Likely channels:
+
+- developer portfolio searches
+- GitHub profile optimization content
+- LinkedIn creator posts
+- engineering career communities
+- AI developer communities
+
+Search phrases they are likely to use:
+
+- developer portfolio GitHub
+- GitHub portfolio
+- showcase GitHub projects
+- GitHub releases
+- GitHub release notes
+- AI developer portfolio
+- GitHub analytics portfolio
+- how to improve GitHub profile
+- proof of work developer
+
+### 3. Recruiters And Hiring Managers
+
+These users care less about daily PR charts and more about credible, low-friction evaluation.
+
+Actionable reasons to use PRBar:
+
+- Find builders with recent, sustained shipping momentum.
+- Screen AI-native developers by shipped work, not self-description.
+- See normalized proof signals from GitHub activity.
+- Review real GitHub Releases rather than vague activity claims.
+- Ask better interview questions based on actual project/repo history.
+- Reduce reliance on resumes that flatten technical work into vague bullets.
+
+Likely channels:
+
+- "hire AI developers"
+- "AI developer portfolio"
+- startup hiring communities
+- technical recruiting LinkedIn
+- founder/operator communities
+
+Search phrases they are likely to use:
+
+- hire AI developers
+- hire AI programmers
+- AI developer portfolio
+- GitHub portfolio developer
+- how to evaluate AI developers
+- developer proof of work
+- GitHub profile hiring
+- GitHub releases developer portfolio
+
+### 4. Teams Adopting AI Coding Tools
+
+This is a secondary segment because enterprise engineering analytics is crowded. Still, small teams may want lightweight visibility without buying Swarmia, LinearB, Jellyfish, or Waydev.
+
+Actionable reasons to use PRBar:
+
+- Watch shipping activity without a heavy dashboard.
+- Understand whether AI-assisted work is producing real merged output.
+- Share weekly team shipping summaries.
+- Celebrate shipped work without stack-ranking developers.
+
+Likely channels:
+
+- "GitHub analytics dashboard"
+- "pull request analytics"
+- "developer productivity metrics"
+- small engineering manager communities
+
+Search phrases they are likely to use:
+
+- GitHub analytics dashboard
+- developer productivity metrics
+- engineering productivity metrics
+- pull request analytics GitHub
+- AI coding metrics
+- AI impact on PR metrics
+- GitHub releases
+- release notes generator
+
+## Keyword Clusters
+
+### Highest Relevance
+
+- vibe coding
+- vibe coding tools
+- vibe coding apps
+- vibe coding reddit
+- AI coding tools
+- AI coding agents
+- Claude Code workflow
+- Cursor AI workflow
+- GitHub Copilot agents
+- AI developer portfolio
+- AI agent developer portfolio
+- developer proof of work
+
+### Hot Terms To Ride
+
+These terms are culturally hot or search-hot enough to justify content even if PRBar is not a direct tool replacement:
+
+- `vibe coding`: category education, profiles, social proof, "what counts as shipping?"
+- `Claude Code`: workflow teardown, shareable "what I shipped with Claude Code" cards
+- `Cursor AI`: workflow comparison, builder stories, "Cursor to shipped release" examples
+- `GitHub Copilot`: mainstream AI coding doorway, especially for professional developers
+- `AI coding agents`: emerging category with high CPC and strong future fit
+- `best AI for coding`: comparison intent; PRBar can publish "tools people actually ship with" angle
+
+### Portfolio And Hiring
+
+- developer portfolio
+- developer portfolio GitHub
+- GitHub portfolio
+- showcase GitHub projects
+- AI developer portfolio website
+- hire AI developers
+- hire AI programmers
+- machine-readable developer profile
+
+### PR And Analytics
+
+- pull request analytics
+- GitHub analytics dashboard
+- GitHub analytics portfolio
+- developer productivity metrics
+- PR cycle time
+- merged pull request tracker
+- GitHub activity tracker
+
+### Community And Launch
+
+- build in public
+- indie hacker
+- micro saas
+- side project
+- ship faster code
+- shipping velocity
+- founder update
+
+## Google Autocomplete Findings
+
+Autocomplete suggests that "vibe coding" search demand is now distributed across definition, jobs, tools, apps, websites, Claude workflows, and Reddit. That is useful because PRBar can target both educational SEO and product-intent pages.
+
+Promising page ideas:
+
+- What is a vibe coding portfolio?
+- How to prove AI coding work with GitHub PRs
+- Best vibe coding tools for builders who ship
+- Claude Code workflow examples from real shipped releases
+- Cursor AI workflow examples from real shipped releases
+- AI developer portfolio: what recruiters should look for
+- GitHub analytics for indie hackers
+- GitHub Releases as proof of work
+- Pull request analytics for solo developers
+- Build-in-public metrics that do not feel cringe
+
+## Community Size Proxies
+
+Approximate community signals found during research:
+
+- r/SideProject: estimates vary by source from about 200K to more than 600K members. Best for narrative "I built X" posts and early feedback.
+- r/SaaS: estimates vary from about 200K to more than 400K members. Best for metrics, pricing, failure posts, and case studies.
+- r/indiehackers: about 100K to 117K members. Best for revenue milestones, build-in-public stories, and educational posts.
+- r/vibecoding: emerging, under 50K members in one Reddit SEO guide, with other search snippets suggesting fast 2026 growth. Best for AI-assisted coding tools and vibe-coded SaaS demos.
+- r/nocode: about 180K members. Best for demos and workflow walkthroughs, especially if PRBar frames itself around outcomes rather than code.
+- r/webdev: about 2.1M members in one guide. Best for technical teardowns and open-source/devtool framing.
+- r/growthhacking: about 188K members. Best for experiments with real numbers.
+- r/buildinpublic: about 32K members in one guide. Best for weekly progress and honest milestone posts.
+- r/alphaandbetausers: about 22K to 88K members. Best for beta recruitment.
+- r/IMadeThis: about 440K members. Best for creator-style launches.
+- Product Hunt: third-party 2026 estimates put it around 4.5M to 8.3M monthly visitors, but founder community commentary increasingly frames Reddit and niche communities as better for early qualified feedback.
+- Hacker News / Show HN: useful for devtools and technical credibility. Third-party community guides estimate very high monthly traffic, but front-page outcomes are volatile.
+- Claude Developers Discord: one 2026 community guide reports 61,800+ members. This is likely strong for Claude Code workflow content if posting is allowed by community rules.
+- IndieHackers.com: one 2026 community guide reports 140K members and a 165K newsletter.
+
+These should be treated as directional, not canonical. Reddit member counts move quickly and third-party sources disagree.
+
+## User Tiers By Where They Hang Out
+
+| Tier | Who | Where To Find Them | Best First Offer | SEO Entry Points |
+| --- | --- | --- | --- | --- |
+| Tier 1 | AI-native indie builders | r/vibecoding, r/SideProject, r/microsaas, r/indiehackers, X build-in-public, Claude/Cursor communities | Connect GitHub, pick repos, turn recent Releases into shareable proof cards | `vibe coding`, `Claude Code workflow`, `Cursor AI workflow`, `GitHub releases`, `micro saas` |
+| Tier 2 | Developers building career proof | LinkedIn, GitHub README/profile searches, portfolio content, r/webdev, r/cscareerquestions-adjacent communities | Turn selected repo Releases into a privacy-safe proof-of-work profile | `GitHub portfolio`, `developer portfolio`, `GitHub release notes`, `showcase GitHub projects` |
+| Tier 3 | Recruiters/founders hiring AI builders | LinkedIn, founder communities, HN hiring threads, startup communities | Review builders through real shipped releases and selected repo history | `hire AI developers`, `AI developer portfolio`, `GitHub profile hiring` |
+| Tier 4 | Small teams adopting AI coding | engineering manager communities, DevOps/dev productivity threads, LinkedIn, GitHub analytics searches | Lightweight release/activity visibility without enterprise analytics | `GitHub analytics`, `developer productivity metrics`, `AI coding metrics`, `release notes` |
+
+## Content And Landing Page Ideas
+
+### Awareness Pages
+
+- What is vibe coding, and how do you prove what shipped?
+- Vibe coding portfolios: how to turn AI-assisted work into credible proof
+- Claude Code workflows: from prompt to GitHub Release
+- Cursor AI workflows: how builders actually ship releases
+- AI coding agents and the new proof-of-work problem
+
+### High-Intent Pages
+
+- GitHub Release cards for AI-assisted developers
+- Developer proof-of-work profile from GitHub Releases
+- GitHub analytics for indie hackers
+- Shareable build-in-public cards from GitHub release notes
+- How recruiters can evaluate AI-native developers
+
+### Community Posts
+
+- "I built a way to turn GitHub Releases into shareable proof-of-work cards"
+- "Is GitHub still readable as a portfolio now that everyone uses AI?"
+- "I turned my last few GitHub Releases into a public shipping card."
+- "Token usage is not proof of work. GitHub Releases are closer."
+- "Would you share a public shipping profile if you could choose exactly which repos are included?"
+
+## Competitive Landscape
+
+### Enterprise Engineering Analytics
+
+Examples: Swarmia, LinearB, Jellyfish, Waydev, Athenian, Haystack.
+
+They focus on teams, cycle time, DORA, review bottlenecks, planning, and manager workflows. Swarmia specifically tracks AI-assisted PRs across tools like GitHub Copilot, Cursor, and Claude Code.
+
+PRBar should avoid competing head-on here at first.
+
+### Developer Portfolio Builders
+
+Emerging tools convert GitHub activity into portfolios or structured profiles. Reddit discussions show demand for making GitHub readable to recruiters and AI agents.
+
+PRBar can differentiate by being activity-first and share-native rather than resume-first.
+
+### Vibe Coding Directories And Content Sites
+
+There are growing directories and guides around vibe coding tools. These mostly index tools and tutorials, not verified builder output.
+
+PRBar can become the proof layer adjacent to this ecosystem.
+
+## Naming Notes
+
+`prbar` is precise for a menu bar app, but weak for a web/social/recruiting product. It also hides the emotional job: "show that I ship."
+
+Better naming directions:
+
+- **ShipProof**: strongest literal positioning; clear for recruiting and portfolios.
+- **MergeProof**: keeps the GitHub/PR mechanic visible.
+- **ShipSignal**: good for analytics plus social proof.
+- **VibeProof**: timely and differentiated, but trend-dependent.
+- **ShipGraph**: suggests activity and network.
+- **PRBar**: keep as the data product or local companion if the broader product gets a new brand.
+
+I would avoid names centered on "Viber" because of collision/confusion with the existing messaging app, and "Hi Vibers" because it sounds community-first before the proof mechanism is obvious.
+
+## Recommended Web App Wedge
+
+Start with public/shareable profiles and cards, not a feed.
+
+The first useful web surface could be:
+
+1. Connect GitHub.
+2. Select which repositories are included.
+3. Import GitHub Releases from those repositories.
+4. Create a public "proof of work" card/profile from release notes with privacy controls.
+5. Share it on Reddit, X, LinkedIn, GitHub README, and portfolio sites.
+6. Later allow annotations, screenshots, launch context, discovery for builders, and recruiter/company views.
+
+This keeps the product useful before the network exists. It also fits the current iOS design direction where Cards are the social primitive.
+
+## Recommended SEO Strategy
+
+1. Build the web app around one concrete artifact: a public "shipping proof" profile/card generated from GitHub Releases in selected repos.
+2. Target `vibe coding` and AI tool keywords with educational content, not direct product pages. These are the top-of-funnel terms.
+3. Target `GitHub portfolio`, `developer portfolio`, and `hire AI developers` with product/commercial pages. These are closer to conversion.
+4. Use community posts to validate language before writing many pages. Reddit will reveal whether people prefer "proof of work," "shipping profile," "vibe coding portfolio," "AI developer portfolio," or another phrase.
+5. Avoid leading with `PR analytics` unless speaking to managers. Developers care more about GitHub Releases, shipping proof, momentum, and privacy-safe sharing.
+
+## Sources
+
+- Stack Overflow 2025 Developer Survey, AI section: https://survey.stackoverflow.co/2025/ai
+- GitHub Octoverse 2025: https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/
+- GitHub Universe 2024 press release: https://github.com/newsroom/press-releases/github-universe-2024
+- Google Ads Keyword Planner, Mean-Weasel LLC account, United States, English, Google Search, May 2025 to April 2026 historical range, checked 2026-05-25
+- GitHub Copilot coding agent press release: https://github.com/newsroom/press-releases/coding-agent-for-github-copilot
+- Tom's Hardware on Nvidia internal AI coding productivity: https://www.tomshardware.com/tech-industry/artificial-intelligence/nvidia-now-produces-three-times-as-much-code-as-before-ai-specialized-version-of-cursor-is-being-used-by-over-30-000-nvidia-engineers-internally
+- PC Gamer on "Vibe Coding Kills Open Source": https://www.pcgamer.com/software/ai/vibe-coding-kills-open-source-claims-new-paper-as-its-authors-lament-the-lack-of-human-attention-towards-OSS-products/
+- AIDev paper on AI coding agents and GitHub PRs: https://arxiv.org/abs/2602.09185
+- Task-stratified PR acceptance paper: https://arxiv.org/abs/2602.08915
+- Agentic coding agents adoption paper: https://arxiv.org/abs/2601.18341
+- Swarmia AI impact on PR metrics: https://help.swarmia.com/use-cases/measure-the-productivity-impact-of-ai-tools/ai-impact-on-pr-metrics
+- Swarmia GitHub reporting page: https://www.swarmia.com/github-reporting/
+- Vibe Coding SEO guide: https://gptprompts.ai/vibe-coding
+- seodata.dev keyword API: https://www.seodata.dev/
+- Reddit SEO guide for founders: https://bynapkin.com/guides/reddit
+- Indie hacker communities guide: https://www.vibecontentcreation.com/blog/indie-hacker-communities-where-solo-founders-hang-out
+- Product Hunt launch statistics: https://www.shno.co/marketing-statistics/product-hunt-launch-statistics
+- Guardian on Collins 2025 Word of the Year: https://www.theguardian.com/technology/2025/nov/06/vibe-coding-collins-dictionary-word-of-the-year-2025
+- Reddit thread on machine-readable developer identity: https://www.reddit.com/r/SideProject/comments/1t9tvz8/i_built_a_proof_of_concept_for_something_i_think/
+- Reddit thread on GitHub-to-portfolio conversion: https://www.reddit.com/r/buildinpublic/comments/1sysmwq/my_github_contained_five_years_of_work_history/
