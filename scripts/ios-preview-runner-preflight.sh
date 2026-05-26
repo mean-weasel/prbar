@@ -4,56 +4,135 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-PROJECT="${IOS_PROJECT:-apple/PRBar.xcodeproj}"
-DEVICE_NAME="${IOS_DEVICE_NAME:-iPhone-preview}"
-KEYCHAIN="${IOS_PREVIEW_KEYCHAIN:-login.keychain-db}"
+device_name="${IOS_DEVICE_NAME:-iPhone-preview}"
+scheme="${IOS_SCHEME:-PRBarPreview}"
+project="${IOS_PROJECT:-apple/PRBar.xcodeproj}"
+keychain="${IOS_PREVIEW_KEYCHAIN_PATH:-$HOME/Library/Keychains/login.keychain-db}"
+identity_pattern="${IOS_PREVIEW_SIGNING_IDENTITY_PATTERN:-Apple Development:}"
 
-for command_name in xcodebuild xcrun xcodegen /usr/libexec/PlistBuddy; do
+echo "iOS preview runner preflight"
+echo "User: $(id -un)"
+echo "Home: $HOME"
+echo "Runner service: ${ACTIONS_RUNNER_SVC:-0}"
+echo "Project: $project"
+echo "Scheme: $scheme"
+echo "Device role: $device_name"
+echo "Keychain: $keychain"
+
+for command_name in xcodebuild xcrun xcodegen jq security; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "$command_name is required for iOS preview runner workflows." >&2
     exit 69
   fi
 done
 
-if [[ ! -d "$PROJECT" ]]; then
-  if [[ -x scripts/ios-generate.sh ]]; then
-    ./scripts/ios-generate.sh
-  fi
+if [[ ! -d "$project" ]] && [[ -x scripts/ios-generate.sh ]]; then
+  ./scripts/ios-generate.sh
 fi
 
-if [[ ! -d "$PROJECT" ]]; then
-  echo "Expected Xcode project at '$PROJECT'. Run scripts/ios-generate.sh first." >&2
+if [[ ! -d "$project" ]]; then
+  echo "Expected Xcode project at '$project'. Run scripts/ios-generate.sh first." >&2
+  exit 66
+fi
+
+if [[ ! -f "$keychain" ]]; then
+  echo "Expected keychain does not exist: $keychain" >&2
   exit 66
 fi
 
 if [[ -n "${IOS_PREVIEW_KEYCHAIN_PASSWORD:-}" ]]; then
-  security unlock-keychain -p "$IOS_PREVIEW_KEYCHAIN_PASSWORD" "$KEYCHAIN"
-  security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
-  security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$IOS_PREVIEW_KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
+  echo "Unlocking preview signing keychain."
+  security unlock-keychain -p "$IOS_PREVIEW_KEYCHAIN_PASSWORD" "$keychain"
+  security set-keychain-settings -lut "${IOS_PREVIEW_KEYCHAIN_TIMEOUT:-21600}" "$keychain"
+
+  current_keychains="$(security list-keychains -d user | tr -d '"')"
+  if ! printf '%s\n' "$current_keychains" | grep -Fxq "$keychain"; then
+    # Keep existing user keychains while making the signing keychain visible to launchd jobs.
+    # shellcheck disable=SC2086
+    security list-keychains -d user -s "$keychain" $current_keychains
+  fi
+
+  security default-keychain -d user -s "$keychain"
+
+  if [[ "${IOS_PREVIEW_SET_KEY_PARTITION_LIST:-0}" == "1" ]]; then
+    echo "Refreshing key partition list for non-interactive codesign access."
+    security set-key-partition-list \
+      -S apple-tool:,apple:,codesign: \
+      -s \
+      -k "$IOS_PREVIEW_KEYCHAIN_PASSWORD" \
+      "$keychain" >/dev/null
+  fi
+else
+  echo "IOS_PREVIEW_KEYCHAIN_PASSWORD is not set; assuming the keychain is already unlocked."
 fi
 
-if ! security find-identity -v -p codesigning | grep -Eq 'Apple Development|iPhone Developer'; then
-  echo "No valid codesigning identity is visible to the runner." >&2
-  echo "Install an Apple Development or iPhone Developer signing identity, or unlock the signing keychain." >&2
-  exit 70
+echo "Default keychain:"
+security default-keychain -d user
+
+echo "Visible signing identities:"
+identities="$(security find-identity -v -p codesigning "$keychain" || true)"
+printf '%s\n' "$identities"
+if ! printf '%s\n' "$identities" | grep -q "$identity_pattern"; then
+  cat >&2 <<EOF
+No codesigning identity matching '$identity_pattern' was visible in $keychain.
+
+For the self-hosted runner service, set the GitHub secret IOS_PREVIEW_KEYCHAIN_PASSWORD
+to the login or dedicated preview keychain password, then retry.
+EOF
+  exit 65
 fi
 
-device_id="$(IOS_DEVICE_NAME="$DEVICE_NAME" ./scripts/ios-resolve-preview-device.sh)"
-echo "Resolved $DEVICE_NAME as $device_id"
+if command -v automationmodetool >/dev/null 2>&1; then
+  automation_status="$(automationmodetool help 2>&1 || true)"
+  printf '%s\n' "$automation_status"
+  if ! printf '%s\n' "$automation_status" | grep -q 'DOES NOT REQUIRE user authentication'; then
+    cat >&2 <<EOF
+Automation Mode still requires local user authentication.
 
-lock_state_json="$(mktemp)"
-if ! xcrun devicectl device info lockState --device "$device_id" --timeout 20 --json-output "$lock_state_json" >/dev/null; then
-  rm -f "$lock_state_json"
-  echo "The preview device '$DEVICE_NAME' is listed, but CoreDevice cannot query its lock state." >&2
-  echo "Unlock and trust the iPhone, make sure Developer Mode is enabled, then retry." >&2
-  exit 66
+Run this once from an interactive admin session on the runner Mac:
+  automationmodetool enable-automationmode-without-authentication
+EOF
+    exit 69
+  fi
+else
+  echo "automationmodetool is unavailable; continuing."
 fi
 
-if grep -Eiq '"isLocked"[[:space:]]*:[[:space:]]*true|"lockState"[[:space:]]*:[[:space:]]*"locked"|"deviceLockState"[[:space:]]*:[[:space:]]*"locked"' "$lock_state_json"; then
-  rm -f "$lock_state_json"
-  echo "The preview device '$DEVICE_NAME' is locked. Unlock it before running preview workflows." >&2
-  exit 66
-fi
-rm -f "$lock_state_json"
+echo "Resolving preview device."
+resolver_output="$(IOS_DEVICE_NAME="$device_name" IOS_SCHEME="$scheme" IOS_PROJECT="$project" ./scripts/ios-resolve-preview-device.sh shell)"
+eval "$resolver_output"
+export IOS_DEVICE_ID IOS_XCODE_DEVICE_ID IOS_DESTINATION
 
+echo "CoreDevice id: $IOS_DEVICE_ID"
+echo "Xcode destination id: $IOS_XCODE_DEVICE_ID"
+echo "Xcode destination: $IOS_DESTINATION"
+
+details_json="$(mktemp "${TMPDIR:-/tmp}/prbar-preview-device-details.XXXXXX")"
+lock_json="$(mktemp "${TMPDIR:-/tmp}/prbar-preview-device-lock.XXXXXX")"
+trap 'rm -f "$details_json" "$lock_json"' EXIT
+
+xcrun devicectl device info details \
+  --device "$IOS_DEVICE_ID" \
+  --json-output "$details_json" \
+  --quiet \
+  --timeout 10 >/dev/null
+
+xcrun devicectl device info lockState \
+  --device "$IOS_DEVICE_ID" \
+  --json-output "$lock_json" \
+  --quiet \
+  --timeout 10 >/dev/null
+
+echo "Device lock state:"
+jq -r '.result | "  passcodeRequired=\(.passcodeRequired) unlockedSinceBoot=\(.unlockedSinceBoot)"' "$lock_json"
+
+passcode_required="$(jq -r '.result.passcodeRequired' "$lock_json")"
+if [[ "$passcode_required" == "true" ]]; then
+  echo "The preview iPhone is locked. Unlock $device_name and retry." >&2
+  exit 69
+fi
+
+echo "Xcode version:"
 xcodebuild -version
+
+echo "Preflight passed."

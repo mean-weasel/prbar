@@ -47,13 +47,16 @@ of scope until the local product loop proves the provider and refresh behavior.
 
 ## iOS Preview Runner
 
-Physical iPhone preview testing uses a self-hosted macOS runner with labels
-`self-hosted`, `macOS`, `prbar-ios`, and `iphone-preview`.
+Physical iPhone preview testing uses a repo-level self-hosted macOS runner,
+mirroring the `issuectl` preview-device pattern. The intended runner is named
+`prbar-iphone-preview` and has labels `self-hosted`, `macOS`, `ARM64`,
+`prbar-ios`, and `iphone-preview`.
 
 The runner Mac needs:
 
 - Xcode with iOS device support installed.
 - XcodeGen available on `PATH`.
+- `jq` available on `PATH`.
 - A trusted, unlocked physical iPhone named `iPhone-preview`.
 - A signing identity visible to the GitHub Actions runner service.
 - The secret `IOS_DEVELOPMENT_TEAM` when the runner should pass an explicit Apple development team to `xcodebuild`.
