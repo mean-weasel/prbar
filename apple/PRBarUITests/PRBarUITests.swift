@@ -18,4 +18,28 @@ final class PRBarUITests: XCTestCase {
     app.tabBars.buttons["More"].tap()
     XCTAssertTrue(app.staticTexts["Menu"].waitForExistence(timeout: 2))
   }
+
+  @MainActor
+  func testPRCalendarAndRepoDistributionAreReachable() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Distribution by repo"].exists)
+    app.buttons["May 23"].tap()
+    XCTAssertTrue(app.staticTexts["1 merged"].waitForExistence(timeout: 2))
+  }
+
+  @MainActor
+  func testReleasesCalendarShowsSelectedReleaseDetail() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    app.tabBars.buttons["Releases"].tap()
+    XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
+    app.buttons["May 21"].tap()
+    XCTAssertTrue(app.staticTexts["v1.0.0 Tagged v1.0.0"].waitForExistence(timeout: 2))
+  }
 }
