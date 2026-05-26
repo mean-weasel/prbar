@@ -13,6 +13,7 @@ Landing page: https://mean-weasel.github.io/prbar/
 - Watch merged pull request activity from the macOS menu bar.
 - Scan activity over a configurable time window.
 - Break activity down by repository.
+- Create shareable Activity and Release cards as images.
 - Use sample data immediately, or provide a GitHub token for live data.
 - Keep the previous activity visible when refreshes fail.
 
@@ -67,8 +68,9 @@ PR_MENU_BAR_GITHUB_TOKEN=github_pat_xxx make run
 ```
 
 The token needs repository read access for the repositories you want to track. Missing
-or blank tokens keep the app on sample data. OAuth, keychain storage, signing,
-notarization, and distribution are intentionally out of scope for this prototype.
+or blank tokens keep the app on sample data. OAuth, keychain storage, Developer ID
+signing, notarization, and downloadable app distribution are intentionally out of scope
+for this prototype.
 In-app GitHub sign-in and credential storage remain an open product decision; the
 environment-token path is the supported live-data path for now.
 
@@ -90,6 +92,13 @@ failures include the reset time when GitHub sends one.
 - Product video: `assets/pr-menu.mp4`
 - Social preview image: `assets/social-preview.png`
 - Favicon: `assets/favicon.svg`
+
+## Releases
+
+GitHub release notes are produced by semantic-release from conventional commit
+titles on `main`. See `Docs/ReleaseReadiness.md` for the current release candidate,
+bundle version, and the remaining Developer ID/notarization work needed before
+attaching a downloadable Mac app.
 
 ## Guardrails
 
