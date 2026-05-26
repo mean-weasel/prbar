@@ -57,6 +57,34 @@ struct GitHubAPIRequest: Equatable {
     GitHubAPIRequest(path: "/user/orgs")
   }
 
+  static func latestReleases(
+    repositoryID: String,
+    page: Int = 1,
+    perPage: Int = 1
+  ) -> GitHubAPIRequest {
+    GitHubAPIRequest(
+      path: "/repos/\(repositoryID)/releases",
+      queryItems: [
+        URLQueryItem(name: "per_page", value: "\(perPage)"),
+        URLQueryItem(name: "page", value: "\(page)"),
+      ]
+    )
+  }
+
+  static func tags(
+    repositoryID: String,
+    page: Int = 1,
+    perPage: Int = 1
+  ) -> GitHubAPIRequest {
+    GitHubAPIRequest(
+      path: "/repos/\(repositoryID)/tags",
+      queryItems: [
+        URLQueryItem(name: "per_page", value: "\(perPage)"),
+        URLQueryItem(name: "page", value: "\(page)"),
+      ]
+    )
+  }
+
   static func mergedPullRequests(
     repositoryID: String,
     since: Date,

@@ -4,6 +4,7 @@ struct GitHubRepository: Decodable, Equatable {
   var fullName: String
   var owner: Owner
   var name: String
+  var isPrivate: Bool
   var permissions: Permissions?
 
   var canPull: Bool {
@@ -22,7 +23,8 @@ struct GitHubRepository: Decodable, Equatable {
       colorHex: RepositoryColor.hexColor(for: fullName),
       weeklyCounts: Array(repeating: 0, count: bucketCount),
       dailyCounts: Array(repeating: 0, count: dailyBucketCount),
-      isIncluded: isIncluded
+      isIncluded: isIncluded,
+      isPrivate: isPrivate
     )
   }
 
@@ -34,10 +36,20 @@ struct GitHubRepository: Decodable, Equatable {
     var pull: Bool?
   }
 
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    fullName = try container.decode(String.self, forKey: .fullName)
+    owner = try container.decode(Owner.self, forKey: .owner)
+    name = try container.decode(String.self, forKey: .name)
+    isPrivate = try container.decodeIfPresent(Bool.self, forKey: .isPrivate) ?? false
+    permissions = try container.decodeIfPresent(Permissions.self, forKey: .permissions)
+  }
+
   private enum CodingKeys: String, CodingKey {
     case fullName = "full_name"
     case owner
     case name
+    case isPrivate = "private"
     case permissions
   }
 }

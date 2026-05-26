@@ -43,5 +43,6 @@ enum PRActivityDataSource: Equatable {
 
 struct PRActivityProviderSelection {
   var provider: PRActivityProviding
+  var releaseProvider: ReleaseMomentProvider
   var dataSource: PRActivityDataSource
 }
