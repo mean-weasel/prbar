@@ -3,12 +3,6 @@ name: iOS
 on:
   pull_request:
     branches: [main]
-    paths:
-      - apple/**
-      - scripts/ios-*.sh
-      - .github/workflows/ios.yml
-      - package.json
-      - package-lock.json
   merge_group:
   push:
     branches: [main]
@@ -39,7 +33,28 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Detect iOS changes
+        id: ios_changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          if printf '%s\n' "$changed_files" | grep -Eq '^(apple/|scripts/ios-|\.github/workflows/ios\.yml$|package\.json$|package-lock\.json$)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Select Xcode
+        if: github.event_name != 'pull_request' || steps.ios_changes.outputs.run == 'true'
         run: |
           if [ -d /Applications/Xcode_16.4.app ]; then
             sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
@@ -48,17 +63,24 @@ jobs:
           fi
           xcodebuild -version
       - name: Install xcodegen
+        if: github.event_name != 'pull_request' || steps.ios_changes.outputs.run == 'true'
         run: brew install xcodegen
       - name: Build
+        if: github.event_name != 'pull_request' || steps.ios_changes.outputs.run == 'true'
         run: ./scripts/ios-build.sh
       - name: Unit tests
+        if: github.event_name != 'pull_request' || steps.ios_changes.outputs.run == 'true'
         env:
           IOS_TEST_ONLY: PRBarTests
         run: ./scripts/ios-test.sh
       - name: UI smoke
+        if: github.event_name != 'pull_request' || steps.ios_changes.outputs.run == 'true'
         env:
           IOS_UI_SMOKE_PROFILE: ${{ inputs.smoke_profile || 'pr' }}
         run: ./scripts/ios-ui-smoke.sh
+      - name: Skip iOS checks
+        if: github.event_name == 'pull_request' && steps.ios_changes.outputs.run != 'true'
+        run: echo "No iOS files changed; reporting required iOS check as skipped."
       - name: Upload iOS test results
         if: failure()
         uses: actions/upload-artifact@v7
