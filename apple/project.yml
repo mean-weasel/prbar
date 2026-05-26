@@ -41,6 +41,7 @@ targets:
       PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.preview
       PRODUCT_NAME: PRBarPreview
       GENERATE_INFOPLIST_FILE: YES
+      DEVELOPMENT_TEAM: B3A6AN2HA4
       CODE_SIGN_STYLE: Automatic
   PRBarTests:
     type: bundle.unit-test
@@ -86,6 +87,7 @@ targets:
         GENERATE_INFOPLIST_FILE: true
         PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.preview.uitests
         TEST_TARGET_NAME: PRBarPreview
+        DEVELOPMENT_TEAM: B3A6AN2HA4
         CODE_SIGN_STYLE: Automatic
         BUNDLE_LOADER: ""
 schemes:
