@@ -7,7 +7,6 @@ on:
       - apple/**
       - scripts/ios-*.sh
       - .github/workflows/ios.yml
-      - project.yml
       - package.json
       - package-lock.json
   push:
@@ -16,7 +15,6 @@ on:
       - apple/**
       - scripts/ios-*.sh
       - .github/workflows/ios.yml
-  merge_group:
   workflow_dispatch:
     inputs:
       smoke_profile:
