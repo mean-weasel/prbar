@@ -63,6 +63,19 @@ if [[ -n "${IOS_PREVIEW_KEYCHAIN_PASSWORD:-}" ]]; then
       "$keychain" >/dev/null
   fi
 else
+  if [[ "${IOS_PREVIEW_SET_KEY_PARTITION_LIST:-0}" == "1" ]]; then
+    cat >&2 <<EOF
+IOS_PREVIEW_KEYCHAIN_PASSWORD is required when IOS_PREVIEW_SET_KEY_PARTITION_LIST=1.
+
+Set the GitHub secret IOS_PREVIEW_KEYCHAIN_PASSWORD to the password for:
+  $keychain
+
+This lets the self-hosted runner refresh key partition access for non-interactive
+codesign. Without it, physical iOS preview builds can fail with errSecInternalComponent.
+EOF
+    exit 65
+  fi
+
   echo "IOS_PREVIEW_KEYCHAIN_PASSWORD is not set; assuming the keychain is already unlocked."
 fi
 
