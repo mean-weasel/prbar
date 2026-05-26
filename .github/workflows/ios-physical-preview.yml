@@ -36,7 +36,7 @@ jobs:
       IOS_UI_SMOKE_PROFILE: ${{ inputs.smoke_profile }}
       IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
       IOS_XCODEBUILD_EXTRA_ARGS: -allowProvisioningUpdates -allowProvisioningDeviceRegistration
-      IOS_PREVIEW_KEYCHAIN_PASSWORD: ${{ secrets.IOS_PREVIEW_KEYCHAIN_PASSWORD }}
+      IOS_PREVIEW_KEYCHAIN_PASSWORD: ${{ secrets.IOS_PREVIEW_KEYCHAIN_PASSWORD || secrets.MACOS_KEYCHAIN_PASSWORD }}
       IOS_PREVIEW_SET_KEY_PARTITION_LIST: '1'
     steps:
       - uses: actions/checkout@v6
