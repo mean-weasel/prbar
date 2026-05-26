@@ -73,12 +73,19 @@ struct CalendarDay: Identifiable, Equatable {
     return formatter.string(from: date)
   }
 
-  func accessibilityLabel(isSelected: Bool) -> String {
+  func accessibilityLabel(
+    isSelected: Bool,
+    countLabel: (Int) -> String = Self.defaultAccessibilityCountLabel
+  ) -> String {
     var label = "\(monthName) \(dayNumber), \(isSelected ? "selected" : "not selected")"
     if count > 0 {
-      label += ", \(count) \(count == 1 ? "pull request" : "pull requests")"
+      label += ", \(count) \(countLabel(count))"
     }
     return label
+  }
+
+  static func defaultAccessibilityCountLabel(for count: Int) -> String {
+    count == 1 ? "item" : "items"
   }
 
   static func days(endingAt endDate: Date, range: ActivityRange) -> [CalendarDay] {

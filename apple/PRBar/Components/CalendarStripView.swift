@@ -3,11 +3,26 @@ import SwiftUI
 struct CalendarStripView: View {
   var days: [CalendarDay]
   @Binding var selectedDate: Date
+  var countLabel: (Int) -> String
+
+  init(
+    days: [CalendarDay],
+    selectedDate: Binding<Date>,
+    countLabel: @escaping (Int) -> String = CalendarDay.defaultAccessibilityCountLabel
+  ) {
+    self.days = days
+    self._selectedDate = selectedDate
+    self.countLabel = countLabel
+  }
 
   var body: some View {
     HStack(spacing: 8) {
       ForEach(days) { day in
-        CalendarDateButton(day: day, isSelected: CalendarDay.isSameDay(day.date, selectedDate)) {
+        CalendarDateButton(
+          day: day,
+          isSelected: CalendarDay.isSameDay(day.date, selectedDate),
+          countLabel: countLabel
+        ) {
           selectedDate = day.date
         }
         .frame(maxWidth: .infinity)
@@ -19,6 +34,7 @@ struct CalendarStripView: View {
 private struct CalendarDateButton: View {
   var day: CalendarDay
   var isSelected: Bool
+  var countLabel: (Int) -> String
   var action: () -> Void
 
   var body: some View {
@@ -39,7 +55,7 @@ private struct CalendarDateButton: View {
       .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
     .buttonStyle(.plain)
-    .accessibilityLabel(day.accessibilityLabel(isSelected: isSelected))
+    .accessibilityLabel(day.accessibilityLabel(isSelected: isSelected, countLabel: countLabel))
   }
 }
 

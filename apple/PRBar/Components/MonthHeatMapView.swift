@@ -3,9 +3,20 @@ import SwiftUI
 struct MonthHeatMapView: View {
   var days: [CalendarDay]
   @Binding var selectedDate: Date
+  var countLabel: (Int) -> String
 
   private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
   private let weekdaySymbols = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+  init(
+    days: [CalendarDay],
+    selectedDate: Binding<Date>,
+    countLabel: @escaping (Int) -> String = CalendarDay.defaultAccessibilityCountLabel
+  ) {
+    self.days = days
+    self._selectedDate = selectedDate
+    self.countLabel = countLabel
+  }
 
   var body: some View {
     LazyVGrid(columns: columns, spacing: 8) {
@@ -44,7 +55,7 @@ struct MonthHeatMapView: View {
           .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(day.accessibilityLabel(isSelected: isSelected))
+        .accessibilityLabel(day.accessibilityLabel(isSelected: isSelected, countLabel: countLabel))
       }
     }
   }
