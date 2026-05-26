@@ -4,7 +4,7 @@ DESTINATION := platform=macOS
 DERIVED_DATA := build
 APP_BINARY := $(DERIVED_DATA)/Build/Products/Debug/PRMenuBar.app/Contents/MacOS/PRMenuBar
 
-.PHONY: generate format-check file-size-check build test refresh-benchmark coverage-report app-smoke run run-live ci-local clean
+.PHONY: generate format-check file-size-check build test refresh-benchmark coverage-report app-smoke package-release run run-live ci-local clean
 .PHONY: ios-generate ios-build ios-test ios-ui-smoke ios-ci-local
 
 generate:
@@ -54,6 +54,9 @@ app-smoke: generate
 		CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO
 	test -d "$(DERIVED_DATA)/Build/Products/Release/PRMenuBar.app"
 	./scripts/app-smoke.sh "$(DERIVED_DATA)/Build/Products/Release/PRMenuBar.app"
+
+package-release:
+	./scripts/package-macos-release.sh
 
 # Direct exec (not `open`) so env vars propagate to ProcessInfo.processInfo.environment.
 run: build
