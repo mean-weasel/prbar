@@ -67,7 +67,7 @@ struct PRsView: View {
       Spacer()
 
       NavigationLink {
-        RepositorySetupPlaceholderView(repositories: store.includedRepositories)
+        RepositorySetupView(repositories: store.includedRepositories)
       } label: {
         Label("\(store.includedRepositories.count) repos", systemImage: "folder.badge.gearshape")
           .labelStyle(.iconOnly)
@@ -82,7 +82,11 @@ struct PRsView: View {
 
   @ViewBuilder
   private var calendar: some View {
-    ActivityCalendarView(days: calendarDays, range: store.prRange, selectedDate: $store.selectedPRDate)
+    if store.prRange == .month {
+      MonthHeatMapView(days: calendarDays, selectedDate: $store.selectedPRDate, countLabel: pullRequestCountLabel)
+    } else {
+      CalendarStripView(days: calendarDays, selectedDate: $store.selectedPRDate, countLabel: pullRequestCountLabel)
+    }
   }
 
   private var selectedDayMetric: some View {
@@ -140,6 +144,10 @@ struct PRsView: View {
     formatter.dateFormat = "MMM d"
     return formatter.string(from: date)
   }
+
+  private func pullRequestCountLabel(for count: Int) -> String {
+    count == 1 ? "pull request" : "pull requests"
+  }
 }
 
 private struct DailyPRBarChart: View {
@@ -174,93 +182,6 @@ private struct DailyPRBarChart: View {
   }
 }
 
-struct ActivityCalendarView: View {
-  var days: [CalendarDay]
-  var range: ActivityRange
-  @Binding var selectedDate: Date
-  var onSelect: ((Date) -> Void)?
-
-  private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
-  private let weekdaySymbols = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
-  var body: some View {
-    if range == .month {
-      LazyVGrid(columns: columns, spacing: 8) {
-        ForEach(weekdaySymbols, id: \.self) { symbol in
-          Text(symbol)
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity)
-        }
-
-        ForEach(0..<CalendarDay.leadingWeekdayPlaceholderCount(for: days), id: \.self) { _ in
-          Color.clear
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .accessibilityHidden(true)
-        }
-
-        ForEach(days) { day in
-          dateButton(for: day, minHeight: 44)
-        }
-      }
-    } else {
-      HStack(spacing: 8) {
-        ForEach(days) { day in
-          dateButton(for: day, minHeight: 56)
-            .frame(maxWidth: .infinity)
-        }
-      }
-    }
-  }
-
-  private func dateButton(for day: CalendarDay, minHeight: CGFloat) -> some View {
-    let isSelected = CalendarDay.isSameDay(day.date, selectedDate)
-
-    return Button {
-      selectedDate = day.date
-      onSelect?(day.date)
-    } label: {
-      VStack(spacing: 4) {
-        Text("\(day.dayNumber)")
-          .font(range == .month ? .subheadline.weight(.semibold) : .headline)
-          .monospacedDigit()
-        if day.count > 0 {
-          Text("\(day.count)")
-            .font(.caption2.weight(.semibold))
-            .monospacedDigit()
-        }
-      }
-      .frame(maxWidth: .infinity, minHeight: minHeight)
-      .foregroundStyle(isSelected ? .white : .primary)
-      .background(tileColor(for: day, isSelected: isSelected))
-      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel(shortDateLabel(for: day.date))
-  }
-
-  private func tileColor(for day: CalendarDay, isSelected: Bool) -> Color {
-    if isSelected {
-      return PRBarTheme.accent
-    }
-
-    if range == .month, day.count > 0 {
-      return PRBarTheme.accent.opacity(0.18 + min(Double(day.count), 6) * 0.08)
-    }
-
-    return Color(.secondarySystemBackground)
-  }
-
-  private func shortDateLabel(for date: Date) -> String {
-    let formatter = DateFormatter()
-    formatter.calendar = Calendar(identifier: .gregorian)
-    formatter.locale = Locale(identifier: "en_US_POSIX")
-    formatter.timeZone = TimeZone(secondsFromGMT: 0)
-    formatter.dateFormat = "MMM d"
-    return formatter.string(from: date)
-  }
-}
-
 private struct PRRepositoryDetailView: View {
   var repository: Repository?
   var pullRequests: [PullRequest]
@@ -280,23 +201,6 @@ private struct PRRepositoryDetailView: View {
       }
     }
     .navigationTitle(repository?.name ?? "Repository")
-  }
-}
-
-private struct RepositorySetupPlaceholderView: View {
-  var repositories: [Repository]
-
-  var body: some View {
-    List(repositories) { repository in
-      VStack(alignment: .leading, spacing: 4) {
-        Text(repository.name)
-          .font(.subheadline.weight(.semibold))
-        Text(repository.reason)
-          .font(.caption)
-          .foregroundStyle(.secondary)
-      }
-    }
-    .navigationTitle("Repositories")
   }
 }
 

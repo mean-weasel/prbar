@@ -57,7 +57,8 @@ struct ReleasesView: View {
 
       Spacer()
 
-      Button {
+      NavigationLink {
+        RepositorySetupView(repositories: store.includedRepositories)
       } label: {
         Label("\(store.includedRepositories.count) repos", systemImage: "folder")
           .labelStyle(.iconOnly)
@@ -66,14 +67,20 @@ struct ReleasesView: View {
           .background(Color(.secondarySystemBackground))
           .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
       }
-      .buttonStyle(.plain)
       .accessibilityLabel("\(store.includedRepositories.count) repositories")
     }
   }
 
   @ViewBuilder
   private var calendar: some View {
-    ActivityCalendarView(days: calendarDays, range: store.releaseRange, selectedDate: $store.selectedReleaseDate) { date in
+    Group {
+      if store.releaseRange == .month {
+        MonthHeatMapView(days: calendarDays, selectedDate: $store.selectedReleaseDate, countLabel: releaseCountLabel)
+      } else {
+        CalendarStripView(days: calendarDays, selectedDate: $store.selectedReleaseDate, countLabel: releaseCountLabel)
+      }
+    }
+    .onChange(of: store.selectedReleaseDate) { _, date in
       store.selectedReleaseID = releases(on: date).first?.id
     }
   }
@@ -136,6 +143,10 @@ struct ReleasesView: View {
     formatter.timeZone = TimeZone(secondsFromGMT: 0)
     formatter.dateFormat = "MMMM d"
     return formatter.string(from: date)
+  }
+
+  private func releaseCountLabel(for count: Int) -> String {
+    count == 1 ? "release" : "releases"
   }
 
   private var fixtureCalendar: Calendar {

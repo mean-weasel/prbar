@@ -27,7 +27,7 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["Distribution by repo"].exists)
-    app.buttons["May 23"].tap()
+    app.buttons["May 23, not selected, 1 pull request"].tap()
     XCTAssertTrue(app.staticTexts["1 merged"].waitForExistence(timeout: 2))
   }
 
@@ -39,7 +39,7 @@ final class PRBarUITests: XCTestCase {
 
     app.tabBars.buttons["Releases"].tap()
     XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
-    app.buttons["May 21"].tap()
+    app.buttons["May 21, not selected, 1 release"].tap()
     XCTAssertTrue(app.staticTexts["v1.0.0 Tagged v1.0.0"].waitForExistence(timeout: 2))
   }
 }
