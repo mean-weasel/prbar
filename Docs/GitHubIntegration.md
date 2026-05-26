@@ -64,3 +64,16 @@ Physical preview workflows are manual by default, run only the checked-out
 workflow ref, and share one concurrency group so the preview iPhone is not used
 by multiple jobs at the same time. Pull requests use simulator CI unless a
 maintainer explicitly dispatches the physical preview workflow.
+
+Use the default `device_name` input when the phone is named `iPhone-preview`.
+If Xcode reports a different name, pass that exact value to the manual workflow:
+
+```bash
+gh workflow run "iOS Preview Runner Health" --ref main -f device_name="iPhone-preview"
+gh workflow run "iOS Physical Preview" --ref main -f smoke_profile=pr -f device_name="iPhone-preview"
+gh workflow run "iOS Preview Install" --ref main -f device_name="iPhone-preview"
+```
+
+The health and preview workflows list attached devices even when preflight
+fails, which makes it easier to distinguish runner-label problems from a
+locked, untrusted, offline, or differently named iPhone.

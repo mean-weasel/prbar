@@ -2,6 +2,11 @@ name: iOS Preview Runner Health
 
 on:
   workflow_dispatch:
+    inputs:
+      device_name:
+        description: Physical iPhone name reported by Xcode
+        required: true
+        default: iPhone-preview
 
 concurrency:
   group: ios-preview-device
@@ -16,7 +21,7 @@ jobs:
     runs-on: [self-hosted, macOS, prbar-ios, iphone-preview]
     timeout-minutes: 10
     env:
-      IOS_DEVICE_NAME: iPhone-preview
+      IOS_DEVICE_NAME: ${{ inputs.device_name }}
       IOS_PROJECT: apple/PRBar.xcodeproj
       IOS_SCHEME: PRBarPreview
       IOS_UI_SCHEME: PRBarPreview
@@ -30,4 +35,5 @@ jobs:
       - name: Runner preflight
         run: ./scripts/ios-preview-runner-preflight.sh
       - name: List devices
+        if: always()
         run: ./scripts/ios-list-devices.sh
