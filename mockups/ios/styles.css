@@ -197,10 +197,12 @@ button {
 .notes-panel,
 .moment,
 .empty-state,
+.export-summary,
 .settings-list,
 .review-notes,
 .list-panel,
 .repo-mix,
+.calendar-panel,
 .menu-list,
 .toggle-list,
 .repo-list {
@@ -213,7 +215,8 @@ button {
 .source-card,
 .release-focus,
 .notes-panel,
-.empty-state {
+.empty-state,
+.export-summary {
   padding: 14px;
 }
 
@@ -226,6 +229,35 @@ button {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.export-summary {
+  display: grid;
+  gap: 0;
+}
+
+.export-summary p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+}
+
+.export-summary p:first-child {
+  border-top: 0;
+}
+
+.export-summary span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.export-summary strong {
+  font-size: 12px;
+  text-align: right;
 }
 
 .segmented,
@@ -262,6 +294,138 @@ button {
 
 .theme-grid button:last-child {
   grid-column: 1 / -1;
+}
+
+.calendar-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.calendar-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.calendar-heading h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.calendar-heading span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.day-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.day-strip button,
+.month-grid button {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--ink);
+}
+
+.day-strip button {
+  min-height: 58px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+
+.day-strip span,
+.month-grid span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.day-strip strong,
+.month-grid strong {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.day-strip small,
+.month-grid small {
+  min-height: 12px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.day-strip button.is-active-day,
+.month-grid button.is-active-day {
+  background: #dcfce7;
+  border-color: #bbf7d0;
+}
+
+.day-strip button.is-warm,
+.month-grid button.is-warm {
+  background: #bae6fd;
+  border-color: #7dd3fc;
+}
+
+.day-strip button.is-hot,
+.month-grid button.is-hot {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
+}
+
+.day-strip button.is-hot span,
+.day-strip button.is-hot small,
+.month-grid button.is-hot span,
+.month-grid button.is-hot small {
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.day-strip button.is-selected,
+.month-grid button.is-selected {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.month-grid em {
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  text-align: center;
+}
+
+.month-grid i {
+  min-height: 36px;
+}
+
+.month-grid button {
+  min-height: 36px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+}
+
+.month-grid button span,
+.month-grid button small {
+  display: none;
 }
 
 .chart {
@@ -633,6 +797,10 @@ button {
 
 .source-card {
   background: #f8fafc;
+}
+
+.export-note {
+  padding: 12px;
 }
 
 .share-card {

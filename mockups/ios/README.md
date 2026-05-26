@@ -11,15 +11,16 @@ Open `mockups/ios/index.html` in a browser to review:
 - Privacy defaults before sharing
 - Sync and recovery states for connecting, stale data, reconnect, rate limits, no repos, no PRs, and no releases
 - More menu with Repos, Settings, Privacy, Sample Data, and About
-- PRs summary in Day / Week / Month ranges
+- PRs summary in Day / Week / Month ranges with tappable calendar days
 - PRs detail from included repos, with repo drill-down and distribution views
-- Shipping moments from included repos: GitHub Releases plus tagged versions
+- Shipping moments from included repos: GitHub Releases plus tagged versions, organized by calendar day
+- Releases Day / Week / Month views with a weekly strip and compact monthly heat map
 - Repository inclusion controls
-- Share composer from PR or release sources
-- Front/back card flip, with release evidence aggregated on the back
-- Share sheet choices for front, back, both sides, captions, image saves, and messages
+- Work-card composer from PR or release sources
+- Public/evidence card sides, with release evidence aggregated on the evidence side
+- Export sheet choices for public-side image, saved image, copied image, captions, and optional evidence-side exports
 - Clean, Terminal, Launch, Hype, and Minimal share-card themes
-- Edit Card sheet for style and privacy controls that update the preview
+- Style & Privacy sheet for controls that update the preview
 
 This prototype is fixture-backed and does not call GitHub. Native iOS implementation should wait until this package is reviewed.
 
@@ -43,3 +44,5 @@ Review links can open specific states with query parameters, for example `?tab=s
 | Private share warning | `?tab=share&private-warning=true` |
 | PR distribution | `?tab=prs` |
 | PR repo detail | `?tab=prs&repo=prbar` |
+| Releases calendar | `?tab=releases` |
+| Release detail | `?tab=releases&release=tag-launch-100` |

@@ -18,7 +18,7 @@ const requiredHtml = [
   "More menu",
   "GitHub Releases",
   "Repo inclusion",
-  "Share from PRs or GitHub Releases",
+  "Work cards from PRs or GitHub Releases",
   "GitHub sign-in",
   "First-run onboarding"
 ];
@@ -42,7 +42,10 @@ const requiredCss = [
   ".status-banner",
   ".native-tabbar",
   ".permission-list",
-  ".sync-steps"
+  ".sync-steps",
+  ".calendar-panel",
+  ".day-strip",
+  ".month-grid"
 ];
 
 const requiredJs = [
@@ -67,9 +70,13 @@ const requiredJs = [
   "renderEmptyState",
   "renderActivity",
   "renderActivityRepoDetail",
+  "renderCalendar",
+  "select-pr-date",
   "selectedPrRepoId",
   "select-activity-repo",
   "renderReleases",
+  "releaseRange",
+  "select-release-date",
   "renderCards",
   "renderCardBackEvidence",
   "renderEditSheet",
@@ -84,19 +91,19 @@ const requiredJs = [
   "Reconnect GitHub",
   "Rate limit",
   "Last synced",
-  "Share ${release.source",
-  "Open on GitHub",
-  "Copy notes",
   "Shipping moments",
+  "Calendar",
   "Generated tag summary",
-  "Tagged version",
-  "Edit Card",
-  "Share Card",
-  "Share Front",
-  "Share Back",
-  "Share Both",
-  "Copy Caption",
-  "Included repos power PRs, Releases, and Share.",
+  "tag and PR activity",
+  "Style & Privacy",
+  "Export card",
+  "Share public-side image",
+  "Export evidence side",
+  "Export both sides",
+  "Copy caption",
+  "Included repos power PRs, Releases, and Cards.",
+  "Public side",
+  "Evidence side",
   "day",
   "week",
   "month"
@@ -112,8 +119,8 @@ const requiredReadme = [
   "Sync and recovery states",
   "More menu with Repos, Settings, Privacy, Sample Data, and About",
   "fixture-backed",
-  "Front/back card flip",
-  "Share sheet"
+  "Public/evidence card sides",
+  "Export sheet"
 ];
 
 for (const item of requiredHtml) assertIncludes(html, item, "HTML prototype marker");

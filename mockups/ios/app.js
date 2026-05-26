@@ -102,7 +102,10 @@ const state = {
   activeMoreScreen: null,
   activeSheet: null,
   selectedPrRepoId: null,
+  selectedPrDate: "2026-05-24",
   range: "week",
+  releaseRange: "week",
+  selectedReleaseDate: "2026-05-24",
   selectedReleaseId: "rel-prbar-140",
   repoSearch: "",
   toast: "",
@@ -136,6 +139,7 @@ const moreItems = [
 
 const themes = ["clean", "terminal", "launch", "hype", "minimal"];
 const ranges = ["day", "week", "month"];
+const todayKey = "2026-05-24";
 
 function includedRepos() {
   return repositories.filter((repo) => repo.included);
@@ -172,8 +176,47 @@ function selectedRelease() {
 }
 
 function rangePrs() {
-  const count = state.range === "day" ? 3 : state.range === "week" ? 7 : 18;
-  return prsForIncludedRepos().slice(0, count);
+  const all = prsForIncludedRepos();
+  const rangeItems = itemsInRange(all, "mergedAt", state.range);
+  return state.selectedPrDate ? rangeItems.filter((pr) => dateKey(pr.mergedAt) === state.selectedPrDate) : rangeItems;
+}
+
+function itemsInRange(items, dateField, range) {
+  const days = range === "day" ? 1 : range === "week" ? 7 : 31;
+  const start = addDays(todayKey, -(days - 1));
+  return items.filter((item) => {
+    const key = dateKey(item[dateField]);
+    return key >= start && key <= todayKey;
+  });
+}
+
+function releaseItemsInRange() {
+  const rangeItems = itemsInRange(releasesForIncludedRepos(), "date", state.releaseRange);
+  return state.selectedReleaseDate ? rangeItems.filter((release) => release.date === state.selectedReleaseDate) : rangeItems;
+}
+
+function dateKey(value) {
+  return String(value).slice(0, 10);
+}
+
+function addDays(dateText, amount) {
+  const date = new Date(`${dateText}T12:00:00`);
+  date.setDate(date.getDate() + amount);
+  return date.toISOString().slice(0, 10);
+}
+
+function dayName(dateText) {
+  return new Date(`${dateText}T12:00:00`).toLocaleDateString("en", { weekday: "short" });
+}
+
+function rangeDays(range) {
+  const count = range === "day" ? 5 : range === "week" ? 7 : 31;
+  return Array.from({ length: count }, (_, index) => addDays(todayKey, index - count + 1));
+}
+
+function calendarDays(range) {
+  if (range !== "month") return rangeDays(range);
+  return Array.from({ length: 31 }, (_, index) => `2026-05-${String(index + 1).padStart(2, "0")}`);
 }
 
 function formatDate(dateText) {
@@ -247,6 +290,7 @@ function toggleRepo(id) {
   repo.included = !repo.included;
   const availableRelease = selectedRelease();
   state.selectedReleaseId = availableRelease?.id || null;
+  state.selectedReleaseDate = availableRelease?.date || todayKey;
   render();
 }
 
@@ -256,6 +300,9 @@ function resetDemoData() {
   });
   state.repoSearch = "";
   state.range = "week";
+  state.releaseRange = "week";
+  state.selectedPrDate = "2026-05-24";
+  state.selectedReleaseDate = "2026-05-24";
   state.activeSheet = null;
   state.cardSide = "front";
   state.selectedReleaseId = "rel-prbar-140";
@@ -315,8 +362,10 @@ function applyInitialRoute() {
     state.selectedPrRepoId = repo;
   }
   if (releases.some((item) => item.id === release)) {
+    const routedRelease = releases.find((item) => item.id === release);
     state.activeTab = "releases";
     state.selectedReleaseId = release;
+    state.selectedReleaseDate = routedRelease.date;
   }
   if (side === "back") state.cardSide = "back";
   if (sheet === "edit" || sheet === "share") state.activeSheet = sheet;
@@ -399,11 +448,13 @@ function renderActiveScreen() {
   return staleBanner + renderMore();
 }
 
-function renderRangeControl() {
+function renderRangeControl(kind = "prs") {
+  const activeRange = kind === "releases" ? state.releaseRange : state.range;
+  const action = kind === "releases" ? "release-range" : "range";
   return `
-    <div class="segmented" aria-label="PR range">
+    <div class="segmented" aria-label="${kind === "releases" ? "Release" : "PR"} range">
       ${ranges.map((range) => `
-        <button type="button" class="${state.range === range ? "is-active" : ""}" data-action="range" data-range="${range}">
+        <button type="button" class="${activeRange === range ? "is-active" : ""}" data-action="${action}" data-range="${range}">
           ${range[0].toUpperCase()}${range.slice(1)}
         </button>
       `).join("")}
@@ -411,10 +462,59 @@ function renderRangeControl() {
   `;
 }
 
+function renderCalendar(kind, items, dateField, selectedDate, range) {
+  const counts = new Map();
+  items.forEach((item) => {
+    const key = dateKey(item[dateField]);
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+  const selectAction = kind === "releases" ? "select-release-date" : "select-pr-date";
+  const noun = kind === "releases" ? "shipping moments" : "merged PRs";
+  const days = calendarDays(range);
+  if (range === "month") {
+    return `
+      <section class="calendar-panel" aria-label="${kind} calendar">
+        <div class="calendar-heading">
+          <div><p class="microcopy">Calendar</p><h2>May 2026</h2></div>
+          <span>${items.length} ${noun}</span>
+        </div>
+        <div class="month-grid">
+          ${["S", "M", "T", "W", "T", "F", "S"].map((label) => `<em>${label}</em>`).join("")}
+          ${Array.from({ length: 5 }, () => `<i aria-hidden="true"></i>`).join("")}
+          ${days.map((day) => renderCalendarDay(day, counts.get(day) || 0, selectedDate, selectAction)).join("")}
+        </div>
+      </section>
+    `;
+  }
+  return `
+    <section class="calendar-panel" aria-label="${kind} calendar">
+      <div class="calendar-heading">
+        <div><p class="microcopy">Calendar</p><h2>${range === "day" ? "Pick a day" : "This week"}</h2></div>
+        <span>${items.length} ${noun}</span>
+      </div>
+      <div class="day-strip">
+        ${days.map((day) => renderCalendarDay(day, counts.get(day) || 0, selectedDate, selectAction)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderCalendarDay(day, count, selectedDate, action) {
+  const intensity = count >= 3 ? "is-hot" : count >= 2 ? "is-warm" : count === 1 ? "is-active-day" : "";
+  return `
+    <button type="button" class="${selectedDate === day ? "is-selected" : ""} ${intensity}" data-action="${action}" data-date="${day}" aria-label="${formatDate(day)} ${count} items">
+      <span>${dayName(day)}</span>
+      <strong>${Number(day.slice(-2))}</strong>
+      <small>${count || ""}</small>
+    </button>
+  `;
+}
+
 function renderActivity() {
+  const allRangePrs = itemsInRange(prsForIncludedRepos(), "mergedAt", state.range);
   const prs = rangePrs();
   const total = prs.length;
-  const rangeLabel = state.range === "day" ? "Today" : state.range === "week" ? "This week" : "This month";
+  const rangeLabel = state.selectedPrDate ? formatDate(state.selectedPrDate) : state.range === "day" ? "Today" : state.range === "week" ? "This week" : "This month";
   const selectedRepo = state.selectedPrRepoId ? repoFor(state.selectedPrRepoId) : null;
   const repoPrs = selectedRepo ? prs.filter((pr) => pr.repoId === selectedRepo.id) : [];
   return `
@@ -424,7 +524,7 @@ function renderActivity() {
         <button class="small-button" type="button" data-action="open-more" data-screen="repos">Repos</button>
       </section>
       ${renderRangeControl()}
-      ${renderStaleDataBanner()}
+      ${renderCalendar("prs", allRangePrs, "mergedAt", state.selectedPrDate, state.range)}
       ${selectedRepo ? renderActivityRepoDetail(selectedRepo, repoPrs) : renderActivityOverview(prs, total, rangeLabel)}
     </section>
   `;
@@ -435,7 +535,7 @@ function renderActivityOverview(prs, total, rangeLabel) {
       <section class="hero-metric">
         <p class="microcopy">${rangeLabel}</p>
         <h1>${total} merged</h1>
-        <p>${state.range === "day" ? "Work landed since morning." : state.range === "week" ? "+28% versus last week. Strong shipping rhythm." : "A strong month across selected repos."}</p>
+        <p>${state.selectedPrDate ? "Activity for the selected calendar day." : state.range === "day" ? "Work landed since morning." : state.range === "week" ? "+28% versus last week. Strong shipping rhythm." : "A strong month across selected repos."}</p>
       </section>
       ${renderChart(prs)}
       <section class="section-title compact-title">
@@ -465,13 +565,28 @@ function renderStaleDataBanner() {
 }
 
 function renderReleases() {
-  const releaseList = releasesForIncludedRepos();
-  const release = selectedRelease();
-  if (!release) {
+  const releaseList = releaseItemsInRange();
+  const rangeReleases = itemsInRange(releasesForIncludedRepos(), "date", state.releaseRange);
+  const availableRelease = selectedRelease();
+  const release = releaseList.find((item) => item.id === state.selectedReleaseId) || releaseList[0] || null;
+  if (!availableRelease) {
     return `
       <section class="screen stack">
         <section class="empty-state"><strong>No shipping moments in selected repos</strong><p>Include more repositories to see GitHub Releases and tagged versions.</p></section>
         <button class="primary-action" type="button" data-action="open-more" data-screen="repos">Manage repos</button>
+      </section>
+    `;
+  }
+  if (!release) {
+    return `
+      <section class="screen stack">
+        <section class="section-title">
+          <div><p class="microcopy">Releases</p><h1>Shipping moments</h1></div>
+          <button class="small-button" type="button" data-action="open-more" data-screen="repos">${includedRepos().length} repos</button>
+        </section>
+        ${renderRangeControl("releases")}
+        ${renderCalendar("releases", rangeReleases, "date", state.selectedReleaseDate, state.releaseRange)}
+        <section class="empty-state"><strong>No releases on ${formatDate(state.selectedReleaseDate)}</strong><p>Pick another calendar day to inspect release notes, tags, and proof-of-work evidence.</p></section>
       </section>
     `;
   }
@@ -482,6 +597,8 @@ function renderReleases() {
         <div><p class="microcopy">Releases</p><h1>Shipping moments</h1></div>
         <button class="small-button" type="button" data-action="open-more" data-screen="repos">${includedRepos().length} repos</button>
       </section>
+      ${renderRangeControl("releases")}
+      ${renderCalendar("releases", rangeReleases, "date", state.selectedReleaseDate, state.releaseRange)}
       <section class="release-focus">
         <p class="microcopy">Selected ${release.source === "tag" ? "tag" : "release"}</p>
         <h2>${escapeHtml(release.tag)} ${escapeHtml(release.title)}</h2>
@@ -492,9 +609,6 @@ function renderReleases() {
         <strong>${release.source === "tag" ? "Generated tag summary" : "Original release notes"}</strong>
         <p>${escapeHtml(release.notes)}</p>
       </section>
-      <button class="primary-action" type="button" data-action="make-release-card" data-release-id="${release.id}">Share ${release.source === "tag" ? "Tag" : "Release"}</button>
-      <button class="secondary-action" type="button" data-action="open-github">Open on GitHub</button>
-      <button class="secondary-action" type="button" data-action="copy-notes">Copy notes</button>
     </section>
   `;
 }
@@ -503,12 +617,12 @@ function renderReleaseTimeline(releaseList, selectedId) {
   const groups = groupReleasesByDate(releaseList);
   return `
     <section class="release-list" aria-label="Shipping moments timeline">
-      ${groups.map(([label, items]) => `
+      ${groups.length ? groups.map(([label, items]) => `
         <div class="release-group">
           <p class="microcopy">${label}</p>
           ${items.map((item) => renderReleaseRow(item, selectedId)).join("")}
         </div>
-      `).join("")}
+      `).join("") : `<section class="empty-state compact"><strong>No releases on ${formatDate(state.selectedReleaseDate)}</strong><p>Try another calendar day or switch to the month view.</p></section>`}
     </section>
   `;
 }
@@ -516,7 +630,7 @@ function renderReleaseTimeline(releaseList, selectedId) {
 function groupReleasesByDate(releaseList) {
   const groups = new Map();
   releaseList.forEach((release) => {
-    const label = release.date >= "2026-05-19" ? "This week" : release.date >= "2026-05-01" ? "Earlier in May" : "Older";
+    const label = `${dayName(release.date)}, ${formatDate(release.date)}`;
     if (!groups.has(label)) groups.set(label, []);
     groups.get(label).push(release);
   });
@@ -542,19 +656,24 @@ function renderCards() {
   return `
     <section class="screen stack">
       <section class="section-title">
-        <div><p class="microcopy">Share</p><h1>Proof of work</h1></div>
+        <div><p class="microcopy">Work cards</p><h1>Create a work card</h1></div>
       </section>
       <section class="source-card">
+        <p class="microcopy">Source</p>
         <strong>${escapeHtml(source.title)}</strong>
         <p>${escapeHtml(source.caption)}</p>
       </section>
       ${state.privateShareWarning && cardHasPrivateEvidence() ? renderPrivateShareWarning() : ""}
+      <section class="export-summary">
+        <p><span>Image</span><strong>${state.cardSide === "front" ? "Public side" : "Evidence side"}</strong></p>
+        <p><span>Caption</span><strong>${source.type === "release" ? "Launch note" : "Progress recap"}</strong></p>
+      </section>
       ${renderShareCard(source)}
       <section class="card-actions">
-        <button class="secondary-action" type="button" data-action="flip-card">${state.cardSide === "front" ? "Show Releases" : "Show Card"}</button>
-        <button class="secondary-action" type="button" data-action="open-sheet" data-sheet="edit">Edit Card</button>
+        <button class="secondary-action" type="button" data-action="flip-card">${state.cardSide === "front" ? "Show evidence" : "Show public card"}</button>
+        <button class="secondary-action" type="button" data-action="open-sheet" data-sheet="edit">Style & Privacy</button>
       </section>
-      <button class="primary-action" type="button" data-action="open-sheet" data-sheet="share">Share Card</button>
+      <button class="primary-action" type="button" data-action="open-sheet" data-sheet="share">Export card</button>
     </section>
   `;
 }
@@ -565,9 +684,9 @@ function cardSource() {
     const repo = repoFor(release.repoId);
     return {
       type: "release",
-      title: `${release.tag} ${release.title}`,
+      title: `Release Receipt · ${release.tag}`,
       metric: release.tag,
-      caption: `${repo.name} · ${formatDate(release.date)} · ${release.source === "tag" ? "Tagged version" : "GitHub Release"}`,
+      caption: `Based on ${release.source === "tag" ? "tag and PR activity" : "GitHub Release notes"} from ${repo.name} on ${formatDate(release.date)}`,
       repoNames: [repo.name],
       count: 1,
       notes: release.notes
@@ -576,9 +695,9 @@ function cardSource() {
   const prs = rangePrs();
   return {
     type: "activity",
-    title: `${prs.length} merged PRs`,
+    title: `Shipping Snapshot · ${state.range}`,
     metric: `${prs.length} merged`,
-    caption: `${state.range[0].toUpperCase()}${state.range.slice(1)} shipping rhythm across selected repos`,
+    caption: `Based on ${state.range} merged PR activity from selected repositories`,
     repoNames: [...new Set(prs.map((pr) => repoFor(pr.repoId).name))],
     count: prs.length,
     notes: "A visible proof-of-work snapshot from PRBar."
@@ -607,12 +726,12 @@ function renderShareCard(source) {
     return `
       <section class="share-card card-back ${draft.theme}">
         <div>
-          <p class="microcopy">${source.type === "release" ? "Release evidence" : `${state.range} releases`}</p>
-          <h2>${source.type === "release" ? "What shipped" : "Release proof"}</h2>
-          <p>${source.type === "release" ? "Release notes and related pull requests from GitHub." : "GitHub releases from included repos, collected behind the share card."}</p>
+          <p class="microcopy">Evidence side</p>
+          <h2>${source.type === "release" ? "Release receipt" : "Work evidence"}</h2>
+          <p>${source.type === "release" ? "GitHub release or tag evidence reviewed before export." : "GitHub activity collected behind the public work card."}</p>
         </div>
         ${renderCardBackEvidence(source)}
-        <footer><span>${draft.showHandle ? "@neonwatty" : "handle hidden"}</span><span>${state.cardSide === "back" ? "back side" : "front side"}</span></footer>
+        <footer><span>${draft.showHandle ? "@neonwatty" : "handle hidden"}</span><span>evidence side</span></footer>
       </section>
     `;
   }
@@ -621,7 +740,7 @@ function renderShareCard(source) {
   return `
     <section class="share-card ${draft.theme}">
       <div>
-          <p class="microcopy">${source.type === "release" ? "Shipping moment" : `This ${state.range}`}</p>
+          <p class="microcopy">Public side</p>
         <h2>${escapeHtml(title)}</h2>
         <p>${escapeHtml(source.caption)}</p>
       </div>
@@ -636,8 +755,8 @@ function renderShareCard(source) {
 function renderPrivateShareWarning() {
   return `
     <section class="status-banner warning">
-      <strong>Private details warning</strong>
-      <p>This card may include private repo names or release details. Review the back side and privacy settings before sharing.</p>
+      <strong>This export may reveal private work</strong>
+      <p>Review repo names, exact counts, PR titles, release notes, and the evidence side before exporting.</p>
     </section>
   `;
 }
@@ -681,16 +800,20 @@ function renderEditSheet() {
 function renderShareSheet() {
   return `
     <header>
-      <div><p class="microcopy">Share card</p><h2>Choose output</h2></div>
+      <div><p class="microcopy">Export card</p><h2>Choose what leaves the app</h2></div>
       <button type="button" class="icon-button" data-action="close-sheet" aria-label="Close">×</button>
     </header>
+    <section class="source-card export-note">
+      <strong>Images are exported as PNGs</strong>
+      <p>Messages and other apps decide how the image and optional caption appear after the iOS Share Sheet opens.</p>
+    </section>
     <section class="share-options">
-      <button type="button" data-action="share-choice">Share Front</button>
-      <button type="button" data-action="share-choice">Share Back</button>
-      <button type="button" data-action="share-choice">Share Both</button>
-      <button type="button" data-action="share-choice">Copy Caption</button>
-      <button type="button" data-action="share-choice">Save Image</button>
-      <button type="button" data-action="share-choice">Message</button>
+      <button type="button" data-action="share-choice">Share public-side image</button>
+      <button type="button" data-action="share-choice">Save image</button>
+      <button type="button" data-action="share-choice">Copy image</button>
+      <button type="button" data-action="share-choice">Copy caption</button>
+      <button type="button" data-action="share-choice">Export evidence side</button>
+      <button type="button" data-action="share-choice">Export both sides</button>
     </section>
   `;
 }
@@ -743,7 +866,7 @@ function moreDescription(id) {
   return {
     repos: "Choose included repositories",
     settings: "GitHub, refresh, defaults",
-    privacy: "Share-card defaults",
+    privacy: "Work-card defaults",
     sample: "Fixture data and reset",
     about: "Prototype context"
   }[id];
@@ -754,7 +877,7 @@ function renderRepos() {
   return `
     <section class="screen stack">
       ${renderBackToMore()}
-      <section class="source-card"><strong>Included repos power PRs, Releases, and Share.</strong><p>${includedRepos().length} of ${repositories.length} repositories included.</p></section>
+      <section class="source-card"><strong>Included repos power PRs, Releases, and Cards.</strong><p>${includedRepos().length} of ${repositories.length} repositories included.</p></section>
       <input class="search-input" value="${escapeHtml(state.repoSearch)}" placeholder="Search repos" aria-label="Search repositories" data-action="repo-search">
       <section class="repo-list">
         ${visibleRepos.map((repo) => `
@@ -956,6 +1079,22 @@ app.addEventListener("click", (event) => {
   if (action === "nav") setTab(target.dataset.tab);
   if (action === "range") {
     state.range = target.dataset.range;
+    state.selectedPrDate = state.range === "month" ? todayKey : state.selectedPrDate;
+    state.selectedPrRepoId = null;
+    render();
+  }
+  if (action === "release-range") {
+    state.releaseRange = target.dataset.range;
+    const visible = itemsInRange(releasesForIncludedRepos(), "date", state.releaseRange);
+    const currentVisible = visible.find((release) => release.date === state.selectedReleaseDate);
+    const nextRelease = currentVisible || visible[0] || selectedRelease();
+    state.selectedReleaseDate = nextRelease?.date || todayKey;
+    state.selectedReleaseId = nextRelease?.id || null;
+    render();
+  }
+  if (action === "select-pr-date") {
+    state.selectedPrDate = target.dataset.date;
+    state.selectedPrRepoId = null;
     render();
   }
   if (action === "select-activity-repo") {
@@ -969,11 +1108,16 @@ app.addEventListener("click", (event) => {
   if (action === "make-activity-card") makeActivityCard();
   if (action === "select-release") {
     state.selectedReleaseId = target.dataset.releaseId;
+    const release = releases.find((item) => item.id === state.selectedReleaseId);
+    state.selectedReleaseDate = release?.date || state.selectedReleaseDate;
     render();
   }
-  if (action === "make-release-card") makeReleaseCard(target.dataset.releaseId);
-  if (action === "open-github") toast("GitHub URL ready");
-  if (action === "copy-notes") toast("Release notes copied");
+  if (action === "select-release-date") {
+    state.selectedReleaseDate = target.dataset.date;
+    const dayRelease = itemsInRange(releasesForIncludedRepos(), "date", state.releaseRange).find((release) => release.date === state.selectedReleaseDate);
+    if (dayRelease) state.selectedReleaseId = dayRelease.id;
+    render();
+  }
   if (action === "flip-card") {
     state.cardSide = state.cardSide === "front" ? "back" : "front";
     render();
@@ -1101,7 +1245,7 @@ function renderRepoSetup() {
       </section>
       <section class="status-banner">
         <strong>${selectedCount} selected</strong>
-        <p>Included repos power PRs, Releases, and Share. Private repos are hidden from shared proof unless you allow them.</p>
+        <p>Included repos power PRs, Releases, and Cards. Private repos are hidden from exported work cards unless you allow them.</p>
       </section>
       <input class="search-input" type="search" placeholder="Search repositories" value="${escapeHtml(state.repoSearch)}" data-action="repo-search">
       <section class="repo-list setup-repos">
@@ -1176,7 +1320,7 @@ function renderSyncing() {
         <p class="is-complete"><span></span>Account loaded</p>
         <p class="is-complete"><span></span>Repositories selected</p>
         <p class="is-active"><span></span>Pull requests and releases syncing</p>
-        <p><span></span>Share card ready</p>
+        <p><span></span>Work card ready</p>
       </section>
       <button class="primary-action" type="button" data-action="finish-sync">View PRBar</button>
     </section>
