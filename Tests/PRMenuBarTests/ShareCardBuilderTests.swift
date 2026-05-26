@@ -52,6 +52,33 @@ final class ShareCardBuilderTests: XCTestCase {
     XCTAssertEqual(payload.notesExcerpt, release.notes)
   }
 
+  func testShareCardExportFilenamesAreSpecificAndFilesystemSafe() {
+    let prPayload = ShareCardPayload.prActivity(
+      PRShareCardPayload(
+        headline: "12 merged PRs this week",
+        rangeLabel: "This Week",
+        activeRepositoryCount: 3,
+        bucketTotals: [2, 3, 7],
+        repoRows: []
+      )
+    )
+    let releasePayload = ShareCardPayload.release(
+      ReleaseShareCardPayload(
+        headline: "v2.1.0 Webhook / retry hardening",
+        repositoryDisplayName: "owner/project",
+        dateLabel: "May 26",
+        notesExcerpt: "Release notes",
+        sourceLabel: "GitHub Release"
+      )
+    )
+
+    XCTAssertEqual(prPayload.exportFilename, "prbar-pr-card-this-week.png")
+    XCTAssertEqual(
+      releasePayload.exportFilename,
+      "prbar-release-card-owner-project-v2-1-0-webhook-retry-hardening.png"
+    )
+  }
+
   private func repository(
     id: String,
     name: String,
