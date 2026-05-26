@@ -40,9 +40,7 @@ enum WorkCardRenderer {
       )
 
     case .releaseReceipt(let releaseID):
-      let release = store.releases.first { $0.id == releaseID }
-        ?? store.releases.first { $0.id == store.selectedReleaseID }
-        ?? store.releases.first
+      let release = selectedRelease(for: store, draftReleaseID: releaseID)
       guard let release else {
         return CardSource(
           type: .release,
@@ -87,7 +85,7 @@ enum WorkCardRenderer {
       }
 
     case .releaseReceipt(let releaseID):
-      guard let release = store.releases.first(where: { $0.id == releaseID }) ?? store.releases.first else {
+      guard let release = selectedRelease(for: store, draftReleaseID: releaseID) else {
         return []
       }
 
@@ -139,6 +137,12 @@ enum WorkCardRenderer {
 
   private static func repository(for id: Repository.ID, in store: PRBarStore) -> Repository? {
     store.repositories.first { $0.id == id }
+  }
+
+  private static func selectedRelease(for store: PRBarStore, draftReleaseID: ReleaseMoment.ID) -> ReleaseMoment? {
+    store.releases.first { $0.id == draftReleaseID }
+      ?? store.releases.first { $0.id == store.selectedReleaseID }
+      ?? store.releases.first
   }
 
   private static func shortDateLabel(for date: Date) -> String {

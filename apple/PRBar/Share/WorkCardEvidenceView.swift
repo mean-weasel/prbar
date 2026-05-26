@@ -24,9 +24,10 @@ struct WorkCardEvidenceView: View {
         ForEach(evidence) { item in
           HStack(alignment: .firstTextBaseline, spacing: 8) {
             if item.isPrivate && draft.showPrivateLabels {
-              Image(systemName: "lock.fill")
-                .font(.caption2)
+              Label("Private", systemImage: "lock.fill")
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(.orange)
+                .labelStyle(.titleAndIcon)
             }
 
             VStack(alignment: .leading, spacing: 3) {
