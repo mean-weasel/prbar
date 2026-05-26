@@ -11,7 +11,7 @@ struct ReleasesView: View {
   @State private var copyMessage: String?
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
+    VStack(alignment: .leading, spacing: 24) {
       if visibleReleases.isEmpty {
         emptyState
       } else {
@@ -47,7 +47,7 @@ struct ReleasesView: View {
   }
 
   private var emptyState: some View {
-    VStack(spacing: 10) {
+    VStack(spacing: 12) {
       switch refreshState {
       case .loading:
         ProgressView()
@@ -83,7 +83,7 @@ struct ReleasesView: View {
       }
     }
     .frame(maxWidth: .infinity)
-    .padding(.vertical, 22)
+    .padding(.vertical, 30)
     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
   }
 
@@ -109,7 +109,7 @@ struct ReleasesView: View {
 
   private var releaseList: some View {
     ScrollView {
-      LazyVStack(spacing: 8) {
+      LazyVStack(spacing: 14) {
         ForEach(visibleReleases) { release in
           ReleaseMomentRow(
             release: release,
@@ -122,13 +122,13 @@ struct ReleasesView: View {
         }
       }
     }
-    .frame(maxHeight: 190)
+    .frame(maxHeight: 260)
   }
 
   private func releaseDetail(_ release: ReleaseMoment) -> some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(alignment: .firstTextBaseline) {
-        VStack(alignment: .leading, spacing: 2) {
+    VStack(alignment: .leading, spacing: 18) {
+      HStack(alignment: .firstTextBaseline, spacing: 16) {
+        VStack(alignment: .leading, spacing: 4) {
           Text(release.source.notesTitle)
             .font(.caption2.weight(.bold))
             .textCase(.uppercase)
@@ -145,7 +145,7 @@ struct ReleasesView: View {
         .foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
 
-      HStack {
+      HStack(spacing: 10) {
         Button("Share Release Card") {
           onShare(
             .release(
@@ -171,7 +171,7 @@ struct ReleasesView: View {
         }
       }
     }
-    .padding(10)
+    .padding(18)
     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
   }
 
@@ -188,8 +188,8 @@ private struct ReleaseMomentRow: View {
 
   var body: some View {
     Button(action: onSelect) {
-      VStack(alignment: .leading, spacing: 5) {
-        HStack {
+      VStack(alignment: .leading, spacing: 9) {
+        HStack(spacing: 10) {
           Text("\(release.tag) \(release.title)")
             .font(.caption.weight(.semibold))
             .lineLimit(1)
@@ -201,7 +201,7 @@ private struct ReleaseMomentRow: View {
           .foregroundStyle(.secondary)
           .lineLimit(2)
       }
-      .padding(10)
+      .padding(16)
       .frame(maxWidth: .infinity, alignment: .leading)
       .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
       .clipShape(RoundedRectangle(cornerRadius: 8))

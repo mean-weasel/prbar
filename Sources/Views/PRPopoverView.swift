@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct PRPopoverView: View {
@@ -14,14 +15,15 @@ struct PRPopoverView: View {
   @State private var isShareSheetPresented = false
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
+    VStack(alignment: .leading, spacing: 28) {
       header
       if let refreshError {
         RefreshErrorView(message: refreshError)
       }
       tabs
+      appControls
     }
-    .padding(18)
+    .padding(28)
     .sheet(isPresented: $isShareSheetPresented) {
       if let sharePayload {
         ShareCardPreviewSheet(payload: sharePayload)
@@ -30,11 +32,11 @@ struct PRPopoverView: View {
   }
 
   private var header: some View {
-    HStack {
-      VStack(alignment: .leading, spacing: 4) {
+    HStack(alignment: .center, spacing: 18) {
+      VStack(alignment: .leading, spacing: 8) {
         Text("PR Activity")
           .font(.headline)
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
           Text(store.summaryText)
           Label(dataSource.title, systemImage: dataSource.systemImage)
         }
@@ -82,11 +84,11 @@ struct PRPopoverView: View {
         }
         .tag(PopoverTab.settings)
     }
-    .frame(minHeight: 430)
+    .frame(minHeight: 560)
   }
 
   private var activityTab: some View {
-    VStack(alignment: .leading, spacing: 16) {
+    VStack(alignment: .leading, spacing: 26) {
       summary
       if store.hasVisibleActivity {
         ActivityChartView(store: store, selectedBucketIndex: selectedBucketBinding)
@@ -101,7 +103,6 @@ struct PRPopoverView: View {
       }
       .buttonStyle(.borderedProminent)
       .disabled(store.hasVisibleActivity == false)
-      footer
     }
   }
 
@@ -111,7 +112,7 @@ struct PRPopoverView: View {
   }
 
   private var summary: some View {
-    HStack(spacing: 12) {
+    HStack(spacing: 18) {
       MetricTile(value: "\(store.totalPullRequests)", label: "merged")
       MetricTile(value: "\(store.activeRepositoryCount)", label: "repos")
       MetricTile(value: "\(store.window.dayCount)", label: "days")
@@ -119,13 +120,28 @@ struct PRPopoverView: View {
   }
 
   private var footer: some View {
-    VStack(alignment: .leading, spacing: 2) {
+    VStack(alignment: .leading, spacing: 4) {
       Text(refreshStatusText)
       Text("Last refreshed \(store.refreshedAt.formatted(date: .omitted, time: .shortened))")
       Text(nextRefreshText)
     }
     .font(.caption2)
     .foregroundStyle(.tertiary)
+  }
+
+  private var appControls: some View {
+    HStack {
+      footer
+      Spacer()
+      Button(role: .destructive) {
+        NSApp.terminate(nil)
+      } label: {
+        Label("Quit", systemImage: "power")
+      }
+      .buttonStyle(.bordered)
+      .keyboardShortcut("q")
+    }
+    .padding(.top, 2)
   }
 
   private var nextRefreshText: String {
@@ -163,7 +179,7 @@ private struct MetricTile: View {
   var label: String
 
   var body: some View {
-    VStack(spacing: 2) {
+    VStack(spacing: 4) {
       Text(value)
         .font(.title3.monospacedDigit().weight(.semibold))
       Text(label)
@@ -171,7 +187,7 @@ private struct MetricTile: View {
         .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity)
-    .padding(.vertical, 10)
+    .padding(.vertical, 18)
     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
   }
 }
@@ -181,7 +197,7 @@ private struct BucketDetailView: View {
   var bucketIndex: Int
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: 16) {
       HStack {
         Text(store.visibleBucketLabels[bucketIndex])
           .font(.caption.weight(.semibold))
@@ -192,7 +208,7 @@ private struct BucketDetailView: View {
       }
 
       ForEach(store.bucketBreakdown(at: bucketIndex).prefix(4)) { item in
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
           Circle()
             .fill(Color(hex: item.repository.colorHex))
             .frame(width: 7, height: 7)
@@ -204,7 +220,7 @@ private struct BucketDetailView: View {
         }
       }
     }
-    .padding(10)
+    .padding(18)
     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
   }
 }
@@ -213,7 +229,7 @@ private struct EmptyActivityView: View {
   var onIncludeAll: () -> Void
 
   var body: some View {
-    VStack(spacing: 10) {
+    VStack(spacing: 14) {
       Image(systemName: "chart.bar.xaxis")
         .font(.title2)
         .foregroundStyle(.secondary)
@@ -226,7 +242,7 @@ private struct EmptyActivityView: View {
         .buttonStyle(.bordered)
     }
     .frame(maxWidth: .infinity)
-    .padding(.vertical, 18)
+    .padding(.vertical, 34)
     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
   }
 }
@@ -235,7 +251,7 @@ private struct RefreshErrorView: View {
   var message: String
 
   var body: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: 10) {
       Image(systemName: "exclamationmark.triangle")
         .foregroundStyle(.orange)
       Text(message)
@@ -243,7 +259,7 @@ private struct RefreshErrorView: View {
         .foregroundStyle(.secondary)
       Spacer()
     }
-    .padding(10)
+    .padding(14)
     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
   }
 }

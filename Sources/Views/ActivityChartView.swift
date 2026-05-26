@@ -6,7 +6,7 @@ struct ActivityChartView: View {
   @State private var hoveredBucketIndex: Int?
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: 12) {
       Text("Merged PRs")
         .font(.caption)
         .foregroundStyle(.secondary)
@@ -61,7 +61,7 @@ struct ActivityChartView: View {
             .zIndex(1)
         }
       }
-      .frame(height: 150)
+      .frame(height: 200)
     }
   }
 
@@ -100,17 +100,17 @@ struct ActivityChartView: View {
   }
 
   private var columnSpacing: CGFloat {
-    store.bin == .day ? 4 : 8
+    store.bin == .day ? 6 : 12
   }
 
   private var columnWidth: CGFloat {
     switch store.bin {
     case .day:
-      return 28
+      return 34
     case .week:
-      return 84
+      return 98
     case .month:
-      return 140
+      return 162
     }
   }
 }
@@ -145,7 +145,7 @@ private struct ActivityChartColumn: View {
   var isSelected: Bool
 
   var body: some View {
-    VStack(spacing: 4) {
+    VStack(spacing: 6) {
       Text("\(total)")
         .font(.caption2.monospacedDigit())
         .foregroundStyle(.secondary)
@@ -167,7 +167,7 @@ private struct ActivityChartColumn: View {
         .foregroundStyle(isSelected ? .primary : .secondary)
     }
     .frame(maxWidth: .infinity)
-    .padding(4)
+    .padding(5)
     .background(isSelected ? Color.primary.opacity(0.08) : Color.clear)
     .clipShape(RoundedRectangle(cornerRadius: 6))
   }
