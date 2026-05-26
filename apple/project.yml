@@ -55,6 +55,20 @@ targets:
       GENERATE_INFOPLIST_FILE: YES
       TEST_HOST: "$(BUILT_PRODUCTS_DIR)/PRBar.app/PRBar"
       BUNDLE_LOADER: "$(TEST_HOST)"
+  PRBarUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - PRBarUITests
+    dependencies:
+      - target: PRBar
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.uitests
+      GENERATE_INFOPLIST_FILE: YES
+      TEST_TARGET_NAME: PRBar
+      CODE_SIGN_STYLE: Automatic
+      BUNDLE_LOADER: ""
 schemes:
   PRBar:
     build:
@@ -63,6 +77,7 @@ schemes:
     test:
       targets:
         - PRBarTests
+        - PRBarUITests
   PRBarPreview:
     build:
       targets:
