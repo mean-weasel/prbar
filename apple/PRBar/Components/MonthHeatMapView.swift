@@ -39,17 +39,18 @@ struct MonthHeatMapView: View {
         Button {
           selectedDate = day.date
         } label: {
-          VStack(spacing: 3) {
+          ZStack(alignment: .topTrailing) {
             Text("\(day.dayNumber)")
               .font(.subheadline.weight(.semibold))
               .monospacedDigit()
+              .frame(maxWidth: .infinity, minHeight: 44)
+
             if day.count > 0 {
-              Text("\(day.count)")
-                .font(.caption2.weight(.semibold))
-                .monospacedDigit()
+              CalendarCountBadge(count: day.count, isSelected: isSelected)
+                .scaleEffect(0.88)
+                .padding(3)
             }
           }
-          .frame(maxWidth: .infinity, minHeight: 44)
           .foregroundStyle(isSelected ? .white : .primary)
           .background(tileColor(for: day))
           .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))

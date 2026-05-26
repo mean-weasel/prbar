@@ -39,23 +39,40 @@ private struct CalendarDateButton: View {
 
   var body: some View {
     Button(action: action) {
-      VStack(spacing: 4) {
+      ZStack(alignment: .topTrailing) {
         Text("\(day.dayNumber)")
           .font(.headline)
           .monospacedDigit()
+          .frame(maxWidth: .infinity, minHeight: 56)
+
         if day.count > 0 {
-          Text("\(day.count)")
-            .font(.caption2.weight(.semibold))
-            .monospacedDigit()
+          CalendarCountBadge(count: day.count, isSelected: isSelected)
+            .padding(4)
         }
       }
-      .frame(maxWidth: .infinity, minHeight: 56)
       .foregroundStyle(isSelected ? .white : .primary)
       .background(isSelected ? PRBarTheme.accent : Color(.secondarySystemBackground))
       .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
     .buttonStyle(.plain)
     .accessibilityLabel(day.accessibilityLabel(isSelected: isSelected, countLabel: countLabel))
+  }
+}
+
+struct CalendarCountBadge: View {
+  var count: Int
+  var isSelected: Bool
+
+  var body: some View {
+    Text("\(count)")
+      .font(.system(size: 10, weight: .bold, design: .rounded))
+      .monospacedDigit()
+      .foregroundStyle(isSelected ? PRBarTheme.accent : .white)
+      .frame(minWidth: 17, minHeight: 17)
+      .padding(.horizontal, count > 9 ? 3 : 0)
+      .background(isSelected ? Color.white : PRBarTheme.accent)
+      .clipShape(Capsule())
+      .accessibilityHidden(true)
   }
 }
 
