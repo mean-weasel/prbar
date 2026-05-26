@@ -3,16 +3,22 @@ import SwiftUI
 struct RepositorySetupView: View {
   private var store: PRBarStore?
   private var fallbackRepositories: [Repository]
+  private var title: String
+  private var showsFinishButton: Bool
   @State private var searchText = ""
 
-  init(store: PRBarStore) {
+  init(store: PRBarStore, title: String = "Repos", showsFinishButton: Bool = false) {
     self.store = store
     self.fallbackRepositories = []
+    self.title = title
+    self.showsFinishButton = showsFinishButton
   }
 
   init(repositories: [Repository]) {
     self.store = nil
     self.fallbackRepositories = repositories
+    self.title = "Repos"
+    self.showsFinishButton = false
   }
 
   var body: some View {
@@ -21,6 +27,15 @@ struct RepositorySetupView: View {
         Text("Included repos power PRs, Releases, and Cards.")
           .font(.subheadline)
           .foregroundStyle(.secondary)
+      }
+
+      if let user = store?.githubConnection.user {
+        Section {
+          Label("@\(user.login)", systemImage: "person.crop.circle")
+            .font(.subheadline)
+        } header: {
+          Text("GitHub")
+        }
       }
 
       Section("Included") {
@@ -38,9 +53,20 @@ struct RepositorySetupView: View {
         }
         .font(.subheadline)
       }
+
     }
-    .navigationTitle("Repos")
+    .navigationTitle(title)
     .searchable(text: $searchText, prompt: "Search repos")
+    .toolbar {
+      if showsFinishButton {
+        ToolbarItem(placement: .topBarTrailing) {
+          Button("Finish setup") {
+            store?.finishRepositorySetup()
+          }
+          .buttonStyle(.borderedProminent)
+        }
+      }
+    }
   }
 
   private var repositories: [Repository] {
@@ -78,6 +104,7 @@ struct RepositorySetupView: View {
           .foregroundStyle(.secondary)
       }
     }
+    .accessibilityLabel("Include \(repository.name)")
     .disabled(repository.access == .sso || store == nil)
   }
 

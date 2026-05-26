@@ -70,4 +70,20 @@ final class PRBarUITests: XCTestCase {
     app.buttons["Repos"].tap()
     XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
   }
+
+  @MainActor
+  func testSignedOutGitHubConnectShowsRepoSelection() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--signed-out"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Connect GitHub"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Private by default"].exists)
+
+    app.buttons["Continue with GitHub"].tap()
+
+    XCTAssertTrue(app.staticTexts["Choose repos"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.switches["Include prbar"].exists)
+    XCTAssertTrue(app.buttons["Finish setup"].exists)
+  }
 }

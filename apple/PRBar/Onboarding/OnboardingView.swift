@@ -5,52 +5,67 @@ struct OnboardingView: View {
 
   var body: some View {
     NavigationStack {
-      List {
-        Section {
-          VStack(alignment: .leading, spacing: 10) {
-            Label("Sign in with GitHub", systemImage: "person.crop.circle.badge.checkmark")
-              .font(.title3.weight(.semibold))
-
-            Text("Connect GitHub to turn merged PRs and releases into private, reviewable work cards.")
-              .font(.subheadline)
-              .foregroundStyle(.secondary)
-          }
-          .padding(.vertical, 6)
-        }
-
-        Section("Setup") {
-          row("Choose repos", step: .repositories, systemImage: "folder.badge.gearshape")
-          row("Set privacy defaults", step: .privacy, systemImage: "lock.shield")
-          row("Sync sample activity", step: .sync, systemImage: "arrow.triangle.2.circlepath")
-        }
-
-        if case let .issue(issue) = store.routeState {
-          Section("Issue") {
-            Text(issue.title)
-              .font(.headline)
-            Text(issue.message)
-              .font(.subheadline)
-              .foregroundStyle(.secondary)
-          }
-        }
-
-        Section {
-          Button("Continue with GitHub") {
-            store.routeState = .onboarding(.repositories)
-          }
-          .buttonStyle(.borderedProminent)
-
-          Button("Use sample data") {
-            store.routeState = .authenticated
-          }
+      Group {
+        if store.routeState == .onboarding(.repositories) {
+          RepositorySetupView(store: store, title: "Choose repos", showsFinishButton: true)
+        } else {
+          signInList
         }
       }
-      .navigationTitle("PRBar")
-      .toolbar {
-        ToolbarItem(placement: .topBarTrailing) {
-          Button("Done") {
-            store.routeState = .authenticated
-          }
+    }
+  }
+
+  private var signInList: some View {
+    List {
+      Section {
+        VStack(alignment: .leading, spacing: 10) {
+          Label("Connect GitHub", systemImage: "person.crop.circle.badge.checkmark")
+            .font(.title3.weight(.semibold))
+
+          Text("Sign in to choose repositories, keep PR and release data synced, and decide what can leave the app.")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 6)
+      }
+
+      Section("Privacy defaults") {
+        Label("Private by default", systemImage: "lock.shield")
+        Label("Public cards hide private repo names", systemImage: "eye.slash")
+      }
+
+      Section("Setup") {
+        row("Choose repos", step: .repositories, systemImage: "folder.badge.gearshape")
+        row("Set privacy defaults", step: .privacy, systemImage: "lock.shield")
+        row("Sync sample activity", step: .sync, systemImage: "arrow.triangle.2.circlepath")
+      }
+
+      if case let .issue(issue) = store.routeState {
+        Section("Issue") {
+          Text(issue.title)
+            .font(.headline)
+          Text(issue.message)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+      }
+
+      Section {
+        Button("Continue with GitHub") {
+          store.connectGitHubForPrototype()
+        }
+        .buttonStyle(.borderedProminent)
+
+        Button("Use sample data") {
+          store.routeState = .authenticated
+        }
+      }
+    }
+    .navigationTitle("PRBar")
+    .toolbar {
+      ToolbarItem(placement: .topBarTrailing) {
+        Button("Done") {
+          store.routeState = .authenticated
         }
       }
     }

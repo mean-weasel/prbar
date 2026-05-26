@@ -28,4 +28,32 @@ final class PRBarModelTests: XCTestCase {
 
     XCTAssertTrue(store.cardHasPrivateEvidence)
   }
+
+  func testGitHubConnectionStartsRepoSetupWithRecommendedReposIncluded() {
+    let store = PRBarStore.sample()
+    store.routeState = .signedOut
+    store.repositories = store.repositories.map { repository in
+      var repository = repository
+      repository.included = false
+      return repository
+    }
+
+    store.connectGitHubForPrototype()
+
+    XCTAssertEqual(store.routeState, .onboarding(.repositories))
+    XCTAssertEqual(store.githubConnection.status, .connected)
+    XCTAssertEqual(store.githubConnection.user?.login, "neonwatty")
+    XCTAssertEqual(store.includedRepositories.map(\.id), ["prbar", "launch-kit"])
+  }
+
+  func testDisconnectingGitHubClearsIncludedReposAndReturnsToSignedOut() {
+    let store = PRBarStore.sample()
+
+    store.disconnectGitHub()
+
+    XCTAssertEqual(store.routeState, .signedOut)
+    XCTAssertEqual(store.githubConnection.status, .signedOut)
+    XCTAssertNil(store.githubConnection.user)
+    XCTAssertTrue(store.includedRepositories.isEmpty)
+  }
 }

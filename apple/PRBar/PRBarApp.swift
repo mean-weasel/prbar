@@ -8,6 +8,7 @@ struct PRBarApp: App {
     let store = PRBarStore.sample()
     if ProcessInfo.processInfo.arguments.contains("--signed-out") {
       store.routeState = .signedOut
+      store.githubConnection = .signedOut
     }
     _store = State(initialValue: store)
   }
