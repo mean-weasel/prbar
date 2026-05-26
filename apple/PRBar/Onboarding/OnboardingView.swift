@@ -52,7 +52,7 @@ struct OnboardingView: View {
 
       Section {
         Button("Continue with GitHub") {
-          store.connectGitHubForPrototype()
+          store.connectGitHub()
         }
         .buttonStyle(.borderedProminent)
 
