@@ -7,6 +7,7 @@ on:
       - assets/**
       - Docs/Marketing.md
       - index.html
+      - mockups/web/**
       - pr-chart-mobile.html
       - .github/workflows/pages.yml
   workflow_dispatch:
@@ -43,6 +44,8 @@ jobs:
           cp Docs/Marketing.md _site/Docs/Marketing.md
           cp pr-chart-mobile.html _site/index.html
           cp pr-chart-mobile.html _site/pr-chart-mobile.html
+          mkdir -p _site/web
+          cp -R mockups/web/. _site/web/
           touch _site/.nojekyll
 
       - name: Upload artifact
