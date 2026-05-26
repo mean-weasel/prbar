@@ -98,19 +98,6 @@ fi
 if command -v automationmodetool >/dev/null 2>&1; then
   automation_status="$(automationmodetool help 2>&1 || true)"
   printf '%s\n' "$automation_status"
-  if printf '%s\n' "$automation_status" | grep -q 'Automation Mode is disabled'; then
-    cat >&2 <<EOF
-Automation Mode is disabled on the runner Mac.
-
-Run this once from an interactive admin session on the runner Mac:
-  automationmodetool enable-automationmode-without-authentication
-
-Then verify with:
-  automationmodetool help
-EOF
-    exit 69
-  fi
-
   if ! printf '%s\n' "$automation_status" | grep -q 'DOES NOT REQUIRE user authentication'; then
     cat >&2 <<EOF
 Automation Mode still requires local user authentication.
