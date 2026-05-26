@@ -42,4 +42,19 @@ final class PRBarUITests: XCTestCase {
     app.buttons["May 21, not selected, 1 release"].tap()
     XCTAssertTrue(app.staticTexts["v1.0.0 Tagged v1.0.0"].waitForExistence(timeout: 2))
   }
+
+  @MainActor
+  func testShareTabExplainsWorkCardExport() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    app.tabBars.buttons["Share"].tap()
+    XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Public side"].exists)
+    app.buttons["Export card"].tap()
+    XCTAssertTrue(app.staticTexts["Choose what leaves the app"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Share public-side image"].exists)
+    XCTAssertTrue(app.buttons["Copy caption"].exists)
+  }
 }
