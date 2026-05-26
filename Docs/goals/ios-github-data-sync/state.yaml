@@ -8,7 +8,7 @@ goal:
   slug: "ios-github-data-sync"
   kind: specific
   tranche: "After PR #44 merges, plan and execute the first real GitHub PR/release data sync tranche for the iOS app."
-  status: active
+  status: done
   oracle:
     signal: "A signed-in simulator/test run can use selected repositories and deterministic service doubles to load PR and release/tag activity through a GitHub data layer, with privacy defaults and error states verified."
     cadence: "after each Scout/Judge/Worker package and at final audit"
@@ -66,7 +66,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/ios-github-data-sync/"
     command: "npx goalbuddy board Docs/goals/ios-github-data-sync"
 
-active_task: T007
+active_task: null
 
 tasks:
   - id: T001
@@ -336,7 +336,7 @@ tasks:
   - id: T007
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: medium
     objective: "Run final verification, polish docs/PR notes, push the branch, and open a draft PR for the iOS GitHub data sync tranche."
     allowed_files:
@@ -353,12 +353,34 @@ tasks:
       - "There are unstaged unrelated changes."
       - "Verification fails twice for the same reason."
       - "PR body cannot truthfully describe live-data behavior."
-    receipt: null
+    receipt:
+      result: done
+      note: "notes/T007-final-pr-worker.md"
+      changed_files:
+        - "Docs/goals/ios-github-data-sync/state.yaml"
+        - "Docs/goals/ios-github-data-sync/notes/T007-final-pr-worker.md"
+      commands:
+        - cmd: "./scripts/format-check.sh"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' ./scripts/ios-build.sh"
+          status: pass
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+          status: pass
+        - cmd: "git push -u origin codex/ios-github-data-sync"
+          status: pass
+        - cmd: "gh pr create --draft --base main --head codex/ios-github-data-sync"
+          status: pass
+      summary: "Final verification passed, branch was pushed, and draft PR #45 was opened."
+      pr: "https://github.com/mean-weasel/prbar/pull/45"
 
   - id: T999
     type: judge
     assignee: Judge
-    status: queued
+    status: done
     reasoning_hint: high
     objective: "Audit whether the iOS GitHub data sync tranche is complete."
     inputs:
@@ -376,23 +398,34 @@ tasks:
       - "full_outcome_complete: true | false"
       - "missing evidence"
       - "next task if not complete"
-    receipt: null
+    receipt:
+      result: done
+      decision: complete
+      note: "notes/T999-final-audit.md"
+      full_outcome_complete: true
+      summary: "The iOS GitHub data sync tranche is complete: source-backed planning is recorded, the REST activity sync slice is implemented and verified, and draft PR #45 is open."
+      evidence:
+        - "Draft PR: https://github.com/mean-weasel/prbar/pull/45"
+        - "Branch: codex/ios-github-data-sync"
+        - "Final build/unit/UI smoke checks passed locally"
+        - "No real GitHub tokens or client secrets were introduced"
 
 checks:
   dirty_fingerprint: unknown
   last_verification:
     result: pass
-    task: T005
+    task: T007
     commands:
       - cmd: "./scripts/format-check.sh"
         status: pass
       - cmd: "git diff --check"
+        status: pass
+      - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' ./scripts/ios-build.sh"
         status: pass
       - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
         status: pass
       - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
         status: pass
     notes:
-      - "T005 implemented REST per-repository activity sync for merged PRs, releases, and tags using deterministic transport tests."
-      - "Normal app launches use GitHubActivityClient; UI tests use StaticGitHubActivityProvider."
-      - "Activity refresh is scoped to included repositories and fails closed without replacing sample data."
+      - "T007 final verification passed and draft PR #45 was opened."
+      - "T999 final audit accepted the tranche as complete."
