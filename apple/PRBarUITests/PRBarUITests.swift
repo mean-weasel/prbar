@@ -57,4 +57,17 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Share public-side image"].exists)
     XCTAssertTrue(app.buttons["Copy caption"].exists)
   }
+
+  @MainActor
+  func testMoreMenuContainsRepositoryAndPrivacySettings() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    app.tabBars.buttons["More"].tap()
+    XCTAssertTrue(app.buttons["Repos"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Privacy"].exists)
+    app.buttons["Repos"].tap()
+    XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
+  }
 }

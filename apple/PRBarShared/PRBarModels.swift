@@ -1,5 +1,27 @@
 import Foundation
 
+enum AppRouteState: Equatable {
+  case authenticated
+  case signedOut
+  case onboarding(OnboardingStep)
+  case issue(AuthIssue)
+}
+
+enum OnboardingStep: String, CaseIterable, Identifiable {
+  case github
+  case repositories
+  case privacy
+  case sync
+
+  var id: String { rawValue }
+}
+
+struct AuthIssue: Identifiable, Equatable {
+  var id: String
+  var title: String
+  var message: String
+}
+
 struct Repository: Identifiable, Equatable {
   enum Visibility: String, CaseIterable, Codable {
     case `public`

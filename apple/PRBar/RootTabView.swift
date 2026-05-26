@@ -4,6 +4,18 @@ struct RootTabView: View {
   @State var store: PRBarStore
 
   var body: some View {
+    Group {
+      switch store.routeState {
+      case .authenticated:
+        tabs
+      case .signedOut, .onboarding, .issue:
+        OnboardingView(store: store)
+      }
+    }
+    .tint(PRBarTheme.accent)
+  }
+
+  private var tabs: some View {
     TabView {
       PRsView(store: store)
         .tabItem { Label("PRs", systemImage: "chart.bar.xaxis") }
@@ -17,7 +29,6 @@ struct RootTabView: View {
       MoreView(store: store)
         .tabItem { Label("More", systemImage: "ellipsis") }
     }
-    .tint(PRBarTheme.accent)
   }
 }
 

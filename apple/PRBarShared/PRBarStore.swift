@@ -13,6 +13,7 @@ final class PRBarStore {
   var selectedRepositoryID: Repository.ID?
   var selectedReleaseID: ReleaseMoment.ID?
   var cardDraft: WorkCardDraft
+  var routeState: AppRouteState
 
   private static let fixtureCalendar: Calendar = {
     var calendar = Calendar(identifier: .gregorian)
@@ -30,7 +31,8 @@ final class PRBarStore {
     releaseRange: ActivityRange = .week,
     selectedRepositoryID: Repository.ID? = nil,
     selectedReleaseID: ReleaseMoment.ID? = "rel-prbar-140",
-    cardDraft: WorkCardDraft = WorkCardDraft(source: .shippingSnapshot, theme: .clean, side: .publicSide, showRepos: true, showHandle: true, exactCounts: true, showPrivateLabels: false)
+    cardDraft: WorkCardDraft = WorkCardDraft(source: .shippingSnapshot, theme: .clean, side: .publicSide, showRepos: true, showHandle: true, exactCounts: true, showPrivateLabels: false),
+    routeState: AppRouteState = .authenticated
   ) {
     self.repositories = repositories
     self.pullRequests = pullRequests
@@ -42,6 +44,7 @@ final class PRBarStore {
     self.selectedRepositoryID = selectedRepositoryID
     self.selectedReleaseID = selectedReleaseID
     self.cardDraft = cardDraft
+    self.routeState = routeState
   }
 
   static func sample() -> PRBarStore {
