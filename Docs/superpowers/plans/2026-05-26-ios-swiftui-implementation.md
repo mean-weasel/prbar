@@ -205,9 +205,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios
         PRODUCT_NAME: PRBar
-        GENERATE_INFOPLIST_FILE: true
-        INFOPLIST_KEY_UILaunchScreen_Generation: true
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        GENERATE_INFOPLIST_FILE: false
+        INFOPLIST_FILE: PRBar/Info.plist
         CODE_SIGN_STYLE: Automatic
 
   PRBarPreview:
@@ -288,9 +287,27 @@ Create `apple/PRBar/Info.plist`:
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>$(DEVELOPMENT_LANGUAGE)</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleIdentifier</key>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>$(PRODUCT_NAME)</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>$(MARKETING_VERSION)</string>
+  <key>CFBundleVersion</key>
+  <string>$(CURRENT_PROJECT_VERSION)</string>
 </dict>
 </plist>
 ```
+
+The app target intentionally uses a checked-in plist with minimal bundle metadata. An empty manual plist builds but does not install reliably as a test host on iOS simulators because the built app has no bundle identifier.
 
 - [ ] **Step 3: Add script and gitignore entries**
 
