@@ -43,4 +43,10 @@ enum SampleData {
     ReleaseMoment(id: "tag-prbar-121", repoID: "prbar", title: "Tagged v1.2.1", tag: "v1.2.1", date: date("2026-05-16"), source: .tag, notes: "No GitHub Release notes found. PRBar summarized merged PRs around this tag.", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v1.2.1")!),
     ReleaseMoment(id: "rel-client-210", repoID: "client-api", title: "Webhook reliability update", tag: "v2.1.0", date: date("2026-05-14"), source: .release, notes: "Hardens webhook signature checks and adds clearer retry handling for customer integrations.", url: URL(string: "https://github.com/example/client-api/releases/tag/v2.1.0")!),
   ]
+
+  static let activitySnapshot = GitHubActivitySnapshot(
+    pullRequests: pullRequests,
+    releases: releases,
+    anchorDate: today
+  )
 }

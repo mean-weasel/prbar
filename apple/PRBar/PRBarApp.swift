@@ -7,10 +7,12 @@ struct PRBarApp: App {
   init() {
     let authService: GitHubAuthServicing
     let repositoryProvider: GitHubRepositoryProviding
+    let activityProvider: GitHubActivityProviding
     let repositorySelectionStore: RepositorySelectionStoring
     if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
       authService = StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore(), session: .fixture)
       repositoryProvider = StaticGitHubRepositoryProvider(repositories: SampleData.repositories)
+      activityProvider = StaticGitHubActivityProvider()
       repositorySelectionStore = InMemoryRepositorySelectionStore()
     } else {
       let sessionStore = KeychainGitHubSessionStore()
@@ -22,12 +24,17 @@ struct PRBarApp: App {
         sessionStore: sessionStore,
         transport: URLSessionGitHubRepositoryTransport()
       )
+      activityProvider = GitHubActivityClient(
+        sessionStore: sessionStore,
+        transport: URLSessionGitHubRepositoryTransport()
+      )
       repositorySelectionStore = UserDefaultsRepositorySelectionStore()
     }
 
     let store = PRBarStore.sample(
       authService: authService,
       repositoryProvider: repositoryProvider,
+      activityProvider: activityProvider,
       repositorySelectionStore: repositorySelectionStore
     )
     if ProcessInfo.processInfo.arguments.contains("--signed-out") {

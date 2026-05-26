@@ -275,10 +275,67 @@ final class PRBarModelTests: XCTestCase {
 
     XCTAssertEqual(try selectionStore.loadIncludedRepositoryIDs(), ["mean-weasel/prbar"])
   }
+
+  func testConnectingGitHubRefreshesActivityForIncludedRepositories() {
+    let store = PRBarStore.sample(
+      authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore(), session: .fixture),
+      repositoryProvider: StaticGitHubRepositoryProvider(
+        repositories: [
+          Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+          Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+        ]
+      ),
+      activityProvider: StaticGitHubActivityProvider(
+        snapshot: GitHubActivitySnapshot(
+          pullRequests: [
+            PullRequest(id: "mean-weasel/prbar#39", title: "Live merged PR", repoID: "mean-weasel/prbar", number: 39, mergedAt: SampleData.dateTime("2026-05-24T17:42:00Z")),
+            PullRequest(id: "example/client-api#77", title: "Private should wait", repoID: "example/client-api", number: 77, mergedAt: SampleData.dateTime("2026-05-24T15:00:00Z"))
+          ],
+          releases: [
+            ReleaseMoment(id: "mean-weasel/prbar@release:v1.4.0", repoID: "mean-weasel/prbar", title: "Live release", tag: "v1.4.0", date: SampleData.date("2026-05-24"), source: .release, notes: "Live release notes", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v1.4.0")!)
+          ],
+          anchorDate: SampleData.date("2026-05-24")
+        )
+      ),
+      repositorySelectionStore: InMemoryRepositorySelectionStore()
+    )
+
+    store.connectGitHub()
+
+    XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#39"])
+    XCTAssertEqual(store.releases.map(\.id), ["mean-weasel/prbar@release:v1.4.0"])
+    XCTAssertEqual(store.activityAnchorDate, SampleData.date("2026-05-24"))
+  }
+
+  func testActivityRefreshFailureKeepsSampleActivityAndShowsIssue() {
+    let store = PRBarStore.sample(
+      authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore(), session: .fixture),
+      repositoryProvider: StaticGitHubRepositoryProvider(
+        repositories: [
+          Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+        ]
+      ),
+      activityProvider: ThrowingGitHubActivityProvider()
+    )
+
+    store.connectGitHub()
+
+    guard case let .issue(issue) = store.routeState else {
+      return XCTFail("Expected an activity sync issue")
+    }
+    XCTAssertEqual(issue.id, "github-auth-failed")
+    XCTAssertEqual(store.pullRequests.map(\.id), SampleData.pullRequests.map(\.id))
+  }
 }
 
 private struct ThrowingGitHubRepositoryProvider: GitHubRepositoryProviding {
   func repositories() throws -> [Repository] {
     throw GitHubRepositoryError.invalidResponse
+  }
+}
+
+private struct ThrowingGitHubActivityProvider: GitHubActivityProviding {
+  func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
+    throw GitHubActivityError.invalidResponse
   }
 }

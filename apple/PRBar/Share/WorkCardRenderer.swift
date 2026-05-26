@@ -115,7 +115,7 @@ enum WorkCardRenderer {
 
   private static func pullRequestsInRange(for store: PRBarStore) -> [PullRequest] {
     let includedIDs = Set(store.includedRepositories.map(\.id))
-    let startDate = CalendarDay.days(endingAt: SampleData.today, range: store.prRange).first?.date ?? SampleData.today
+    let startDate = CalendarDay.days(endingAt: store.activityAnchorDate, range: store.prRange).first?.date ?? store.activityAnchorDate
 
     return store.pullRequests.filter { pullRequest in
       includedIDs.contains(pullRequest.repoID) && pullRequest.mergedAt >= startDate

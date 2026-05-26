@@ -4,7 +4,7 @@ struct ReleasesView: View {
   @Bindable var store: PRBarStore
 
   private var calendarDays: [CalendarDay] {
-    CalendarDay.days(endingAt: SampleData.today, range: store.releaseRange).map { day in
+    CalendarDay.days(endingAt: store.activityAnchorDate, range: store.releaseRange).map { day in
       CalendarDay(date: day.date, count: releases(on: day.date).count)
     }
   }
