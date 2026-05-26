@@ -8,7 +8,7 @@ goal:
   slug: "ios-github-auth-integration"
   kind: specific
   tranche: "After PR #43 merges, implement real GitHub auth/session/repo-selection plumbing for the iOS app as one verified PR."
-  status: active
+  status: done
   oracle:
     signal: "A signed-out simulator run can connect through the real GitHub auth boundary or controlled test doubles, store/load session state safely, fetch repositories through a GitHub service layer, select repos, relaunch with selections preserved, and pass unit/UI smoke checks."
     cadence: "after each Worker package and at final audit"
@@ -66,7 +66,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/ios-github-auth-integration/"
     command: "npx goalbuddy board docs/goals/ios-github-auth-integration"
 
-active_task: T008
+active_task: null
 
 tasks:
   - id: T001
@@ -428,7 +428,7 @@ tasks:
   - id: T008
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: medium
     objective: "Run final local verification, polish docs/PR notes, push the branch, and open a draft PR for the completed post-merge GitHub auth integration slice."
     allowed_files:
@@ -451,12 +451,34 @@ tasks:
       - "There are unstaged unrelated changes."
       - "Verification fails twice for the same reason."
       - "PR body cannot truthfully describe auth/session behavior."
-    receipt: null
+    receipt:
+      result: done
+      note: "notes/T008-final-pr-worker.md"
+      changed_files:
+        - "Docs/goals/ios-github-auth-integration/state.yaml"
+        - "Docs/goals/ios-github-auth-integration/notes/T008-final-pr-worker.md"
+      commands:
+        - cmd: "./scripts/format-check.sh"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' ./scripts/ios-build.sh"
+          status: pass
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+          status: pass
+        - cmd: "git push -u origin codex/ios-github-auth-integration"
+          status: pass
+        - cmd: "gh pr create --draft --base main --head codex/ios-github-auth-integration"
+          status: pass
+      summary: "Final verification passed, branch was pushed, and draft PR #44 was opened."
+      pr: "https://github.com/mean-weasel/prbar/pull/44"
 
   - id: T999
     type: judge
     assignee: Judge
-    status: queued
+    status: done
     reasoning_hint: high
     objective: "Audit whether the post-merge GitHub auth integration tranche is complete."
     inputs:
@@ -474,23 +496,32 @@ tasks:
       - "full_outcome_complete: true | false"
       - "missing evidence"
       - "next task if not complete"
-    receipt: null
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "The post-merge GitHub auth integration tranche is complete: PR #43 merged, main was synced, the iOS app has real auth/session/repo service boundaries with deterministic tests, final local verification passed, and draft PR #44 is open."
+      evidence:
+        - "Draft PR: https://github.com/mean-weasel/prbar/pull/44"
+        - "Commit: 23a3427 Add iOS GitHub auth repository plumbing"
+        - "Final build/unit/UI smoke checks passed locally"
+        - "No real GitHub tokens or client secrets were introduced"
 
 checks:
   dirty_fingerprint: unknown
   last_verification:
     result: pass
-    task: T007
+    task: T008
     commands:
-      - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
-        status: pass
       - cmd: "./scripts/format-check.sh"
         status: pass
       - cmd: "git diff --check"
         status: pass
-      - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/SignedOutOnly-T007.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubConnectShowsRepoSelection"
+      - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' ./scripts/ios-build.sh"
+        status: pass
+      - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
         status: pass
       - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
         status: pass
     notes:
-      - "T007 implemented GitHub repo API + repo selection persistence and activated T008 final verification/PR."
+      - "T008 final verification passed and draft PR #44 was opened."
