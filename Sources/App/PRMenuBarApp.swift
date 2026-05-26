@@ -43,7 +43,7 @@ struct PRMenuBarApp: App {
       ) {
         refresh(now: Date())
       }
-      .frame(width: 460)
+      .frame(width: 560)
       .onAppear {
         refreshIfDue(now: Date())
         refreshReleases(now: Date())
