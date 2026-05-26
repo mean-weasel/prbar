@@ -25,7 +25,9 @@ targets:
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - PRBar
+      - path: PRBar
+        excludes:
+          - Info.plist
       - PRBarShared
     info:
       path: PRBarPreview-Info.plist
@@ -70,6 +72,21 @@ targets:
         TEST_TARGET_NAME: PRBar
         CODE_SIGN_STYLE: Automatic
         BUNDLE_LOADER: ""
+  PRBarPreviewUITests:
+    type: bundle.ui-testing
+    supportedDestinations: [iOS]
+    deploymentTarget: "18.0"
+    sources:
+      - PRBarPreviewUITests
+    dependencies:
+      - target: PRBarPreview
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.preview.uitests
+        TEST_TARGET_NAME: PRBarPreview
+        CODE_SIGN_STYLE: Automatic
+        BUNDLE_LOADER: ""
 schemes:
   PRBar:
     build:
@@ -83,3 +100,6 @@ schemes:
     build:
       targets:
         PRBarPreview: all
+    test:
+      targets:
+        - PRBarPreviewUITests

@@ -1,0 +1,50 @@
+name: iOS Physical Preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      smoke_profile:
+        description: iOS UI smoke profile
+        required: true
+        default: pr
+        type: choice
+        options: [fast, pr, full]
+
+concurrency:
+  group: ios-preview-device
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  device-smoke:
+    name: Physical Device Smoke
+    runs-on: [self-hosted, macOS, prbar-ios, iphone-preview]
+    timeout-minutes: 30
+    env:
+      IOS_DEVICE_NAME: iPhone-preview
+      IOS_PROJECT: apple/PRBar.xcodeproj
+      IOS_SCHEME: PRBarPreview
+      IOS_UI_SCHEME: PRBarPreview
+      IOS_UI_TEST_TARGET: PRBarPreviewUITests
+      PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.preview
+      IOS_UI_SMOKE_PROFILE: ${{ inputs.smoke_profile }}
+      IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+      IOS_XCODEBUILD_EXTRA_ARGS: -allowProvisioningUpdates -allowProvisioningDeviceRegistration
+      IOS_PREVIEW_KEYCHAIN_PASSWORD: ${{ secrets.IOS_PREVIEW_KEYCHAIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Runner preflight
+        run: ./scripts/ios-preview-runner-preflight.sh
+      - name: Resolve preview device
+        run: ./scripts/ios-resolve-preview-device.sh
+      - name: Run physical device smoke
+        run: ./scripts/ios-preview-device-smoke.sh
+      - name: Upload preview smoke results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-preview-device-smoke-results
+          path: apple/PreviewDeviceSmokeResults.xcresult
+          retention-days: 14
