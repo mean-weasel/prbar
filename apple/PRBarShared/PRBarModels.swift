@@ -73,8 +73,12 @@ struct CalendarDay: Identifiable, Equatable {
     return formatter.string(from: date)
   }
 
-  var accessibilityLabel: String {
-    "\(monthName) \(dayNumber)"
+  func accessibilityLabel(isSelected: Bool) -> String {
+    var label = "\(monthName) \(dayNumber), \(isSelected ? "selected" : "not selected")"
+    if count > 0 {
+      label += ", \(count) \(count == 1 ? "pull request" : "pull requests")"
+    }
+    return label
   }
 
   static func days(endingAt endDate: Date, range: ActivityRange) -> [CalendarDay] {
@@ -102,6 +106,12 @@ struct CalendarDay: Identifiable, Equatable {
 
   static func isSameDay(_ lhs: Date, _ rhs: Date) -> Bool {
     calendar.isDate(lhs, inSameDayAs: rhs)
+  }
+
+  static func leadingWeekdayPlaceholderCount(for days: [CalendarDay]) -> Int {
+    guard let firstDay = days.first else { return 0 }
+
+    return calendar.component(.weekday, from: firstDay.date) - 1
   }
 
   private static let calendar: Calendar = {

@@ -39,7 +39,7 @@ private struct CalendarDateButton: View {
       .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
     .buttonStyle(.plain)
-    .accessibilityLabel(day.accessibilityLabel)
+    .accessibilityLabel(day.accessibilityLabel(isSelected: isSelected))
   }
 }
 

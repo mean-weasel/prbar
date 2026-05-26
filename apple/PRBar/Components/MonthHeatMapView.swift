@@ -5,10 +5,26 @@ struct MonthHeatMapView: View {
   @Binding var selectedDate: Date
 
   private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
+  private let weekdaySymbols = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
   var body: some View {
     LazyVGrid(columns: columns, spacing: 8) {
+      ForEach(weekdaySymbols, id: \.self) { symbol in
+        Text(symbol)
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(.secondary)
+          .frame(maxWidth: .infinity)
+      }
+
+      ForEach(0..<CalendarDay.leadingWeekdayPlaceholderCount(for: days), id: \.self) { _ in
+        Color.clear
+          .frame(maxWidth: .infinity, minHeight: 44)
+          .accessibilityHidden(true)
+      }
+
       ForEach(days) { day in
+        let isSelected = CalendarDay.isSameDay(day.date, selectedDate)
+
         Button {
           selectedDate = day.date
         } label: {
@@ -23,12 +39,12 @@ struct MonthHeatMapView: View {
             }
           }
           .frame(maxWidth: .infinity, minHeight: 44)
-          .foregroundStyle(CalendarDay.isSameDay(day.date, selectedDate) ? .white : .primary)
+          .foregroundStyle(isSelected ? .white : .primary)
           .background(tileColor(for: day))
           .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(day.accessibilityLabel)
+        .accessibilityLabel(day.accessibilityLabel(isSelected: isSelected))
       }
     }
   }

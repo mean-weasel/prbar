@@ -23,4 +23,18 @@ final class CalendarSelectionTests: XCTestCase {
     XCTAssertEqual(day.dayNumber, 24)
     XCTAssertEqual(day.monthName, "May")
   }
+
+  func testMayFixtureMonthStartsUnderFridayInWeekdayGrid() {
+    let days = CalendarDay.days(endingAt: SampleData.today, range: .month)
+
+    XCTAssertEqual(CalendarDay.leadingWeekdayPlaceholderCount(for: days), 5)
+  }
+
+  func testAccessibilityLabelIncludesSelectedStateAndCount() {
+    let selectedDay = CalendarDay(date: SampleData.dateTime("2026-05-24T01:30:00Z"), count: 3)
+    let emptyDay = CalendarDay(date: SampleData.dateTime("2026-05-25T01:30:00Z"), count: 0)
+
+    XCTAssertEqual(selectedDay.accessibilityLabel(isSelected: true), "May 24, selected, 3 pull requests")
+    XCTAssertEqual(emptyDay.accessibilityLabel(isSelected: false), "May 25, not selected")
+  }
 }
