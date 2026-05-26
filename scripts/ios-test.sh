@@ -7,11 +7,19 @@ cd "$ROOT_DIR"
 ./scripts/ios-generate.sh
 rm -rf apple/TestResults.xcresult
 destination="$(./scripts/ios-resolve-simulator-destination.sh)"
-xcodebuild test \
-  -project apple/PRBar.xcodeproj \
-  -scheme "${IOS_SCHEME:-PRBar}" \
-  -configuration "${IOS_CONFIGURATION:-Debug}" \
-  -destination "$destination" \
-  -derivedDataPath apple/build \
-  -resultBundlePath apple/TestResults.xcresult \
+args=(
+  test
+  -project apple/PRBar.xcodeproj
+  -scheme "${IOS_SCHEME:-PRBar}"
+  -configuration "${IOS_CONFIGURATION:-Debug}"
+  -destination "$destination"
+  -derivedDataPath apple/build
+  -resultBundlePath apple/TestResults.xcresult
   CODE_SIGNING_ALLOWED="${IOS_CODE_SIGNING_ALLOWED:-NO}"
+)
+
+if [[ -n "${IOS_TEST_ONLY:-}" ]]; then
+  args+=("-only-testing:${IOS_TEST_ONLY}")
+fi
+
+xcodebuild "${args[@]}"

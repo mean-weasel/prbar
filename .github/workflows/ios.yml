@@ -50,7 +50,9 @@ jobs:
         run: brew install xcodegen
       - name: Build
         run: ./scripts/ios-build.sh
-      - name: Unit and UI tests
+      - name: Unit tests
+        env:
+          IOS_TEST_ONLY: PRBarTests
         run: ./scripts/ios-test.sh
       - name: UI smoke
         env:
