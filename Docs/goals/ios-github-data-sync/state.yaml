@@ -1,0 +1,398 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "iOS GitHub Data Sync"
+  slug: "ios-github-data-sync"
+  kind: specific
+  tranche: "After PR #44 merges, plan and execute the first real GitHub PR/release data sync tranche for the iOS app."
+  status: active
+  oracle:
+    signal: "A signed-in simulator/test run can use selected repositories and deterministic service doubles to load PR and release/tag activity through a GitHub data layer, with privacy defaults and error states verified."
+    cadence: "after each Scout/Judge/Worker package and at final audit"
+    final_proof: "A draft PR exists with source-backed architecture notes, Judge-approved implementation scope, passing local iOS build/unit/UI smoke checks, deterministic tests for data mapping/filtering/privacy/error behavior, and no secrets introduced."
+  intake:
+    original_request: "Planning out extensively using GoBuddy Prep. Once that PR merges that is."
+    interpreted_outcome: "Prepare the next GoalBuddy board after PR #44: implement real GitHub PR and release/tag activity sync for the iOS app on top of the merged auth/repo foundation."
+    input_shape: specific
+    audience: "PRBar iOS users who want real on-the-road PR stats and release proof-of-work, plus the maintainer reviewing the next PR."
+    authority: approved
+    proof_type: test
+    completion_proof: "A draft PR implementing a verified iOS GitHub data sync vertical slice with deterministic tests and local/CI-friendly proof."
+    likely_misfire: "Jumping into a large social/sharing build or broad UI redesign before the app can reliably fetch real PR and release/tag data from GitHub."
+    blind_spots_considered:
+      - "GitHub Search vs REST endpoint choice for merged PR activity, rate limits, pagination, and date filtering."
+      - "Release and tag coverage: GitHub Releases are not equivalent to all tags."
+      - "Selected repository filtering and privacy defaults for public/private repos."
+      - "Offline/cache/loading/empty/error states in SwiftUI."
+      - "Avoiding real tokens, private data, and network flakiness in CI."
+      - "Data freshness expectations for a mobile app used on the road."
+    existing_plan_facts:
+      - "PR #44 merged the iOS auth/session/repository foundation to main."
+      - "The iOS app still uses sample PR/release activity fixtures for core tabs."
+      - "The product direction includes PR stats, releases/tags, and shareable proof-of-work cards."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: planned
+    url: "http://goalbuddy.localhost:41737/ios-github-data-sync/"
+    command: "npx goalbuddy board Docs/goals/ios-github-data-sync"
+
+active_task: T007
+
+tasks:
+  - id: T001
+    type: pm
+    assignee: PM
+    status: done
+    reasoning_hint: default
+    objective: "Verify the post-PR #44 baseline and create the implementation branch for the data-sync tranche."
+    inputs:
+      - "origin/main"
+      - "PR #44 merge result"
+      - "Docs/goals/ios-github-data-sync/goal.md"
+    constraints:
+      - "Do not implement product code in this task."
+      - "Do not touch unrelated dirty worktrees or branches."
+      - "If PR #44 is not actually present on origin/main, stop and record the blocker."
+    expected_output:
+      - "Main sync status"
+      - "Baseline commit"
+      - "Implementation branch name"
+      - "Receipt proving the gate is open"
+    receipt:
+      result: done
+      summary: "Verified PR #44 is merged into origin/main and created the implementation branch for the iOS GitHub data-sync tranche."
+      evidence:
+        - "PR #44 state MERGED"
+        - "PR #44 mergedAt 2026-05-26T18:19:11Z"
+        - "PR #44 merge commit 0e351e106e4c2b7097133159ad1a0ce396055902"
+        - "Baseline branch HEAD: 0e351e1 Add iOS GitHub auth repository plumbing (#44)"
+        - "Implementation branch: codex/ios-github-data-sync tracking origin/main"
+      commands:
+        - cmd: "gh pr view 44 --json state,mergedAt,mergeCommit,url"
+          status: pass
+        - cmd: "git checkout -B codex/ios-github-data-sync origin/main"
+          status: pass
+
+  - id: T002
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Map the current iOS data architecture after PR #44: sample PR/release fixtures, store filtering, selected repositories, share-card evidence, tests, and CI scripts."
+    inputs:
+      - "apple/"
+      - "scripts/ios-*.sh"
+      - ".github/workflows/"
+      - "Docs/goals/ios-github-auth-integration/"
+    constraints:
+      - "Read-only."
+      - "Prefer file-path evidence over generic advice."
+      - "Identify test seams and likely files for a first live-data vertical slice."
+    expected_output:
+      - "Architecture map"
+      - "Current fixture and filtering behavior"
+      - "Likely allowed_files for implementation"
+      - "Verification command list"
+      - "Risks needing Judge decisions"
+    receipt:
+      result: done
+      note: "notes/T002-ios-data-architecture-map.md"
+      summary: "Mapped fixture-backed PR/release data flow, selected-repo filtering, share-card evidence use, auth/repo service seams from PR #44, tests, CI, likely allowed files, and risks needing Judge decisions."
+      evidence:
+        - "apple/PRBarShared/SampleData.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBarShared/GitHubRepositories.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/Share/WorkCardRenderer.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - ".github/workflows/ios.yml"
+        - "scripts/ios-build.sh"
+        - "scripts/ios-test.sh"
+        - "scripts/ios-ui-smoke.sh"
+      spawned_tasks:
+        - T003
+
+  - id: T003
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Research primary-source GitHub API options for merged PR activity, releases, tags, pagination, rate limits, permissions, and date windows."
+    inputs:
+      - "Official GitHub REST and GraphQL documentation"
+      - "Existing auth/repository scope decisions from PR #44"
+    constraints:
+      - "Read-only."
+      - "Use primary sources."
+      - "Do not select architecture; gather options, tradeoffs, scopes, and testability constraints."
+    expected_output:
+      - "Merged PR query options and tradeoffs"
+      - "Release vs tag API options and tradeoffs"
+      - "Pagination/rate-limit considerations"
+      - "Scope and permission implications"
+      - "CI/test-double implications"
+    receipt:
+      result: done
+      note: "notes/T003-github-api-research.md"
+      summary: "Researched primary-source GitHub API choices for merged PRs, releases, tags, pagination, rate limits, permissions, and deterministic test strategy; recommended REST per-repo endpoints for first slice."
+      evidence:
+        - "GitHub REST Search docs source"
+        - "GitHub issue/PR search qualifiers docs"
+        - "GitHub REST Pull Requests docs"
+        - "GitHub REST Releases docs"
+        - "GitHub REST Repository Tags docs"
+        - "GitHub REST rate-limit docs"
+      spawned_tasks:
+        - T004
+
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the first implementation architecture and largest safe Worker slice for iOS GitHub PR/release data sync."
+    inputs:
+      - "T002 receipt"
+      - "T003 receipt"
+      - "Goal oracle"
+    constraints:
+      - "Do not implement."
+      - "Prefer one coherent vertical slice over scattered plumbing."
+      - "Do not require real credentials for CI."
+      - "Explicitly decide REST vs GraphQL/Search strategy, caching policy, date range, selected-repo filtering, and privacy behavior."
+    expected_output:
+      - "approve | reject"
+      - "Architecture decision"
+      - "Exact Worker objective"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+      - "Deferred work list"
+    receipt:
+      result: done
+      decision: approved
+      note: "notes/T004-data-sync-architecture-decision.md"
+      full_outcome_complete: false
+      rationale: "REST per-repository endpoints best match the selected-repo model, avoid Search API rate/query limits, and fit the existing session/transport/pagination test seams."
+      worker_task: T005
+      allowed_files:
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBarShared/GitHubRepositories.swift"
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarShared/SampleData.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/Share/WorkCardRenderer.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarTests/GitHubActivityTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "Docs/goals/ios-github-data-sync/state.yaml"
+        - "Docs/goals/ios-github-data-sync/notes/T004-data-sync-architecture-decision.md"
+        - "Docs/goals/ios-github-data-sync/notes/T005-data-sync-worker.md"
+      verify:
+        - "./scripts/format-check.sh"
+        - "git diff --check"
+        - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the Judge-approved iOS GitHub data sync vertical slice with deterministic tests."
+    allowed_files:
+      - "apple/PRBarShared/GitHubActivity.swift"
+      - "apple/PRBarShared/GitHubAuth.swift"
+      - "apple/PRBarShared/GitHubRepositories.swift"
+      - "apple/PRBarShared/PRBarModels.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBarShared/SampleData.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBar/PRs/PRsView.swift"
+      - "apple/PRBar/Releases/ReleasesView.swift"
+      - "apple/PRBar/Share/WorkCardRenderer.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarTests/GitHubActivityTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "Docs/goals/ios-github-data-sync/state.yaml"
+      - "Docs/goals/ios-github-data-sync/notes/T004-data-sync-architecture-decision.md"
+      - "Docs/goals/ios-github-data-sync/notes/T005-data-sync-worker.md"
+    verify:
+      - "./scripts/format-check.sh"
+      - "git diff --check"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+    stop_if:
+      - "Need files outside Judge-approved allowed_files."
+      - "GitHub API behavior requires a new architecture decision."
+      - "Verification fails twice for the same reason."
+      - "Implementation would expose private repo data by default."
+    receipt:
+      result: done
+      note: "notes/T005-data-sync-worker.md"
+      summary: "Implemented the Judge-approved REST per-repository GitHub activity data-sync slice with deterministic tests for request construction, mapping, selected-repository filtering, and failure behavior."
+      changed_files:
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarShared/SampleData.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/Share/WorkCardRenderer.swift"
+        - "apple/PRBarTests/GitHubActivityTests.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "Docs/goals/ios-github-data-sync/state.yaml"
+        - "Docs/goals/ios-github-data-sync/notes/T005-data-sync-worker.md"
+      evidence:
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarShared/SampleData.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/Share/WorkCardRenderer.swift"
+        - "apple/PRBarTests/GitHubActivityTests.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+      commands:
+        - cmd: "./scripts/format-check.sh"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+          status: pass
+
+  - id: T006
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review the implemented data-sync slice and decide whether a second Worker slice is required before PR."
+    inputs:
+      - "T005 receipt"
+      - "Current diff"
+      - "Last verification"
+    constraints:
+      - "Do not implement."
+      - "Reject if live-data behavior is cosmetic, untested, or privacy-ambiguous."
+      - "If another slice is needed, define exact allowed_files and verify commands."
+    expected_output:
+      - "complete_enough_for_pr | needs_more_work"
+      - "Missing evidence if rejected"
+      - "Next Worker package if needed"
+    receipt:
+      result: done
+      decision: complete_enough_for_pr
+      note: "notes/T006-data-sync-judge.md"
+      full_outcome_complete: false
+      summary: "Approved the implemented activity-sync slice for final PR prep; no second Worker slice is required before opening the PR."
+      evidence:
+        - "GitHubActivityClient uses authenticated REST requests behind the existing session and transport seams."
+        - "PRBarStore refreshes only included repository activity."
+        - "Normal app launches use the live activity provider; UI tests remain fixture-backed."
+        - "T005 verification passed."
+      next_task: T007
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: medium
+    objective: "Run final verification, polish docs/PR notes, push the branch, and open a draft PR for the iOS GitHub data sync tranche."
+    allowed_files:
+      - "Docs/goals/ios-github-data-sync/state.yaml"
+      - "Docs/goals/ios-github-data-sync/notes/T006-data-sync-judge.md"
+      - "Docs/goals/ios-github-data-sync/notes/T007-final-pr-worker.md"
+    verify:
+      - "./scripts/format-check.sh"
+      - "git diff --check"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' ./scripts/ios-build.sh"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+    stop_if:
+      - "There are unstaged unrelated changes."
+      - "Verification fails twice for the same reason."
+      - "PR body cannot truthfully describe live-data behavior."
+    receipt: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit whether the iOS GitHub data sync tranche is complete."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "Draft PR URL"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion if the app still only has fixture PR/release behavior for the target slice."
+      - "Reject completion if tests rely on real secrets or user-specific credentials."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T005
+    commands:
+      - cmd: "./scripts/format-check.sh"
+        status: pass
+      - cmd: "git diff --check"
+        status: pass
+      - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        status: pass
+      - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+        status: pass
+    notes:
+      - "T005 implemented REST per-repository activity sync for merged PRs, releases, and tags using deterministic transport tests."
+      - "Normal app launches use GitHubActivityClient; UI tests use StaticGitHubActivityProvider."
+      - "Activity refresh is scoped to included repositories and fails closed without replacing sample data."

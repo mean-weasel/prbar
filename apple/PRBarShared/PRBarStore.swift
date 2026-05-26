@@ -12,11 +12,13 @@ final class PRBarStore {
   var releaseRange: ActivityRange
   var selectedRepositoryID: Repository.ID?
   var selectedReleaseID: ReleaseMoment.ID?
+  var activityAnchorDate: Date
   var cardDraft: WorkCardDraft
   var routeState: AppRouteState
   var githubConnection: GitHubConnection
   private let authService: GitHubAuthServicing
   private let repositoryProvider: GitHubRepositoryProviding
+  private let activityProvider: GitHubActivityProviding
   private let repositorySelectionStore: RepositorySelectionStoring
 
   private static let fixtureCalendar: Calendar = {
@@ -35,11 +37,13 @@ final class PRBarStore {
     releaseRange: ActivityRange = .week,
     selectedRepositoryID: Repository.ID? = nil,
     selectedReleaseID: ReleaseMoment.ID? = "rel-prbar-140",
+    activityAnchorDate: Date = SampleData.today,
     cardDraft: WorkCardDraft = WorkCardDraft(source: .shippingSnapshot, theme: .clean, side: .publicSide, showRepos: true, showHandle: true, exactCounts: true, showPrivateLabels: false),
     routeState: AppRouteState = .authenticated,
     githubConnection: GitHubConnection = GitHubConnection(status: .connected, user: GitHubUser(login: "neonwatty", displayName: "Neon Watty")),
     authService: GitHubAuthServicing = StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore()),
     repositoryProvider: GitHubRepositoryProviding = StaticGitHubRepositoryProvider(repositories: SampleData.repositories),
+    activityProvider: GitHubActivityProviding = StaticGitHubActivityProvider(),
     repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore()
   ) {
     self.repositories = repositories
@@ -51,17 +55,20 @@ final class PRBarStore {
     self.releaseRange = releaseRange
     self.selectedRepositoryID = selectedRepositoryID
     self.selectedReleaseID = selectedReleaseID
+    self.activityAnchorDate = activityAnchorDate
     self.cardDraft = cardDraft
     self.routeState = routeState
     self.githubConnection = githubConnection
     self.authService = authService
     self.repositoryProvider = repositoryProvider
+    self.activityProvider = activityProvider
     self.repositorySelectionStore = repositorySelectionStore
   }
 
   static func sample(
     authService: GitHubAuthServicing = StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore()),
     repositoryProvider: GitHubRepositoryProviding = StaticGitHubRepositoryProvider(repositories: SampleData.repositories),
+    activityProvider: GitHubActivityProviding = StaticGitHubActivityProvider(),
     repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore()
   ) -> PRBarStore {
     PRBarStore(
@@ -70,8 +77,10 @@ final class PRBarStore {
       releases: SampleData.releases,
       selectedPRDate: SampleData.today,
       selectedReleaseDate: SampleData.today,
+      activityAnchorDate: SampleData.today,
       authService: authService,
       repositoryProvider: repositoryProvider,
+      activityProvider: activityProvider,
       repositorySelectionStore: repositorySelectionStore
     )
   }
@@ -103,6 +112,7 @@ final class PRBarStore {
       if let connection = try authService.restoreConnection() {
         githubConnection = connection
         try loadRepositoriesForConnectedUser()
+        try refreshActivityForIncludedRepositories()
         routeState = .authenticated
       }
     } catch {
@@ -115,6 +125,7 @@ final class PRBarStore {
     do {
       githubConnection = try authService.connect()
       try loadRepositoriesForConnectedUser()
+      try refreshActivityForIncludedRepositories()
       routeState = .onboarding(.repositories)
     } catch {
       githubConnection = .signedOut
@@ -124,6 +135,7 @@ final class PRBarStore {
 
   func finishRepositorySetup() {
     try? repositorySelectionStore.saveIncludedRepositoryIDs(includedRepositories.map(\.id))
+    try? refreshActivityForIncludedRepositories()
     routeState = .authenticated
   }
 
@@ -141,6 +153,20 @@ final class PRBarStore {
 
   private func loadRepositoriesForConnectedUser() throws {
     repositories = try applyStoredSelection(to: repositoryProvider.repositories())
+  }
+
+  private func refreshActivityForIncludedRepositories() throws {
+    let snapshot = try activityProvider.activity(
+      for: includedRepositories,
+      endingAt: activityAnchorDate,
+      lookbackDays: 30
+    )
+    pullRequests = snapshot.pullRequests
+    releases = snapshot.releases
+    activityAnchorDate = snapshot.anchorDate
+    selectedPRDate = snapshot.anchorDate
+    selectedReleaseDate = snapshot.anchorDate
+    selectedReleaseID = snapshot.releases.first?.id
   }
 
   private func applyStoredSelection(to repositories: [Repository]) throws -> [Repository] {

@@ -4,7 +4,7 @@ struct PRsView: View {
   @Bindable var store: PRBarStore
 
   private var calendarDays: [CalendarDay] {
-    CalendarDay.days(endingAt: SampleData.today, range: store.prRange).map { day in
+    CalendarDay.days(endingAt: store.activityAnchorDate, range: store.prRange).map { day in
       CalendarDay(date: day.date, count: pullRequests(on: day.date).count)
     }
   }
