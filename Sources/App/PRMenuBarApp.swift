@@ -7,6 +7,7 @@ struct PRMenuBarApp: App {
   private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
   @State private var store: PRActivityStore
   @State private var releaseStore: ReleaseMomentStore
+  @State private var releaseRefreshState: ReleaseRefreshState
   @State private var refreshError: String?
   @State private var isRefreshing = false
   @State private var refreshGeneration = 0
@@ -26,6 +27,7 @@ struct PRMenuBarApp: App {
 
     _store = State(initialValue: settingsStore.load().map(initial.applying) ?? initial)
     _releaseStore = State(initialValue: Self.initialReleaseStore(providerSelection, now: now))
+    _releaseRefreshState = State(initialValue: .idle)
     _refreshError = State(initialValue: initialState.refreshError)
   }
 
@@ -34,6 +36,7 @@ struct PRMenuBarApp: App {
       PRPopoverView(
         store: $store,
         releaseStore: releaseStore,
+        releaseRefreshState: releaseRefreshState,
         refreshError: refreshError,
         isRefreshing: isRefreshing,
         dataSource: providerSelection.dataSource
@@ -97,8 +100,12 @@ struct PRMenuBarApp: App {
         switch result {
         case .success(let refreshedStore):
           store = refreshedStore
-          if case .success(let releases) = releaseResult {
+          switch releaseResult {
+          case .success(let releases):
             releaseStore = ReleaseMomentStore(releases: releases)
+            releaseRefreshState = .idle
+          case .failure(let error):
+            releaseRefreshState = .failed(Self.releaseRefreshMessage(for: error))
           }
           refreshError = nil
         case .failure(let error):
@@ -118,15 +125,22 @@ struct PRMenuBarApp: App {
 
   private func refreshReleases(now: Date) {
     let repositories = store.repositories
+    releaseRefreshState = .loading
     DispatchQueue.global(qos: .utility).async {
-      let releases = try? providerSelection.releaseProvider.fetchReleaseMoments(
-        repositories: repositories,
-        now: now
-      )
+      let result = Result {
+        try providerSelection.releaseProvider.fetchReleaseMoments(
+          repositories: repositories,
+          now: now
+        )
+      }
 
       DispatchQueue.main.async {
-        if let releases {
+        switch result {
+        case .success(let releases):
           releaseStore = ReleaseMomentStore(releases: releases)
+          releaseRefreshState = .idle
+        case .failure(let error):
+          releaseRefreshState = .failed(Self.releaseRefreshMessage(for: error))
         }
       }
     }
@@ -145,5 +159,9 @@ struct PRMenuBarApp: App {
         now: now
       )
     return ReleaseMomentStore(releases: releases ?? [])
+  }
+
+  private static func releaseRefreshMessage(for error: Error) -> String {
+    "Could not load release notes: \(error.localizedDescription)"
   }
 }

@@ -54,22 +54,44 @@ final class GitHubReleaseMomentProvider: ReleaseMomentProvider {
   var token: String
   var transport: GitHubAPITransport
   private let pageSize = 1
+  private let cacheDuration: TimeInterval
+  private var cache: ReleaseMomentCache?
 
-  init(token: String, transport: GitHubAPITransport) {
+  init(
+    token: String,
+    transport: GitHubAPITransport,
+    cacheDuration: TimeInterval = 15 * 60
+  ) {
     self.token = token
     self.transport = transport
+    self.cacheDuration = cacheDuration
   }
 
   func fetchReleaseMoments(
     repositories: [RepositoryActivity],
     now: Date = Date()
   ) throws -> [ReleaseMoment] {
-    try repositories
+    let includedRepositoryIDs = repositories.filter(\.isIncluded).map(\.id).sorted()
+    if let cache,
+      cache.repositoryIDs == includedRepositoryIDs,
+      now.timeIntervalSince(cache.createdAt) < cacheDuration
+    {
+      return cache.releases
+    }
+
+    let releases =
+      try repositories
       .filter(\.isIncluded)
       .compactMap { repository in
         try releaseMoment(for: repository, now: now)
       }
       .sorted { $0.date > $1.date }
+    cache = ReleaseMomentCache(
+      createdAt: now,
+      repositoryIDs: includedRepositoryIDs,
+      releases: releases
+    )
+    return releases
   }
 
   private func releaseMoment(
@@ -162,4 +184,10 @@ private struct GitHubTag: Decodable {
       source: .tag
     )
   }
+}
+
+private struct ReleaseMomentCache {
+  var createdAt: Date
+  var repositoryIDs: [String]
+  var releases: [ReleaseMoment]
 }

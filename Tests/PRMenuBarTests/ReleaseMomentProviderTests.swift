@@ -95,6 +95,41 @@ final class ReleaseMomentProviderTests: XCTestCase {
     )
   }
 
+  func testGitHubProviderReusesCachedReleaseMomentsWithinCacheDuration() throws {
+    let now = Date(timeIntervalSince1970: 1_800_000_000)
+    let transport = FixtureGitHubAPITransport(
+      data: Data(
+        """
+        [
+          {
+            "id": 42,
+            "tag_name": "v2.1.0",
+            "name": "Webhook hardening",
+            "body": "Fixes retry handling and clarifies release diagnostics.",
+            "published_at": "2026-05-20T12:00:00Z",
+            "html_url": "https://github.com/owner/project/releases/tag/v2.1.0"
+          }
+        ]
+        """.utf8
+      )
+    )
+    let provider = GitHubReleaseMomentProvider(
+      token: "token",
+      transport: transport,
+      cacheDuration: 60
+    )
+    let repositories = [repository(id: "owner/project")]
+
+    let first = try provider.fetchReleaseMoments(repositories: repositories, now: now)
+    let second = try provider.fetchReleaseMoments(
+      repositories: repositories,
+      now: now.addingTimeInterval(30)
+    )
+
+    XCTAssertEqual(first, second)
+    XCTAssertEqual(transport.capturedRequests.count, 1)
+  }
+
   func testRepositoryPrivateFlagMapsToActivityPrivacy() throws {
     let data = Data(
       """

@@ -3,6 +3,7 @@ import SwiftUI
 struct PRPopoverView: View {
   @Binding var store: PRActivityStore
   var releaseStore: ReleaseMomentStore = ReleaseMomentStore(releases: [])
+  var releaseRefreshState: ReleaseRefreshState = .idle
   var refreshError: String?
   var isRefreshing = false
   var dataSource: PRActivityDataSource = .sample
@@ -66,6 +67,7 @@ struct PRPopoverView: View {
         .tag(PopoverTab.activity)
       ReleasesView(
         releaseStore: releaseStore,
+        refreshState: releaseRefreshState,
         repositories: store.repositories,
         onEditRepos: { selectedTab = .settings },
         onShare: presentShareCard

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ReleasesView: View {
   var releaseStore: ReleaseMomentStore
+  var refreshState: ReleaseRefreshState = .idle
   var repositories: [RepositoryActivity]
   var onEditRepos: () -> Void
   var onShare: (ShareCardPayload) -> Void
@@ -14,6 +15,7 @@ struct ReleasesView: View {
       if visibleReleases.isEmpty {
         emptyState
       } else {
+        statusBanner
         releaseList
         if let selectedRelease {
           releaseDetail(selectedRelease)
@@ -46,21 +48,63 @@ struct ReleasesView: View {
 
   private var emptyState: some View {
     VStack(spacing: 10) {
-      Image(systemName: "shippingbox")
-        .font(.title2)
-        .foregroundStyle(.secondary)
-      Text("No releases in included repositories")
-        .font(.subheadline.weight(.semibold))
-      Text("Include more repositories to see GitHub Releases and tagged versions.")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .multilineTextAlignment(.center)
-      Button("Edit Repos", action: onEditRepos)
-        .buttonStyle(.bordered)
+      switch refreshState {
+      case .loading:
+        ProgressView()
+          .controlSize(.small)
+        Text("Loading releases")
+          .font(.subheadline.weight(.semibold))
+        Text("Checking GitHub Releases and tags for included repositories.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .multilineTextAlignment(.center)
+      case .failed(let message):
+        Image(systemName: "exclamationmark.triangle")
+          .font(.title2)
+          .foregroundStyle(.orange)
+        Text("Release notes unavailable")
+          .font(.subheadline.weight(.semibold))
+        Text(message)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .multilineTextAlignment(.center)
+      case .idle:
+        Image(systemName: "shippingbox")
+          .font(.title2)
+          .foregroundStyle(.secondary)
+        Text("No releases in included repositories")
+          .font(.subheadline.weight(.semibold))
+        Text("Include more repositories to see GitHub Releases and tagged versions.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .multilineTextAlignment(.center)
+        Button("Edit Repos", action: onEditRepos)
+          .buttonStyle(.bordered)
+      }
     }
     .frame(maxWidth: .infinity)
     .padding(.vertical, 22)
     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+  }
+
+  @ViewBuilder
+  private var statusBanner: some View {
+    switch refreshState {
+    case .loading:
+      HStack(spacing: 8) {
+        ProgressView()
+          .controlSize(.small)
+        Text("Refreshing release notes")
+      }
+      .font(.caption)
+      .foregroundStyle(.secondary)
+    case .failed(let message):
+      Label(message, systemImage: "exclamationmark.triangle")
+        .font(.caption)
+        .foregroundStyle(.orange)
+    case .idle:
+      EmptyView()
+    }
   }
 
   private var releaseList: some View {
