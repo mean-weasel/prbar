@@ -1,0 +1,496 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "iOS GitHub Auth Integration"
+  slug: "ios-github-auth-integration"
+  kind: specific
+  tranche: "After PR #43 merges, implement real GitHub auth/session/repo-selection plumbing for the iOS app as one verified PR."
+  status: active
+  oracle:
+    signal: "A signed-out simulator run can connect through the real GitHub auth boundary or controlled test doubles, store/load session state safely, fetch repositories through a GitHub service layer, select repos, relaunch with selections preserved, and pass unit/UI smoke checks."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Task receipts show PR #43 merged, main synced, implementation PR opened, unit tests passed, iOS UI smoke passed, build passed, and no secrets were introduced."
+  intake:
+    original_request: "Planning out extensively using GoBuddy Prep. Once that PR merges that is."
+    interpreted_outcome: "Prepare a GoalBuddy board that will execute the next post-merge iOS PR: real GitHub auth, secure session storage, repo fetching, and repo selection persistence."
+    input_shape: specific
+    audience: "PRBar iOS users and the maintainer reviewing the next implementation PR."
+    authority: approved
+    proof_type: test
+    completion_proof: "A draft PR after #43 merges that implements and verifies the real GitHub auth/session/repo-selection vertical slice."
+    likely_misfire: "Stopping at another prototype/mock flow instead of establishing a secure, testable OAuth/session/API architecture."
+    blind_spots_considered:
+      - "OAuth app type, callback URL scheme, and whether device flow or ASWebAuthenticationSession is the right first implementation."
+      - "Keychain storage and testability without real tokens in CI."
+      - "GitHub API pagination, rate limits, scopes, private repo visibility, and failure states."
+      - "Preserving privacy defaults: private repos excluded by default and hidden from share surfaces unless intentionally included."
+      - "Keeping UI tests deterministic with fakes or launch-time dependency injection."
+      - "Not expanding into PR/release data fetching before auth and repo selection are real."
+    existing_plan_facts:
+      - "PR #43 contains prototype GitHub connection state and repo-selection onboarding."
+      - "This goal must wait until PR #43 merges to main."
+      - "The preferred next PR is GitHub OAuth plus secure token/session storage, then repo API integration."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/ios-github-auth-integration/"
+    command: "npx goalbuddy board docs/goals/ios-github-auth-integration"
+
+active_task: T008
+
+tasks:
+  - id: T001
+    type: pm
+    assignee: PM
+    status: done
+    reasoning_hint: default
+    objective: "Gate execution on PR #43 being merged, then sync main and create a fresh post-merge implementation branch."
+    inputs:
+      - "https://github.com/mean-weasel/prbar/pull/43"
+      - "origin/main"
+    constraints:
+      - "Do not implement product code in this task."
+      - "Do not start Worker tasks until PR #43 is merged."
+      - "Do not touch unrelated dirty worktrees or branches."
+      - "If PR #43 is not merged, record blocked status for this task and keep the goal ready to resume."
+    expected_output:
+      - "PR #43 merge status"
+      - "Main sync status"
+      - "Fresh branch name for implementation"
+      - "Receipt proving the gate is open or blocked"
+    receipt:
+      result: done
+      summary: "PR #43 was marked ready, the iOS workflow was patched to run on merge_group, the PR passed pull_request and merge_group checks, merged through the queue, and main was synced into a fresh implementation branch."
+      evidence:
+        - "PR #43 mergedAt 2026-05-26T17:37:34Z"
+        - "Merge commit 418ec9c28a549e1fad3ec4257e843be59db7d959"
+        - "Merge-group CI run 26464281113: success"
+        - "Merge-group iOS run 26464281105: success"
+        - "Fresh branch: codex/ios-github-auth-integration tracking origin/main"
+      changed_files:
+        - ".github/workflows/ios.yml"
+      commands:
+        - cmd: "gh pr ready 43"
+          status: pass
+        - cmd: "gh pr merge 43"
+          status: pass
+        - cmd: "git fetch origin main --prune && git checkout -B codex/ios-github-auth-integration origin/main"
+          status: pass
+
+  - id: T009
+    type: pm
+    assignee: PM
+    status: done
+    reasoning_hint: default
+    objective: "Hold the board ready and re-check PR #43 merge status on the next continuation."
+    inputs:
+      - "T001 receipt"
+      - "https://github.com/mean-weasel/prbar/pull/43"
+    constraints:
+      - "Do not implement product code in this task."
+      - "Do not start Scout, Judge, or Worker tasks until PR #43 is merged."
+      - "When PR #43 is merged, replace this holding task with a done receipt, reactivate the post-merge sync branch step, and continue."
+    expected_output:
+      - "Current PR #43 merge status"
+      - "Either continued hold or transition to post-merge sync"
+    receipt:
+      result: done
+      summary: "Holding task resolved after PR #43 merged through the merge queue; board advanced to Scout architecture mapping."
+      evidence:
+        - "PR #43 state MERGED"
+        - "GoalBuddy active task advanced to T002"
+
+  - id: T002
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Map the current iOS app architecture, auth prototype from PR #43, existing dependency injection points, tests, CI scripts, and likely files for the real GitHub auth/repo-selection slice."
+    inputs:
+      - "apple/"
+      - "scripts/ios-*.sh"
+      - ".github/workflows/"
+      - "Docs/"
+      - "PR #43 diff after merge"
+    constraints:
+      - "Read-only."
+      - "Prefer file-path evidence over generic advice."
+      - "Identify verification commands that run locally and in CI."
+    expected_output:
+      - "Architecture map"
+      - "Likely allowed_files for implementation"
+      - "Existing test seams and missing seams"
+      - "Verification command list"
+      - "Risks that need Judge decisions"
+    receipt:
+      result: done
+      note: "notes/T002-ios-architecture-map.md"
+      summary: "Mapped the iOS fixture-backed store, prototype GitHub connect flow, repo setup bindings, test seams, iOS CI scripts, merge-queue workflows, and reusable macOS GitHub provider patterns."
+      evidence:
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/RootTabView.swift"
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBar/Onboarding/OnboardingView.swift"
+        - "apple/PRBar/More/RepositorySetupView.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "scripts/ios-build.sh"
+        - "scripts/ios-test.sh"
+        - "scripts/ios-ui-smoke.sh"
+        - ".github/workflows/ios.yml"
+        - ".github/workflows/ci.yml"
+        - "Sources/Models/GitHubAPIRequest.swift"
+        - "Sources/Models/GitHubPRActivityProvider.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderTests.swift"
+      spawned_tasks:
+        - T003
+
+  - id: T003
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Research GitHub auth and API integration choices for an iOS app and translate them into repo-local implementation constraints."
+    inputs:
+      - "Official GitHub OAuth/App documentation"
+      - "Apple ASWebAuthenticationSession and Keychain guidance"
+      - "Existing repo constraints from T002"
+    constraints:
+      - "Read-only."
+      - "Use primary sources for GitHub and Apple behavior."
+      - "Do not select architecture; gather options, tradeoffs, scopes, and testability constraints."
+    expected_output:
+      - "Recommended auth options with tradeoffs"
+      - "Token/session storage constraints"
+      - "GitHub scopes needed for public/private repo listing"
+      - "API pagination/rate-limit/error considerations"
+      - "CI/test-double implications"
+    receipt:
+      result: done
+      note: "notes/T003-github-auth-research.md"
+      summary: "Researched official GitHub OAuth/device flow, OAuth scopes, authenticated repository listing, REST rate-limit behavior, Apple ASWebAuthenticationSession, and Apple Keychain Services constraints."
+      evidence:
+        - "GitHub OAuth authorization docs"
+        - "GitHub OAuth scopes docs"
+        - "GitHub REST list authenticated repositories docs"
+        - "GitHub REST rate limits docs"
+        - "Apple ASWebAuthenticationSession docs"
+        - "Apple Keychain Services docs"
+      spawned_tasks:
+        - T004
+
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the implementation architecture and first Worker slice for real GitHub auth/session plumbing."
+    inputs:
+      - "T002 receipt"
+      - "T003 receipt"
+      - "Goal oracle"
+    constraints:
+      - "Do not implement."
+      - "Prefer the smallest secure architecture that can become production-grade."
+      - "Do not require real credentials for CI verification."
+      - "Explicitly decide OAuth/session flow, Keychain abstraction, service protocols, and test-double strategy."
+    expected_output:
+      - "Architecture decision"
+      - "Exact Worker objective for auth/session slice"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+      - "Deferred work list"
+    receipt:
+      result: done
+      decision: "approved"
+      note: "notes/T004-auth-architecture-decision.md"
+      full_outcome_complete: false
+      rationale: "Device-flow OAuth plus protocol-backed Keychain session storage is the smallest secure, testable first auth slice; ASWebAuthenticationSession web OAuth is deferred until there is a safe token-exchange strategy."
+      worker_task: T005
+      allowed_files:
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarShared/SampleData.swift"
+        - "apple/PRBarShared/*.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/Onboarding/OnboardingView.swift"
+        - "apple/PRBar/More/MoreView.swift"
+        - "apple/PRBar/More/RepositorySetupView.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarTests/*.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "apple/project.yml"
+        - "Docs/goals/ios-github-auth-integration/state.yaml"
+        - "Docs/goals/ios-github-auth-integration/notes/"
+        - "Docs/goals/ios-github-auth-integration/notes/T005-auth-session-worker.md"
+      verify:
+        - "./scripts/format-check.sh"
+        - "git diff --check"
+        - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/SignedOutOnly.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubConnectShowsRepoSelection"
+        - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the real GitHub auth/session foundation selected by Judge, including secure token storage abstraction and deterministic tests."
+    allowed_files:
+      - "apple/PRBarShared/PRBarModels.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBarShared/SampleData.swift"
+      - "apple/PRBarShared/*.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBar/Onboarding/OnboardingView.swift"
+      - "apple/PRBar/More/MoreView.swift"
+      - "apple/PRBar/More/RepositorySetupView.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarTests/*.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "apple/project.yml"
+      - "Docs/goals/ios-github-auth-integration/state.yaml"
+      - "Docs/goals/ios-github-auth-integration/notes/"
+      - "Docs/goals/ios-github-auth-integration/notes/T005-auth-session-worker.md"
+    verify:
+      - "./scripts/format-check.sh"
+      - "git diff --check"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/SignedOutOnly.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubConnectShowsRepoSelection"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+    stop_if:
+      - "Need files outside Judge-approved allowed_files."
+      - "Need real GitHub client secrets or user tokens."
+      - "OAuth flow choice conflicts with platform constraints."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      note: "notes/T005-auth-session-worker.md"
+      changed_files:
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/Onboarding/OnboardingView.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "Docs/goals/ios-github-auth-integration/state.yaml"
+        - "Docs/goals/ios-github-auth-integration/notes/T005-auth-session-worker.md"
+      commands:
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+        - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/SignedOutOnly.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubConnectShowsRepoSelection"
+          status: pass
+        - cmd: "./scripts/format-check.sh"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+          status: pass
+      summary: "Added protocol-backed GitHub auth/session state, Keychain-facing token storage, deterministic fake auth, device-flow request construction, app/session restoration, and tests."
+
+  - id: T006
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review the auth/session slice and choose the next largest safe repo API + persistence Worker package."
+    inputs:
+      - "T005 receipt"
+      - "Current diff"
+      - "Last verification"
+    constraints:
+      - "Do not implement."
+      - "Reject proceeding if auth/session storage is insecure, untestable, or only cosmetic."
+      - "Choose one coherent repo API + selection persistence package if the foundation is sound."
+    expected_output:
+      - "approve | reject"
+      - "Missing evidence if rejected"
+      - "Exact Worker objective for repo API and persistence"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+    receipt:
+      result: done
+      decision: "approved"
+      note: "notes/T006-auth-slice-judge.md"
+      full_outcome_complete: false
+      rationale: "Auth/session foundation is protocol-backed, Keychain-facing, verified with fakes, and has concrete device-flow request construction; production polling is deferred but not blocking repo API + persistence."
+      worker_task: T007
+      allowed_files:
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBarShared/GitHubRepositories.swift"
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarShared/SampleData.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/Onboarding/OnboardingView.swift"
+        - "apple/PRBar/More/RepositorySetupView.swift"
+        - "apple/PRBar/More/MoreView.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "Docs/goals/ios-github-auth-integration/state.yaml"
+        - "Docs/goals/ios-github-auth-integration/notes/T006-auth-slice-judge.md"
+        - "Docs/goals/ios-github-auth-integration/notes/T007-repo-api-worker.md"
+      verify:
+        - "./scripts/format-check.sh"
+        - "git diff --check"
+        - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/SignedOutOnly.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubConnectShowsRepoSelection"
+        - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement GitHub repository fetching, repository selection persistence, and SwiftUI wiring so onboarding/settings use the real service boundary while tests stay deterministic."
+    allowed_files:
+      - "apple/PRBarShared/GitHubAuth.swift"
+      - "apple/PRBarShared/GitHubRepositories.swift"
+      - "apple/PRBarShared/PRBarModels.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBarShared/SampleData.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBar/Onboarding/OnboardingView.swift"
+      - "apple/PRBar/More/RepositorySetupView.swift"
+      - "apple/PRBar/More/MoreView.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "Docs/goals/ios-github-auth-integration/state.yaml"
+      - "Docs/goals/ios-github-auth-integration/notes/T006-auth-slice-judge.md"
+      - "Docs/goals/ios-github-auth-integration/notes/T007-repo-api-worker.md"
+    verify:
+      - "./scripts/format-check.sh"
+      - "git diff --check"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/SignedOutOnly.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubConnectShowsRepoSelection"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+    stop_if:
+      - "Need files outside Judge-approved allowed_files."
+      - "GitHub API behavior requires a new architecture decision."
+      - "Private repo privacy defaults become ambiguous."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      note: "notes/T007-repo-api-worker.md"
+      changed_files:
+        - "apple/PRBarShared/GitHubRepositories.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "Docs/goals/ios-github-auth-integration/state.yaml"
+        - "Docs/goals/ios-github-auth-integration/notes/T007-repo-api-worker.md"
+      commands:
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+        - cmd: "./scripts/format-check.sh"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/SignedOutOnly-T007.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubConnectShowsRepoSelection"
+          status: pass
+        - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+          status: pass
+      summary: "Added authenticated GitHub repository fetching, pagination-aware decoding, repo-selection persistence, app/test wiring, privacy-default application, and deterministic coverage for success/failure paths."
+
+  - id: T008
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: medium
+    objective: "Run final local verification, polish docs/PR notes, push the branch, and open a draft PR for the completed post-merge GitHub auth integration slice."
+    allowed_files:
+      - "apple/PRBarShared/GitHubAuth.swift"
+      - "apple/PRBarShared/GitHubRepositories.swift"
+      - "apple/PRBarShared/PRBarModels.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBar/Onboarding/OnboardingView.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "Docs/goals/ios-github-auth-integration/state.yaml"
+      - "Docs/goals/ios-github-auth-integration/notes/T008-final-pr-worker.md"
+    verify:
+      - "./scripts/format-check.sh"
+      - "git diff --check"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' ./scripts/ios-build.sh"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+    stop_if:
+      - "There are unstaged unrelated changes."
+      - "Verification fails twice for the same reason."
+      - "PR body cannot truthfully describe auth/session behavior."
+    receipt: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit whether the post-merge GitHub auth integration tranche is complete."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "Draft PR URL"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion if the app still only has prototype auth/repo behavior."
+      - "Reject completion if tests rely on real secrets or user-specific credentials."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T007
+    commands:
+      - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        status: pass
+      - cmd: "./scripts/format-check.sh"
+        status: pass
+      - cmd: "git diff --check"
+        status: pass
+      - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/SignedOutOnly-T007.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubConnectShowsRepoSelection"
+        status: pass
+      - cmd: "IOS_DESTINATION='platform=iOS Simulator,name=iPhone 17' IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+        status: pass
+    notes:
+      - "T007 implemented GitHub repo API + repo selection persistence and activated T008 final verification/PR."
