@@ -12,7 +12,19 @@ UI_TEST_TARGET="${IOS_UI_TEST_TARGET:-PRBarPreviewUITests}"
 DERIVED_DATA_PATH="${IOS_DERIVED_DATA_PATH:-apple/PreviewSmokeBuild}"
 RESULT_BUNDLE="${IOS_PREVIEW_SMOKE_RESULT_BUNDLE:-apple/PreviewDeviceSmokeResults.xcresult}"
 PROFILE="${IOS_UI_SMOKE_PROFILE:-pr}"
+DEVICE_READY_TIMEOUT="${IOS_DEVICE_READY_TIMEOUT:-45}"
 XCODEBUILD_EXTRA_ARGS=()
+
+if [[ -z "${IOS_DESTINATION:-}" ]]; then
+  echo "Resolving physical preview device by name: $DEVICE_NAME"
+  resolver_output="$(IOS_DEVICE_NAME="$DEVICE_NAME" IOS_SCHEME="$SCHEME" IOS_PROJECT="$PROJECT" ./scripts/ios-resolve-preview-device.sh shell)"
+  eval "$resolver_output"
+  export IOS_DEVICE_ID IOS_XCODE_DEVICE_ID IOS_DESTINATION
+else
+  destination_id="$(printf '%s\n' "$IOS_DESTINATION" | sed -n 's/.*id=\([^,]*\).*/\1/p')"
+  export IOS_XCODE_DEVICE_ID="${IOS_XCODE_DEVICE_ID:-$destination_id}"
+  export IOS_DEVICE_ID="${IOS_DEVICE_ID:-$destination_id}"
+fi
 
 if [[ -n "${IOS_DEVELOPMENT_TEAM:-}" ]]; then
   XCODEBUILD_EXTRA_ARGS+=("DEVELOPMENT_TEAM=$IOS_DEVELOPMENT_TEAM")
@@ -36,7 +48,47 @@ case "$PROFILE" in
     ;;
 esac
 
-device_id="$(IOS_DEVICE_NAME="$DEVICE_NAME" ./scripts/ios-resolve-preview-device.sh)"
+if [[ -z "${IOS_DEVICE_ID:-}" || -z "${IOS_DESTINATION:-}" ]]; then
+  echo "Could not resolve physical preview device '$DEVICE_NAME'." >&2
+  exit 64
+fi
+
+echo "Checking physical iOS device readiness for: $IOS_DEVICE_ID"
+echo "Device role: $DEVICE_NAME"
+echo "Xcode destination: $IOS_DESTINATION"
+echo "Keep the iPhone unlocked and awake until the UI test starts."
+
+ready_deadline=$((SECONDS + DEVICE_READY_TIMEOUT))
+while true; do
+  if xcrun devicectl device info details --device "$IOS_DEVICE_ID" --quiet --timeout 10 >/dev/null 2>&1; then
+    break
+  fi
+
+  if [[ "$SECONDS" -ge "$ready_deadline" ]]; then
+    cat >&2 <<EOF
+Device '$IOS_DEVICE_ID' was not ready within ${DEVICE_READY_TIMEOUT}s.
+
+Make sure the iPhone is:
+- connected to this Mac
+- trusted by this Mac
+- unlocked and awake
+
+Run './scripts/ios-list-devices.sh' to verify the CoreDevice identifier, then retry.
+EOF
+    exit 69
+  fi
+
+  sleep 3
+done
+
+lock_json="$(mktemp "${TMPDIR:-/tmp}/prbar-device-lock.XXXXXX")"
+trap 'rm -f "$lock_json"' EXIT
+if xcrun devicectl device info lockState --device "$IOS_DEVICE_ID" --json-output "$lock_json" --quiet --timeout 10 >/dev/null 2>&1; then
+  echo "Device lock state:"
+  jq -r '.result | "  passcodeRequired=\(.passcodeRequired) unlockedSinceBoot=\(.unlockedSinceBoot)"' "$lock_json"
+else
+  echo "Could not read device lock state; continuing to xcodebuild, which will fail if the phone is locked." >&2
+fi
 
 ./scripts/ios-generate.sh
 rm -rf "$RESULT_BUNDLE"
@@ -46,7 +98,7 @@ args=(
   -project "$PROJECT"
   -scheme "$SCHEME"
   -configuration "$CONFIGURATION"
-  -destination "platform=iOS,id=$device_id"
+  -destination "$IOS_DESTINATION"
   -derivedDataPath "$DERIVED_DATA_PATH"
   -resultBundlePath "$RESULT_BUNDLE"
 )
