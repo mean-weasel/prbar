@@ -19,6 +19,7 @@ args=(
   -configuration "${IOS_CONFIGURATION:-Debug}"
   -destination "${IOS_DESTINATION:-platform=iOS Simulator,name=iPhone 16}"
   -derivedDataPath apple/build
+  -resultBundlePath "${IOS_UI_SMOKE_RESULT_BUNDLE:-apple/UISmokeResults.xcresult}"
 )
 
 if [[ "${IOS_DESTINATION:-}" != *"platform=iOS,"* ]]; then
@@ -30,4 +31,5 @@ for test_id in "${TESTS[@]}"; do
 done
 
 ./scripts/ios-generate.sh
+rm -rf "${IOS_UI_SMOKE_RESULT_BUNDLE:-apple/UISmokeResults.xcresult}"
 xcodebuild "${args[@]}"
