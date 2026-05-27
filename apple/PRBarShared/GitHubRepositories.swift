@@ -235,7 +235,7 @@ private struct GitHubRepositoryPayload: Decodable {
       name: name,
       visibility: isPrivate ? .private : .public,
       colorHex: colorHex(for: fullName),
-      included: canPull && isPrivate == false,
+      included: false,
       recommended: false,
       access: canPull ? .ready : .sso,
       reason: "Fetched from GitHub"

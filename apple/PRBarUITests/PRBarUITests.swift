@@ -95,12 +95,12 @@ final class PRBarUITests: XCTestCase {
     app.launchArguments = ["--ui-testing", "--ui-testing-cached-activity"]
     app.launch()
 
-    XCTAssertTrue(app.staticTexts["Showing cached GitHub data"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
     app.tabBars.buttons["Share"].tap()
     XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Cached GitHub data")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed")).firstMatch.exists)
     app.buttons["Export card"].tap()
-    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Cached GitHub data")).firstMatch.waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed")).firstMatch.waitForExistence(timeout: 2))
     XCTAssertTrue(app.buttons["Share public-side image"].exists)
   }
 
@@ -179,7 +179,7 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
-  func testRelaunchRestoresCachedActivityWhenRefreshFails() {
+  func testRelaunchRestoresCachedActivityWithoutBlockingRefresh() {
     let seedApp = XCUIApplication()
     seedApp.launchArguments = ["--ui-testing", "--ui-testing-seed-activity-cache"]
     seedApp.launch()
@@ -193,8 +193,8 @@ final class PRBarUITests: XCTestCase {
     app.launch()
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
-    XCTAssertTrue(app.staticTexts["Showing cached GitHub data"].waitForExistence(timeout: 4))
-    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Showing cached data from")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "May 24, 2026")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts["#424 Cached relaunch PR"].exists)
 
     app.tabBars.buttons["Releases"].tap()

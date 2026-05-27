@@ -133,10 +133,19 @@ struct RepositorySetupView: View {
     .toolbar {
       if showsFinishButton {
         ToolbarItem(placement: .topBarTrailing) {
-          Button("Finish setup") {
-            store?.finishRepositorySetup()
+          Button {
+            Task {
+              await store?.finishRepositorySetup()
+            }
+          } label: {
+            if store?.isRefreshingActivity == true {
+              ProgressView()
+            } else {
+              Text("Finish setup")
+            }
           }
           .buttonStyle(.borderedProminent)
+          .disabled(store == nil || includedCount == 0 || store?.isRefreshingActivity == true)
         }
       }
     }

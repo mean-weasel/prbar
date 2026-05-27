@@ -68,6 +68,14 @@ struct PRBarApp: App {
       try? repositorySelectionStore.clearIncludedRepositoryIDs()
       try? activityCacheStore.clear()
       try? repositorySelectionStore.saveIncludedRepositoryIDs(["prbar"])
+      try? activityCacheStore.save(
+        GitHubActivityCacheRecord(
+          githubLogin: GitHubAuthSession.fixture.user.login,
+          includedRepositoryIDs: ["prbar"],
+          snapshot: Self.uiTestingCachedSnapshot,
+          lastRefreshedAt: SampleData.dateTime("2026-05-24T18:30:00Z")
+        )
+      )
     }
 
     let store = PRBarStore.sample(

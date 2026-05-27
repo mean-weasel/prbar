@@ -127,16 +127,7 @@ final class PRBarStore {
         githubConnection = connection
         let hasStoredSelection = try loadRepositoriesForConnectedUser()
         if hasStoredSelection {
-          let restoredCache = restoreCachedActivityForConnectedUser()
-          do {
-            try refreshActivityForIncludedRepositories()
-          } catch {
-            if restoredCache {
-              activityRefreshIssue = authIssue(for: error).issue
-            } else {
-              throw error
-            }
-          }
+          _ = restoreCachedActivityForConnectedUser()
           routeState = .authenticated
         } else {
           routeState = .onboarding(.repositories)
@@ -188,18 +179,55 @@ final class PRBarStore {
     }
   }
 
+  @MainActor
+  func pollGitHubAuthorization(_ authorization: GitHubDeviceAuthorization) async {
+    while true {
+      guard case let .authorizing(currentAuthorization) = routeState,
+        currentAuthorization.deviceCode == authorization.deviceCode
+      else {
+        return
+      }
+
+      guard currentAuthorization.isExpired(at: currentDate()) == false else {
+        return
+      }
+
+      let delayNanoseconds = UInt64(max(currentAuthorization.interval, 1)) * 1_000_000_000
+      do {
+        try await Task.sleep(nanoseconds: delayNanoseconds)
+      } catch {
+        return
+      }
+
+      guard case let .authorizing(latestAuthorization) = routeState,
+        latestAuthorization.deviceCode == authorization.deviceCode,
+        latestAuthorization.isExpired(at: currentDate()) == false
+      else {
+        return
+      }
+
+      continueGitHubAuthorization()
+    }
+  }
+
   func refreshGitHubAuthorization() {
     connectGitHub()
   }
 
-  func finishRepositorySetup() {
+  @MainActor
+  func finishRepositorySetup() async {
     try? repositorySelectionStore.saveIncludedRepositoryIDs(includedRepositories.map(\.id))
-    do {
-      try refreshActivityForIncludedRepositories()
-      routeState = .authenticated
-    } catch {
-      routeState = authIssue(for: error)
+
+    routeState = .authenticated
+    guard includedRepositories.isEmpty == false else {
+      applyActivitySnapshot(GitHubActivitySnapshot(pullRequests: [], releases: [], anchorDate: activityAnchorDate))
+      lastActivityRefreshAttemptAt = nil
+      lastActivityRefreshAt = nil
+      activityRefreshIssue = nil
+      return
     }
+
+    await refreshActivity()
   }
 
   @MainActor
@@ -325,10 +353,7 @@ final class PRBarStore {
       if let storedIDs {
         repository.included = storedIDs.contains(repository.id)
       } else {
-        repository.included =
-          repository.access == .ready &&
-          repository.visibility == .public &&
-          (repository.included || repository.recommended)
+        repository.included = false
       }
       return repository
     }
