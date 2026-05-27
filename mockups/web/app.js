@@ -104,28 +104,11 @@ const sampleData = {
   repos,
 };
 
-const app = document.querySelector("#app") || document.querySelector("main") || document.body;
+const app = document.querySelector("#app");
 const nav = document.querySelector(".nav-links");
 const headerAction = document.querySelector(".header-action");
-let modal = document.querySelector("[data-early-access-modal]");
-
-if (!modal) {
-  modal = document.createElement("div");
-  modal.className = "early-access-modal";
-  modal.dataset.earlyAccessModal = "";
-  modal.hidden = true;
-  modal.innerHTML = `
-    <div class="modal-backdrop" data-close-modal></div>
-    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="early-access-title">
-      <button type="button" class="icon-button" data-close-modal aria-label="Close early access">x</button>
-      <span>Early access</span>
-      <h2 id="early-access-title">Claim your PRBar board</h2>
-      <p>Connect selected repos, publish receipts, and make your shipping rhythm visible.</p>
-      <a class="primary-action" href="${linkTo("dashboard")}" data-close-modal>Open dashboard</a>
-    </section>
-  `;
-  document.body.appendChild(modal);
-}
+const modal = document.querySelector("#early-access-modal");
+const hasAppShell = app && nav && headerAction && modal;
 
 function routeIdFromHash() {
   const hash = window.location.hash.replace(/^#\/?/, "").trim();
@@ -414,30 +397,30 @@ function closeModal() {
   modal.hidden = true;
 }
 
-window.addEventListener("hashchange", renderRoute);
+if (hasAppShell) {
+  window.addEventListener("hashchange", renderRoute);
 
-if (headerAction) {
   headerAction.href = "#";
   headerAction.addEventListener("click", (event) => {
     event.preventDefault();
     openModal();
   });
-}
 
-const closeModalButton = document.querySelector("[data-close-modal]");
+  const closeModalButton = modal.querySelector("[data-close-modal]");
 
-if (closeModalButton) {
-  closeModalButton.addEventListener("click", closeModal);
-}
-
-modal.addEventListener("click", (event) => {
-  if (event.target.matches("[data-close-modal]")) {
-    closeModal();
+  if (closeModalButton) {
+    closeModalButton.addEventListener("click", closeModal);
   }
-});
 
-if (!window.location.hash) {
-  window.location.hash = linkTo("home");
-} else {
-  renderRoute();
+  modal.addEventListener("click", (event) => {
+    if (event.target.matches("[data-close-modal]")) {
+      closeModal();
+    }
+  });
+
+  if (!window.location.hash) {
+    window.location.hash = linkTo("home");
+  } else {
+    renderRoute();
+  }
 }
