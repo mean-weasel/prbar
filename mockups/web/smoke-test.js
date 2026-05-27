@@ -60,11 +60,7 @@ async function main() {
 
     await page.goto(`${baseUrl}#/boards`, { waitUntil: "networkidle" });
     await page.locator("[data-board='projects']").click();
-    const boardText = await page.locator("body").innerText();
-
-    if (!boardText.includes("Active projects") && !boardText.includes("SideProject Radar")) {
-      throw new Error("#/boards project board did not render active project content");
-    }
+    await assertBodyIncludes(page, "#/boards project board", "Active projects");
 
     await page.goto(`${baseUrl}#/talent`, { waitUntil: "networkidle" });
     await page.locator("[data-filter='available']").click();

@@ -182,14 +182,22 @@ function proofCard(title, body, routeId, meta = "Verified GitHub") {
 function renderBoardRows(boardId = "rising") {
   const output = document.querySelector("[data-board-output]");
   const rows = sample.boards[boardId] || sample.boards.rising;
+  const boardHeadings = {
+    rising: "Rising builders",
+    projects: "Active projects",
+    releases: "Recent releases",
+  };
+  const heading = boardHeadings[boardId] || boardHeadings.rising;
 
   if (!output) {
     return;
   }
 
-  output.innerHTML = rows
-    .map(
-      (row) => `
+  output.innerHTML = `
+    <h2>${heading}</h2>
+    ${rows
+      .map(
+        (row) => `
         <article class="leader-row">
           <strong>#${row.rank}</strong>
           <div>
@@ -199,8 +207,9 @@ function renderBoardRows(boardId = "rising") {
           <strong>${row.metric}</strong>
         </article>
       `
-    )
-    .join("");
+      )
+      .join("")}
+  `;
 }
 
 function renderTalentRows(filter = "all") {
