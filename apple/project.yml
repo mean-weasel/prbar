@@ -35,6 +35,7 @@ targets:
       generate: true
       properties:
         CFBundleDisplayName: PRBar Preview
+        PRBarGitHubOAuthClientID: $(PRBAR_IOS_GITHUB_CLIENT_ID)
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
