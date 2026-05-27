@@ -53,6 +53,20 @@ struct PRSettingsView: View {
         }
       }
       .pickerStyle(.segmented)
+
+      Toggle(isOn: $store.showPrivateRepositoryNamesInShare) {
+        VStack(alignment: .leading, spacing: 3) {
+          Text("Show private repo names in share cards")
+            .font(.subheadline.weight(.medium))
+          Text("When off, private repositories are labeled as Private repo in exported cards.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+      }
+      .toggleStyle(.checkbox)
+      .padding(14)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
     }
   }
 

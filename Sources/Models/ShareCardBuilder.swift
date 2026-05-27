@@ -3,11 +3,12 @@ import Foundation
 enum ShareCardBuilder {
   static func prActivityPayload(store: PRActivityStore) -> PRShareCardPayload {
     let rangeLabel = rangeLabel(for: store.window)
+    let showPrivateNames = store.showPrivateRepositoryNamesInShare
     let repoRows = store.includedRepositories
       .map { repository in
         ShareCardRepoRow(
           id: repository.id,
-          displayName: repository.shareDisplayName,
+          displayName: repository.shareDisplayName(revealingPrivateNames: showPrivateNames),
           count: repository.visibleTotal(for: store.window, bin: store.bin),
           colorHex: repository.colorHex
         )
@@ -19,12 +20,28 @@ enum ShareCardBuilder {
         }
         return lhs.count > rhs.count
       }
+    let chartBuckets = store.visibleBucketLabels.indices.map { index in
+      ShareCardBucket(
+        id: "\(index)-\(store.visibleBucketLabels[index])",
+        label: store.visibleBucketLabels[index],
+        total: store.bucketTotals[index],
+        segments: store.bucketBreakdown(at: index).map { item in
+          ShareCardBucketSegment(
+            id: item.repository.id,
+            value: item.value,
+            colorHex: item.repository.colorHex
+          )
+        }
+      )
+    }
 
     return PRShareCardPayload(
       headline: "\(store.totalPullRequests) merged PRs \(rangeLabel)",
       rangeLabel: rangeLabel,
+      totalPullRequests: store.totalPullRequests,
       activeRepositoryCount: store.activeRepositoryCount,
-      bucketTotals: store.bucketTotals,
+      showsPrivateRepositoryNames: showPrivateNames,
+      chartBuckets: chartBuckets,
       repoRows: repoRows
     )
   }
@@ -33,12 +50,27 @@ enum ShareCardBuilder {
     release: ReleaseMoment,
     repository: RepositoryActivity?
   ) -> ReleaseShareCardPayload {
+    releasePayload(
+      release: release,
+      repository: repository,
+      revealingPrivateNames: false
+    )
+  }
+
+  static func releasePayload(
+    release: ReleaseMoment,
+    repository: RepositoryActivity?,
+    revealingPrivateNames: Bool
+  ) -> ReleaseShareCardPayload {
     ReleaseShareCardPayload(
       headline: "\(release.tag) \(release.title)",
-      repositoryDisplayName: repository?.shareDisplayName ?? "Selected repo",
+      repositoryDisplayName: repository?.shareDisplayName(
+        revealingPrivateNames: revealingPrivateNames
+      ) ?? "Selected repo",
       dateLabel: release.date.formatted(date: .abbreviated, time: .omitted),
       notesExcerpt: release.notes,
-      sourceLabel: release.source.shareCardSourceLabel
+      sourceLabel: release.source.shareCardSourceLabel,
+      showsPrivateRepositoryName: revealingPrivateNames && repository?.isPrivate == true
     )
   }
 
@@ -47,18 +79,22 @@ enum ShareCardBuilder {
     case .oneDay:
       return "today"
     case .oneWeek:
-      return "this week"
+      return "past week"
     case .twoWeeks:
-      return "these 2 weeks"
+      return "past 2 weeks"
     case .oneMonth:
-      return "this month"
+      return "past month"
     }
   }
 }
 
 extension RepositoryActivity {
   var shareDisplayName: String {
-    isPrivate ? "Private repo" : name
+    shareDisplayName(revealingPrivateNames: false)
+  }
+
+  func shareDisplayName(revealingPrivateNames: Bool) -> String {
+    isPrivate && revealingPrivateNames == false ? "Private repo" : name
   }
 }
 

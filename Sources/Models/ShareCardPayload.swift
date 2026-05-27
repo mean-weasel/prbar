@@ -15,9 +15,15 @@ enum ShareCardPayload: Equatable {
 
   var privacyMessage: String {
     switch self {
-    case .prActivity:
+    case .prActivity(let payload):
+      if payload.showsPrivateRepositoryNames {
+        return "Privacy warning: private repository names are visible in this export."
+      }
       return "Privacy applied: private repository names are hidden before export."
     case .release(let payload):
+      if payload.showsPrivateRepositoryName {
+        return "Privacy warning: this private repository name is visible in this export."
+      }
       if payload.repositoryDisplayName == "Private repo" {
         return "Privacy warning: this release comes from a private repository, "
           + "so the repo name is hidden."
@@ -59,8 +65,10 @@ enum ShareCardPayload: Equatable {
 struct PRShareCardPayload: Equatable {
   var headline: String
   var rangeLabel: String
+  var totalPullRequests: Int
   var activeRepositoryCount: Int
-  var bucketTotals: [Int]
+  var showsPrivateRepositoryNames: Bool
+  var chartBuckets: [ShareCardBucket]
   var repoRows: [ShareCardRepoRow]
 }
 
@@ -70,11 +78,25 @@ struct ReleaseShareCardPayload: Equatable {
   var dateLabel: String
   var notesExcerpt: String
   var sourceLabel: String
+  var showsPrivateRepositoryName: Bool
 }
 
 struct ShareCardRepoRow: Identifiable, Equatable {
   var id: String
   var displayName: String
   var count: Int
+  var colorHex: String
+}
+
+struct ShareCardBucket: Identifiable, Equatable {
+  var id: String
+  var label: String
+  var total: Int
+  var segments: [ShareCardBucketSegment]
+}
+
+struct ShareCardBucketSegment: Identifiable, Equatable {
+  var id: String
+  var value: Int
   var colorHex: String
 }

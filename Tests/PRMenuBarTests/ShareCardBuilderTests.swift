@@ -20,10 +20,33 @@ final class ShareCardBuilderTests: XCTestCase {
 
     let payload = ShareCardBuilder.prActivityPayload(store: store)
 
-    XCTAssertEqual(payload.headline, "8 merged PRs this week")
+    XCTAssertEqual(payload.headline, "8 merged PRs past week")
+    XCTAssertEqual(payload.totalPullRequests, 8)
     XCTAssertEqual(payload.repoRows.map(\.displayName), ["Private repo", "public"])
     XCTAssertEqual(payload.repoRows.map(\.count), [5, 3])
-    XCTAssertEqual(payload.bucketTotals, [0, 0, 0, 0, 0, 0, 8])
+    XCTAssertFalse(payload.showsPrivateRepositoryNames)
+    XCTAssertEqual(payload.chartBuckets.map(\.total), [0, 0, 0, 0, 0, 0, 8])
+    XCTAssertEqual(payload.chartBuckets.last?.segments.map(\.value), [5, 3])
+  }
+
+  func testPRActivityPayloadCanRevealPrivateRepositoryNames() {
+    let store = PRActivityStore(
+      bucketLabels: ["W1", "W2"],
+      dailyBucketLabels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      window: .oneWeek,
+      bin: .day,
+      refreshInterval: .daily,
+      showPrivateRepositoryNamesInShare: true,
+      repositories: [
+        repository(id: "owner/private", name: "client-secret", count: 5, isPrivate: true)
+      ],
+      refreshedAt: Date(timeIntervalSince1970: 0)
+    )
+
+    let payload = ShareCardBuilder.prActivityPayload(store: store)
+
+    XCTAssertTrue(payload.showsPrivateRepositoryNames)
+    XCTAssertEqual(payload.repoRows.map(\.displayName), ["client-secret"])
   }
 
   func testReleasePayloadMasksPrivateRepositoryAndLabelsSource() {
@@ -50,15 +73,46 @@ final class ShareCardBuilderTests: XCTestCase {
     XCTAssertEqual(payload.repositoryDisplayName, "Private repo")
     XCTAssertEqual(payload.sourceLabel, "Tag-derived summary")
     XCTAssertEqual(payload.notesExcerpt, release.notes)
+    XCTAssertFalse(payload.showsPrivateRepositoryName)
+  }
+
+  func testReleasePayloadCanRevealPrivateRepositoryName() {
+    let release = ReleaseMoment(
+      id: "rel",
+      repositoryID: "owner/private",
+      title: "Webhook retry hardening",
+      tag: "v2.1.0",
+      date: Date(timeIntervalSince1970: 0),
+      notes: "Hardens webhook signature checks and adds clearer retry handling.",
+      url: nil,
+      source: .tag
+    )
+    let repository = repository(
+      id: "owner/private",
+      name: "client-secret",
+      count: 5,
+      isPrivate: true
+    )
+
+    let payload = ShareCardBuilder.releasePayload(
+      release: release,
+      repository: repository,
+      revealingPrivateNames: true
+    )
+
+    XCTAssertEqual(payload.repositoryDisplayName, "client-secret")
+    XCTAssertTrue(payload.showsPrivateRepositoryName)
   }
 
   func testShareCardExportFilenamesAreSpecificAndFilesystemSafe() {
     let prPayload = ShareCardPayload.prActivity(
       PRShareCardPayload(
-        headline: "12 merged PRs this week",
-        rangeLabel: "This Week",
+        headline: "12 merged PRs past week",
+        rangeLabel: "Past Week",
+        totalPullRequests: 12,
         activeRepositoryCount: 3,
-        bucketTotals: [2, 3, 7],
+        showsPrivateRepositoryNames: false,
+        chartBuckets: [],
         repoRows: []
       )
     )
@@ -68,11 +122,12 @@ final class ShareCardBuilderTests: XCTestCase {
         repositoryDisplayName: "owner/project",
         dateLabel: "May 26",
         notesExcerpt: "Release notes",
-        sourceLabel: "GitHub Release"
+        sourceLabel: "GitHub Release",
+        showsPrivateRepositoryName: false
       )
     )
 
-    XCTAssertEqual(prPayload.exportFilename, "prbar-pr-card-this-week.png")
+    XCTAssertEqual(prPayload.exportFilename, "prbar-pr-card-past-week.png")
     XCTAssertEqual(
       releasePayload.exportFilename,
       "prbar-release-card-owner-project-v2-1-0-webhook-retry-hardening.png"

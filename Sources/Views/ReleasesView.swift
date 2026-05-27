@@ -5,6 +5,7 @@ struct ReleasesView: View {
   var releaseStore: ReleaseMomentStore
   var refreshState: ReleaseRefreshState = .idle
   var repositories: [RepositoryActivity]
+  var revealingPrivateNamesInShare = false
   var onEditRepos: () -> Void
   var onShare: (ShareCardPayload) -> Void
   @State private var selectedReleaseID: String?
@@ -151,7 +152,8 @@ struct ReleasesView: View {
             .release(
               ShareCardBuilder.releasePayload(
                 release: release,
-                repository: repository(for: release)
+                repository: repository(for: release),
+                revealingPrivateNames: revealingPrivateNamesInShare
               )
             )
           )

@@ -39,18 +39,47 @@ struct ShareCardView: View {
   }
 
   private func prContent(_ payload: PRShareCardPayload) -> some View {
-    VStack(alignment: .leading, spacing: 14) {
-      Text(payload.headline)
-        .font(.system(size: 30, weight: .heavy, design: .rounded))
-        .lineLimit(2)
-      Text(
-        "\(payload.activeRepositoryCount) active repos, with private repository names hidden by default."
-      )
-      .font(.caption)
-      .foregroundStyle(.white.opacity(0.78))
-      MiniShareChart(values: payload.bucketTotals)
-      VStack(spacing: 7) {
-        ForEach(payload.repoRows.prefix(4)) { row in
+    VStack(alignment: .leading, spacing: 15) {
+      HStack(alignment: .top, spacing: 18) {
+        VStack(alignment: .leading, spacing: 2) {
+          Text("\(payload.totalPullRequests)")
+            .font(.system(size: 52, weight: .heavy, design: .rounded))
+            .monospacedDigit()
+            .minimumScaleFactor(0.78)
+          Text("merged PRs")
+            .font(.title3.weight(.heavy))
+            .foregroundStyle(.white.opacity(0.9))
+        }
+
+        Spacer(minLength: 0)
+
+        VStack(alignment: .trailing, spacing: 5) {
+          Text(payload.rangeLabel.capitalized)
+            .font(.subheadline.weight(.bold))
+          Text("\(payload.activeRepositoryCount) active repos")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.white.opacity(0.7))
+        }
+        .multilineTextAlignment(.trailing)
+        .foregroundStyle(.white.opacity(0.82))
+      }
+
+      VStack(alignment: .leading, spacing: 6) {
+        MiniShareChart(buckets: payload.chartBuckets)
+        HStack {
+          Text(payload.chartBuckets.first?.label ?? "")
+          Spacer()
+          Text("Peak \(payload.chartBuckets.map(\.total).max() ?? 0)")
+            .monospacedDigit()
+          Spacer()
+          Text(payload.chartBuckets.last?.label ?? "")
+        }
+        .font(.system(size: 8, weight: .bold))
+        .foregroundStyle(.white.opacity(0.52))
+      }
+
+      VStack(alignment: .leading, spacing: 8) {
+        ForEach(payload.repoRows.prefix(3)) { row in
           HStack(spacing: 8) {
             Circle()
               .fill(Color(hex: row.colorHex))
@@ -64,12 +93,7 @@ struct ShareCardView: View {
           .font(.caption.weight(.semibold))
         }
       }
-      .padding(10)
-      .background(.white.opacity(0.09), in: RoundedRectangle(cornerRadius: 8))
-      .overlay(
-        RoundedRectangle(cornerRadius: 8)
-          .stroke(.white.opacity(0.14))
-      )
+      .padding(.top, 2)
     }
   }
 
@@ -100,7 +124,7 @@ struct ShareCardView: View {
   private var payloadHeight: CGFloat {
     switch payload {
     case .prActivity:
-      return 300
+      return 340
     case .release:
       return 240
     }
@@ -131,21 +155,41 @@ struct ShareCardView: View {
 }
 
 private struct MiniShareChart: View {
-  var values: [Int]
+  var buckets: [ShareCardBucket]
 
   var body: some View {
-    HStack(alignment: .bottom, spacing: 6) {
-      ForEach(Array(values.enumerated()), id: \.offset) { _, value in
-        RoundedRectangle(cornerRadius: 4)
-          .fill(LinearGradient(colors: [.cyan, .blue], startPoint: .top, endPoint: .bottom))
-          .frame(height: height(for: value))
+    HStack(alignment: .bottom, spacing: 5) {
+      ForEach(buckets) { bucket in
+        GeometryReader { proxy in
+          VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            VStack(spacing: 0) {
+              if bucket.segments.isEmpty {
+                RoundedRectangle(cornerRadius: 3)
+                  .fill(.white.opacity(0.14))
+                  .frame(height: 3)
+              } else {
+                ForEach(bucket.segments.reversed()) { segment in
+                  Rectangle()
+                    .fill(Color(hex: segment.colorHex))
+                    .frame(height: segmentHeight(segment.value, in: proxy.size.height))
+                }
+              }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 3))
+          }
+        }
+        .frame(maxWidth: .infinity)
       }
     }
-    .frame(height: 44)
+    .frame(height: 58)
   }
 
-  private func height(for value: Int) -> CGFloat {
-    let maxValue = max(values.max() ?? 1, 1)
-    return max(CGFloat(value) / CGFloat(maxValue) * 42, value > 0 ? 8 : 4)
+  private var maxTotal: Int {
+    max(buckets.map(\.total).max() ?? 1, 1)
+  }
+
+  private func segmentHeight(_ value: Int, in availableHeight: CGFloat) -> CGFloat {
+    CGFloat(value) / CGFloat(maxTotal) * max(availableHeight - 2, 1)
   }
 }

@@ -6,6 +6,7 @@ struct PRActivityStore: Codable {
   var window: ActivityWindow
   var bin: ActivityBin
   var refreshInterval: AutoRefreshInterval
+  var showPrivateRepositoryNamesInShare: Bool
   var repositories: [RepositoryActivity]
   var refreshedAt: Date
 
@@ -15,6 +16,7 @@ struct PRActivityStore: Codable {
     window: ActivityWindow,
     bin: ActivityBin = .week,
     refreshInterval: AutoRefreshInterval,
+    showPrivateRepositoryNamesInShare: Bool = false,
     repositories: [RepositoryActivity],
     refreshedAt: Date
   ) {
@@ -23,8 +25,25 @@ struct PRActivityStore: Codable {
     self.window = window
     self.bin = bin
     self.refreshInterval = refreshInterval
+    self.showPrivateRepositoryNamesInShare = showPrivateRepositoryNamesInShare
     self.repositories = repositories
     self.refreshedAt = refreshedAt
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    bucketLabels = try container.decode([String].self, forKey: .bucketLabels)
+    dailyBucketLabels =
+      try container.decodeIfPresent([String].self, forKey: .dailyBucketLabels) ?? []
+    window = try container.decode(ActivityWindow.self, forKey: .window)
+    bin = try container.decodeIfPresent(ActivityBin.self, forKey: .bin) ?? .week
+    refreshInterval =
+      try container.decodeIfPresent(AutoRefreshInterval.self, forKey: .refreshInterval) ?? .daily
+    showPrivateRepositoryNamesInShare =
+      try container.decodeIfPresent(Bool.self, forKey: .showPrivateRepositoryNamesInShare)
+      ?? false
+    repositories = try container.decode([RepositoryActivity].self, forKey: .repositories)
+    refreshedAt = try container.decode(Date.self, forKey: .refreshedAt)
   }
 
   var visibleBucketLabels: [String] {
@@ -35,7 +54,10 @@ struct PRActivityStore: Codable {
       }
       return Array(dailyBucketLabels.suffix(window.dayCount))
     case .week:
-      return Array(bucketLabels.suffix(window.visibleBucketCount))
+      guard dailyBucketLabels.isEmpty == false else {
+        return Array(bucketLabels.suffix(window.visibleBucketCount))
+      }
+      return Array(dailyBucketLabels.suffix(window.dayCount)).groupedLabels(size: 7)
     case .month:
       guard dailyBucketLabels.isEmpty == false else {
         return Array(bucketLabels.suffix(window.visibleBucketCount)).groupedLabels(size: 4)
@@ -109,6 +131,7 @@ struct PRActivityStore: Codable {
       window: window,
       bin: bin,
       refreshInterval: refreshInterval,
+      showPrivateRepositoryNamesInShare: showPrivateRepositoryNamesInShare,
       includedRepositoryIDs: repositories.filter(\.isIncluded).map(\.id),
       knownRepositoryIDs: repositories.map(\.id)
     )
@@ -121,6 +144,7 @@ struct PRActivityStore: Codable {
     copy.window = settings.window
     copy.bin = settings.bin
     copy.refreshInterval = settings.refreshInterval
+    copy.showPrivateRepositoryNamesInShare = settings.showPrivateRepositoryNamesInShare
     copy.repositories = repositories.map { repository in
       var updated = repository
       if known.contains(repository.id) {
@@ -180,6 +204,19 @@ struct PRActivityStore: Codable {
       repositories: [],
       refreshedAt: refreshedAt
     )
+  }
+}
+
+extension PRActivityStore {
+  fileprivate enum CodingKeys: String, CodingKey {
+    case bucketLabels
+    case dailyBucketLabels
+    case window
+    case bin
+    case refreshInterval
+    case showPrivateRepositoryNamesInShare
+    case repositories
+    case refreshedAt
   }
 }
 
