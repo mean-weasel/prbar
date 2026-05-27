@@ -1,0 +1,329 @@
+version: 2
+
+goal:
+  title: "iOS Share Real Proof"
+  slug: "ios-share-real-proof"
+  kind: specific
+  tranche: "Make the iOS Share surface generate and export a proof-of-work card from selected GitHub PR, release, and tag data."
+  status: active
+  oracle:
+    signal: "A merged iOS PR plus automated simulator checks and physical Preview evidence demonstrate a real-data native share artifact with conservative privacy semantics."
+    cadence: "After Scout mapping, after Judge slice selection, after each Worker package, and at final audit."
+    final_proof: "Merged PR with relevant unit/UI tests, merge queue success, post-merge main iOS success, and successful iOS Physical Preview workflow on iPhone-preview."
+  intake:
+    original_request: "Plan out this next with GoalBuddy."
+    interpreted_outcome: "The next iOS tranche should turn the Share tab from a mock/demo surface into a native shareable proof-of-work card backed by selected GitHub PR/release/tag activity."
+    input_shape: specific
+    audience: "High-velocity GitHub users who want to privately share recent work proof from iPhone in chat, iMessage, Slack, or similar apps."
+    authority: requested
+    proof_type: test
+    completion_proof: "A merged PR proves real-data card generation and native share export with deterministic simulator tests, post-merge main iOS success, and iOS Physical Preview success."
+    likely_misfire: "A polished Share screen still uses dummy data, or export shares a vague screenshot without clear activity evidence, date range, repo scope, or stale-data labeling."
+    blind_spots_considered:
+      - "Share output format: image, text summary, or both."
+      - "Private repo names, PR titles, release notes, and author metadata may be sensitive."
+      - "Stale cached data needs honest labeling if used for a card."
+      - "The app may already have reusable renderer/export pieces that should be preserved."
+      - "CI cannot depend on live GitHub credentials or real share destinations."
+      - "Mac share-card code may share model concepts but should not be changed casually."
+    existing_plan_facts:
+      - "The iOS app has already been moving from dummy data to live GitHub-backed activity."
+      - "Repo selection and pull-to-refresh were planned as prerequisites for useful real activity."
+      - "Offline cache/reliability work makes stale data semantics important for any shared artifact."
+      - "The product direction prefers native local sharing before any public social backend."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/ios-share-real-proof/"
+    command: "npx goalbuddy board /Users/neonwatty/Desktop/prbar/Docs/goals/ios-share-real-proof"
+
+active_task: T005
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Map the current iOS Share surface, card rendering/export capabilities, activity snapshot data flow, privacy/freshness metadata, and deterministic verification hooks."
+    inputs:
+      - "Docs/goals/ios-share-real-proof/goal.md"
+      - "Current repository state"
+      - "Existing iOS Share views and shared PRBar activity models"
+      - "Existing macOS/share-card code only as comparison evidence, not an edit target"
+    constraints:
+      - "Read-only."
+      - "Do not edit product files."
+      - "Do not run live GitHub credential flows."
+      - "Identify exact Swift/shared/test/workflow files relevant to Share tab rendering, native export, card generation, PR/release/tag activity, date ranges, stale/offline labeling, and UI tests."
+      - "Call out any shared files that could affect macOS before Judge approves edits."
+    expected_output:
+      - "Current Share tab behavior and whether it is sample-backed or activity-backed."
+      - "Existing renderer/export mechanisms available on iOS."
+      - "Activity data needed for card front/back/evidence details."
+      - "Privacy and stale-data labeling risks."
+      - "Test seams for deterministic card payload and UI/export behavior."
+      - "Recommended implementation options for Judge."
+    receipt:
+      result: done
+      note: "notes/T001-ios-share-real-proof-scout.md"
+      summary: "The Share tab is already backed by PRBarStore activity through WorkCardRenderer, so the remaining gap is native export plus stronger provenance/privacy/freshness semantics. Current export actions only dismiss a sheet and show placeholder alerts. iOS has SwiftUI card views that can be rendered with ImageRenderer; macOS has a separate NSImage/NSSharingService implementation that is useful precedent but should not be edited without Judge approval."
+      evidence:
+        - "apple/PRBar/Share/ShareView.swift: uses WorkCardRenderer.source/evidence(for: store), shows source/private-warning/export UI, and opens ExportCardSheet."
+        - "apple/PRBar/Share/ExportCardSheet.swift: lists export actions but only calls onAction; no native share, copy, save, or image rendering."
+        - "apple/PRBar/Share/WorkCardRenderer.swift: shippingSnapshot and releaseReceipt derive source/evidence from store pullRequests, releases, selectedReleaseID, prRange, and includedRepositories."
+        - "apple/PRBar/Share/WorkCardView.swift and WorkCardEvidenceView.swift: SwiftUI card faces suitable for ImageRenderer."
+        - "apple/PRBarShared/PRBarStore.swift: owns activity arrays, included repos, githubConnection, lastActivityRefreshAt, lastActivityRefreshAttemptAt, activityRefreshIssue, and cardDraft."
+        - "Sources/Views/ShareCardRenderer.swift and ShareCardPreviewSheet.swift: macOS precedent for ImageRenderer plus native share/copy/save, but AppKit-specific."
+        - "apple/PRBarUITests/PRBarUITests.swift: existing Share export UI smoke and deterministic --ui-testing-refresh-data/--ui-testing-cached-activity hooks."
+      risks:
+        - "A shared card can leak private repo names, PR titles, release notes, exact counts, or the GitHub login if privacy controls are unclear."
+        - "Cached/stale activity could be exported without an honest freshness label."
+        - "Simulator UI tests should not depend on external share-sheet destinations."
+        - "Hardcoded @neonwatty handle in card views should be replaced with store-derived GitHub login or hidden text."
+      recommended_option: "Approve one iOS-only vertical slice: add a store-derived export model/caption/provenance builder, render the selected card side to an image with ImageRenderer, expose a native local share path for image plus caption, add caption-copy/test seams, show privacy/freshness provenance before export, and verify with unit plus focused UI tests."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the largest safe first implementation package for real-data iOS Share cards and native export."
+    inputs:
+      - "T001 receipt"
+      - "Docs/goals/ios-share-real-proof/goal.md"
+    constraints:
+      - "Prefer one coherent vertical slice that changes real user behavior."
+      - "Require card data provenance, repo/date scope, and stale/fresh labeling to be addressed enough for a safe first PR."
+      - "Do not approve backend, public profile, messaging, or new GitHub scope work."
+      - "Bound allowed_files tightly and avoid macOS changes unless clearly necessary."
+    expected_output:
+      - "Decision: approved implementation package, split package, or request more scouting."
+      - "Exact Worker objective."
+      - "Allowed files."
+      - "Verification commands."
+      - "Stop conditions."
+      - "Explicit non-goals for the first PR."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      summary: "Approve one iOS-only vertical slice: build a real store-derived share export model, show provenance/privacy/freshness before export, render the selected card side to a native image, and replace placeholder export alerts with a real native local share path plus deterministic caption-copy/export test seams. This is the largest safe first slice because it changes the user-visible Share behavior from mock actions to an actual proof artifact while avoiding backend/social scope and macOS churn."
+      rationale: "Scout showed Share cards already consume provider-backed store data, so adding more data plumbing alone would miss the goal. The trust gap is the export boundary: what leaves the app, whether it is fresh/stale, whether it contains private evidence, and whether the app can produce a native shareable artifact without live credentials."
+      worker_task: T003
+      allowed_files:
+        - "apple/PRBar/Share/ShareView.swift"
+        - "apple/PRBar/Share/WorkCardView.swift"
+        - "apple/PRBar/Share/WorkCardEvidenceView.swift"
+        - "apple/PRBar/Share/ExportCardSheet.swift"
+        - "apple/PRBar/Share/WorkCardRenderer.swift"
+        - "apple/PRBar/Share/WorkCardExport.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "Docs/goals/ios-share-real-proof/**"
+      verify:
+        - "git diff --check"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/ShareRealProofUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testShareTabExportsRealActivityProof -only-testing:PRBarUITests/PRBarUITests/testShareTabLabelsCachedProofBeforeExport"
+      stop_if:
+        - "Need new GitHub OAuth scopes, backend infrastructure, public profile hosting, or external credentials."
+        - "Need to edit macOS Sources/ or Tests/PRMenuBarTests files."
+        - "ImageRenderer cannot produce a deterministic iOS image artifact without a smaller verified export seam."
+        - "Native share UI cannot be opened or tested without relying on external destinations; in that case keep the native action in product code but verify the prepared export item through model/UI seams."
+        - "Privacy/freshness semantics require a product decision beyond existing WorkCardDraft controls."
+      explicit_non_goals:
+        - "No public social feed, hosted profile, messaging, or upload."
+        - "No new GitHub scopes."
+        - "No macOS share-card behavior changes."
+        - "No broad Share tab redesign beyond export/provenance controls."
+        - "No live GitHub credentials in CI or UI tests."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: default
+    objective: "Implement the Judge-selected real-data Share card and native export slice."
+    constraints:
+      - "Write only inside allowed_files selected by Judge."
+      - "Use existing SwiftUI and shared-model patterns."
+      - "Keep sharing local/private by default."
+      - "Do not broaden into social backend, public profile, messaging, or unrelated visual redesign."
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/ShareRealProofUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testShareTabExportsRealActivityProof -only-testing:PRBarUITests/PRBarUITests/testShareTabLabelsCachedProofBeforeExport"
+    stop_if:
+      - "Need new GitHub OAuth scopes, backend infrastructure, or external credentials."
+      - "Need to persist or upload private activity outside app-private local storage."
+      - "Need broad macOS UI changes."
+      - "Native share export cannot be verified deterministically without a smaller test seam."
+    allowed_files:
+      - "apple/PRBar/Share/ShareView.swift"
+      - "apple/PRBar/Share/WorkCardView.swift"
+      - "apple/PRBar/Share/WorkCardEvidenceView.swift"
+      - "apple/PRBar/Share/ExportCardSheet.swift"
+      - "apple/PRBar/Share/WorkCardRenderer.swift"
+      - "apple/PRBar/Share/WorkCardExport.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBarShared/PRBarModels.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "Docs/goals/ios-share-real-proof/**"
+    receipt:
+      result: done
+      summary: "Implemented the approved iOS-only real proof export slice. Share now builds a store-derived WorkCardExport with caption, provenance, freshness, privacy messaging, and native-card source data. The Share tab shows proof source/freshness/privacy before export, card faces use the signed-in GitHub handle instead of a hardcoded handle, ExportCardSheet shows what will leave the app, and export actions now prepare native image+caption sharing, copy images, copy captions, or share evidence/both sides. WorkCardImageRenderer renders selected card sides to UIImage with ImageRenderer."
+      changed_files:
+        - "apple/PRBar/Share/WorkCardExport.swift"
+        - "apple/PRBar/Share/ShareView.swift"
+        - "apple/PRBar/Share/ExportCardSheet.swift"
+        - "apple/PRBar/Share/WorkCardRenderer.swift"
+        - "apple/PRBar/Share/WorkCardView.swift"
+        - "apple/PRBar/Share/WorkCardEvidenceView.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "Docs/goals/ios-share-real-proof/goal.md"
+        - "Docs/goals/ios-share-real-proof/state.yaml"
+        - "Docs/goals/ios-share-real-proof/notes/T001-ios-share-real-proof-scout.md"
+      commands:
+        - command: "git diff --check"
+          status: pass
+          summary: "No whitespace errors."
+        - command: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          summary: "55 tests, 0 failures."
+        - command: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/ShareRealProofUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testShareTabExportsRealActivityProof -only-testing:PRBarUITests/PRBarUITests/testShareTabLabelsCachedProofBeforeExport"
+          status: pass
+          summary: "2 focused Share UI tests, 0 failures."
+        - command: "IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+          status: pass
+          summary: "PR-profile UI smoke passed with tabs and Share export tests."
+      notes:
+        - "First unit run failed on a Swift contains(where:) syntax issue in WorkCardExport; fixed and reran successfully."
+        - "The native iOS share sheet itself is launched from product code through UIActivityViewController, while deterministic tests verify export model, image rendering, provenance UI, and copy-caption behavior without relying on external share destinations."
+        - "MacOS Sources/ and Tests/PRMenuBarTests were not edited."
+
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review the implemented Share slice for product trust, privacy, UX, regression risk, and verification adequacy before PR."
+    inputs:
+      - "T003 receipt"
+      - "Implementation diff"
+      - "Verification output"
+    constraints:
+      - "Code-review posture: prioritize bugs, privacy leaks, stale-data ambiguity, UI regressions, and missing tests."
+      - "Do not approve if the card can be mistaken for fresh/live data when sourced from stale cache."
+      - "Do not approve if sample data can accidentally appear in a signed-in real-data share path."
+    expected_output:
+      - "Decision: approved_for_pr | needs_changes | blocked."
+      - "Findings ordered by severity."
+      - "Required fixes or PR-ready evidence."
+    receipt:
+      result: done
+      decision: approved_for_pr
+      full_outcome_complete: false
+      findings: []
+      summary: "Approved for PR. The implementation stays within the iOS-only allowed scope, avoids macOS share-card changes, replaces placeholder export behavior with a native image/caption artifact path, derives card source/handle/provenance from PRBarStore, and makes privacy plus cached/fresh state visible before export. Verification covers model construction, cached/private freshness labeling, native UIImage rendering, refreshed-data Share UI, cached Share UI, existing PR-profile Share smoke, and whitespace."
+      verification_reviewed:
+        - "git diff --check: pass"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh: pass, 55 tests"
+        - "Focused Share UI tests: pass, 2 tests"
+        - "IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh: pass, 2 tests"
+      residual_risk:
+        - "Simulator tests avoid asserting external share-sheet destinations because those depend on installed apps and OS state; product code still opens UIActivityViewController with rendered image and caption."
+        - "Save-to-Photos was intentionally not included, avoiding Photos permission scope in this tranche."
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: low
+    objective: "Open, shepherd, and merge the Share card PR once Judge approves the implementation."
+    allowed_files:
+      - "apple/PRBar/Share/ShareView.swift"
+      - "apple/PRBar/Share/WorkCardView.swift"
+      - "apple/PRBar/Share/WorkCardEvidenceView.swift"
+      - "apple/PRBar/Share/ExportCardSheet.swift"
+      - "apple/PRBar/Share/WorkCardRenderer.swift"
+      - "apple/PRBar/Share/WorkCardExport.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "Docs/goals/ios-share-real-proof/**"
+    verify:
+      - "git diff --check"
+      - "PR CI and iOS checks pass"
+      - "Merge queue CI and iOS checks pass"
+    stop_if:
+      - "Unrelated dirty work would be included."
+      - "Required checks fail with a non-flaky product regression."
+      - "Merge queue reports conflicts that require implementation changes outside approved scope."
+    constraints:
+      - "Preserve unrelated dirty worktree changes."
+      - "Use the repo's merge queue and normal GitHub checks."
+      - "Inspect failures enough to identify blockers rather than retrying blindly."
+    expected_output:
+      - "PR URL."
+      - "CI/iOS check links and conclusions."
+      - "Merge queue result."
+      - "Merged commit SHA."
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: low
+    objective: "Verify post-merge main checks and iOS Physical Preview on iPhone-preview."
+    constraints:
+      - "Do not mark the goal complete until post-merge main iOS and iPhone-preview physical smoke evidence are recorded."
+      - "If physical Preview fails, identify whether the blocker is signing, runner/device availability, Automation Mode, app build, or smoke behavior."
+    expected_output:
+      - "Post-merge main CI/iOS links and conclusions."
+      - "iOS Physical Preview run link and conclusion."
+      - "Likely blocker if any run fails."
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Final audit: prove the full iOS Share Real Proof outcome is complete against the oracle."
+    constraints:
+      - "Do not mark complete if any queued required Worker remains."
+      - "Map receipts back to the original request, likely misfire, and final proof requirements."
+      - "Record full_outcome_complete: true only with merged PR, checks, post-merge main iOS, and physical Preview proof."
+    expected_output:
+      - "Final audit receipt."
+      - "decision: complete | incomplete."
+      - "full_outcome_complete: true only if the oracle is satisfied."

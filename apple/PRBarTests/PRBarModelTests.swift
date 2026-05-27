@@ -29,6 +29,68 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertTrue(store.cardHasPrivateEvidence)
   }
 
+  func testWorkCardExportUsesCurrentStoreActivityAndGitHubHandle() {
+    let store = PRBarStore.sample()
+    store.githubConnection = GitHubConnection(status: .connected, user: GitHubUser(login: "octocat", displayName: "Octo Cat"))
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+    store.pullRequests = [
+      PullRequest(id: "mean-weasel/prbar#101", title: "Share real proof", repoID: "mean-weasel/prbar", number: 101, mergedAt: SampleData.dateTime("2026-05-24T17:42:00Z")),
+      PullRequest(id: "example/client-api#77", title: "Excluded private PR", repoID: "example/client-api", number: 77, mergedAt: SampleData.dateTime("2026-05-24T16:18:00Z"))
+    ]
+    store.releases = [
+      ReleaseMoment(id: "mean-weasel/prbar@release:v1.0.0", repoID: "mean-weasel/prbar", title: "Share proof release", tag: "v1.0.0", date: SampleData.date("2026-05-24"), source: .release, notes: "Release notes from GitHub.", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v1.0.0")!)
+    ]
+    store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T18:30:00Z")
+
+    let export = WorkCardExportBuilder.export(for: store)
+
+    XCTAssertEqual(export.source.metric, "1 merged")
+    XCTAssertEqual(export.source.repoNames, ["prbar"])
+    XCTAssertEqual(export.source.handle, "@octocat")
+    XCTAssertTrue(export.caption.contains("1 merged via PRBar"))
+    XCTAssertTrue(export.caption.contains("Repos: prbar"))
+    XCTAssertTrue(export.provenance.contains("1 selected repo"))
+    XCTAssertTrue(export.freshness.contains("Last refreshed"))
+    XCTAssertEqual(export.privacyMessage, "Only selected GitHub activity is included in this export.")
+  }
+
+  func testWorkCardExportLabelsCachedPrivateEvidenceBeforeSharing() {
+    let store = PRBarStore.sample()
+    store.repositories = [
+      Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+    store.pullRequests = [
+      PullRequest(id: "example/client-api#77", title: "Private cached PR", repoID: "example/client-api", number: 77, mergedAt: SampleData.dateTime("2026-05-24T17:42:00Z"))
+    ]
+    store.releases = [
+      ReleaseMoment(id: "example/client-api@release:v2.1.0", repoID: "example/client-api", title: "Private cached release", tag: "v2.1.0", date: SampleData.date("2026-05-24"), source: .release, notes: "Private release notes.", url: URL(string: "https://github.com/example/client-api/releases/tag/v2.1.0")!)
+    ]
+    store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T08:00:00Z")
+    store.lastActivityRefreshAttemptAt = SampleData.dateTime("2026-05-24T09:00:00Z")
+    store.activityRefreshIssue = AuthIssue(id: "github-network-unavailable", title: "Network unavailable", message: "GitHub is unavailable.")
+
+    let export = WorkCardExportBuilder.export(for: store)
+
+    XCTAssertTrue(export.includesPrivateEvidence)
+    XCTAssertTrue(export.freshness.contains("Cached GitHub data"))
+    XCTAssertTrue(export.privacyMessage.contains("private repo names"))
+    XCTAssertTrue(export.evidence.contains { $0.isPrivate })
+  }
+
+  @MainActor
+  func testWorkCardImageRendererProducesNativeImageArtifact() {
+    let export = WorkCardExportBuilder.export(for: PRBarStore.sample(), side: .publicSide)
+
+    let image = WorkCardImageRenderer.image(for: export)
+
+    XCTAssertNotNil(image)
+    XCTAssertGreaterThan(image?.size.width ?? 0, 0)
+    XCTAssertGreaterThan(image?.size.height ?? 0, 0)
+  }
+
   func testGitHubConnectionStartsRepoSetupWithRecommendedReposIncluded() throws {
     let sessionStore = InMemoryGitHubSessionStore()
     let store = PRBarStore.sample(

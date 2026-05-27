@@ -1,9 +1,13 @@
 import SwiftUI
+import UIKit
 
 struct ShareView: View {
   @Bindable var store: PRBarStore
 
   @State private var isExportSheetPresented = false
+  @State private var isNativeSharePresented = false
+  @State private var nativeShareItems: [Any] = []
+  @State private var exportMessage: String?
   @State private var alertTitle = ""
   @State private var isAlertPresented = false
 
@@ -18,6 +22,7 @@ struct ShareView: View {
             privateWarningPanel
           }
 
+          provenancePanel
           exportSummary
 
           Group {
@@ -52,14 +57,23 @@ struct ShareView: View {
           }
           .buttonStyle(.borderedProminent)
           .frame(maxWidth: .infinity, alignment: .leading)
+
+          if let exportMessage {
+            Text(exportMessage)
+              .font(.caption)
+              .foregroundStyle(.secondary)
+          }
         }
         .padding()
       }
       .navigationTitle("Share")
       .sheet(isPresented: $isExportSheetPresented) {
-        ExportCardSheet { action in
-          presentAlert(action.rawValue)
+        ExportCardSheet(export: currentExport) { action in
+          handleExportAction(action)
         }
+      }
+      .sheet(isPresented: $isNativeSharePresented) {
+        WorkCardActivityView(activityItems: nativeShareItems)
       }
       .alert(alertTitle, isPresented: $isAlertPresented) {
         Button("OK", role: .cancel) {}
@@ -110,6 +124,28 @@ struct ShareView: View {
     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
   }
 
+  private var provenancePanel: some View {
+    let export = currentExport
+
+    return VStack(alignment: .leading, spacing: 8) {
+      Text("Proof source")
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.secondary)
+      Text(export.provenance)
+        .font(.subheadline.weight(.semibold))
+      Text(export.freshness)
+        .font(.caption)
+        .foregroundStyle(export.freshness.hasPrefix("Cached") ? .orange : .secondary)
+      Text(export.privacyMessage)
+        .font(.caption)
+        .foregroundStyle(export.includesPrivateEvidence ? .orange : .secondary)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(14)
+    .background(Color(.secondarySystemBackground))
+    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+  }
+
   private var exportSummary: some View {
     VStack(spacing: 10) {
       summaryRow(label: "Image", value: store.cardDraft.side == .publicSide ? "Public side" : "Evidence side")
@@ -130,6 +166,72 @@ struct ShareView: View {
         .fontWeight(.semibold)
     }
     .font(.subheadline)
+  }
+
+  private var currentExport: WorkCardExport {
+    WorkCardExportBuilder.export(for: store)
+  }
+
+  private func handleExportAction(_ action: ExportAction) {
+    switch action {
+    case .sharePublicImage:
+      share(side: .publicSide)
+    case .copyImage:
+      copyImage(side: store.cardDraft.side)
+    case .copyCaption:
+      copyCaption()
+    case .exportEvidenceSide:
+      share(side: .evidenceSide)
+    case .exportBothSides:
+      shareBothSides()
+    }
+  }
+
+  @MainActor
+  private func share(side: CardSide) {
+    let export = WorkCardExportBuilder.export(for: store, side: side)
+    guard let image = WorkCardImageRenderer.image(for: export) else {
+      presentAlert("Could not render card image")
+      return
+    }
+
+    nativeShareItems = [image, export.caption]
+    exportMessage = "Native share prepared for \(export.sideLabel.lowercased())."
+    isNativeSharePresented = true
+  }
+
+  @MainActor
+  private func shareBothSides() {
+    let publicExport = WorkCardExportBuilder.export(for: store, side: .publicSide)
+    let evidenceExport = WorkCardExportBuilder.export(for: store, side: .evidenceSide)
+    guard
+      let publicImage = WorkCardImageRenderer.image(for: publicExport),
+      let evidenceImage = WorkCardImageRenderer.image(for: evidenceExport)
+    else {
+      presentAlert("Could not render card images")
+      return
+    }
+
+    nativeShareItems = [publicImage, evidenceImage, publicExport.caption]
+    exportMessage = "Native share prepared for both card sides."
+    isNativeSharePresented = true
+  }
+
+  @MainActor
+  private func copyImage(side: CardSide) {
+    let export = WorkCardExportBuilder.export(for: store, side: side)
+    guard let image = WorkCardImageRenderer.image(for: export) else {
+      presentAlert("Could not render card image")
+      return
+    }
+
+    UIPasteboard.general.image = image
+    exportMessage = "\(export.sideLabel) image copied."
+  }
+
+  private func copyCaption() {
+    UIPasteboard.general.string = currentExport.caption
+    exportMessage = "Caption copied from GitHub activity."
   }
 
   private func presentAlert(_ title: String) {

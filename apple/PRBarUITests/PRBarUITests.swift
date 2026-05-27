@@ -59,6 +59,52 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testShareTabExportsRealActivityProof() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-refresh-data"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    app.buttons["Refresh activity"].tap()
+    XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
+
+    app.tabBars.buttons["Share"].tap()
+    XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["1 merged"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Proof source"].exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed")).firstMatch.exists)
+
+    app.buttons["Export card"].tap()
+    XCTAssertTrue(app.staticTexts["Image and caption stay local"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Progress recap")).firstMatch.exists)
+    XCTAssertTrue(app.buttons["Share public-side image"].exists)
+    app.buttons["Copy caption"].tap()
+    XCTAssertTrue(app.staticTexts["Caption copied from GitHub activity."].waitForExistence(timeout: 2))
+  }
+
+  @MainActor
+  func testShareTabLabelsCachedProofBeforeExport() {
+    let seedApp = XCUIApplication()
+    seedApp.launchArguments = ["--ui-testing", "--ui-testing-seed-activity-cache"]
+    seedApp.launch()
+
+    XCTAssertTrue(seedApp.staticTexts["#424 Cached relaunch PR"].waitForExistence(timeout: 4))
+    seedApp.terminate()
+
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-cached-activity"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Showing cached GitHub data"].waitForExistence(timeout: 4))
+    app.tabBars.buttons["Share"].tap()
+    XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Cached GitHub data")).firstMatch.exists)
+    app.buttons["Export card"].tap()
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Cached GitHub data")).firstMatch.waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Share public-side image"].exists)
+  }
+
+  @MainActor
   func testMoreMenuContainsRepositoryAndPrivacySettings() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]

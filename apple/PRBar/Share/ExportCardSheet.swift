@@ -2,7 +2,6 @@ import SwiftUI
 
 enum ExportAction: String, CaseIterable, Identifiable {
   case sharePublicImage = "Share public-side image"
-  case saveImage = "Save image"
   case copyImage = "Copy image"
   case copyCaption = "Copy caption"
   case exportEvidenceSide = "Export evidence side"
@@ -14,6 +13,7 @@ enum ExportAction: String, CaseIterable, Identifiable {
 struct ExportCardSheet: View {
   @Environment(\.dismiss) private var dismiss
 
+  var export: WorkCardExport
   var onAction: (ExportAction) -> Void
 
   var body: some View {
@@ -28,11 +28,27 @@ struct ExportCardSheet: View {
         }
 
         VStack(alignment: .leading, spacing: 6) {
-          Text("Images are exported as PNGs")
+          Text("Image and caption stay local")
             .font(.headline)
-          Text("Messages and other apps decide how the image and optional caption appear after sharing.")
+          Text("Messages and other apps decide how the image and caption appear after sharing.")
             .font(.subheadline)
             .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+        VStack(alignment: .leading, spacing: 8) {
+          Label(export.privacyMessage, systemImage: export.includesPrivateEvidence ? "lock.shield" : "checkmark.shield")
+            .font(.caption)
+            .foregroundStyle(export.includesPrivateEvidence ? .orange : .secondary)
+          Text(export.provenance)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+          Text(export.freshness)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(export.freshness.hasPrefix("Cached") ? .orange : .secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
@@ -43,7 +59,9 @@ struct ExportCardSheet: View {
           ForEach(ExportAction.allCases) { action in
             Button(action.rawValue) {
               dismiss()
-              onAction(action)
+              DispatchQueue.main.async {
+                onAction(action)
+              }
             }
             .buttonStyle(.bordered)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,5 +86,5 @@ struct ExportCardSheet: View {
 }
 
 #Preview {
-  ExportCardSheet { _ in }
+  ExportCardSheet(export: WorkCardExportBuilder.export(for: .sample())) { _ in }
 }
