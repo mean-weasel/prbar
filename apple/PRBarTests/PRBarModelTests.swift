@@ -104,6 +104,71 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.includedRepositories.map(\.id), ["prbar"])
   }
 
+  func testRestoringGitHubSessionUsesCachedActivityWhenRefreshFails() throws {
+    let sessionStore = InMemoryGitHubSessionStore()
+    try sessionStore.saveSession(.fixture)
+    let cachedRefreshDate = SampleData.dateTime("2026-05-24T18:30:00Z")
+    let cachedSnapshot = GitHubActivitySnapshot(
+      pullRequests: [
+        PullRequest(id: "prbar#424", title: "Cached relaunch PR", repoID: "prbar", number: 424, mergedAt: SampleData.dateTime("2026-05-24T19:30:00Z"))
+      ],
+      releases: [
+        ReleaseMoment(id: "prbar@release:v4.2.4", repoID: "prbar", title: "Cached relaunch release", tag: "v4.2.4", date: SampleData.date("2026-05-24"), source: .release, notes: "Loaded from cache.", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v4.2.4")!)
+      ],
+      anchorDate: SampleData.date("2026-05-24")
+    )
+    let cacheStore = InMemoryGitHubActivityCacheStore(
+      record: GitHubActivityCacheRecord(
+        githubLogin: "neonwatty",
+        includedRepositoryIDs: ["prbar"],
+        snapshot: cachedSnapshot,
+        lastRefreshedAt: cachedRefreshDate
+      )
+    )
+    let store = PRBarStore.sample(
+      authService: StaticGitHubAuthService(sessionStore: sessionStore),
+      activityProvider: ThrowingGitHubActivityProvider(error: GitHubAPIError.networkUnavailable),
+      repositorySelectionStore: InMemoryRepositorySelectionStore(includedRepositoryIDs: ["prbar"]),
+      activityCacheStore: cacheStore
+    )
+    store.githubConnection = .signedOut
+    store.routeState = .signedOut
+
+    store.restoreGitHubSession()
+
+    XCTAssertEqual(store.routeState, .authenticated)
+    XCTAssertEqual(store.pullRequests.map(\.id), ["prbar#424"])
+    XCTAssertEqual(store.releases.map(\.id), ["prbar@release:v4.2.4"])
+    XCTAssertEqual(store.lastActivityRefreshAt, cachedRefreshDate)
+    XCTAssertEqual(store.activityRefreshIssue?.id, "github-network-unavailable")
+  }
+
+  func testRestoringGitHubSessionWithoutMatchingCacheKeepsIssueOnRefreshFailure() throws {
+    let sessionStore = InMemoryGitHubSessionStore()
+    try sessionStore.saveSession(.fixture)
+    let cacheStore = InMemoryGitHubActivityCacheStore(
+      record: GitHubActivityCacheRecord(
+        githubLogin: "octocat",
+        includedRepositoryIDs: ["prbar"],
+        snapshot: SampleData.activitySnapshot,
+        lastRefreshedAt: SampleData.dateTime("2026-05-24T18:30:00Z")
+      )
+    )
+    let store = PRBarStore.sample(
+      authService: StaticGitHubAuthService(sessionStore: sessionStore),
+      activityProvider: ThrowingGitHubActivityProvider(error: GitHubAPIError.networkUnavailable),
+      repositorySelectionStore: InMemoryRepositorySelectionStore(includedRepositoryIDs: ["prbar"]),
+      activityCacheStore: cacheStore
+    )
+
+    store.restoreGitHubSession()
+
+    guard case let .issue(issue) = store.routeState else {
+      return XCTFail("Expected issue without a matching cache")
+    }
+    XCTAssertEqual(issue.id, "github-network-unavailable")
+  }
+
   func testRestoringMissingGitHubSessionReturnsToSignedOut() {
     let store = PRBarStore.sample(
       authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore())
@@ -118,8 +183,17 @@ final class PRBarModelTests: XCTestCase {
   func testDisconnectingGitHubClearsIncludedReposAndReturnsToSignedOut() throws {
     let sessionStore = InMemoryGitHubSessionStore()
     try sessionStore.saveSession(.fixture)
+    let cacheStore = InMemoryGitHubActivityCacheStore(
+      record: GitHubActivityCacheRecord(
+        githubLogin: "neonwatty",
+        includedRepositoryIDs: ["prbar"],
+        snapshot: SampleData.activitySnapshot,
+        lastRefreshedAt: SampleData.dateTime("2026-05-24T18:30:00Z")
+      )
+    )
     let store = PRBarStore.sample(
-      authService: StaticGitHubAuthService(sessionStore: sessionStore)
+      authService: StaticGitHubAuthService(sessionStore: sessionStore),
+      activityCacheStore: cacheStore
     )
 
     store.disconnectGitHub()
@@ -129,6 +203,7 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertNil(store.githubConnection.user)
     XCTAssertTrue(store.includedRepositories.isEmpty)
     XCTAssertNil(try sessionStore.loadSession())
+    XCTAssertNil(cacheStore.record)
   }
 
   func testInMemoryGitHubSessionStoreRoundTripsSession() throws {
@@ -584,6 +659,35 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.releases.map(\.id), ["mean-weasel/prbar@release:v1.4.0"])
     XCTAssertEqual(store.activityAnchorDate, SampleData.date("2026-05-24"))
     XCTAssertEqual(store.lastActivityRefreshAt, refreshDate)
+  }
+
+  @MainActor
+  func testSuccessfulActivityRefreshWritesScopedCacheRecord() async {
+    let refreshDate = SampleData.dateTime("2026-05-24T22:00:00Z")
+    let cacheStore = InMemoryGitHubActivityCacheStore()
+    let store = PRBarStore.sample(
+      activityProvider: StaticGitHubActivityProvider(
+        snapshot: GitHubActivitySnapshot(
+          pullRequests: [
+            PullRequest(id: "prbar#91", title: "Cache write PR", repoID: "prbar", number: 91, mergedAt: SampleData.dateTime("2026-05-24T20:00:00Z"))
+          ],
+          releases: [],
+          anchorDate: SampleData.date("2026-05-24")
+        )
+      ),
+      activityCacheStore: cacheStore,
+      currentDate: { refreshDate }
+    )
+    store.repositories = [
+      Repository(id: "prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(cacheStore.record?.githubLogin, "neonwatty")
+    XCTAssertEqual(cacheStore.record?.includedRepositoryIDs, ["prbar"])
+    XCTAssertEqual(cacheStore.record?.snapshot.pullRequests.map(\.id), ["prbar#91"])
+    XCTAssertEqual(cacheStore.record?.lastRefreshedAt, refreshDate)
   }
 
   func testActivityRefreshFailureKeepsSampleActivityAndShowsIssue() {

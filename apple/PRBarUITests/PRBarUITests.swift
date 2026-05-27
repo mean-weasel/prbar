@@ -126,10 +126,33 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 2))
     app.buttons["Refresh activity"].tap()
 
-    XCTAssertTrue(app.staticTexts["Showing last synced data"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Showing cached GitHub data"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Retry failed")).firstMatch.exists)
-    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Showing data from")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Showing cached data from")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts["#39 Connect GitHub auth fallback"].exists)
+  }
+
+  @MainActor
+  func testRelaunchRestoresCachedActivityWhenRefreshFails() {
+    let seedApp = XCUIApplication()
+    seedApp.launchArguments = ["--ui-testing", "--ui-testing-seed-activity-cache"]
+    seedApp.launch()
+
+    XCTAssertTrue(seedApp.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(seedApp.staticTexts["#424 Cached relaunch PR"].waitForExistence(timeout: 4))
+    seedApp.terminate()
+
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-cached-activity"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Showing cached GitHub data"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Showing cached data from")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts["#424 Cached relaunch PR"].exists)
+
+    app.tabBars.buttons["Releases"].tap()
+    XCTAssertTrue(app.staticTexts["v4.2.4 Cached relaunch release"].waitForExistence(timeout: 2))
   }
 
   @MainActor

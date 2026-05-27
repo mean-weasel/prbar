@@ -127,4 +127,72 @@ final class GitHubActivityTests: XCTestCase {
       .timedOut
     )
   }
+
+  func testFileGitHubActivityCacheStoreRoundTripsMatchingRecord() throws {
+    let fileURL = temporaryCacheURL()
+    let store = FileGitHubActivityCacheStore(fileURL: fileURL)
+    let record = GitHubActivityCacheRecord(
+      githubLogin: "neonwatty",
+      includedRepositoryIDs: ["launch-kit", "prbar"],
+      snapshot: SampleData.activitySnapshot,
+      lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z")
+    )
+
+    try store.save(record)
+
+    XCTAssertEqual(
+      try store.load(githubLogin: "neonwatty", includedRepositoryIDs: ["prbar", "launch-kit"]),
+      record
+    )
+    XCTAssertNil(try store.load(githubLogin: "octocat", includedRepositoryIDs: ["prbar", "launch-kit"]))
+    XCTAssertNil(try store.load(githubLogin: "neonwatty", includedRepositoryIDs: ["prbar"]))
+  }
+
+  func testFileGitHubActivityCacheStoreIgnoresUnsupportedVersion() throws {
+    let fileURL = temporaryCacheURL()
+    let store = FileGitHubActivityCacheStore(fileURL: fileURL)
+    let record = GitHubActivityCacheRecord(
+      githubLogin: "neonwatty",
+      includedRepositoryIDs: ["prbar"],
+      snapshot: SampleData.activitySnapshot,
+      lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"),
+      version: 999
+    )
+
+    try store.save(record)
+
+    XCTAssertNil(try store.load(githubLogin: "neonwatty", includedRepositoryIDs: ["prbar"]))
+  }
+
+  func testFileGitHubActivityCacheStoreThrowsForCorruptCache() throws {
+    let fileURL = temporaryCacheURL()
+    try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data("not-json".utf8).write(to: fileURL)
+
+    let store = FileGitHubActivityCacheStore(fileURL: fileURL)
+
+    XCTAssertThrowsError(try store.load(githubLogin: "neonwatty", includedRepositoryIDs: ["prbar"]))
+  }
+
+  func testFileGitHubActivityCacheStoreClearsCacheFile() throws {
+    let fileURL = temporaryCacheURL()
+    let store = FileGitHubActivityCacheStore(fileURL: fileURL)
+    let record = GitHubActivityCacheRecord(
+      githubLogin: "neonwatty",
+      includedRepositoryIDs: ["prbar"],
+      snapshot: SampleData.activitySnapshot,
+      lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z")
+    )
+
+    try store.save(record)
+    try store.clear()
+
+    XCTAssertNil(try store.load(githubLogin: "neonwatty", includedRepositoryIDs: ["prbar"]))
+  }
+
+  private func temporaryCacheURL() -> URL {
+    FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+      .appendingPathComponent("GitHubActivityCache.json")
+  }
 }

@@ -1,0 +1,342 @@
+version: 2
+
+goal:
+  title: iOS Activity Offline Cache
+  slug: ios-activity-offline-cache
+  kind: specific
+  tranche: "Persist and restore the last successful iOS GitHub activity snapshot so PRs/Releases remain trustworthy across relaunch, offline startup, and failed refreshes."
+  status: active
+  oracle:
+    signal: "A merged iOS PR plus automated simulator checks and physical Preview evidence demonstrate persisted cached activity restore and honest stale/offline UI states."
+    cadence: "After each Worker package and at final audit."
+    final_proof: "Merged PR with relevant tests, merge queue success, post-merge main iOS success, and successful iOS Physical Preview workflow on iPhone-preview."
+  intake:
+    original_request: "Plan out this next with GoalBuddy."
+    interpreted_outcome: "The iOS app should persist the last successful GitHub activity snapshot and restore it across relaunch/offline startup with clear stale/offline semantics."
+    input_shape: specific
+    audience: "High-velocity GitHub users checking PR and release activity from iPhone while mobile or temporarily offline."
+    authority: requested
+    proof_type: test
+    completion_proof: "A merged PR proves cached activity restore with simulator/unit/UI checks, post-merge main iOS success, and iOS Physical Preview success on iPhone-preview."
+    likely_misfire: "A cache exists technically, but users cannot tell whether displayed data is fresh, stale cached data, sample data, or failed sync data."
+    blind_spots_considered:
+      - "The cache envelope may need versioning to survive schema changes."
+      - "Sample data must not be mistaken for real cached GitHub data."
+      - "Repository-selection and auth-account changes may need invalidation or scoped cache keys."
+      - "Cache corruption and partial writes must fail safely."
+      - "Local GitHub metadata storage has privacy implications."
+      - "Shared PRBar models may affect macOS behavior."
+    existing_plan_facts:
+      - "PR #62 merged the first iOS data reliability tranche."
+      - "The previous tranche added last attempted refresh, last successful refresh, clearer GitHub failure mapping, and stale-but-usable UI after in-memory refresh failure."
+      - "Persistent offline/stale activity cache was explicitly deferred from PR #62."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: starting
+    url: "http://goalbuddy.localhost:41737/ios-activity-offline-cache/"
+    command: "npx goalbuddy board /Users/neonwatty/Desktop/prbar/Docs/goals/ios-activity-offline-cache"
+
+active_task: T005
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Map the current iOS activity data, storage, freshness, auth, repo-selection, and test surfaces for a persistent offline cache."
+    inputs:
+      - "Docs/goals/ios-activity-offline-cache/goal.md"
+      - "Current repository state"
+      - "PR #62 as merged context"
+    constraints:
+      - "Read-only."
+      - "Do not alter product files."
+      - "Identify exact Swift/shared/test/workflow files relevant to activity snapshots, app launch restore, repo selection, auth identity, sample data, and freshness UI."
+      - "Call out shared-model or storage choices that could affect macOS."
+      - "Do not design the final architecture beyond evidence-backed options."
+    expected_output:
+      - "Relevant source, shared model, test, and workflow files."
+      - "Current app-launch, refresh, sample-data, and repo-selection data flow."
+      - "Current persistence mechanisms already present in the repo."
+      - "Cache key/invalidation risks."
+      - "Existing verification commands and likely flaky spots."
+      - "Recommended implementation options for Judge to choose from."
+    receipt:
+      result: done
+      note: "notes/T001-ios-activity-offline-cache-scout.md"
+      summary: "Mapped the iOS activity data, persistence, freshness, auth, repo-selection, UI, test, and workflow surfaces. Activity data is not currently persisted; production launch starts from sample data, then refreshes live if a stored repo selection exists. Failed refresh during launch routes to an issue without restoring previous activity. Existing in-memory stale behavior is lost on relaunch."
+      evidence:
+        - "apple/PRBarShared/PRBarStore.swift:119"
+        - "apple/PRBarShared/PRBarStore.swift:175"
+        - "apple/PRBarShared/PRBarStore.swift:235"
+        - "apple/PRBarShared/PRBarStore.swift:248"
+        - "apple/PRBarShared/GitHubActivity.swift:9"
+        - "apple/PRBarShared/GitHubAuth.swift:186"
+        - "apple/PRBarShared/GitHubRepositories.swift:286"
+        - "apple/PRBar/Components/ActivitySyncStatusView.swift:3"
+        - "apple/PRBar/PRBarApp.swift:7"
+        - "apple/PRBarUITests/PRBarUITests.swift:101"
+      risks:
+        - "Sample data can be mistaken for cached live data after relaunch if restore semantics are not explicit."
+        - "Cache should be scoped by GitHub login/account identity."
+        - "Repository selection changes must filter or invalidate cached data."
+        - "Corrupt or old cache files must fail safely."
+        - "Private repo PR/release metadata is privacy-sensitive local data."
+      recommended_option: "Versioned activity cache store vertical slice with Codable snapshot models, app-private JSON file storage, login and included-repo scoping, stale/offline restore UI, disconnect clearing, and unit/UI proof."
+      spawned_tasks:
+        - T002
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the first safe vertical implementation package for persistent iOS activity cache."
+    inputs:
+      - "T001 receipt"
+      - "Docs/goals/ios-activity-offline-cache/goal.md"
+    constraints:
+      - "Prefer one coherent user-visible vertical slice over isolated storage plumbing."
+      - "Require versioning, invalidation, and stale/offline copy to be addressed enough for a safe first PR."
+      - "Bound allowed files to the minimum Swift/shared/test/workflow set needed."
+      - "Do not approve scope that requires new GitHub scopes, backend infrastructure, or product-policy decisions."
+    expected_output:
+      - "Decision: approved implementation package or request more scouting."
+      - "Exact Worker objective."
+      - "Allowed files."
+      - "Verification commands."
+      - "Stop conditions."
+      - "Explicit non-goals for the first PR."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      summary: "Approve one vertical cache slice: add a versioned activity cache store, make the activity snapshot models codable, save successful live activity snapshots with login and included-repo scope, restore matching cached activity before live refresh on app launch, show stale/offline copy if refresh fails after restore, and clear cached activity on disconnect. This is the largest safe useful first slice because it proves relaunch/offline user behavior end to end without new GitHub scopes or backend work."
+      rationale: "Metadata-only persistence would not satisfy the goal because the app would still show sample PRs/Releases after relaunch. A versioned file-backed cache creates the storage contract future slices will need while keeping policy limited to app-private local data."
+      allowed_files:
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBarShared/GitHubActivityCache.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBar/Components/ActivitySyncStatusView.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarTests/GitHubActivityTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "Docs/goals/ios-activity-offline-cache/**"
+      verify:
+        - "git diff --check"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/ActivityCacheUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testRelaunchRestoresCachedActivityWhenRefreshFails"
+      stop_if:
+        - "Need changed GitHub OAuth scopes, backend infrastructure, or external credentials."
+        - "Need to persist private activity outside app-private local storage."
+        - "Need broad macOS UI changes."
+        - "Cache invalidation policy cannot be resolved with login and included-repo scoping."
+        - "Local verification fails twice for the same unexplained reason."
+      explicit_non_goals:
+        - "No Share tab, release annotations, or social card work."
+        - "No navigation redesign."
+        - "No remote sync or backup of cached activity."
+        - "No cache encryption beyond app-private storage and existing platform protections in this PR."
+      next_task: T003
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: default
+    objective: "Implement the Judge-selected persistent activity cache slice."
+    inputs:
+      - "T002 receipt"
+      - "Docs/goals/ios-activity-offline-cache/goal.md"
+    constraints:
+      - "Write only inside allowed_files selected by Judge."
+      - "Preserve existing app architecture and shared macOS compatibility."
+      - "Do not broaden scope into Share cards, release annotations, navigation redesign, or unrelated visual polish."
+    allowed_files:
+      - "apple/PRBarShared/PRBarModels.swift"
+      - "apple/PRBarShared/GitHubActivity.swift"
+      - "apple/PRBarShared/GitHubActivityCache.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBar/Components/ActivitySyncStatusView.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarTests/GitHubActivityTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "Docs/goals/ios-activity-offline-cache/**"
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/ActivityCacheUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testRelaunchRestoresCachedActivityWhenRefreshFails"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Cache invalidation or privacy semantics require a product decision."
+      - "Implementation requires backend infrastructure, new credentials, or changed GitHub scopes."
+      - "Local verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      summary: "Implemented the approved persistent iOS activity cache slice. Activity snapshots and models are codable, successful live refreshes save a versioned app-private cache scoped by GitHub login and included repos, app launch restores a matching cache before live refresh, failed launch refreshes keep the user in authenticated PRs/Releases with cached stale/offline copy, and disconnect clears cached activity."
+      changed_files:
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBarShared/GitHubActivityCache.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBar/Components/ActivitySyncStatusView.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarTests/GitHubActivityTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "Docs/goals/ios-activity-offline-cache/state.yaml"
+        - "Docs/goals/ios-activity-offline-cache/notes/T001-ios-activity-offline-cache-scout.md"
+      commands:
+        - command: "git diff --check"
+          status: pass
+          summary: "No whitespace errors."
+        - command: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          summary: "52 tests, 0 failures."
+        - command: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/ActivityCacheUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testRelaunchRestoresCachedActivityWhenRefreshFails"
+          status: pass
+          summary: "1 UI test, 0 failures."
+      notes:
+        - "One focused UI run initially failed because the persistent UI-test hook restored without a fixture session; fixed by seeding the fixture session before restore."
+        - "Cache write failures are intentionally non-blocking for live data display in this slice."
+
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review the implemented cache slice for product trust, data safety, regression risk, and verification adequacy before PR."
+    inputs:
+      - "T003 receipt"
+      - "Current diff"
+      - "Verification output"
+    constraints:
+      - "Read-only."
+      - "Prioritize stale/fresh ambiguity, cache corruption, auth/repo invalidation, sample-data leakage, and test gaps."
+    expected_output:
+      - "approved | needs_changes"
+      - "Specific required fixes if not approved."
+      - "Whether the slice is ready for PR and merge-queue verification."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      summary: "The implemented cache slice is ready for PR. It adds a versioned app-private cache, scopes restored data by GitHub login and included repository IDs, avoids treating sample data as restored live data, clears the cache on disconnect, preserves authenticated PRs/Releases when a launch refresh fails after cache restore, and updates stale copy to explicitly say cached GitHub data."
+      risks:
+        - "Cache write failures are intentionally non-blocking and not surfaced to users in this first slice."
+        - "Corrupt cache files are ignored by store restore via safe fallback; the lower-level file store still throws and is covered by tests."
+        - "The first slice uses app-private file storage but does not add extra encryption beyond platform storage protections."
+      verification_reviewed:
+        - "git diff --check: pass"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh: pass, 52 tests"
+        - "Focused relaunch cache UI test: pass, 1 test"
+      next_task: T005
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: default
+    objective: "Prepare and publish the PR for the approved persistent iOS activity cache slice, then monitor required checks."
+    inputs:
+      - "T004 receipt"
+      - "Current branch and diff"
+    constraints:
+      - "Do not include unrelated dirty local work."
+      - "PR body must describe user-visible stale/offline cache behavior and verification."
+      - "Use merge queue when checks are green."
+    allowed_files:
+      - "Docs/goals/ios-activity-offline-cache/goal.md"
+      - "Docs/goals/ios-activity-offline-cache/state.yaml"
+      - "Docs/goals/ios-activity-offline-cache/notes/**"
+    verify:
+      - "git diff --check"
+      - "Relevant iOS unit/UI checks selected by Judge."
+      - "PR checks pass."
+    stop_if:
+      - "Unrelated dirty work would be included."
+      - "Required checks fail with a non-flaky product regression."
+      - "Merge queue reports conflicts that require implementation changes outside approved scope."
+    receipt: null
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: default
+    objective: "After merge, verify post-merge main iOS and run the iOS Physical Preview workflow on iPhone-preview."
+    inputs:
+      - "Merged PR link"
+      - "GitHub Actions run links"
+    constraints:
+      - "Do not declare the tranche complete until both normal main iOS and physical Preview iPhone evidence are known."
+      - "If physical Preview fails, identify whether the blocker is Automation Mode, device lock/offline, signing, build, or UI smoke."
+    allowed_files:
+      - "Docs/goals/ios-activity-offline-cache/state.yaml"
+      - "Docs/goals/ios-activity-offline-cache/notes/**"
+    verify:
+      - "main CI/iOS status check inspection"
+      - "iOS Physical Preview workflow_dispatch on main with device_name=iPhone-preview"
+    stop_if:
+      - "GitHub Actions access is unavailable."
+      - "The physical device is offline or locked and requires operator action."
+    receipt: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit whether the persistent iOS activity cache tranche is complete."
+    inputs:
+      - "All task receipts"
+      - "Merged PR"
+      - "Post-merge main iOS result"
+      - "iOS Physical Preview result"
+    constraints:
+      - "Read-only."
+      - "Do not mark complete if only planning, storage plumbing, or partial implementation is done."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Missing evidence if not complete."
+      - "Next task if not complete."
+    receipt: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: not_run
+    task: T001
+    commands: []

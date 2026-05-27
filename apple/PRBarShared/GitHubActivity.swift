@@ -6,7 +6,7 @@ enum GitHubActivityError: Error, Equatable {
   case invalidResponse
 }
 
-struct GitHubActivitySnapshot: Equatable, Sendable {
+struct GitHubActivitySnapshot: Codable, Equatable, Sendable {
   var pullRequests: [PullRequest]
   var releases: [ReleaseMoment]
   var anchorDate: Date
