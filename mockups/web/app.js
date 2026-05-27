@@ -1,7 +1,7 @@
 const routes = [
   { path: "/home", label: "Home" },
   { path: "/network", label: "Connect" },
-  { path: "/boards", label: "Boards" },
+  { path: "/boards", label: "Showcase" },
   { path: "/talent", label: "Talent" },
   { path: "/dashboard", label: "Dashboard" },
   { path: "/profile", label: "Profile" },
@@ -10,6 +10,35 @@ const routes = [
   { path: "/repos", label: "Repos" },
   { path: "/studio", label: "Studio" },
   { path: "/trust", label: "Trust" },
+];
+
+const routeGroups = [
+  {
+    title: "Discover",
+    routes: [
+      { path: "/home", label: "Home", copy: "Landing page and product story." },
+      { path: "/network", label: "Connect", copy: "Social feed for following high-velocity AI builders." },
+      { path: "/boards", label: "Showcase", copy: "Apps, builders, and receipts worth watching." },
+      { path: "/talent", label: "Talent", copy: "Find builders by proof, stack, and availability." },
+    ],
+  },
+  {
+    title: "Inspect Proof",
+    routes: [
+      { path: "/profile", label: "Profile", copy: "Public proof profile with featured apps and receipts." },
+      { path: "/receipt", label: "Receipt", copy: "GitHub-backed release receipt with attached app context." },
+      { path: "/project", label: "Project", copy: "Public app page backed by selected receipts." },
+    ],
+  },
+  {
+    title: "Manage Proof",
+    routes: [
+      { path: "/dashboard", label: "Dashboard", copy: "Review imported activity and add app context." },
+      { path: "/repos", label: "Repos", copy: "Choose sources and attach repos to apps." },
+      { path: "/studio", label: "Studio", copy: "Edit receipt context while preserving GitHub facts." },
+      { path: "/trust", label: "Trust", copy: "Rules for what counts, what is hidden, and what is ignored." },
+    ],
+  },
 ];
 
 const builders = [
@@ -96,6 +125,54 @@ const releases = [
   },
 ];
 
+const showcaseApps = [
+  {
+    name: "SideProject Radar",
+    builder: builders[0],
+    status: "Public beta",
+    category: "AI discovery",
+    tagline: "A weekly radar for indie products before they trend.",
+    description: "Maya connects two selected repos, release notes, and app screenshots so people can inspect the product and the proof behind it.",
+    links: ["Web app", "GitHub", "Receipt"],
+    proof: ["42 PRs", "4 releases", "v2.1.0", "9-day streak"],
+    repos: ["maya/sideproject-radar", "maya/radar-ios"],
+    receipt: releases[0],
+    score: "128 votes",
+    pick: "PRBar pick",
+    color: "#19b394",
+  },
+  {
+    name: "Launch Sprint Kit",
+    builder: builders[1],
+    status: "Founder-ready",
+    category: "Micro-SaaS",
+    tagline: "Billing, onboarding, and launch handoff patterns for fast SaaS teams.",
+    description: "A curated app page lets Nora show the thing she built, then back it with the release trail imported from GitHub.",
+    links: ["Demo", "Docs", "Receipt"],
+    proof: ["31 PRs", "3 releases", "Stripe", "6-day streak"],
+    repos: ["nora/launch-sprint-kit"],
+    receipt: releases[1],
+    score: "97 votes",
+    pick: "Community",
+    color: "#f4c430",
+  },
+  {
+    name: "iOS Proof Cards",
+    builder: builders[2],
+    status: "App Store build",
+    category: "Devtools",
+    tagline: "Native share cards for builders who want receipts instead of claims.",
+    description: "Devon can show the iOS app, attach the public package and private app repo, and keep client-sensitive proof redacted.",
+    links: ["App Store", "TestFlight", "Receipt"],
+    proof: ["24 PRs", "2 releases", "SwiftUI", "11-day streak"],
+    repos: ["devon/proof-cards-ios", "devon/proof-card-renderer"],
+    receipt: releases[2],
+    score: "84 votes",
+    pick: "Rising",
+    color: "#2f6fed",
+  },
+];
+
 const networkPosts = releases.map((release, index) => ({
   release,
   action: ["shipped a release", "published a launch receipt", "tagged a proof milestone"][index],
@@ -121,39 +198,33 @@ const timeline = [
 ];
 
 const boardViews = {
-  rising: {
-    label: "Rising builders",
-    eyebrow: "Community-ranked momentum",
-    description: "Community votes and PRBar picks spotlight the builders gaining real proof velocity.",
-    items: [
-      { builder: builders[0], why: "4 releases this week", detail: "Latest receipt ties 8 PRs to a tagged release.", score: "128 votes", pick: "PRBar pick" },
-      { builder: builders[1], why: "Launch sprint closed", detail: "Moved billing analytics from PR stack to public release.", score: "97 votes", pick: "Community" },
-      { builder: builders[2], why: "11-day active streak", detail: "iOS proof flow shipped across app and shared package.", score: "84 votes", pick: "Rising" },
-    ],
+  apps: {
+    label: "Apps",
+    eyebrow: "App showcase",
+    description: "Discover what AI-native builders are making, with GitHub proof behind every product.",
+    items: showcaseApps,
   },
-  projects: {
-    label: "Active projects",
-    eyebrow: "Curated project radar",
-    description: "Browse projects nominated by the community and featured by PRBar for visible shipping cadence.",
-    items: [
-      { builder: builders[0], why: "SideProject Radar", detail: "Release cadence: 4 tags in 30 days. Latest: v2.1.0.", score: "Featured", pick: "PRBar pick" },
-      { builder: builders[1], why: "Launch Sprint Kit", detail: "Founder-ready kit with billing, onboarding, and handoff receipts.", score: "92 votes", pick: "Community" },
-      { builder: builders[2], why: "iOS Proof Cards", detail: "Mobile receipt studio with redaction and native share previews.", score: "71 votes", pick: "Nominated" },
-    ],
+  builders: {
+    label: "Builders",
+    eyebrow: "Builder momentum",
+    description: "Follow people whose apps, releases, and merged PRs show real velocity.",
+    items: showcaseApps,
   },
-  releases: {
-    label: "New receipts",
-    eyebrow: "Fresh featured receipts",
-    description: "Vote on proof-backed releases and browse the receipts PRBar thinks deserve a closer look.",
-    items: releases.map((release) => ({
-      builder: release.builder,
-      why: release.title,
-      detail: release.summary,
-      score: release.facts[0],
-      pick: "Fresh",
-    })),
+  receipts: {
+    label: "Receipts",
+    eyebrow: "Fresh proof",
+    description: "Browse the release receipts behind the apps and builders getting attention.",
+    items: showcaseApps,
   },
 };
+
+const boardFilters = ["This week", "AI apps", "iOS", "SaaS", "Devtools", "Public beta", "Hiring signal"];
+
+const boardPicks = [
+  { label: "PRBar Pick", title: "SideProject Radar", copy: "Best product page this week: real app, selected repos, release notes, and visible cadence." },
+  { label: "Community Nominee", title: "Launch Sprint Kit", copy: "Founders keep saving this because the product story is easy to inspect." },
+  { label: "Needs votes", title: "iOS Proof Cards", copy: "Strong native proof surface, currently climbing in Mobile + Devtools." },
+];
 
 const app = document.querySelector("#app");
 
@@ -166,17 +237,99 @@ function setRoute(path) {
   window.location.hash = path;
 }
 
+function readTocCollapsed() {
+  try {
+    return window.localStorage?.getItem("prbar-toc-collapsed") === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeTocCollapsed(collapsed) {
+  try {
+    window.localStorage?.setItem("prbar-toc-collapsed", String(collapsed));
+  } catch {
+    // The mockup still works if browser storage is unavailable.
+  }
+}
+
 function shell(content) {
   const path = routePath();
   return `
-    <header class="topbar">
-      <a class="brand" href="#/home" aria-label="PRBar home"><span>PR</span><strong>PRBar</strong></a>
-      <nav class="nav" aria-label="Primary navigation">
-        ${routes.slice(0, 4).map((route) => `<a class="${path === route.path ? "active" : ""}" href="#${route.path}">${route.label}</a>`).join("")}
+    <div class="mockup-shell">
+      ${tableOfContents(path)}
+      <div class="mockup-main">
+        <header class="topbar">
+          <button class="toc-toggle" type="button" aria-label="Hide table of contents" aria-pressed="false" data-toc-toggle>
+            <span class="panel-icon" aria-hidden="true"><i></i><b></b></span>
+          </button>
+          <a class="brand" href="#/home" aria-label="PRBar home"><span>PR</span><strong>PRBar</strong></a>
+          <nav class="nav" aria-label="Primary navigation">
+            ${routes.slice(0, 4).map((route) => `<a class="${path === route.path ? "active" : ""}" href="#${route.path}">${route.label}</a>`).join("")}
+          </nav>
+          <a class="topbar-action" href="#/dashboard">Claim profile</a>
+        </header>
+        <main>${content}</main>
+      </div>
+    </div>
+  `;
+}
+
+function tableOfContents(path) {
+  return `
+    <aside class="toc-sidebar" aria-label="Mockup table of contents">
+      <div class="toc-brand">
+        <a class="brand" href="#/home" aria-label="PRBar home"><span>PR</span><strong>PRBar</strong></a>
+        <p>Mockup tree</p>
+      </div>
+      <nav class="toc-nav">
+        <div class="toc-root"><span>PRBar Web</span></div>
+        ${routeGroups.map((group, groupIndex) => `
+          <section class="tree-group">
+            <h2>
+              <span>${String(groupIndex + 1).padStart(2, "0")}</span>
+              <strong>${group.title}</strong>
+            </h2>
+            <div class="tree-children">
+              ${group.routes.map((route) => `
+                <a class="${path === route.path ? "active" : ""}" href="#${route.path}">
+                  <span>
+                    <strong>${route.label}</strong>
+                  </span>
+                </a>
+              `).join("")}
+            </div>
+          </section>
+        `).join("")}
       </nav>
-      <a class="topbar-action" href="#/dashboard">Claim profile</a>
-    </header>
-    <main>${content}</main>
+    </aside>
+  `;
+}
+
+function routeIndex() {
+  return `
+    <section class="route-index" aria-label="Mockup page index">
+      <div class="route-index-heading">
+        <p class="eyebrow">Mockup index</p>
+        <h2>Open every page from here.</h2>
+        <p>Use this as the review map while we keep expanding the concept.</p>
+      </div>
+      <div class="route-index-groups">
+        ${routeGroups.map((group) => `
+          <article>
+            <h3>${group.title}</h3>
+            <div class="route-link-list">
+              ${group.routes.map((route) => `
+                <a href="#${route.path}">
+                  <strong>${route.label}</strong>
+                  <span>${route.copy}</span>
+                </a>
+              `).join("")}
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>
   `;
 }
 
@@ -229,6 +382,61 @@ function builderCard(builder, options = {}) {
       </div>
       ${sparkline(builder.trend)}
       <div class="tag-row">${builder.tools.map((tool) => `<span>${tool}</span>`).join("")}</div>
+    </article>
+  `;
+}
+
+function appPreview(app) {
+  return `
+    <div class="app-preview" style="--app-color: ${app.color}">
+      <div class="app-window">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="app-preview-body">
+        <strong>${app.name}</strong>
+        <p>${app.tagline}</p>
+        <div class="app-preview-bars">
+          ${app.builder.trend.map((value) => `<i style="height: ${value}%"></i>`).join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function showcaseAppCard(app, index) {
+  return `
+    <article class="app-showcase-card">
+      <div class="rank">
+        <span>#${index + 1}</span>
+        <button type="button" aria-label="Vote for ${app.name}">▲</button>
+      </div>
+      <div class="app-card-body">
+        ${appPreview(app)}
+        <div class="app-card-copy">
+          <div class="identity-row compact">
+            <span class="avatar">${app.builder.initials}</span>
+            <div>
+              <h3>${app.name}</h3>
+              <p>${app.builder.handle} · ${app.category} · ${app.status}</p>
+            </div>
+            <b>${app.pick}</b>
+          </div>
+          <p>${app.description}</p>
+          <div class="board-proof-row">
+            ${app.proof.map((item) => `<span>${item}</span>`).join("")}
+          </div>
+          <div class="app-links">
+            ${app.links.map((link) => `<a href="${link === "Receipt" ? "#/receipt" : "#/project"}">${link}</a>`).join("")}
+          </div>
+          <div class="source-row">
+            <code>${app.repos.join(" + ")}</code>
+            <div class="board-actions">
+              <span>${app.score}</span>
+              <a href="#/receipt">Receipts behind rank</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </article>
   `;
 }
@@ -289,7 +497,7 @@ function homePage() {
         <p class="lede">Show the world your receipts.</p>
         <div class="action-row">
           <a class="primary" href="#/network">Open Connect</a>
-          <a class="secondary" href="#/boards">See what is shipping</a>
+          <a class="secondary" href="#/boards">Open Showcase</a>
         </div>
       </div>
       <div class="hero-proof">
@@ -359,9 +567,10 @@ function homePage() {
     </section>
     <section class="surface-grid">
       <a class="surface-card" href="#/network"><span>01</span><h2>Connect</h2><p>Follow high-velocity AI builders.</p></a>
-      <a class="surface-card" href="#/boards"><span>02</span><h2>Momentum Boards</h2><p>Community-ranked momentum, curated by PRBar.</p></a>
+      <a class="surface-card" href="#/boards"><span>02</span><h2>Showcase</h2><p>Builders, projects, and receipts worth watching.</p></a>
       <a class="surface-card" href="#/talent"><span>03</span><h2>Talent Board</h2><p>Scout builders with recent proof, relevant stacks, and clear availability.</p></a>
     </section>
+    ${routeIndex()}
   `);
 }
 
@@ -399,55 +608,62 @@ function networkPage() {
   `);
 }
 
-function boardsPage(activeView = "rising") {
-  const view = boardViews[activeView] || boardViews.rising;
+function boardsPage(activeView = "apps") {
+  const view = boardViews[activeView] || boardViews.apps;
+  const featured = view.items[0];
   return shell(`
     <section class="page-hero dark">
       <p class="eyebrow">${view.eyebrow}</p>
-      <h1>See what deserves attention.</h1>
+      <h1>Apps, builders, and receipts worth watching.</h1>
       <p>${view.description}</p>
-      <div class="board-tabs" role="tablist" aria-label="Momentum board views">
+      <div class="board-filterbar" aria-label="Showcase filters">
+        ${boardFilters.map((filter, index) => `<button class="${index === 0 ? "active" : ""}" type="button">${filter}</button>`).join("")}
+      </div>
+      <div class="board-tabs" role="tablist" aria-label="Showcase views">
         ${Object.entries(boardViews).map(([key, item]) => `<button class="${key === activeView ? "active" : ""}" data-board="${key}" type="button">${item.label}</button>`).join("")}
       </div>
     </section>
     <section class="board-discovery">
       <article class="board-spotlight">
-        <span>#1 rising signal</span>
-        <h2>${view.items[0].why}</h2>
-        <p>${view.items[0].detail}</p>
-        <div class="spotlight-grid">
-          <div><strong>${view.items[0].builder.stats.prs}</strong><span>merged PRs</span></div>
-          <div><strong>${view.items[0].builder.stats.releases}</strong><span>releases</span></div>
-          <div><strong>${view.items[0].builder.stats.streak}</strong><span>day streak</span></div>
+        <span>${featured.pick} · Featured app</span>
+        <h2>${featured.name}</h2>
+        <p>${featured.tagline}</p>
+        ${appPreview(featured)}
+        <div class="spotlight-reason">
+          <b>Why featured</b>
+          <span>${featured.description}</span>
         </div>
-        ${sparkline(view.items[0].builder.trend)}
+        <div class="spotlight-grid">
+          <div><strong>${featured.builder.stats.prs}</strong><span>merged PRs</span></div>
+          <div><strong>${featured.builder.stats.releases}</strong><span>releases</span></div>
+          <div><strong>${featured.score}</strong><span>showcase signal</span></div>
+        </div>
+        ${sparkline(featured.builder.trend)}
+        <div class="app-links spotlight-links">
+          <a href="#/project">Open app page</a>
+          <a href="#/receipt">View receipt</a>
+          <a href="#/profile">Follow builder</a>
+        </div>
       </article>
-      <div class="board-list">
-        ${view.items.map((item, index) => `
-          <article class="momentum-card">
-            <div class="rank">#${index + 1}</div>
-            <div>
-              <div class="identity-row compact">
-                <span class="avatar">${item.builder.initials}</span>
-                <div>
-                  <h3>${item.builder.handle}</h3>
-                  <p>${item.builder.domains.join(" / ")}</p>
-                </div>
-                <b>${item.pick}</b>
-              </div>
-              <h2>${item.why}</h2>
-              <p>${item.detail}</p>
-              <div class="source-row">
-                <code>${item.builder.repo} ${item.builder.tag}</code>
-                <div class="board-actions">
-                  <span>${item.score}</span>
-                  <a href="#/receipt">Receipts behind rank</a>
-                  <button type="button">Vote</button>
-                </div>
-              </div>
-            </div>
+      <div class="board-main">
+        <div class="board-list">
+          ${view.items.map((item, index) => showcaseAppCard(item, index)).join("")}
+        </div>
+        <aside class="board-rail">
+          <h2>How apps make the board</h2>
+          <article>
+            <span>User curated</span>
+            <h3>Add the product GitHub cannot see</h3>
+            <p>Builders can add app links, screenshots, status, and context, then attach the repos and receipts that prove the work.</p>
           </article>
-        `).join("")}
+          ${boardPicks.map((pick) => `
+            <article>
+              <span>${pick.label}</span>
+              <h3>${pick.title}</h3>
+              <p>${pick.copy}</p>
+            </article>
+          `).join("")}
+        </aside>
       </div>
     </section>
   `);
@@ -503,6 +719,17 @@ function dashboardPage() {
         <div class="action-row small"><a class="primary" href="#/studio">Open studio</a><a class="secondary light" href="#/repos">Manage sources</a></div>
       </article>
       <div class="dashboard-stack">
+        <article class="app-builder-panel">
+          <div class="panel-heading"><span>New surface</span><h2>Add what GitHub cannot see</h2></div>
+          <p>Show the app, product, TestFlight build, demo, or customer-facing thing your receipts helped ship.</p>
+          <div class="app-form-preview">
+            <label>App name<span>SideProject Radar</span></label>
+            <label>Status<span>Public beta</span></label>
+            <label>Links<span>Web app · GitHub · latest receipt</span></label>
+            <label>Receipts attached<span>v2.1.0 · 8 PRs merged · 34 tests added</span></label>
+          </div>
+          <div class="action-row small"><a class="primary" href="#/project">Preview app page</a><a class="secondary light" href="#/repos">Attach repos</a></div>
+        </article>
         ${receiptCard(releases[0])}
         <div class="mini-grid">
           <div><strong>68</strong><span>proof PRs</span></div>
@@ -534,6 +761,20 @@ function profilePage() {
     </section>
     <section class="profile-proof-grid">
       ${builderCard(builder, { featured: true })}
+      <div class="featured-apps-panel">
+        <h2>Featured apps</h2>
+        ${showcaseApps.slice(0, 2).map((item) => `
+          <article>
+            ${appPreview(item)}
+            <div>
+              <span>${item.status}</span>
+              <h3>${item.name}</h3>
+              <p>${item.tagline}</p>
+              ${statPills(item.proof.slice(0, 3))}
+            </div>
+          </article>
+        `).join("")}
+      </div>
       <div class="timeline-panel">
         <h2>Proof timeline</h2>
         ${timeline.map((item) => `<article><span>${item.date}</span><h3>${item.title}</h3><p>${item.detail}</p></article>`).join("")}
@@ -545,6 +786,7 @@ function profilePage() {
 
 function receiptPage() {
   const release = releases[0];
+  const attachedApp = showcaseApps[0];
   return shell(`
     <section class="receipt-hero">
       <div>
@@ -572,20 +814,30 @@ function receiptPage() {
         <p>This release moved the project from useful prototype to something people can revisit weekly. The receipt keeps the facts tied to GitHub while leaving room to explain the product decision.</p>
         <div class="action-row small"><a class="primary" href="#/studio">Edit in studio</a><a class="secondary light" href="#/project">View project</a></div>
       </article>
+      <article class="receipt-app-panel">
+        ${appPreview(attachedApp)}
+        <div>
+          <span>This receipt supports</span>
+          <h2>${attachedApp.name}</h2>
+          <p>${attachedApp.description}</p>
+          ${statPills(attachedApp.proof)}
+        </div>
+      </article>
     </section>
   `);
 }
 
 function projectPage() {
+  const item = showcaseApps[0];
   return shell(`
     <section class="project-hero">
-      <p class="eyebrow">Project history</p>
-      <h1>Watch the project ship.</h1>
-      <p>Track cadence, latest releases, selected repos, and the receipts behind momentum.</p>
+      <p class="eyebrow">${item.status} · ${item.category}</p>
+      <h1>${item.name}</h1>
+      <p>${item.description}</p>
       <div class="project-links"><a href="#/receipt">Latest receipt</a><a href="#/profile">Builder profile</a><a href="#/repos">Source repos</a></div>
     </section>
     <section class="project-grid">
-      <article class="project-visual"><span>Live proof card</span><strong>4 releases / 30 days</strong>${sparkline([34, 48, 52, 71, 79, 96])}</article>
+      <article class="project-visual"><span>Live app page</span><strong>${item.tagline}</strong>${appPreview(item)}${statPills(item.proof)}</article>
       <div class="timeline-panel">
         <h2>What changed over time</h2>
         ${timeline.map((item) => `<article><span>${item.date}</span><h3>${item.title}</h3><p>${item.detail}</p></article>`).join("")}
@@ -595,6 +847,12 @@ function projectPage() {
 }
 
 function reposPage() {
+  const repoApps = [
+    { repos: "maya/sideproject-radar + maya/radar-ios", app: "SideProject Radar", mode: "Public app page" },
+    { repos: "nora/launch-sprint-kit", app: "Launch Sprint Kit", mode: "Demo + docs" },
+    { repos: "client/stealth-onboarding", app: "Private client app", mode: "Counts only, names hidden" },
+  ];
+
   return shell(`
     <section class="page-hero">
       <p class="eyebrow">Repo sources</p>
@@ -611,6 +869,17 @@ function reposPage() {
         <p>Private names can stay hidden while merged PR counts and release receipts remain eligible.</p>
       </aside>
       <div class="repo-list">
+        <article class="repo-attach-panel">
+          <h2>Attach repos to apps</h2>
+          <p>Receipts can power a public product page, a private proof trail, or both.</p>
+          ${repoApps.map((item) => `
+            <div>
+              <code>${item.repos}</code>
+              <span>${item.app}</span>
+              <b>${item.mode}</b>
+            </div>
+          `).join("")}
+        </article>
         ${repoSources.map((repo) => `
           <article class="repo-row">
             <div><h3>${repo.name}</h3><p>${repo.activity} / latest release ${repo.lastRelease}</p></div>
@@ -665,7 +934,7 @@ function placeholderPage(label) {
       <p class="eyebrow">Route not found</p>
       <h1>${label}</h1>
       <p>This mockup route is not part of the current prototype walkthrough.</p>
-      <div class="action-row"><a class="primary" href="#/boards">Back to Boards</a><a class="secondary light" href="#/network">Open Connect</a></div>
+      <div class="action-row"><a class="primary" href="#/boards">Back to Showcase</a><a class="secondary light" href="#/network">Open Connect</a></div>
     </section>
   `);
 }
@@ -698,6 +967,22 @@ function render() {
       window.scrollTo({ top: 0, behavior: "instant" });
     });
   });
+
+  const toggle = document.querySelector("[data-toc-toggle]");
+  const collapsed = readTocCollapsed();
+  document.body.classList.toggle("toc-collapsed", collapsed);
+
+  if (toggle) {
+    toggle.setAttribute("aria-pressed", String(collapsed));
+    toggle.setAttribute("aria-label", collapsed ? "Show table of contents" : "Hide table of contents");
+    toggle.addEventListener("click", () => {
+      const nextCollapsed = !document.body.classList.contains("toc-collapsed");
+      document.body.classList.toggle("toc-collapsed", nextCollapsed);
+      writeTocCollapsed(nextCollapsed);
+      toggle.setAttribute("aria-pressed", String(nextCollapsed));
+      toggle.setAttribute("aria-label", nextCollapsed ? "Show table of contents" : "Hide table of contents");
+    });
+  }
 }
 
 window.addEventListener("hashchange", render);

@@ -28,7 +28,8 @@ The mockup centers the web product around:
 
 - proof-of-work profiles
 - PR and release receipts
-- momentum boards for builders, projects, and releases
+- a showcase for apps, builders, and receipts worth watching
+- user-curated app pages backed by selected GitHub repos and release receipts
 - AI builder talent discovery
 - private dashboard/source-selection workflows
 - PRBar's Mac, iOS, and web app family
