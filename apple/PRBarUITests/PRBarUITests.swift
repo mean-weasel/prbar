@@ -229,9 +229,11 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Authorize GitHub"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["github-device-code"].exists)
+    XCTAssertTrue(app.staticTexts["github-device-code-expiration"].exists)
     XCTAssertTrue(app.buttons["Copy code"].exists)
     XCTAssertTrue(app.buttons["Copy link"].exists)
     XCTAssertTrue(app.buttons["Open here"].exists)
+    XCTAssertTrue(app.buttons["Refresh code"].exists)
 
     app.buttons["I authorized GitHub"].tap()
 

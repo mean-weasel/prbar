@@ -10,7 +10,9 @@ struct OnboardingView: View {
         if store.routeState == .onboarding(.repositories) {
           RepositorySetupView(store: store, title: "Choose repos", showsFinishButton: true)
         } else if case let .authorizing(authorization) = store.routeState {
-          authorizationList(authorization)
+          TimelineView(.periodic(from: Date(), by: 1)) { context in
+            authorizationList(authorization, now: context.date)
+          }
         } else {
           signInList
         }
@@ -18,16 +20,18 @@ struct OnboardingView: View {
     }
   }
 
-  private func authorizationList(_ authorization: GitHubDeviceAuthorization) -> some View {
-    List {
+  private func authorizationList(_ authorization: GitHubDeviceAuthorization, now: Date) -> some View {
+    let isExpired = authorization.isExpired(at: now)
+
+    return List {
       Section {
         VStack(alignment: .leading, spacing: 12) {
           Label("Authorize GitHub", systemImage: "key.horizontal")
             .font(.title3.weight(.semibold))
 
-          Text("Open GitHub on any device, enter this code, then return here.")
+          Text(isExpired ? "This GitHub code expired. Request a fresh code to continue." : "Open GitHub on any device, enter this code, then return here.")
             .font(.subheadline)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(isExpired ? .red : .secondary)
 
           Text(authorization.userCode)
             .font(.system(.largeTitle, design: .monospaced).weight(.bold))
@@ -36,6 +40,11 @@ struct OnboardingView: View {
             .textSelection(.enabled)
             .accessibilityLabel("GitHub device code \(authorization.userCode)")
             .accessibilityIdentifier("github-device-code")
+
+          Label(expirationText(for: authorization, now: now), systemImage: isExpired ? "exclamationmark.triangle" : "clock")
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(isExpired ? .red : .secondary)
+            .accessibilityIdentifier("github-device-code-expiration")
 
           HStack(spacing: 10) {
             Button {
@@ -82,10 +91,12 @@ struct OnboardingView: View {
           store.continueGitHubAuthorization()
         }
         .buttonStyle(.borderedProminent)
+        .disabled(isExpired)
 
-        Button("Start over") {
-          store.connectGitHub()
+        Button(isExpired ? "Get new code" : "Refresh code") {
+          store.refreshGitHubAuthorization()
         }
+        .accessibilityIdentifier("refresh-github-device-code")
 
         Button("Use sample data") {
           store.routeState = .authenticated
@@ -164,6 +175,20 @@ struct OnboardingView: View {
         }
       }
     }
+  }
+
+  private func expirationText(for authorization: GitHubDeviceAuthorization, now: Date) -> String {
+    let remainingSeconds = authorization.remainingSeconds(at: now)
+    guard remainingSeconds > 0 else {
+      return "Code expired"
+    }
+
+    let minutes = remainingSeconds / 60
+    let seconds = remainingSeconds % 60
+    if minutes > 0 {
+      return "Code expires in \(minutes)m \(seconds)s"
+    }
+    return "Code expires in \(seconds)s"
   }
 }
 

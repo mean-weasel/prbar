@@ -34,6 +34,7 @@ struct GitHubDeviceAuthorization: Codable, Equatable, Sendable {
   var verificationURI: URL
   var expiresIn: Int
   var interval: Int
+  var issuedAt: Date = Date()
 
   enum CodingKeys: String, CodingKey {
     case deviceCode = "device_code"
@@ -41,6 +42,34 @@ struct GitHubDeviceAuthorization: Codable, Equatable, Sendable {
     case verificationURI = "verification_uri"
     case expiresIn = "expires_in"
     case interval
+  }
+
+  init(
+    deviceCode: String,
+    userCode: String,
+    verificationURI: URL,
+    expiresIn: Int,
+    interval: Int,
+    issuedAt: Date = Date()
+  ) {
+    self.deviceCode = deviceCode
+    self.userCode = userCode
+    self.verificationURI = verificationURI
+    self.expiresIn = expiresIn
+    self.interval = interval
+    self.issuedAt = issuedAt
+  }
+
+  var expiresAt: Date {
+    issuedAt.addingTimeInterval(TimeInterval(expiresIn))
+  }
+
+  func remainingSeconds(at date: Date = Date()) -> Int {
+    max(0, Int(expiresAt.timeIntervalSince(date).rounded(.down)))
+  }
+
+  func isExpired(at date: Date = Date()) -> Bool {
+    remainingSeconds(at: date) <= 0
   }
 }
 
@@ -316,6 +345,7 @@ struct GitHubDeviceFlowAuthService: GitHubAuthServicing {
   var configuration: GitHubOAuthConfiguration
   var sessionStore: GitHubSessionStoring
   var transport: GitHubRepositoryTransport = URLSessionGitHubRepositoryTransport()
+  var currentDate: @Sendable () -> Date = Date.init
 
   func restoreConnection() throws -> GitHubConnection? {
     try sessionStore.loadSession()?.connection
@@ -354,7 +384,9 @@ struct GitHubDeviceFlowAuthService: GitHubAuthServicing {
   private func requestDeviceAuthorization(clientID: String) throws -> GitHubDeviceAuthorization {
     let request = try GitHubDeviceFlowRequest.deviceCode(clientID: clientID, scopes: configuration.scopes)
     let data = try transport.data(for: request)
-    return try JSONDecoder().decode(GitHubDeviceAuthorization.self, from: data)
+    var authorization = try JSONDecoder().decode(GitHubDeviceAuthorization.self, from: data)
+    authorization.issuedAt = currentDate()
+    return authorization
   }
 
   private func pollToken(clientID: String, authorization: GitHubDeviceAuthorization) throws -> GitHubDeviceTokenPayload {
