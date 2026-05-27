@@ -86,6 +86,25 @@ struct RepositorySetupView: View {
           }
           .pickerStyle(.segmented)
           .accessibilityIdentifier("repo-filter-picker")
+
+          HStack(spacing: 10) {
+            Button {
+              setVisibleReadyRepositories(included: true)
+            } label: {
+              Label("Select visible", systemImage: "checkmark.circle")
+            }
+            .buttonStyle(.bordered)
+            .disabled(store == nil || visibleReadyRepositories.isEmpty)
+
+            Button {
+              setVisibleReadyRepositories(included: false)
+            } label: {
+              Label("Clear visible", systemImage: "xmark.circle")
+            }
+            .buttonStyle(.bordered)
+            .disabled(store == nil || visibleSelectedRepositories.isEmpty)
+          }
+          .font(.subheadline)
         }
       }
 
@@ -135,6 +154,14 @@ struct RepositorySetupView: View {
 
   private var includedCount: Int {
     repositories.filter(\.included).count
+  }
+
+  private var visibleReadyRepositories: [Repository] {
+    filteredRepositories.filter { $0.access == .ready }
+  }
+
+  private var visibleSelectedRepositories: [Repository] {
+    visibleReadyRepositories.filter(\.included)
   }
 
   private var filteredSectionTitle: String {
@@ -221,6 +248,17 @@ struct RepositorySetupView: View {
         store?.repositories[index].included = isIncluded
       }
     )
+  }
+
+  private func setVisibleReadyRepositories(included: Bool) {
+    guard let store else {
+      return
+    }
+
+    let visibleIDs = Set(visibleReadyRepositories.map(\.id))
+    for index in store.repositories.indices where visibleIDs.contains(store.repositories[index].id) {
+      store.repositories[index].included = included
+    }
   }
 }
 

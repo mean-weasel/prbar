@@ -31,7 +31,7 @@ struct ReleasesView: View {
         VStack(alignment: .leading, spacing: 24) {
           header
 
-          refreshIssue
+          syncStatus
 
           RangePickerView(selection: $store.releaseRange)
 
@@ -63,17 +63,12 @@ struct ReleasesView: View {
   }
 
   @ViewBuilder
-  private var refreshIssue: some View {
-    if let issue = store.activityRefreshIssue {
-      Label(issue.message, systemImage: "exclamationmark.triangle")
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .accessibilityIdentifier("releases-refresh-issue")
-    }
+  private var syncStatus: some View {
+    ActivitySyncStatusView(
+      isRefreshing: store.isRefreshingActivity,
+      lastRefreshedAt: store.lastActivityRefreshAt,
+      issue: store.activityRefreshIssue
+    )
   }
 
   private var header: some View {
@@ -138,18 +133,35 @@ struct ReleasesView: View {
       .padding(14)
       .background(Color(.secondarySystemBackground))
       .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    } else {
+      ActivityEmptyStateView(
+        title: "No release selected",
+        detail: "Choose a day with releases or refresh GitHub activity.",
+        systemImage: "tag",
+        identifier: "selected-release-empty-state"
+      )
     }
   }
 
+  @ViewBuilder
   private var releaseRows: some View {
     VStack(alignment: .leading, spacing: 16) {
-      ForEach(groupedReleases, id: \.date) { group in
-        VStack(alignment: .leading, spacing: 10) {
-          Text(longDateLabel(for: group.date))
-            .font(.headline)
+      if groupedReleases.isEmpty {
+        ActivityEmptyStateView(
+          title: "No releases or tags",
+          detail: "Refresh GitHub activity or include repos that publish releases.",
+          systemImage: "shippingbox",
+          identifier: "releases-empty-state"
+        )
+      } else {
+        ForEach(groupedReleases, id: \.date) { group in
+          VStack(alignment: .leading, spacing: 10) {
+            Text(longDateLabel(for: group.date))
+              .font(.headline)
 
-          ForEach(group.releases) { release in
-            ReleaseRowView(release: release, repository: repository(for: release.repoID))
+            ForEach(group.releases) { release in
+              ReleaseRowView(release: release, repository: repository(for: release.repoID))
+            }
           }
         }
       }

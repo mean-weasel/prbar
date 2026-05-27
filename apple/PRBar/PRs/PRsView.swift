@@ -13,6 +13,13 @@ struct PRsView: View {
     pullRequests(on: store.selectedPRDate)
   }
 
+  private var includedPullRequests: [PullRequest] {
+    let includedIDs = Set(store.includedRepositories.map(\.id))
+    return store.pullRequests
+      .filter { includedIDs.contains($0.repoID) }
+      .sorted { $0.mergedAt > $1.mergedAt }
+  }
+
   private var chartDays: [DailyPRChartDay] {
     calendarDays.map { day in
       DailyPRChartDay(
@@ -53,7 +60,7 @@ struct PRsView: View {
         VStack(alignment: .leading, spacing: 24) {
           header
 
-          refreshIssue
+          syncStatus
 
           RangePickerView(selection: $store.prRange)
 
@@ -94,18 +101,12 @@ struct PRsView: View {
     }
   }
 
-  @ViewBuilder
-  private var refreshIssue: some View {
-    if let issue = store.activityRefreshIssue {
-      Label(issue.message, systemImage: "exclamationmark.triangle")
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .accessibilityIdentifier("prs-refresh-issue")
-    }
+  private var syncStatus: some View {
+    ActivitySyncStatusView(
+      isRefreshing: store.isRefreshingActivity,
+      lastRefreshedAt: store.lastActivityRefreshAt,
+      issue: store.activityRefreshIssue
+    )
   }
 
   private var header: some View {
@@ -151,6 +152,11 @@ struct PRsView: View {
       Text("\(selectedPullRequests.count) merged")
         .font(.title2.weight(.bold))
         .monospacedDigit()
+      if selectedPullRequests.isEmpty {
+        Text("No PRs merged on this day.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(14)
@@ -163,18 +169,27 @@ struct PRsView: View {
       Text("Recent PRs")
         .font(.headline)
 
-      ForEach(store.pullRequests.sorted { $0.mergedAt > $1.mergedAt }.prefix(5)) { pullRequest in
-        VStack(alignment: .leading, spacing: 4) {
-          Text("#\(pullRequest.number) \(pullRequest.title)")
-            .font(.subheadline.weight(.semibold))
-          Text(repository(for: pullRequest.repoID)?.name ?? pullRequest.repoID)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+      if includedPullRequests.isEmpty {
+        ActivityEmptyStateView(
+          title: "No merged PRs",
+          detail: "Refresh GitHub activity or include more repositories.",
+          systemImage: "arrow.triangle.pull",
+          identifier: "prs-empty-state"
+        )
+      } else {
+        ForEach(includedPullRequests.prefix(5)) { pullRequest in
+          VStack(alignment: .leading, spacing: 4) {
+            Text("#\(pullRequest.number) \(pullRequest.title)")
+              .font(.subheadline.weight(.semibold))
+            Text(repository(for: pullRequest.repoID)?.name ?? pullRequest.repoID)
+              .font(.caption)
+              .foregroundStyle(.secondary)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(12)
+          .background(Color(.secondarySystemBackground))
+          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
       }
     }
   }
