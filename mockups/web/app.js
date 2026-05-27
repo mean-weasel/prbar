@@ -393,10 +393,6 @@ function openModal() {
   modal.hidden = false;
 }
 
-function closeModal() {
-  modal.hidden = true;
-}
-
 if (hasAppShell) {
   window.addEventListener("hashchange", renderRoute);
 
@@ -406,16 +402,10 @@ if (hasAppShell) {
     openModal();
   });
 
-  const closeModalButton = modal.querySelector("[data-close-modal]");
-
-  if (closeModalButton) {
-    closeModalButton.addEventListener("click", closeModal);
-  }
-
-  modal.addEventListener("click", (event) => {
-    if (event.target.matches("[data-close-modal]")) {
-      closeModal();
-    }
+  document.querySelectorAll("[data-close-modal]").forEach((control) => {
+    control.addEventListener("click", () => {
+      modal.hidden = true;
+    });
   });
 
   if (!window.location.hash) {
