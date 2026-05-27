@@ -74,7 +74,7 @@ const talent = [
   {
     handle: "@nora.ship",
     summary: "Cursor, SaaS dashboards, 3 releases this month.",
-    tags: ["available", "saas", "cursor"],
+    tags: ["available", "saas", "cursor", "launch"],
   },
   {
     handle: "@devon.codes",
@@ -84,7 +84,7 @@ const talent = [
   {
     handle: "@rhea.builds",
     summary: "AI app builder with founder-friendly weekly shipping cadence.",
-    tags: ["saas", "mobile", "founder"],
+    tags: ["saas", "mobile", "founder", "launch"],
   },
 ];
 
