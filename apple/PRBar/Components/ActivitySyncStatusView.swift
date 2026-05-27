@@ -50,7 +50,7 @@ struct ActivitySyncStatusView: View {
       return "Refreshing GitHub activity"
     }
     if issue != nil && lastRefreshedAt != nil {
-      return "Showing last synced data"
+      return "Showing cached GitHub data"
     }
     if issue != nil {
       return "Last refresh failed"
@@ -67,7 +67,7 @@ struct ActivitySyncStatusView: View {
     }
     if let issue {
       if let lastRefreshedAt {
-        return "\(attemptLabel) \(issue.message) Showing data from \(dateFormatter.string(from: lastRefreshedAt))."
+        return "\(attemptLabel) \(issue.message) Showing cached data from \(dateFormatter.string(from: lastRefreshedAt))."
       }
       return issue.message
     }

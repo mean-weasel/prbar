@@ -24,6 +24,7 @@ final class PRBarStore {
   private let repositoryProvider: GitHubRepositoryProviding
   private let activityProvider: GitHubActivityProviding
   private let repositorySelectionStore: RepositorySelectionStoring
+  private let activityCacheStore: GitHubActivityCacheStoring
   private let currentDate: @Sendable () -> Date
 
   private static let fixtureCalendar: Calendar = {
@@ -50,6 +51,7 @@ final class PRBarStore {
     repositoryProvider: GitHubRepositoryProviding = StaticGitHubRepositoryProvider(repositories: SampleData.repositories),
     activityProvider: GitHubActivityProviding = StaticGitHubActivityProvider(),
     repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore(),
+    activityCacheStore: GitHubActivityCacheStoring = InMemoryGitHubActivityCacheStore(),
     currentDate: @escaping @Sendable () -> Date = Date.init
   ) {
     self.repositories = repositories
@@ -69,6 +71,7 @@ final class PRBarStore {
     self.repositoryProvider = repositoryProvider
     self.activityProvider = activityProvider
     self.repositorySelectionStore = repositorySelectionStore
+    self.activityCacheStore = activityCacheStore
     self.currentDate = currentDate
   }
 
@@ -77,6 +80,7 @@ final class PRBarStore {
     repositoryProvider: GitHubRepositoryProviding = StaticGitHubRepositoryProvider(repositories: SampleData.repositories),
     activityProvider: GitHubActivityProviding = StaticGitHubActivityProvider(),
     repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore(),
+    activityCacheStore: GitHubActivityCacheStoring = InMemoryGitHubActivityCacheStore(),
     currentDate: @escaping @Sendable () -> Date = Date.init
   ) -> PRBarStore {
     PRBarStore(
@@ -90,6 +94,7 @@ final class PRBarStore {
       repositoryProvider: repositoryProvider,
       activityProvider: activityProvider,
       repositorySelectionStore: repositorySelectionStore,
+      activityCacheStore: activityCacheStore,
       currentDate: currentDate
     )
   }
@@ -122,7 +127,16 @@ final class PRBarStore {
         githubConnection = connection
         let hasStoredSelection = try loadRepositoriesForConnectedUser()
         if hasStoredSelection {
-          try refreshActivityForIncludedRepositories()
+          let restoredCache = restoreCachedActivityForConnectedUser()
+          do {
+            try refreshActivityForIncludedRepositories()
+          } catch {
+            if restoredCache {
+              activityRefreshIssue = authIssue(for: error).issue
+            } else {
+              throw error
+            }
+          }
           routeState = .authenticated
         } else {
           routeState = .onboarding(.repositories)
@@ -201,6 +215,7 @@ final class PRBarStore {
       )
       applyActivitySnapshot(snapshot)
       lastActivityRefreshAt = attemptedAt
+      saveActivityCache(snapshot: snapshot, lastRefreshedAt: attemptedAt)
       self.selectedPRDate = selectedPRDate
       self.selectedReleaseDate = selectedReleaseDate
       if let selectedReleaseID, releases.contains(where: { $0.id == selectedReleaseID }) {
@@ -216,6 +231,7 @@ final class PRBarStore {
   func disconnectGitHub() {
     try? authService.disconnect()
     try? repositorySelectionStore.clearIncludedRepositoryIDs()
+    try? activityCacheStore.clear()
     githubConnection = .signedOut
     repositories = repositories.map { repository in
       var repository = repository
@@ -242,7 +258,40 @@ final class PRBarStore {
     )
     applyActivitySnapshot(snapshot)
     lastActivityRefreshAt = attemptedAt
+    saveActivityCache(snapshot: snapshot, lastRefreshedAt: attemptedAt)
     activityRefreshIssue = nil
+  }
+
+  @discardableResult
+  private func restoreCachedActivityForConnectedUser() -> Bool {
+    guard let githubLogin = githubConnection.user?.login else {
+      return false
+    }
+
+    let includedIDs = includedRepositories.map(\.id)
+    guard let record = try? activityCacheStore.load(githubLogin: githubLogin, includedRepositoryIDs: includedIDs) else {
+      return false
+    }
+
+    applyActivitySnapshot(record.snapshot)
+    lastActivityRefreshAt = record.lastRefreshedAt
+    lastActivityRefreshAttemptAt = nil
+    activityRefreshIssue = nil
+    return true
+  }
+
+  private func saveActivityCache(snapshot: GitHubActivitySnapshot, lastRefreshedAt: Date) {
+    guard let githubLogin = githubConnection.user?.login else {
+      return
+    }
+
+    let record = GitHubActivityCacheRecord(
+      githubLogin: githubLogin,
+      includedRepositoryIDs: includedRepositories.map(\.id),
+      snapshot: snapshot,
+      lastRefreshedAt: lastRefreshedAt
+    )
+    try? activityCacheStore.save(record)
   }
 
   private func applyActivitySnapshot(_ snapshot: GitHubActivitySnapshot) {

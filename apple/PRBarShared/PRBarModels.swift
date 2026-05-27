@@ -43,7 +43,7 @@ struct GitHubUser: Identifiable, Codable, Equatable, Sendable {
   var displayName: String
 }
 
-struct Repository: Identifiable, Equatable, Sendable {
+struct Repository: Identifiable, Codable, Equatable, Sendable {
   enum Visibility: String, CaseIterable, Codable, Sendable {
     case `public`
     case `private`
@@ -65,7 +65,7 @@ struct Repository: Identifiable, Equatable, Sendable {
   var reason: String
 }
 
-struct PullRequest: Identifiable, Equatable, Sendable {
+struct PullRequest: Identifiable, Codable, Equatable, Sendable {
   var id: String
   var title: String
   var repoID: Repository.ID
@@ -73,7 +73,7 @@ struct PullRequest: Identifiable, Equatable, Sendable {
   var mergedAt: Date
 }
 
-struct ReleaseMoment: Identifiable, Equatable, Sendable {
+struct ReleaseMoment: Identifiable, Codable, Equatable, Sendable {
   enum Source: String, CaseIterable, Codable, Sendable {
     case release
     case tag
