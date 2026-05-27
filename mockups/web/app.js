@@ -104,6 +104,24 @@ const sampleData = {
   repos,
 };
 
+const sample = {
+  ...sampleData,
+  boards: {
+    rising: sampleData.boards,
+    projects: sampleData.projects.map((project, index) => ({
+      rank: index + 1,
+      handle: project.name,
+      metric: `${project.receipts} receipts`,
+      detail: project.summary,
+    })),
+    releases: [
+      { rank: 1, handle: "@maya.codes", metric: "4 releases", detail: "SideProject Radar v2.1 leading the week" },
+      { rank: 2, handle: "@devon.codes", metric: "3 releases", detail: "iOS Proof Cards shipped twice" },
+      { rank: 3, handle: "@nora.ship", metric: "2 releases", detail: "Launch Sprint Kit update published" },
+    ],
+  },
+};
+
 const app = document.querySelector("#app");
 const nav = document.querySelector(".nav-links");
 const headerAction = document.querySelector(".header-action");
@@ -147,12 +165,94 @@ function proofCard(title, body, routeId, meta = "Verified GitHub") {
   `;
 }
 
-function render(html) {
-  app.innerHTML = html;
+function renderBoardRows(boardId = "rising") {
+  const output = document.querySelector("[data-board-output]");
+  const rows = sample.boards[boardId] || sample.boards.rising;
+
+  if (!output) {
+    return;
+  }
+
+  output.innerHTML = rows
+    .map(
+      (row) => `
+        <article class="leader-row">
+          <strong>#${row.rank}</strong>
+          <div>
+            <strong>${row.handle}</strong>
+            <span>${row.detail}</span>
+          </div>
+          <strong>${row.metric}</strong>
+        </article>
+      `
+    )
+    .join("");
 }
 
-function renderRoute() {
+function renderTalentRows(filter = "all") {
+  const output = document.querySelector("[data-talent-output]");
+  const rows = filter === "all" ? sample.talent : sample.talent.filter((person) => person.tags.includes(filter));
+
+  if (!output) {
+    return;
+  }
+
+  output.innerHTML = rows
+    .map(
+      (person) => `
+        <article class="talent-card">
+          <h3>${person.handle}</h3>
+          <p>${person.summary}</p>
+          <div class="talent-tags">${tags(person.tags)}</div>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function bindPageInteractions() {
+  document.querySelectorAll("[data-board]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll("[data-board]").forEach((control) => control.classList.remove("active"));
+      button.classList.add("active");
+      renderBoardRows(button.dataset.board);
+    });
+  });
+
+  document.querySelectorAll("[data-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll("[data-filter]").forEach((control) => control.classList.remove("active"));
+      button.classList.add("active");
+      renderTalentRows(button.dataset.filter);
+    });
+  });
+
+  document.querySelectorAll("[data-repo-toggle]").forEach((button) => {
+    button.addEventListener("click", () => {
+      button.classList.toggle("active");
+      button.textContent = button.classList.contains("active") ? "Included" : "Excluded";
+    });
+  });
+
+  document.querySelectorAll("[data-copy-link]").forEach((button) => {
+    button.addEventListener("click", () => {
+      button.textContent = "Receipt link copied";
+    });
+  });
+
+  renderBoardRows("rising");
+  renderTalentRows("all");
+}
+
+function render() {
   const routeId = routeIdFromHash();
+
+  app.innerHTML = renderRoute(routeId);
+  app.focus({ preventScroll: true });
+  bindPageInteractions();
+}
+
+function renderRoute(routeId = routeIdFromHash()) {
   const views = {
     home: renderHome,
     network: renderNetwork,
@@ -176,11 +276,11 @@ function renderRoute() {
       .join("");
   }
 
-  views[routeId]();
+  return views[routeId]();
 }
 
 function renderHome() {
-  render(`
+  return `
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-content">
         <p class="hero-label">Verified GitHub velocity for AI-native builders</p>
@@ -213,11 +313,11 @@ function renderHome() {
         ${proofCard("Momentum Boards", "Rank builders by merged work, releases, projects, and recent momentum.", "boards")}
       </div>
     </section>
-  `);
+  `;
 }
 
 function renderNetwork() {
-  render(`
+  return `
     <section class="section-pad" aria-labelledby="network-title">
       <div class="section-heading">
         <span>Proof Network</span>
@@ -254,13 +354,13 @@ function renderNetwork() {
         </aside>
       </div>
     </section>
-  `);
+  `;
 }
 
 function renderProfile() {
   const featuredProject = sampleData.projects[0];
 
-  render(`
+  return `
     <section class="section-pad" aria-labelledby="profile-title">
       <div class="section-heading compact">
         <span>${sampleData.builder.handle}</span>
@@ -291,7 +391,7 @@ function renderProfile() {
         ${proofCard(featuredProject.name, featuredProject.summary, "project", `${featuredProject.receipts} receipts`)}
       </div>
     </section>
-  `);
+  `;
 }
 
 function renderReceipt() {
@@ -301,7 +401,7 @@ function renderReceipt() {
     { title: "Cover radar scoring with regression tests", repo: "ai-onboarding-flow", merged: "#57" },
   ];
 
-  render(`
+  return `
     <section class="section-pad" aria-labelledby="receipt-title">
       <div class="section-heading compact">
         <span>${sampleData.release.type}</span>
@@ -337,7 +437,7 @@ function renderReceipt() {
           .join("")}
       </div>
     </section>
-  `);
+  `;
 }
 
 function renderProject() {
@@ -348,7 +448,7 @@ function renderProject() {
     { label: "Radar scoring tested", detail: "Tests added before v2.1 publish" },
   ];
 
-  render(`
+  return `
     <section class="section-pad" aria-labelledby="project-title">
       <div class="section-heading compact">
         <span>${project.status}</span>
@@ -376,11 +476,11 @@ function renderProject() {
           .join("")}
       </div>
     </section>
-  `);
+  `;
 }
 
 function renderBoards() {
-  render(`
+  return `
     <section class="boards-section section-pad" aria-labelledby="boards-title">
       <div class="section-heading compact">
         <span>High-vibe leaderboards</span>
@@ -388,31 +488,17 @@ function renderBoards() {
         <p>Rank builders by PRs merged, releases made, active streaks, and project momentum.</p>
       </div>
       <div class="hero-actions" role="group" aria-label="Board views">
-        <button class="secondary-action" type="button" data-board="rising">Rising builders</button>
+        <button class="secondary-action active" type="button" data-board="rising">Rising builders</button>
         <button class="secondary-action" type="button" data-board="projects">Projects</button>
         <button class="secondary-action" type="button" data-board="releases">Releases</button>
       </div>
-      <div data-board-output></div>
-      <div class="leaderboard">${sampleData.boards
-        .map(
-          (row) => `
-            <article class="leader-row">
-              <strong>#${row.rank}</strong>
-              <div>
-                <strong>${row.handle}</strong>
-                <span>${row.detail}</span>
-              </div>
-              <strong>${row.metric}</strong>
-            </article>
-          `
-        )
-        .join("")}</div>
+      <div class="leaderboard" data-board-output></div>
     </section>
-  `);
+  `;
 }
 
 function renderTalent() {
-  render(`
+  return `
     <section class="talent-section section-pad" aria-labelledby="talent-title">
       <div class="section-heading compact">
         <span>AI Builder Talent Board</span>
@@ -426,19 +512,9 @@ function renderTalent() {
         <button class="secondary-action" type="button" data-filter="mobile">Mobile</button>
         <button class="secondary-action" type="button" data-filter="saas">SaaS</button>
       </div>
-      <div class="talent-grid" data-talent-output>${sampleData.talent
-        .map(
-          (person) => `
-            <article class="talent-card">
-              <h3>${person.handle}</h3>
-              <p>${person.summary}</p>
-              <div class="talent-tags">${tags(person.tags)}</div>
-            </article>
-          `
-        )
-        .join("")}</div>
+      <div class="talent-grid" data-talent-output></div>
     </section>
-  `);
+  `;
 }
 
 function renderDashboard() {
@@ -449,7 +525,7 @@ function renderDashboard() {
     { label: "Release", value: "v2.1" },
   ];
 
-  render(`
+  return `
     <section class="section-pad" aria-labelledby="dashboard-title">
       <div class="section-heading compact">
         <span>Receipt Command Center</span>
@@ -489,11 +565,11 @@ function renderDashboard() {
         ${proofCard("Receipt Studio", "Edit evidence, generate a card, and prepare the share link.", "studio")}
       </div>
     </section>
-  `);
+  `;
 }
 
 function renderRepos() {
-  render(`
+  return `
     <section class="section-pad" aria-labelledby="repos-title">
       <div class="section-heading compact">
         <span>Proof Sources</span>
@@ -527,18 +603,18 @@ function renderRepos() {
               <span>${repo.selected ? "included" : "paused"}</span>
               <strong>${repo.prs} PRs</strong>
               <button class="secondary-action${repo.selected ? " active" : ""}" type="button" data-repo-toggle="${repo.name}">
-                ${repo.selected ? "Included" : "Include"}
+                ${repo.selected ? "Included" : "Excluded"}
               </button>
             </article>
           `
         )
         .join("")}</div>
     </section>
-  `);
+  `;
 }
 
 function renderStudio() {
-  render(`
+  return `
     <section class="section-pad" aria-labelledby="studio-title">
       <div class="section-heading compact">
         <span>Receipt Studio</span>
@@ -590,11 +666,11 @@ function renderStudio() {
         <button class="primary-action" type="button" data-copy-link>Copy link</button>
       </article>
     </section>
-  `);
+  `;
 }
 
 function renderTrust() {
-  render(`
+  return `
     <section class="section-pad" aria-labelledby="trust-title">
       <div class="section-heading compact">
         <span>Trust Center</span>
@@ -639,7 +715,7 @@ function renderTrust() {
         </article>
       </div>
     </section>
-  `);
+  `;
 }
 
 function openModal() {
@@ -647,7 +723,7 @@ function openModal() {
 }
 
 if (hasAppShell) {
-  window.addEventListener("hashchange", renderRoute);
+  window.addEventListener("hashchange", render);
 
   headerAction.addEventListener("click", (event) => {
     event.preventDefault();
@@ -663,6 +739,6 @@ if (hasAppShell) {
   if (!window.location.hash) {
     window.location.hash = linkTo("home");
   } else {
-    renderRoute();
+    render();
   }
 }
