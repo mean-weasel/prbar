@@ -396,7 +396,6 @@ function openModal() {
 if (hasAppShell) {
   window.addEventListener("hashchange", renderRoute);
 
-  headerAction.href = "#";
   headerAction.addEventListener("click", (event) => {
     event.preventDefault();
     openModal();
