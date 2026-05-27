@@ -28,6 +28,7 @@ jobs:
       IOS_UI_TEST_TARGET: PRBarPreviewUITests
       PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.preview
       IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+      PRBAR_IOS_GITHUB_CLIENT_ID: ${{ secrets.PRBAR_IOS_GITHUB_CLIENT_ID }}
       IOS_XCODEBUILD_EXTRA_ARGS: -allowProvisioningUpdates -allowProvisioningDeviceRegistration
       IOS_PREVIEW_KEYCHAIN_PASSWORD: ${{ secrets.IOS_PREVIEW_KEYCHAIN_PASSWORD }}
       IOS_PREVIEW_SET_KEY_PARTITION_LIST: '1'
