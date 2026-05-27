@@ -126,6 +126,27 @@ function tags(items) {
   return items.map((item) => `<span>${item}</span>`).join("");
 }
 
+function statGrid(stats) {
+  return `
+    <div class="profile-stats">
+      ${stats.map((stat) => `<div><strong>${stat.value}</strong><span>${stat.label}</span></div>`).join("")}
+    </div>
+  `;
+}
+
+function proofCard(title, body, routeId, meta = "Verified GitHub") {
+  return `
+    <article class="release-card">
+      <div>
+        <span>${meta}</span>
+        <h3>${title}</h3>
+        <p>${body}</p>
+      </div>
+      <a class="secondary-action" href="${linkTo(routeId)}">Open</a>
+    </article>
+  `;
+}
+
 function render(html) {
   app.innerHTML = html;
 }
@@ -165,14 +186,31 @@ function renderHome() {
         <p class="hero-label">Verified GitHub velocity for AI-native builders</p>
         <h1 id="hero-title">Show the world your receipts.</h1>
         <p class="hero-lede">
-          <strong>Token usage does not count.</strong> PRBar tracks features shipped,
-          PRs merged, releases made, and projects launched so proof comes from work
-          that landed.
+          <strong>Token usage does not count.</strong> PRBar turns selected GitHub activity into
+          public proof of features shipped, PRs merged, releases made, and projects launched.
         </p>
         <div class="hero-actions">
-          <a class="primary-action" href="${linkTo("profile")}">View profile</a>
-          <a class="secondary-action" href="${linkTo("network")}">Explore network</a>
+          <a class="primary-action" href="${linkTo("profile")}">Claim your profile</a>
+          <a class="secondary-action" href="${linkTo("network")}">Scout builders</a>
         </div>
+      </div>
+    </section>
+    <section class="section-pad" aria-labelledby="home-proof-title">
+      <div class="section-heading compact">
+        <span>Featured receipt</span>
+        <h2 id="home-proof-title">${sampleData.release.title}</h2>
+        <p>${sampleData.release.summary}</p>
+      </div>
+      ${proofCard(
+        sampleData.release.type,
+        `${sampleData.builder.handle} shipped ${sampleData.release.signals.join(", ")} from selected repo activity.`,
+        "receipt",
+        "Release receipt"
+      )}
+      <div class="apps-grid">
+        ${proofCard("Builder profile", `${sampleData.builder.name} is showing tools, stats, and GitHub-backed shipping history.`, "profile")}
+        ${proofCard("Project operating history", `${sampleData.projects[0].name} has ${sampleData.projects[0].receipts} receipts and a visible release trail.`, "project")}
+        ${proofCard("Momentum Boards", "Rank builders by merged work, releases, projects, and recent momentum.", "boards")}
       </div>
     </section>
   `);
@@ -183,33 +221,51 @@ function renderNetwork() {
     <section class="section-pad" aria-labelledby="network-title">
       <div class="section-heading">
         <span>Proof Network</span>
-        <h1 id="network-title">Proof Network</h1>
-        <p>Follow builders through receipts, releases, projects, and verified repo momentum.</p>
+        <h1 id="network-title">People and projects first. GitHub proof underneath.</h1>
+        <p>Scout builders by what they shipped, then inspect the receipts and source signals behind the story.</p>
       </div>
-      <div class="proof-stack">${sampleData.feed
-        .map(
-          (item) => `
-            <article class="release-card">
-              <div>
-                <span>${item.actor}</span>
-                <h3>${item.action}</h3>
-                <p>${item.target}</p>
-              </div>
-            </article>
-          `
-        )
-        .join("")}</div>
+      <div class="apps-grid">
+        <div class="proof-stack">${sampleData.feed
+          .map(
+            (item) => `
+              <article class="release-card">
+                <div>
+                  <span>${item.actor}</span>
+                  <h3>${item.action}</h3>
+                  <p>${item.target}</p>
+                </div>
+                <a class="secondary-action" href="${linkTo("receipt")}">Receipt</a>
+              </article>
+            `
+          )
+          .join("")}</div>
+        <aside class="profile-card" aria-label="Source panel">
+          <div class="profile-header">
+            <div class="avatar">${sampleData.builder.avatar}</div>
+            <div>
+              <h3>${sampleData.builder.name}</h3>
+              <p>${sampleData.builder.role}</p>
+            </div>
+            <span>Live proof</span>
+          </div>
+          ${statGrid(sampleData.builder.stats)}
+          <div class="talent-tags">${tags(sampleData.builder.tools)}</div>
+          <p>${sampleData.repos.filter((repo) => repo.selected).length} selected repos contribute to public proof. Private details stay controlled by the builder.</p>
+        </aside>
+      </div>
     </section>
   `);
 }
 
 function renderProfile() {
+  const featuredProject = sampleData.projects[0];
+
   render(`
     <section class="section-pad" aria-labelledby="profile-title">
       <div class="section-heading compact">
         <span>${sampleData.builder.handle}</span>
         <h1 id="profile-title">Receipts beat resumes.</h1>
-        <p>${sampleData.builder.role} using ${sampleData.builder.tools.join(", ")}.</p>
+        <p>${sampleData.builder.role} with a public trail of selected GitHub work.</p>
       </div>
       <article class="profile-card">
         <div class="profile-header">
@@ -220,44 +276,105 @@ function renderProfile() {
           </div>
           <span>Verified</span>
         </div>
-        <div class="profile-stats">${sampleData.builder.stats
-          .map((stat) => `<div><strong>${stat.value}</strong><span>${stat.label}</span></div>`)
-          .join("")}</div>
+        <div class="talent-tags">${tags(sampleData.builder.tools)}</div>
+        ${statGrid(sampleData.builder.stats)}
+        <div class="release-card">
+          <div>
+            <span>Hiring signal</span>
+            <h3>Ships AI product work in public</h3>
+            <p>${sampleData.builder.name} has ${sampleData.release.summary.toLowerCase()} Recruiters and founders can inspect receipts instead of guessing from a resume.</p>
+          </div>
+        </div>
       </article>
+      <div class="apps-grid">
+        ${proofCard(sampleData.release.title, sampleData.release.summary, "receipt", sampleData.release.type)}
+        ${proofCard(featuredProject.name, featuredProject.summary, "project", `${featuredProject.receipts} receipts`)}
+      </div>
     </section>
   `);
 }
 
 function renderReceipt() {
+  const mergedPrs = [
+    { title: "Add founder discovery filters", repo: "sideproject-radar", merged: "#184" },
+    { title: "Import release notes from GitHub tags", repo: "sideproject-radar", merged: "#188" },
+    { title: "Cover radar scoring with regression tests", repo: "ai-onboarding-flow", merged: "#57" },
+  ];
+
   render(`
     <section class="section-pad" aria-labelledby="receipt-title">
       <div class="section-heading compact">
         <span>${sampleData.release.type}</span>
-        <h1 id="receipt-title">Release Receipt</h1>
-        <p>${sampleData.release.summary}</p>
+        <h1 id="receipt-title">${sampleData.release.title}</h1>
+        <p>Repo sideproject-radar · tag v2.1 · published this week by ${sampleData.builder.handle}</p>
       </div>
       <article class="release-card">
         <div>
-          <span>${sampleData.release.title}</span>
-          <h3>${sampleData.release.type}</h3>
+          <span>Release receipt</span>
+          <h3>Notes</h3>
+          <p>${sampleData.release.summary} This receipt highlights shipped product surface, verification work, and tagged release history.</p>
           <div class="talent-tags">${tags(sampleData.release.signals)}</div>
         </div>
       </article>
+      <div class="apps-grid">
+        ${proofCard("Proof summary", "8 merged PRs, 2 source repos, release tag present, and notes imported from GitHub.", "repos")}
+        ${proofCard("Builder context", `${sampleData.builder.name} connected ${sampleData.repos.filter((repo) => repo.selected).length} repos for this public proof surface.`, "profile")}
+      </div>
+      <div class="leaderboard" aria-label="Merged PR rows">
+        ${mergedPrs
+          .map(
+            (pr) => `
+              <article class="leader-row">
+                <strong>${pr.merged}</strong>
+                <div>
+                  <strong>${pr.title}</strong>
+                  <span>${pr.repo}</span>
+                </div>
+                <span>merged</span>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
     </section>
   `);
 }
 
 function renderProject() {
   const project = sampleData.projects[0];
+  const timeline = [
+    { label: "Discovery filters merged", detail: "Feature PRs landed in selected repo" },
+    { label: "Release notes imported", detail: "GitHub tag connected to public receipt" },
+    { label: "Radar scoring tested", detail: "Tests added before v2.1 publish" },
+  ];
 
   render(`
     <section class="section-pad" aria-labelledby="project-title">
       <div class="section-heading compact">
         <span>${project.status}</span>
-        <h1 id="project-title">Project Page</h1>
+        <h1 id="project-title">SideProject Radar operating history.</h1>
         <p>${project.name}: ${project.summary}</p>
       </div>
-      <a class="secondary-action" href="${linkTo("receipt")}">${project.receipts} receipts</a>
+      <div class="apps-grid">
+        ${proofCard("Shipping signal", `${project.receipts} receipts, ${sampleData.release.summary.toLowerCase()}`, "receipt")}
+        ${proofCard("Current status", `${project.name} is ${project.status} and backed by selected GitHub proof.`, "network")}
+      </div>
+      <div class="leaderboard" aria-label="Proof timeline">
+        ${timeline
+          .map(
+            (item, index) => `
+              <article class="leader-row">
+                <strong>${index + 1}</strong>
+                <div>
+                  <strong>${item.label}</strong>
+                  <span>${item.detail}</span>
+                </div>
+                <span>verified</span>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
     </section>
   `);
 }
@@ -270,6 +387,12 @@ function renderBoards() {
         <h1 id="boards-title">Momentum Boards</h1>
         <p>Rank builders by PRs merged, releases made, active streaks, and project momentum.</p>
       </div>
+      <div class="hero-actions" role="group" aria-label="Board views">
+        <button class="secondary-action" type="button" data-board="rising">Rising builders</button>
+        <button class="secondary-action" type="button" data-board="projects">Projects</button>
+        <button class="secondary-action" type="button" data-board="releases">Releases</button>
+      </div>
+      <div data-board-output></div>
       <div class="leaderboard">${sampleData.boards
         .map(
           (row) => `
