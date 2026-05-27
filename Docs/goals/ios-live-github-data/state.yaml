@@ -1,0 +1,902 @@
+version: 2
+
+goal:
+  title: "iOS Live GitHub Data"
+  slug: "ios-live-github-data"
+  kind: existing_plan
+  tranche: "Replace the iOS preview app's dummy runtime data with an authenticated GitHub-backed data path while preserving deterministic sample providers for previews and CI."
+  status: done
+  oracle:
+    signal: "A simulator or physical-device walkthrough plus automated tests showing signed-in GitHub data drives PRs, Releases, repo selection, and Share, while sample providers still power previews/CI."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Receipts for provider contracts, auth/session, repo selection, GitHub fetch/normalization, UI wiring, share output, and verification commands, followed by a final Judge/PM audit with full_outcome_complete: true."
+  intake:
+    original_request: "Make a detailed GoalBuddy plan for replacing dummy iOS preview data with real GitHub-backed data."
+    interpreted_outcome: "PRBar iOS should move from dummy data to a live GitHub-backed app path without losing preview/CI determinism or privacy-safe defaults."
+    input_shape: existing_plan
+    audience: "PRBar iOS users and maintainers"
+    authority: requested
+    proof_type: demo
+    completion_proof: "The iOS app can authenticate with GitHub, select repos, fetch and normalize real PR/release/tag data, render the existing PRs/Releases/Share surfaces from that data, and pass deterministic CI/previews using sample providers."
+    likely_misfire: "Implementing only a nicer dummy-data abstraction or one live screen, while releases/share/repo selection still depend on hardcoded sample data."
+    blind_spots_considered:
+      - "GitHub OAuth/device flow scope and rate-limit behavior."
+      - "Keychain token storage and logout/revocation behavior."
+      - "Selected-repo privacy defaults and private repo share safety."
+      - "GitHub pagination, tags without releases, release drafts/prereleases, renamed/deleted repos."
+      - "Date/time-zone normalization for daily calendars and distributions."
+      - "Offline, loading, empty, partial-failure, and unauthenticated states."
+      - "CI and SwiftUI previews must not require real GitHub credentials."
+      - "The first tranche should not create a public social backend."
+    existing_plan_facts:
+      - "Introduce a data-provider abstraction with sample and live implementations."
+      - "Keep sample data for previews, preview app mode, and CI."
+      - "Add Sign in with GitHub and Keychain token storage before live syncing."
+      - "Add repo selection similar to the macOS menu bar app."
+      - "Fetch PRs, GitHub releases, and tagged versions from selected repos."
+      - "Normalize PR/release/tag data into daily buckets, repo distributions, calendars, and share summaries."
+      - "Keep share generation local through native iOS share surfaces in the first tranche."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/ios-live-github-data/"
+    command: "npx goalbuddy board /Users/neonwatty/Desktop/prbar/docs/goals/ios-live-github-data"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Map the current iOS app data flow, dummy/sample data sources, GitHub-related code, repo-selection patterns, and verification commands without changing files."
+    inputs:
+      - "apple/"
+      - "Sources/"
+      - "scripts/"
+      - ".github/workflows/"
+      - "docs/"
+      - "The current GoalBuddy charter and intake facts"
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation files."
+      - "Do not start new product work."
+      - "Prefer concrete file-path evidence over generic advice."
+    expected_output:
+      - "Current iOS data/source map with file paths."
+      - "Where dummy/sample data enters each UI surface."
+      - "Existing GitHub/auth/repo-selection reusable pieces."
+      - "Verification commands for unit tests, simulator smoke, and physical preview."
+      - "Risks or blockers that should shape Worker allowed_files."
+    receipt:
+      result: done
+      summary: "Current iOS app already has model/provider seams, repo selection, Keychain storage, GitHub repository fetching, PR/release/tag activity fetching, and UI wiring for PRs/Releases/Share. The live-data blocker is auth: production PRBarApp injects GitHubDeviceFlowAuthService, but GitHubDeviceFlowAuthService.connect() still throws a placeholder before network device-code/token polling."
+      evidence:
+        - "apple/PRBar/PRBarApp.swift wires static providers only for --ui-testing; production injects KeychainGitHubSessionStore, GitHubRepositoryClient, GitHubActivityClient, and UserDefaultsRepositorySelectionStore."
+        - "apple/PRBarShared/PRBarStore.swift drives repositories, pullRequests, releases, routeState, GitHub auth, repo loading, selected repo persistence, and activity refresh."
+        - "apple/PRBarShared/GitHubActivity.swift implements GitHubActivityClient for merged PRs, releases, tags, and tag commit metadata behind GitHubActivityProviding."
+        - "apple/PRBarShared/GitHubRepositories.swift implements GitHubRepositoryClient and repository selection persistence seams."
+        - "apple/PRBarShared/GitHubAuth.swift implements KeychainGitHubSessionStore and request builders, but GitHubDeviceFlowAuthService.connect() is not wired to network polling."
+        - "apple/PRBar/PRs/PRsView.swift, apple/PRBar/Releases/ReleasesView.swift, and apple/PRBar/Share/ShareView.swift read provider-backed PRBarStore state."
+        - "apple/PRBar/More/RepositorySetupView.swift handles selected repo toggles and finish setup."
+        - "apple/PRBarTests/GitHubActivityTests.swift and apple/PRBarTests/PRBarModelTests.swift cover provider mapping, repo privacy defaults, and store refresh behavior."
+      verification_commands:
+        - "./scripts/ios-test.sh"
+        - "./scripts/ios-ui-smoke.sh"
+        - "gh workflow run \"iOS Physical Preview\" --repo mean-weasel/prbar --ref <branch> -f smoke_profile=pr -f device_name=iPhone-preview"
+      risks:
+        - "Live GitHub sign-in needs a configured PRBAR_IOS_GITHUB_CLIENT_ID; CI must continue using static providers and fakes."
+        - "Device flow requires polling states and user-code UX; current GitHubAuthServicing.connect() is synchronous, so the first safe slice should establish a deterministic polling boundary and tests without committing secrets."
+        - "Private repo data is already excluded by default on fetched repos but sample data still includes private repos for share warning coverage."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Validate the live-data architecture and choose the first largest safe Worker slice."
+    inputs:
+      - "T001 receipt"
+      - "goal.oracle"
+      - "goal.intake.existing_plan_facts"
+    constraints:
+      - "Do not implement."
+      - "Preserve previews/CI sample data."
+      - "Reject any plan that requires real GitHub credentials in CI."
+      - "Pick the largest safe useful first slice with explicit allowed_files, verification, and stop conditions."
+    expected_output:
+      - "Architecture decision: approved | revise | blocked."
+      - "First Worker objective."
+      - "allowed_files for the first Worker."
+      - "verify commands."
+      - "stop_if conditions."
+      - "Any follow-up board task edits needed."
+    receipt:
+      result: done
+      decision: "approved"
+      full_outcome_complete: false
+      rationale: "Provider contracts and sample/live data seams already exist from earlier iOS auth/data-sync work. The largest safe next slice is to replace the placeholder GitHubDeviceFlowAuthService.connect() with a tested device-flow polling implementation while preserving deterministic CI and sample providers."
+      worker_task: "T004"
+      allowed_files:
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "docs/goals/ios-live-github-data/state.yaml"
+      verify:
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      stop_if:
+        - "A GitHub client secret, real token, or user credential would be needed."
+        - "GitHub auth UX needs asynchronous user-code presentation beyond the current service boundary."
+        - "Need files outside allowed_files."
+        - "Verification fails twice for the same reason."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: blocked
+    reasoning_hint: medium
+    objective: "Implement the data-provider contract and deterministic sample provider selected by Judge so views can depend on structured app data instead of ad hoc dummy constants."
+    allowed_files:
+      - "apple/PRBarShared/GitHubRepositories.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBar/More/RepositorySetupView.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+    verify:
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Provider API shape is ambiguous after reading T001/T002."
+      - "SwiftUI previews or CI would require live GitHub credentials."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: blocked
+      summary: "No separate Worker needed for this slice: current code already has PRBarStore provider seams, StaticGitHubRepositoryProvider, StaticGitHubActivityProvider, GitHubRepositoryClient, GitHubActivityClient, and deterministic tests. T004 is the next required implementation task."
+      evidence:
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarShared/GitHubRepositories.swift"
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBarTests/GitHubActivityTests.swift"
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add GitHub sign-in/session plumbing for iOS with Keychain-backed token storage, logout, unauthenticated UI states, and privacy-first defaults."
+    allowed_files:
+      - "apple/PRBarShared/GitHubAuth.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "docs/goals/ios-live-github-data/state.yaml"
+    verify:
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+    stop_if:
+      - "OAuth/device-flow requirements are unclear."
+      - "A GitHub app/client credential or owner decision is required."
+      - "Token values would appear in logs, fixtures, screenshots, or committed files."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      summary: "GitHubDeviceFlowAuthService now uses the injected transport to request a device code, poll for an OAuth token, fetch the signed-in GitHub user, save the session through the existing session store, and return a connected GitHubConnection. Pending device authorization is surfaced as GitHubAuthError.authorizationPending so the next UX slice can show the user code and continue polling without committing credentials or requiring network access in CI."
+      changed_files:
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "docs/goals/ios-live-github-data/state.yaml"
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "34 tests passed."
+      evidence:
+        - "GitHubDeviceFlowRequest.user(token:) builds the authenticated /user request with GitHub API headers."
+        - "GitHubOAuthConfiguration keeps a default maxTokenPollAttempts so existing callers remain source-compatible."
+        - "PRBarModelTests covers the full fake device-code -> token -> user -> stored-session path."
+        - "PRBarModelTests covers authorization_pending returning the decoded GitHubDeviceAuthorization for UI follow-up."
+
+  - id: T010
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the next largest safe slice for turning the synchronous device-flow auth backend into an iOS sign-in UX that shows the GitHub user code, verification URL, pending/loading/error states, and then continues into repo selection and live provider refresh."
+    inputs:
+      - "T004 receipt"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBar/Onboarding/OnboardingView.swift"
+      - "apple/PRBar/More/RepositorySetupView.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarUITests/"
+    constraints:
+      - "Do not implement."
+      - "Preserve static providers for previews, UI tests, and CI."
+      - "Do not require real GitHub credentials, client secrets, or tokens in committed files."
+      - "Respect privacy defaults: public repos included by default, private repos excluded unless explicitly selected."
+      - "Prefer one vertical sign-in-to-repo-selection slice over isolated UI polish."
+    expected_output:
+      - "Architecture decision for async/pending auth UX."
+      - "Worker objective."
+      - "allowed_files."
+      - "verify commands."
+      - "stop_if conditions."
+    receipt:
+      result: done
+      decision: "approved"
+      full_outcome_complete: false
+      rationale: "The backend device-flow slice is verified, but the current iOS onboarding still calls connectGitHub() synchronously and can only treat authorization_pending as a generic failure. The next largest safe slice is a vertical sign-in UX boundary: expose pending device authorization in store state, show the GitHub user code and verification URL in onboarding, allow retry/continue polling through fakeable services, and keep UI-test/static providers deterministic."
+      worker_task: "T011"
+      allowed_files:
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBar/Onboarding/OnboardingView.swift"
+        - "apple/PRBar/RootTabView.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "docs/goals/ios-live-github-data/state.yaml"
+      verify:
+        - "git diff --check"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      stop_if:
+        - "Need a real GitHub token, client secret, or network-dependent CI test."
+        - "Need URL-opening entitlements or associated-domain/product decisions beyond showing/copying the verification URL."
+        - "Need files outside allowed_files."
+        - "Verification fails twice for the same reason."
+
+  - id: T011
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Wire the verified GitHub device-flow auth backend into iOS onboarding: represent pending device authorization in app state, show the GitHub user code and verification URL, provide deterministic retry/continue behavior for token polling, and preserve existing sample/static auth paths for previews and CI."
+    allowed_files:
+      - "apple/PRBarShared/GitHubAuth.swift"
+      - "apple/PRBarShared/PRBarModels.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBar/Onboarding/OnboardingView.swift"
+      - "apple/PRBar/RootTabView.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "docs/goals/ios-live-github-data/state.yaml"
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+    stop_if:
+      - "Need a real GitHub token, client secret, or network-dependent CI test."
+      - "Need URL-opening entitlements or associated-domain/product decisions beyond showing/copying the verification URL."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      summary: "Onboarding now has a first-class pending GitHub device authorization route. connectGitHub() can surface the decoded user code and verification URL, OnboardingView renders an Authorize GitHub screen, and continueGitHubAuthorization() resumes token polling through the same fakeable auth service before loading repositories and moving into repo setup."
+      changed_files:
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBar/Onboarding/OnboardingView.swift"
+        - "apple/PRBar/RootTabView.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "docs/goals/ios-live-github-data/state.yaml"
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "35 tests passed."
+      evidence:
+        - "AppRouteState now includes .authorizing(GitHubDeviceAuthorization)."
+        - "GitHubAuthServicing exposes continueDeviceAuthorization(_:) with GitHubDeviceFlowAuthService polling the existing device authorization."
+        - "PRBarStore.handleAuth(_:) preserves signingIn state while authorization is pending instead of treating it as a generic failure."
+        - "OnboardingView shows the GitHub user code and verification URL and provides 'I authorized GitHub' continuation."
+        - "PRBarModelTests covers pending authorization followed by successful continuation into repository setup."
+
+  - id: T012
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review the verified sign-in UX bridge and choose the next largest safe slice toward fully live GitHub-backed PRs, Releases/tags, repo selection, and Share."
+    inputs:
+      - "T004 receipt"
+      - "T011 receipt"
+      - "Existing queued tasks T005-T008"
+      - "goal.oracle"
+      - "Current diff"
+    constraints:
+      - "Do not implement."
+      - "Do not duplicate work already completed by existing provider/repo/activity clients."
+      - "Reject completion while queued required live-data tasks remain."
+      - "Prefer a vertical verification/demo slice over cosmetic polish."
+      - "Preserve sample/static providers for previews, UI tests, and CI."
+    expected_output:
+      - "complete | not_complete"
+      - "next Worker objective"
+      - "allowed_files"
+      - "verify commands"
+      - "stop_if conditions"
+    receipt:
+      result: done
+      decision: "not_complete"
+      full_outcome_complete: false
+      rationale: "The signed-in runtime path now has auth, pending device-code UX, repo providers, activity providers, repo selection, and PR/Releases/Share UI wiring, but production OAuth configuration is still too narrow: appDefault only reads PRBAR_IOS_GITHUB_CLIENT_ID from ProcessInfo.environment. A normal installed iOS app needs a build/app configuration seam, and CI/previews must remain credential-free."
+      worker_task: "T013"
+      allowed_files:
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/Info.plist"
+        - "apple/project.yml"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "docs/goals/ios-live-github-data/state.yaml"
+      verify:
+        - "git diff --check"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      stop_if:
+        - "A real GitHub client ID, client secret, token, or owner account decision is required."
+        - "Need files outside allowed_files."
+        - "Verification fails twice for the same reason."
+
+  - id: T013
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add a credential-free app/build configuration seam for the iOS GitHub OAuth client ID so production builds can supply it through Info.plist/build settings while CI, previews, and tests can remain deterministic without real credentials."
+    allowed_files:
+      - "apple/PRBarShared/GitHubAuth.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBar/Info.plist"
+      - "apple/project.yml"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "docs/goals/ios-live-github-data/state.yaml"
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+    stop_if:
+      - "A real GitHub client ID, client secret, token, or owner account decision is required."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      summary: "Added a credential-free app/build configuration seam for the iOS GitHub OAuth client ID. Production builds can supply PRBAR_IOS_GITHUB_CLIENT_ID into Info.plist as PRBarGitHubOAuthClientID, while the default build setting remains empty and appDefault treats empty or unexpanded placeholders as missing. Environment values still override bundle values for local launches and tests."
+      changed_files:
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBar/Info.plist"
+        - "apple/project.yml"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "docs/goals/ios-live-github-data/state.yaml"
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "38 tests passed."
+      evidence:
+        - "GitHubOAuthConfiguration.appDefault(environment:bundleInfo:) reads environment first, then PRBarGitHubOAuthClientID from Info.plist."
+        - "apple/PRBar/Info.plist includes PRBarGitHubOAuthClientID backed by $(PRBAR_IOS_GITHUB_CLIENT_ID)."
+        - "apple/project.yml defines PRBAR_IOS_GITHUB_CLIENT_ID as an empty default build setting."
+        - "PRBarModelTests covers environment override, bundle fallback, and empty/unexpanded placeholder handling."
+
+  - id: T014
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add a credential-free iOS UI test path that exercises the GitHub device-code onboarding flow from signed out, through pending authorization, into repository setup, using deterministic fake auth and sample providers."
+    allowed_files:
+      - "apple/PRBarShared/GitHubAuth.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBar/Onboarding/OnboardingView.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "docs/goals/ios-live-github-data/state.yaml"
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DeviceAuthUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection"
+    stop_if:
+      - "Need a real GitHub token, client ID, client secret, or network-dependent UI test."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      summary: "Added a deterministic simulator UI walkthrough for GitHub device-code onboarding. A --ui-testing-device-auth launch path now returns a pending device authorization first, then succeeds on continuation, letting UI tests prove signed-out -> code screen -> repository setup without real GitHub credentials or network access."
+      changed_files:
+        - "apple/PRBarShared/GitHubAuth.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/Onboarding/OnboardingView.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "docs/goals/ios-live-github-data/state.yaml"
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "38 tests passed."
+        - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DeviceAuthUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection"
+          status: pass
+          details: "1 UI test passed."
+      evidence:
+        - "StaticGitHubAuthService can return authorizationPending on connect and success on continueDeviceAuthorization for deterministic UI tests."
+        - "PRBarApp wires --ui-testing-device-auth to fake pending auth plus sample repo/activity providers."
+        - "OnboardingView exposes the device code with a stable github-device-code accessibility identifier."
+        - "PRBarUITests.testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection verifies Connect GitHub, Authorize GitHub, verification URL, continuation, and repo setup."
+
+  - id: T015
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit current evidence against the iOS live GitHub data oracle and choose whether to activate final audit, add a physical/simulator smoke verification slice, or implement one remaining live-data gap."
+    inputs:
+      - "All done task receipts"
+      - "Current diff"
+      - "goal.oracle"
+      - "Queued tasks T005-T009 and T999"
+    constraints:
+      - "Do not implement."
+      - "Reject final completion if real signed-in app path still falls back to sample data as the primary runtime source."
+      - "Reject final completion if repo selection, PRs, Releases/tags, or Share are not covered by provider-backed state."
+      - "Reject final completion if CI/previews require live credentials."
+      - "Prefer a verification slice over more implementation if code evidence already satisfies the live-data path."
+    expected_output:
+      - "complete_ready | needs_work"
+      - "full_outcome_complete: false unless final audit is genuinely ready"
+      - "missing evidence"
+      - "next Worker or final-audit task"
+      - "allowed_files and verify commands if more work is needed"
+    receipt:
+      result: done
+      decision: "needs_work"
+      full_outcome_complete: false
+      summary: "Current code evidence covers the queued repo-selection, GitHub fetch/normalization, and UI wiring tasks, but the full oracle still needs a broader verification slice before final audit. The next task is T009: run the deterministic simulator/unit smoke suite and record remaining physical/live-data proof gaps."
+      reconciled_tasks:
+        - "T005"
+        - "T006"
+        - "T007"
+        - "T008"
+      missing_evidence:
+        - "No final verification receipt yet covering full unit tests plus simulator smoke after the auth/config/UI walkthrough changes."
+        - "No final audit receipt mapping all evidence back to the original live-data oracle."
+        - "No real-credential manual walkthrough has been recorded; final audit must treat that as either required proof or an explicit remaining gap."
+      next_task: "T009"
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement selected-repo configuration for iOS and wire it into the app's data provider so PR/release fetching is scoped to explicit user choices."
+    allowed_files:
+      - "apple/PRBarShared/GitHubRepositories.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBar/More/RepositorySetupView.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+    verify:
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+    stop_if:
+      - "Existing macOS repo-selection behavior conflicts with the proposed iOS behavior."
+      - "Privacy defaults are ambiguous."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      summary: "Repository selection is implemented and wired into provider-backed activity refresh. Fetched repos default to public included/private excluded unless a persisted selection exists; finishing setup persists included repo IDs and refreshes activity for selected repos."
+      changed_files:
+        - "apple/PRBarShared/GitHubRepositories.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBar/More/RepositorySetupView.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+      commands:
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "38 tests passed during T014 verification."
+      evidence:
+        - "UserDefaultsRepositorySelectionStore and InMemoryRepositorySelectionStore persist included repo IDs."
+        - "PRBarStore.applyStoredSelection(to:) applies privacy-first defaults and stored selections."
+        - "RepositorySetupView toggles included repos and finishRepositorySetup() persists selections."
+        - "PRBarModelTests covers fetched repositories with privacy defaults, restored persisted selections, and finishRepositorySetup persistence."
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement GitHub PR, release, and tag fetching behind the live provider, including pagination, rate-limit/error handling, and deterministic fakes for tests."
+    allowed_files:
+      - "apple/PRBarShared/GitHubActivity.swift"
+      - "apple/PRBarTests/GitHubActivityTests.swift"
+    verify:
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+    stop_if:
+      - "GitHub API scope or endpoint choice requires owner approval."
+      - "Network tests would be required in CI."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      summary: "GitHub PR, release, and tag fetching is implemented behind GitHubActivityProviding with deterministic transport fakes for tests. The live provider reads the stored session token, paginates selected ready repos, fetches closed PRs, releases, tags, and tag commit metadata, and excludes network requirements from CI."
+      changed_files:
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBarTests/GitHubActivityTests.swift"
+      commands:
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "38 tests passed during T014 verification."
+      evidence:
+        - "GitHubActivityClient fetches pull requests, releases, tags, and commits through GitHubActivityRequest."
+        - "GitHubActivityTests covers request construction, missing-session behavior, and mapping merged PRs/releases/tags through FixtureGitHubRepositoryTransport."
+        - "StaticGitHubActivityProvider remains available for previews, UI tests, and CI sample mode."
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Normalize GitHub PR/release/tag payloads into daily buckets, repo distributions, calendars, and share summaries used by the existing PRs/Releases/Share UI."
+    allowed_files:
+      - "apple/PRBarShared/GitHubActivity.swift"
+      - "apple/PRBarShared/PRBarModels.swift"
+      - "apple/PRBar/Components/CalendarStripView.swift"
+      - "apple/PRBar/Components/MonthHeatMapView.swift"
+      - "apple/PRBar/Share/WorkCardRenderer.swift"
+      - "apple/PRBarTests/GitHubActivityTests.swift"
+      - "apple/PRBarTests/CalendarSelectionTests.swift"
+    verify:
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+    stop_if:
+      - "Date/time-zone semantics are ambiguous."
+      - "Release versus tag inclusion rules are ambiguous."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      summary: "GitHub payloads are normalized into PRBar app models used by daily buckets, repo distributions, calendars, releases, tags, and share cards. Dates use ISO-8601 decoding and UTC/Gregorian calendar helpers for day grouping."
+      changed_files:
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBar/Components/CalendarStripView.swift"
+        - "apple/PRBar/Components/MonthHeatMapView.swift"
+        - "apple/PRBar/Share/WorkCardRenderer.swift"
+        - "apple/PRBarTests/GitHubActivityTests.swift"
+        - "apple/PRBarTests/CalendarSelectionTests.swift"
+      commands:
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "38 tests passed during T014 verification."
+      evidence:
+        - "GitHubPullRequestActivityPayload maps merged_at into PullRequest mergedAt and filters by startDate."
+        - "GitHubReleaseActivityPayload maps releases into ReleaseMoment with source .release; GitHubTagActivityPayload maps unreleased tags into ReleaseMoment with source .tag."
+        - "CalendarDay and the PR/Releases views use UTC/Gregorian day matching for daily calendars."
+        - "WorkCardRenderer reads store pullRequests, releases, included repositories, and selected release IDs instead of hardcoded UI data."
+
+  - id: T008
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Wire the SwiftUI PRs, Releases, repo-selection, and Share screens to provider-backed state with loading, empty, error, offline/sample, and signed-out states."
+    allowed_files:
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBar/PRs/PRsView.swift"
+      - "apple/PRBar/Releases/ReleasesView.swift"
+      - "apple/PRBar/Share/ShareView.swift"
+      - "apple/PRBar/More/RepositorySetupView.swift"
+      - "apple/PRBar/RootTabView.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+    verify:
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+    stop_if:
+      - "A view requires a product decision not covered by the charter."
+      - "Need files outside allowed_files."
+      - "Text or layout changes risk breaking the approved mockup direction without review."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      summary: "SwiftUI PRs, Releases, repo-selection, and Share screens are wired to PRBarStore provider-backed state. The signed-in production app injects live GitHub auth, repository, activity, and selection providers; UI tests and previews still use static/sample providers."
+      changed_files:
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/Share/ShareView.swift"
+        - "apple/PRBar/More/RepositorySetupView.swift"
+        - "apple/PRBar/RootTabView.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+      commands:
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "38 tests passed during T014 verification."
+        - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DeviceAuthUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection"
+          status: pass
+          details: "1 UI test passed during T014 verification."
+      evidence:
+        - "PRBarApp uses static providers only for --ui-testing; production injects GitHubDeviceFlowAuthService, GitHubRepositoryClient, GitHubActivityClient, and UserDefaultsRepositorySelectionStore."
+        - "PRsView derives daily calendars, chart segments, repo distribution, and recent PR rows from store.pullRequests and store.includedRepositories."
+        - "ReleasesView derives calendars and grouped releases from store.releases and included repositories."
+        - "ShareView uses WorkCardRenderer.source/evidence(for: store), which reads provider-backed store data."
+        - "PRBarUITests covers PR, Releases, Share, More, repo selection, and the credential-free device-code onboarding walkthrough."
+
+  - id: T009
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Verify the live-data tranche with unit tests, simulator smoke, and physical preview guidance or workflow updates, keeping sample-mode CI deterministic."
+    allowed_files:
+      - "apple/PRBar/Onboarding/OnboardingView.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "docs/ios-live-github-smoke.md"
+      - "docs/goals/ios-live-github-data/state.yaml"
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DeviceAuthUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection"
+    stop_if:
+      - "Physical device is unavailable, locked, or untrusted."
+      - "Credentials are missing for manual live-data testing."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      summary: "Verified the current iOS live-data tranche with formatting/diff hygiene, deterministic model/unit tests, PR-profile simulator smoke, and the credential-free device-code onboarding UI walkthrough. CI/previews remain sample-backed; real-account live-data proof is still not recorded and should be evaluated in final audit."
+      changed_files:
+        - "docs/goals/ios-live-github-data/state.yaml"
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "38 tests passed."
+        - cmd: "IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+          status: pass
+          details: "2 UI tests passed."
+        - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DeviceAuthUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection"
+          status: pass
+          details: "1 UI test passed."
+      remaining_risk:
+        - "No real GitHub OAuth client ID/live account walkthrough has been recorded in this goal run."
+        - "Physical preview smoke was not run in this task."
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether the iOS app has moved from dummy runtime data to a verified GitHub-backed data path without losing previews, CI determinism, or privacy-safe defaults."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "Goal oracle"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if any required Worker task is still queued, active, or lacks a receipt."
+      - "Reject completion if only sample/dummy data is wired."
+      - "Reject completion if GitHub credentials are required for CI/previews."
+      - "Reject completion if PRs, Releases/tags, repo selection, or Share are not covered by the live-data path or an explicit deferred/blocking receipt."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "evidence mapped to the oracle"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: "not_complete"
+      full_outcome_complete: false
+      evidence_mapped_to_oracle:
+        - "Provider boundary exists: PRBarApp injects live GitHub auth/repo/activity/selection providers for production and static providers for UI tests."
+        - "Auth/session exists: T004, T011, T013, and T014 cover device-flow auth, Keychain-compatible session storage, pending device-code UX, app/build configuration, and simulator UI walkthrough."
+        - "Repo selection exists: T005 covers fetched repo defaults, stored selection, and provider-scoped refresh."
+        - "PRs/Releases/tags fetching and normalization exist: T006 and T007 cover GitHub activity clients and daily/release/tag normalization."
+        - "PRs/Releases/Share UI wiring exists: T008 and T009 cover provider-backed UI surfaces and simulator smoke."
+        - "CI/previews remain deterministic: UI tests use --ui-testing static providers; unit tests use in-memory stores and fixture transports."
+      missing_evidence:
+        - "No real GitHub OAuth client ID is present in this environment, so a real-account sign-in/fetch walkthrough has not been recorded."
+        - "No physical preview smoke was run for this final tranche after the latest auth/config changes."
+      next_task: "T016"
+
+  - id: T016
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add a concise live GitHub smoke-test runbook that explains how to supply the OAuth client ID at build time, run the iOS app without committing credentials, verify live repo/PR/release/share behavior, and capture acceptable final-audit evidence."
+    allowed_files:
+      - "docs/ios-live-github-smoke.md"
+      - "docs/goals/ios-live-github-data/state.yaml"
+    verify:
+      - "git diff --check"
+      - "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/ios-live-github-data/state.yaml"
+    stop_if:
+      - "A real GitHub token, client secret, or account-specific credential would need to be written to disk."
+      - "Need files outside allowed_files."
+    receipt:
+      result: done
+      summary: "Added a live GitHub smoke-test runbook that keeps credentials out of source and logs while documenting the final real-account proof needed for the live-data tranche."
+      changed_files:
+        - "docs/ios-live-github-smoke.md"
+        - "docs/goals/ios-live-github-data/state.yaml"
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/ios-live-github-data/state.yaml"
+          status: pass
+      evidence:
+        - "docs/ios-live-github-smoke.md documents transient PRBAR_IOS_GITHUB_CLIENT_ID build injection."
+        - "The runbook describes signed-out launch, device authorization, repo selection, PRs, Releases, and Share verification."
+        - "The runbook lists acceptable final-audit evidence and explicitly forbids recording tokens, client secrets, or unintended private data."
+
+  - id: T017
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Run the live GitHub smoke test from docs/ios-live-github-smoke.md when a GitHub OAuth client ID is available, capture the final proof, then re-run the deterministic unit/UI checks and return to T999 final audit."
+    allowed_files:
+      - "apple/PRBar/Onboarding/OnboardingView.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "docs/ios-live-github-smoke.md"
+      - "docs/goals/ios-live-github-data/state.yaml"
+    verify:
+      - "Manual live smoke from docs/ios-live-github-smoke.md with client ID redacted"
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+    stop_if:
+      - "PRBAR_IOS_GITHUB_CLIENT_ID is unavailable."
+      - "A token, client secret, or private account data would need to be committed or logged."
+      - "The simulator or physical preview device is unavailable."
+    receipt:
+      result: done
+      summary: "Completed a real GitHub live smoke on the iPhone 17 simulator. PRBar iOS built with a transient OAuth client ID, launched signed out, generated a GitHub device code, authorized PRBar iOS through Chrome, restored the saved GitHub session, loaded live repositories for @neonwatty, and rendered PRs, Releases, and Share from a narrow live repo selection. The run exposed and fixed an important first-run issue: sign-in now stops at repo selection after loading repos instead of immediately syncing activity for every public repo. Activity refresh runs after an explicit saved selection, and missing restored sessions now return to signed out instead of authenticated sample data."
+      changed_files:
+        - "apple/PRBar/Onboarding/OnboardingView.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "docs/ios-live-github-smoke.md"
+        - "docs/goals/ios-live-github-data/state.yaml"
+      commands:
+        - cmd: "if [[ -n \"${PRBAR_IOS_GITHUB_CLIENT_ID:-}\" ]]; then echo present; else echo missing; fi"
+          status: pass
+          details: "missing from shell, so the GitHub OAuth client ID was supplied only as a transient xcodebuild setting and was not written to source."
+        - cmd: "./scripts/ios-generate.sh"
+          status: pass
+        - cmd: "xcodebuild build -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build PRBAR_IOS_GITHUB_CLIENT_ID=<redacted>"
+          status: pass
+          details: "Build succeeded with the OAuth client ID redacted from the receipt."
+        - cmd: "xcrun simctl install/launch <iPhone 17 simulator> com.neonwatty.PRBar.ios --signed-out"
+          status: pass
+          details: "The app launched to signed-out onboarding; UI automation confirmed the Continue with GitHub button."
+        - cmd: "Tap Continue with GitHub and inspect simulator UI hierarchy"
+          status: pass
+          details: "The app showed a real GitHub device-code screen and verification URL."
+        - cmd: "Open https://github.com/login/device in Chrome and enter the app-displayed user code"
+          status: pass
+          details: "GitHub accepted the typed device code and showed the Authorize PRBar iOS page."
+        - cmd: "Click Authorize neonwatty on GitHub"
+          status: pass
+          details: "GitHub showed 'Congratulations, you're all set!' after authorizing PRBar iOS."
+        - cmd: "Tap I authorized GitHub in the simulator"
+          status: pass
+          details: "The app restored the real GitHub session and showed live repo setup for @neonwatty instead of sample data."
+        - cmd: "xcrun simctl spawn <iPhone 17 simulator> defaults write com.neonwatty.PRBar.ios github.includedRepositoryIDs -array neonwatty/fleet && relaunch"
+          status: pass
+          details: "Narrowed the live smoke selection to a personal public repo to avoid org OAuth restrictions and broad first-run syncing."
+        - cmd: "Inspect PRs, Releases, and Share in simulator"
+          status: pass
+          details: "PRs showed one included live repo with fleet PR rows such as #51; Releases showed fleet release/tag notes including v0.4.1; Share rendered a card from the selected live repo set."
+        - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DeviceAuthUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection"
+          status: pass
+          details: "Focused device-auth UI test passes and verifies Copy code, Copy link, and Open here affordances."
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "40 tests passed."
+        - cmd: "IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+          status: pass
+          details: "2 UI tests passed."
+        - cmd: "git diff --check"
+          status: pass
+      evidence:
+        - "Signed-out production launch no longer falls back to authenticated sample data when Keychain has no GitHub session."
+        - "A successful GitHub device authorization now reaches live repo setup before any activity refresh."
+        - "Restored sessions with a saved repo selection refresh activity and render provider-backed PRs/Releases/Share."
+        - "Org-restricted repos require an explicit org grant; a personal public repo was used for the manual live smoke."
+      remaining_risk:
+        - "The live data path still uses synchronous URLSession/semaphore calls; moving activity sync off the main thread should be the next polish/performance slice."
+        - "First-run defaults currently include many public repos in repo setup; product may want a safer default such as no repos selected or a small recent-repo cap."
+
+  - id: T018
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Final audit of the iOS live GitHub data tranche against the goal oracle after the real-account simulator smoke and deterministic verification suite."
+    inputs:
+      - "T017 receipt"
+      - "All previous task receipts"
+      - "Current dirty diff"
+      - "Goal oracle"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if the runtime path still relies on dummy/sample data after live sign-in."
+      - "Reject completion if CI/previews require live GitHub credentials."
+      - "Reject completion if PRs, Releases, repo selection, or Share lack live-data proof."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Evidence mapped to oracle"
+      - "Residual risks"
+    receipt:
+      result: done
+      decision: "complete"
+      full_outcome_complete: true
+      summary: "The iOS app has moved from dummy runtime data to a verified GitHub-backed data path while preserving deterministic sample providers for previews, CI, and UI tests. The final proof includes a real GitHub device-flow authorization on the iPhone 17 simulator, live repo setup for @neonwatty, live PRs/Releases/Share rendering from a selected public repo, and passing deterministic unit/UI checks."
+      evidence_mapped_to_oracle:
+        - "Authenticated GitHub path: PRBar iOS built with a transient OAuth client ID, launched signed out, displayed a real GitHub device code, authorized through GitHub, and restored a saved GitHub session without committing credentials."
+        - "Repo selection: after authorization the app loaded live repositories for @neonwatty and stopped at repo setup before activity refresh; a narrow selected repo set was saved for the smoke test."
+        - "PRs: the PRs tab rendered live provider-backed rows for neonwatty/fleet, including recent PR numbers and titles."
+        - "Releases/tags: the Releases tab rendered live release/tag notes for neonwatty/fleet, including v0.4.1."
+        - "Share: the Share tab rendered a work card from the selected live repo set rather than hardcoded sample data."
+        - "Preview/CI determinism: UI tests still use explicit --ui-testing static providers, unit tests use fakes/in-memory stores, and the OAuth client ID remains build-time/runtime configuration only."
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "40 tests passed."
+        - cmd: "IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+          status: pass
+          details: "2 UI tests passed."
+        - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DeviceAuthUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection"
+          status: pass
+          details: "1 UI test passed."
+      residual_risks:
+        - "Live GitHub fetches still use synchronous URLSession/semaphore calls; moving sync off the main thread should be the next iOS quality slice."
+        - "First-run repo setup currently defaults many public repos to included; product should decide whether to start with no repos selected or a smaller recommended set."
+        - "Org-restricted repositories need explicit GitHub org authorization; the successful live smoke used a personal public repo."
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T018
+    commands:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DeviceAuthUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection"

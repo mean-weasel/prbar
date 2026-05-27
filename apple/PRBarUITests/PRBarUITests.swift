@@ -72,6 +72,44 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testRepositorySetupSearchAndFiltersRepos() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    app.tabBars.buttons["More"].tap()
+    XCTAssertTrue(app.buttons["Repos"].waitForExistence(timeout: 2))
+    app.buttons["Repos"].tap()
+
+    XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
+    app.textFields["repo-search-field"].tap()
+    app.textFields["repo-search-field"].typeText("docs")
+    XCTAssertTrue(app.switches["Include docs-site"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Documentation releases"].exists)
+
+    app.buttons["Clear repo search"].tap()
+    app.buttons["Blocked"].tap()
+    XCTAssertTrue(app.switches["Include ops-console"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Needs SSO authorization"].exists)
+  }
+
+  @MainActor
+  func testPullToRefreshUpdatesPRsAndReleases() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-refresh-data"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    app.buttons["Refresh activity"].tap()
+    XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
+
+    app.tabBars.buttons["Releases"].tap()
+    XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
+    app.buttons["Refresh activity"].tap()
+    XCTAssertTrue(app.staticTexts["v9.9.9 UI refresh release"].waitForExistence(timeout: 4))
+  }
+
+  @MainActor
   func testSignedOutGitHubConnectShowsRepoSelection() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing", "--signed-out"]
@@ -81,6 +119,29 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Private by default"].exists)
 
     app.buttons["Continue with GitHub"].tap()
+
+    XCTAssertTrue(app.staticTexts["Choose repos"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.switches["Include prbar"].exists)
+    XCTAssertTrue(app.buttons["Finish setup"].exists)
+  }
+
+  @MainActor
+  func testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-device-auth", "--signed-out"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Connect GitHub"].waitForExistence(timeout: 4))
+
+    app.buttons["Continue with GitHub"].tap()
+
+    XCTAssertTrue(app.staticTexts["Authorize GitHub"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["github-device-code"].exists)
+    XCTAssertTrue(app.buttons["Copy code"].exists)
+    XCTAssertTrue(app.buttons["Copy link"].exists)
+    XCTAssertTrue(app.buttons["Open here"].exists)
+
+    app.buttons["I authorized GitHub"].tap()
 
     XCTAssertTrue(app.staticTexts["Choose repos"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.switches["Include prbar"].exists)

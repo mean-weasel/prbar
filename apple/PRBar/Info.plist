@@ -18,6 +18,8 @@
   <string>$(MARKETING_VERSION)</string>
   <key>CFBundleVersion</key>
   <string>$(CURRENT_PROJECT_VERSION)</string>
+  <key>PRBarGitHubOAuthClientID</key>
+  <string>$(PRBAR_IOS_GITHUB_CLIENT_ID)</string>
   <key>UILaunchScreen</key>
   <dict/>
   <key>UISupportedInterfaceOrientations</key>

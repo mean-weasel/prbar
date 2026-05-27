@@ -6,14 +6,21 @@ enum GitHubActivityError: Error, Equatable {
   case invalidResponse
 }
 
-struct GitHubActivitySnapshot: Equatable {
+struct GitHubActivitySnapshot: Equatable, Sendable {
   var pullRequests: [PullRequest]
   var releases: [ReleaseMoment]
   var anchorDate: Date
 }
 
-protocol GitHubActivityProviding {
+protocol GitHubActivityProviding: Sendable {
   func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot
+  func activityAsync(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) async throws -> GitHubActivitySnapshot
+}
+
+extension GitHubActivityProviding {
+  func activityAsync(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) async throws -> GitHubActivitySnapshot {
+    try activity(for: repositories, endingAt: endDate, lookbackDays: lookbackDays)
+  }
 }
 
 struct StaticGitHubActivityProvider: GitHubActivityProviding {
@@ -24,6 +31,32 @@ struct StaticGitHubActivityProvider: GitHubActivityProviding {
   }
 
   func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
+    let includedIDs = Set(repositories.map(\.id))
+    return GitHubActivitySnapshot(
+      pullRequests: snapshot.pullRequests.filter { includedIDs.contains($0.repoID) },
+      releases: snapshot.releases.filter { includedIDs.contains($0.repoID) },
+      anchorDate: snapshot.anchorDate
+    )
+  }
+}
+
+final class SequencedGitHubActivityProvider: GitHubActivityProviding, @unchecked Sendable {
+  private var snapshots: [GitHubActivitySnapshot]
+  private let lock = NSLock()
+
+  init(snapshots: [GitHubActivitySnapshot]) {
+    self.snapshots = snapshots
+  }
+
+  func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
+    lock.lock()
+    defer { lock.unlock() }
+
+    guard snapshots.isEmpty == false else {
+      return GitHubActivitySnapshot(pullRequests: [], releases: [], anchorDate: endDate)
+    }
+
+    let snapshot = snapshots.removeFirst()
     let includedIDs = Set(repositories.map(\.id))
     return GitHubActivitySnapshot(
       pullRequests: snapshot.pullRequests.filter { includedIDs.contains($0.repoID) },
@@ -87,7 +120,7 @@ enum GitHubActivityRequest {
   }
 }
 
-struct GitHubActivityClient: GitHubActivityProviding {
+struct GitHubActivityClient: GitHubActivityProviding, @unchecked Sendable {
   var sessionStore: GitHubSessionStoring
   var transport: GitHubRepositoryTransport
   var calendar: Calendar = {
@@ -115,6 +148,12 @@ struct GitHubActivityClient: GitHubActivityProviding {
       releases: releases.sorted { $0.date > $1.date },
       anchorDate: calendar.startOfDay(for: endDate)
     )
+  }
+
+  func activityAsync(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) async throws -> GitHubActivitySnapshot {
+    try await Task.detached {
+      try activity(for: repositories, endingAt: endDate, lookbackDays: lookbackDays)
+    }.value
   }
 
   private func repositoryPullRequests(_ repository: Repository, token: String, startDate: Date) throws -> [PullRequest] {
