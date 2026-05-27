@@ -574,7 +574,7 @@ svg {
   padding: 13px;
   background: #f8fafc;
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: 8px;
 }
 
 .leader-row strong {
@@ -601,7 +601,7 @@ svg {
   padding: 16px;
   background: #f8fafc;
   border: 1px solid var(--line);
-  border-radius: 15px;
+  border-radius: 8px;
 }
 
 .talent-card h3 {
