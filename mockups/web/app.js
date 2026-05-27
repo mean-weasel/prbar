@@ -417,9 +417,16 @@ function renderTalent() {
       <div class="section-heading compact">
         <span>AI Builder Talent Board</span>
         <h1 id="talent-title">Who can help me ship this?</h1>
-        <p>Find builders whose profiles are backed by release history and repo focus.</p>
+        <p>Filter builders by availability, launch surface, mobile skill, and SaaS shipping history.</p>
       </div>
-      <div class="talent-grid">${sampleData.talent
+      <div class="hero-actions" role="group" aria-label="Talent filters">
+        <button class="secondary-action active" type="button" data-filter="all">All</button>
+        <button class="secondary-action" type="button" data-filter="available">Available</button>
+        <button class="secondary-action" type="button" data-filter="launch">Launch</button>
+        <button class="secondary-action" type="button" data-filter="mobile">Mobile</button>
+        <button class="secondary-action" type="button" data-filter="saas">SaaS</button>
+      </div>
+      <div class="talent-grid" data-talent-output>${sampleData.talent
         .map(
           (person) => `
             <article class="talent-card">
@@ -435,24 +442,52 @@ function renderTalent() {
 }
 
 function renderDashboard() {
+  const proofStats = [
+    { label: "Active repos", value: sampleData.repos.filter((repo) => repo.selected).length },
+    { label: "Proof PRs", value: sampleData.repos.filter((repo) => repo.selected).reduce((total, repo) => total + repo.prs, 0) },
+    { label: "Receipts", value: sampleData.projects.reduce((total, project) => total + project.receipts, 0) },
+    { label: "Release", value: "v2.1" },
+  ];
+
   render(`
     <section class="section-pad" aria-labelledby="dashboard-title">
       <div class="section-heading compact">
-        <span>Private dashboard</span>
-        <h1 id="dashboard-title">Receipt Command Center</h1>
-        <p>Select repos, review proof signals, and publish receipts from one place.</p>
+        <span>Receipt Command Center</span>
+        <h1 id="dashboard-title">Turn this week's work into proof.</h1>
+        <p>Select repos, review evidence, and publish a clear receipt without exposing private work.</p>
       </div>
-      <div class="apps-grid">${sampleData.projects
-        .map(
-          (project) => `
-            <article>
-              <h3>${project.name}</h3>
-              <p>${project.summary}</p>
-              <span>${project.receipts} receipts</span>
-            </article>
-          `
-        )
-        .join("")}</div>
+      <div class="dashboard-grid">
+        <article class="release-card">
+          <div>
+            <span>Featured receipt</span>
+            <h3>${sampleData.release.title}</h3>
+            <p>${sampleData.release.summary} Review the release card before sharing it to your profile.</p>
+            <div class="talent-tags">${tags(sampleData.release.signals)}</div>
+          </div>
+          <a class="secondary-action" href="${linkTo("receipt")}">Review</a>
+        </article>
+        <aside class="profile-card" aria-label="Next action">
+          <div class="profile-header">
+            <div class="avatar">${sampleData.builder.avatar}</div>
+            <div>
+              <h3>Next action</h3>
+              <p>Confirm repo sources, then generate the share card.</p>
+            </div>
+            <span>Ready</span>
+          </div>
+          <p>${sampleData.repos.filter((repo) => repo.selected).length} repos are currently included in public proof for ${sampleData.builder.handle}.</p>
+          <div class="hero-actions">
+            <a class="primary-action" href="${linkTo("studio")}">Open studio</a>
+            <a class="secondary-action" href="${linkTo("repos")}">Sources</a>
+          </div>
+        </aside>
+      </div>
+      ${statGrid(proofStats)}
+      <div class="apps-grid">
+        ${proofCard("Builder profile", "Check how the selected proof appears on your public builder profile.", "profile")}
+        ${proofCard("Proof sources", "Choose which GitHub repos count toward public stats and receipts.", "repos")}
+        ${proofCard("Receipt Studio", "Edit evidence, generate a card, and prepare the share link.", "studio")}
+      </div>
     </section>
   `);
 }
@@ -461,18 +496,39 @@ function renderRepos() {
   render(`
     <section class="section-pad" aria-labelledby="repos-title">
       <div class="section-heading compact">
-        <span>Connected GitHub</span>
-        <h1 id="repos-title">Proof Sources</h1>
-        <p>Choose which repositories count toward public proof.</p>
+        <span>Proof Sources</span>
+        <h1 id="repos-title">Choose which repos count.</h1>
+        <p>Included repos power receipts, profile stats, project history, and momentum boards.</p>
       </div>
-      <div class="leaderboard">${sampleData.repos
+      <aside class="profile-card" aria-label="Source panel">
+        <div class="profile-header">
+          <div class="avatar">${sampleData.builder.avatar}</div>
+          <div>
+            <h3>GitHub source panel</h3>
+            <p>${sampleData.builder.handle} controls what becomes public proof.</p>
+          </div>
+          <span>${sampleData.repos.filter((repo) => repo.selected).length} active</span>
+        </div>
+        ${statGrid([
+          { label: "Connected", value: sampleData.repos.length },
+          { label: "Included", value: sampleData.repos.filter((repo) => repo.selected).length },
+          { label: "Private", value: sampleData.repos.filter((repo) => repo.visibility === "private").length },
+          { label: "Merged PRs", value: sampleData.repos.reduce((total, repo) => total + repo.prs, 0) },
+        ])}
+      </aside>
+      <div class="leaderboard" aria-label="Repository proof sources">${sampleData.repos
         .map(
           (repo) => `
             <article class="leader-row">
-              <strong>${repo.name}</strong>
-              <span>${repo.visibility}</span>
-              <span>${repo.selected ? "selected" : "paused"}</span>
+              <div>
+                <strong>${repo.name}</strong>
+                <span>${repo.visibility} repo · ${repo.prs} merged PRs</span>
+              </div>
+              <span>${repo.selected ? "included" : "paused"}</span>
               <strong>${repo.prs} PRs</strong>
+              <button class="secondary-action${repo.selected ? " active" : ""}" type="button" data-repo-toggle="${repo.name}">
+                ${repo.selected ? "Included" : "Include"}
+              </button>
             </article>
           `
         )
@@ -485,16 +541,53 @@ function renderStudio() {
   render(`
     <section class="section-pad" aria-labelledby="studio-title">
       <div class="section-heading compact">
-        <span>Shareable cards</span>
-        <h1 id="studio-title">Receipt Studio</h1>
-        <p>Compose public proof cards from releases, projects, and selected repo activity.</p>
+        <span>Receipt Studio</span>
+        <h1 id="studio-title">Edit the evidence. Generate the card.</h1>
+        <p>Polish the receipt copy, choose what evidence appears, and prepare a share link.</p>
       </div>
-      <article class="release-card">
+      <div class="dashboard-grid">
+        <article class="release-card" aria-label="Evidence panel">
+          <div>
+            <span>Evidence panel</span>
+            <h3>${sampleData.release.title}</h3>
+            <p>${sampleData.release.summary} Source repos: ${sampleData.repos
+              .filter((repo) => repo.selected)
+              .map((repo) => repo.name)
+              .join(", ")}.</p>
+            <div class="talent-tags">${tags(sampleData.release.signals)}</div>
+          </div>
+          <a class="secondary-action" href="${linkTo("repos")}">Sources</a>
+        </article>
+        <form class="profile-card" aria-label="Editor panel">
+          <div class="profile-header">
+            <div class="avatar">${sampleData.builder.avatar}</div>
+            <div>
+              <h3>Editor panel</h3>
+              <p>Write the proof card that appears on your profile.</p>
+            </div>
+            <span>Draft</span>
+          </div>
+          <label>
+            Receipt copy
+            <textarea rows="6">${sampleData.release.title}: ${sampleData.release.summary}</textarea>
+          </label>
+          <label>
+            <input type="checkbox" checked>
+            Include selected repo names
+          </label>
+          <label>
+            <input type="checkbox" checked>
+            Include merged PR count
+          </label>
+        </form>
+      </div>
+      <article class="release-card share-output">
         <div>
-          <span>${sampleData.release.title}</span>
-          <h3>${sampleData.release.type}</h3>
-          <p>${sampleData.release.summary}</p>
+          <span>Share output</span>
+          <h3>${sampleData.builder.handle}/${sampleData.release.title.toLowerCase().replace(/\s+/g, "-")}</h3>
+          <p>Generated card is ready for profile, project page, and outbound updates.</p>
         </div>
+        <button class="primary-action" type="button" data-copy-link>Copy link</button>
       </article>
     </section>
   `);
@@ -504,9 +597,46 @@ function renderTrust() {
   render(`
     <section class="section-pad" aria-labelledby="trust-title">
       <div class="section-heading compact">
-        <span>Privacy and verification</span>
-        <h1 id="trust-title">Trust Center</h1>
-        <p>Hide private repo names, select what counts, and keep token usage out of public proof.</p>
+        <span>Trust Center</span>
+        <h1 id="trust-title">Clear rules for GitHub proof.</h1>
+        <p>PRBar turns selected GitHub activity into public proof while keeping private code and token usage out of the score.</p>
+      </div>
+      <div class="trust-grid">
+        <article class="release-card">
+          <div>
+            <span>What PRBar reads</span>
+            <h3>Selected GitHub metadata</h3>
+            <p>Repository names, merged PR counts, release tags, timestamps, titles, and public proof fields chosen by the builder.</p>
+          </div>
+        </article>
+        <article class="release-card">
+          <div>
+            <span>What PRBar counts</span>
+            <h3>Shipping activity</h3>
+            <p>Merged PRs, releases, project receipts, tests added, and recent momentum from repos the builder includes.</p>
+          </div>
+        </article>
+        <article class="release-card">
+          <div>
+            <span>What PRBar protects</span>
+            <h3>Private work stays private</h3>
+            <p>Builders can pause repos, hide private source details, and decide which proof appears on public pages.</p>
+          </div>
+        </article>
+        <article class="release-card">
+          <div>
+            <span>What PRBar does not count</span>
+            <h3>No token scoreboard</h3>
+            <p>Token usage, prompt volume, vanity commits, and unmerged work do not become proof of shipping.</p>
+          </div>
+        </article>
+        <article class="release-card">
+          <div>
+            <span>Anti-gaming</span>
+            <h3>Receipts need durable signals</h3>
+            <p>Proof favors merged work, release history, project context, and source consistency over noisy activity spikes.</p>
+          </div>
+        </article>
       </div>
     </section>
   `);
