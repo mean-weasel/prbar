@@ -122,6 +122,8 @@ const sample = {
   },
 };
 
+const repoState = sampleData.repos.map((repo) => ({ ...repo }));
+
 const app = document.querySelector("#app");
 const nav = document.querySelector(".nav-links");
 const headerAction = document.querySelector(".header-action");
@@ -150,6 +152,18 @@ function statGrid(stats) {
       ${stats.map((stat) => `<div><strong>${stat.value}</strong><span>${stat.label}</span></div>`).join("")}
     </div>
   `;
+}
+
+function repoSummary(reposToCount = repoState) {
+  const included = reposToCount.filter((repo) => repo.selected).length;
+
+  return {
+    connected: reposToCount.length,
+    included,
+    excluded: reposToCount.length - included,
+    private: reposToCount.filter((repo) => repo.visibility === "private").length,
+    mergedPrs: reposToCount.reduce((total, repo) => total + repo.prs, 0),
+  };
 }
 
 function proofCard(title, body, routeId, meta = "Verified GitHub") {
@@ -229,8 +243,14 @@ function bindPageInteractions() {
 
   document.querySelectorAll("[data-repo-toggle]").forEach((button) => {
     button.addEventListener("click", () => {
-      button.classList.toggle("active");
-      button.textContent = button.classList.contains("active") ? "Included" : "Excluded";
+      const repo = repoState.find((item) => item.name === button.dataset.repoToggle);
+
+      if (!repo) {
+        return;
+      }
+
+      repo.selected = !repo.selected;
+      render();
     });
   });
 
@@ -569,6 +589,8 @@ function renderDashboard() {
 }
 
 function renderRepos() {
+  const summary = repoSummary();
+
   return `
     <section class="section-pad" aria-labelledby="repos-title">
       <div class="section-heading compact">
@@ -583,24 +605,25 @@ function renderRepos() {
             <h3>GitHub source panel</h3>
             <p>${sampleData.builder.handle} controls what becomes public proof.</p>
           </div>
-          <span>${sampleData.repos.filter((repo) => repo.selected).length} active</span>
+          <span>${summary.included} active</span>
         </div>
         ${statGrid([
-          { label: "Connected", value: sampleData.repos.length },
-          { label: "Included", value: sampleData.repos.filter((repo) => repo.selected).length },
-          { label: "Private", value: sampleData.repos.filter((repo) => repo.visibility === "private").length },
-          { label: "Merged PRs", value: sampleData.repos.reduce((total, repo) => total + repo.prs, 0) },
+          { label: "Connected", value: summary.connected },
+          { label: "Included", value: summary.included },
+          { label: "Excluded", value: summary.excluded },
+          { label: "Private", value: summary.private },
+          { label: "Merged PRs", value: summary.mergedPrs },
         ])}
       </aside>
-      <div class="leaderboard" aria-label="Repository proof sources">${sampleData.repos
+      <div class="leaderboard" aria-label="Repository proof sources">${repoState
         .map(
           (repo) => `
-            <article class="leader-row">
+            <article class="leader-row" data-repo-row="${repo.name}">
               <div>
                 <strong>${repo.name}</strong>
                 <span>${repo.visibility} repo · ${repo.prs} merged PRs</span>
               </div>
-              <span>${repo.selected ? "included" : "paused"}</span>
+              <span data-repo-status="${repo.name}">${repo.selected ? "included" : "excluded"}</span>
               <strong>${repo.prs} PRs</strong>
               <button class="secondary-action${repo.selected ? " active" : ""}" type="button" data-repo-toggle="${repo.name}">
                 ${repo.selected ? "Included" : "Excluded"}
