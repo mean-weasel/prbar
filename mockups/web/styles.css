@@ -125,8 +125,44 @@ button {
 }
 
 .secondary-action {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.secondary-action:hover {
+  background: var(--white);
+  border-color: rgba(109, 40, 217, 0.34);
+}
+
+.secondary-action.active {
+  color: var(--violet-dark);
+  background: var(--violet);
+  border-color: var(--violet);
+  box-shadow: none;
+}
+
+.hero .secondary-action:not(.active),
+.boards-section .secondary-action:not(.active),
+.receipt-hero-card .secondary-action:not(.active),
+.featured-receipt .secondary-action:not(.active),
+.featured-card .secondary-action:not(.active) {
   color: var(--text);
-  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(248, 250, 252, 0.1);
+  border-color: rgba(203, 213, 225, 0.34);
+  box-shadow: none;
+}
+
+.hero .secondary-action:not(.active):hover,
+.boards-section .secondary-action:not(.active):hover,
+.receipt-hero-card .secondary-action:not(.active):hover,
+.featured-receipt .secondary-action:not(.active):hover,
+.featured-card .secondary-action:not(.active):hover {
+  background: rgba(248, 250, 252, 0.16);
+  border-color: rgba(203, 213, 225, 0.56);
 }
 
 .hero {
