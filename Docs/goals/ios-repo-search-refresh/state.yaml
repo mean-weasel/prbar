@@ -1,0 +1,292 @@
+version: 2
+
+goal:
+  title: "iOS Repo Search And Pull Refresh"
+  slug: "ios-repo-search-refresh"
+  kind: specific
+  tranche: "Improve iOS repository selection for high-repo-count accounts and add/verify pull-to-refresh for live PR and release data."
+  status: done
+  oracle:
+    signal: "A simulator walkthrough and automated tests show repo search/filter UX works with many repos, PRs and Releases expose native pull-to-refresh, refreshed provider data replaces stale PR/release/tag state, and previews/CI remain sample-backed."
+    cadence: "after Scout mapping, after the selected Worker slice, and at final audit"
+    final_proof: "Receipts for current-state mapping, implementation, deterministic unit/UI tests, and final Judge/PM audit with full_outcome_complete: true."
+  intake:
+    original_request: "Plan the next iOS tranche with GoalBuddy: repo search for selecting repos and pull-to-refresh for PRs/Releases."
+    interpreted_outcome: "PRBar iOS should make repo selection fast for accounts with many repos and allow PRs/Releases to refresh live GitHub data in-place."
+    input_shape: specific
+    audience: "PRBar iOS users with many GitHub repositories"
+    authority: requested
+    proof_type: test
+    completion_proof: "Simulator/UI tests and unit tests demonstrate scalable repo selection and refresh-triggered data replacement without live credentials in CI."
+    likely_misfire: "Adding visible controls that do not actually improve many-repo selection or do not trigger a provider-backed refresh."
+    blind_spots_considered:
+      - "Large repo lists may need owner/org grouping, selected-only filters, and clear empty states, not just text search."
+      - "Pull-to-refresh should preserve navigation context and selected range/date when feasible."
+      - "Refresh failures should be recoverable in the current tab."
+      - "Live refresh may currently be synchronous; Scout/Judge must decide whether async refactor is in-scope for this tranche."
+      - "Deterministic CI tests need fake providers that can prove refresh data changed."
+      - "Unrelated dirty macOS/share-card changes must be left untouched."
+    existing_plan_facts:
+      - "Repository selection already has at least a basic search concept from prior work, but needs UX validation for large accounts."
+      - "PRs and Releases should support native iOS pull-to-refresh."
+      - "The store has a live activity refresh path, but it may not be public or async enough for direct view refresh."
+      - "The previous live-data tranche preserved sample/static providers for previews and CI."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/ios-repo-search-refresh/"
+    command: "npx goalbuddy board /Users/neonwatty/Desktop/prbar/docs/goals/ios-repo-search-refresh"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: low
+    objective: "Map the current iOS repository selection UX, PRs/Releases refresh affordances, store/provider refresh seams, deterministic test hooks, and verification commands without changing files."
+    inputs:
+      - "apple/PRBar/More/RepositorySetupView.swift"
+      - "apple/PRBar/PRs/PRsView.swift"
+      - "apple/PRBar/Releases/ReleasesView.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBarShared/GitHubActivity.swift"
+      - "apple/PRBarTests/"
+      - "apple/PRBarUITests/"
+      - "scripts/"
+      - "Current dirty worktree status"
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation files."
+      - "Do not inspect unrelated macOS/share-card changes except to identify files to avoid."
+      - "Prefer concrete file-path evidence over generic advice."
+    expected_output:
+      - "Current repo-selection search/filter behavior and UX gaps."
+      - "Current PRs/Releases pull-to-refresh status."
+      - "Store/provider seams available for refresh and whether async work is needed."
+      - "Deterministic fake/test hooks needed to prove refresh data changes."
+      - "Recommended verification commands."
+      - "Risks that should shape Worker allowed_files."
+    receipt:
+      result: done
+      summary: "Current iOS repo selection has a basic native search field, but no selected/available/blocked filters, no large-list summary, and no empty search state. PRsView and ReleasesView do not use .refreshable. PRBarStore has a provider-backed refresh path, but it is private and currently only runs after restoring a saved selection or finishing repo setup. Deterministic tests can use fake/static providers; UI tests can launch with sample providers and assert repo filtering plus refresh-triggered data changes if a UI-test refresh snapshot is injected."
+      evidence:
+        - "apple/PRBar/More/RepositorySetupView.swift has @State searchText, .searchable(text:prompt:), and name/owner filtering, but only one Included section."
+        - "apple/PRBar/PRs/PRsView.swift wraps content in ScrollView without .refreshable."
+        - "apple/PRBar/Releases/ReleasesView.swift wraps content in ScrollView without .refreshable."
+        - "apple/PRBarShared/PRBarStore.swift has private refreshActivityForIncludedRepositories(), called by restoreGitHubSession() and finishRepositorySetup()."
+        - "apple/PRBarTests/PRBarModelTests.swift already has StaticGitHubActivityProvider/ThrowingGitHubActivityProvider coverage around finishRepositorySetup refresh."
+        - "apple/PRBarUITests/PRBarUITests.swift has tab, repo setup, PR calendar, release calendar, and auth UI coverage using --ui-testing sample providers."
+        - "Unrelated dirty macOS/share-card files are present under Sources/ and Tests/PRMenuBarTests and should remain untouched."
+      recommended_verification:
+        - "git diff --check"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/RepoSearchRefreshUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases"
+      risks:
+        - "The live provider remains synchronous; the safe slice can expose refresh and show in-place errors, but a deeper async/network-jank cleanup may be a follow-up."
+        - "Search alone may be insufficient for very large accounts, so the Worker should add simple native filters and an empty state."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Validate the Scout findings and choose the largest safe Worker slice for repo selection search/filter UX plus PRs/Releases pull-to-refresh."
+    inputs:
+      - "T001 receipt"
+      - "Goal oracle"
+      - "Current dirty worktree status"
+    constraints:
+      - "Do not implement."
+      - "Reject a slice that touches unrelated macOS/share-card work."
+      - "Preserve CI/previews without live GitHub credentials."
+      - "Prefer one vertical implementation slice if repo search and refresh share safe files and verification."
+      - "Split into separate Worker tasks only if async refresh risk or UI-test setup makes the combined slice unsafe."
+    expected_output:
+      - "Decision: approved | split | blocked."
+      - "Exact Worker objective."
+      - "allowed_files."
+      - "verify commands."
+      - "stop_if conditions."
+      - "Any deferred follow-up tasks."
+    receipt:
+      result: done
+      decision: "approved"
+      full_outcome_complete: false
+      rationale: "A single vertical Worker slice is safe and useful: repo picker changes are isolated to RepositorySetupView, refresh state and provider refresh belong in PRBarStore, PRs/Releases can adopt native .refreshable, PRBarApp can inject a deterministic refresh snapshot for UI tests, and tests can prove provider-backed replacement without live credentials."
+      worker_task: "T003"
+      allowed_files:
+        - "apple/PRBar/More/RepositorySetupView.swift"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "docs/goals/ios-repo-search-refresh/state.yaml"
+      verify:
+        - "git diff --check"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/RepoSearchRefreshUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases"
+      stop_if:
+        - "Need files outside allowed_files."
+        - "Need a live GitHub token, client secret, or network-dependent CI test."
+        - "Synchronous refresh causes simulator UI tests to hang twice for the same reason."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement native repo selection search/filter UX plus provider-backed pull-to-refresh on PRs and Releases, with deterministic unit/UI tests."
+    allowed_files:
+      - "apple/PRBar/More/RepositorySetupView.swift"
+      - "apple/PRBar/PRs/PRsView.swift"
+      - "apple/PRBar/Releases/ReleasesView.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBarShared/GitHubActivity.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "docs/goals/ios-repo-search-refresh/state.yaml"
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/RepoSearchRefreshUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Need a live GitHub token, client secret, or network-dependent CI test."
+      - "Repo-selection UX requirements become ambiguous after reading Scout/Judge receipts."
+      - "Refresh requires a larger async architecture change than the selected slice allows."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: done
+      summary: "Implemented a vertical repo-selection and activity-refresh slice. Repository setup now has a visible search row, clear action, selected count, total count, segmented filters for All/Selected/Available/Blocked, and an empty state. PRs and Releases now expose native .refreshable plus a toolbar refresh action that calls a public provider-backed PRBarStore.refreshActivity(). Refresh replaces PR/release state for included repositories, preserves the user's selected dates where possible, records in-place refresh errors, and keeps CI deterministic through static/sequence providers."
+      changed_files:
+        - "apple/PRBar/More/RepositorySetupView.swift"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "docs/goals/ios-repo-search-refresh/state.yaml"
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "42 tests passed."
+        - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/RepoSearchRefreshUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases"
+          status: pass
+          details: "2 UI tests passed."
+      evidence:
+        - "RepositorySetupView filters repositories by search text across name, owner, id, and reason, and by selected/available/blocked status."
+        - "PRsView and ReleasesView both call store.refreshActivity() from .refreshable and a refresh toolbar button."
+        - "PRBarStore.refreshActivity() uses the existing GitHubActivityProviding path, replaces pullRequests/releases, preserves selected dates where possible, and records activityRefreshIssue instead of changing routeState."
+        - "SequencedGitHubActivityProvider lets unit/UI tests prove refreshed data replaces stale sample data without live credentials."
+        - "PRBarUITests covers searching docs-site, filtering blocked SSO repos, and refresh-triggered PR/release UI changes."
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: blocked
+    reasoning_hint: medium
+    objective: "Implement the second slice if Judge splits repo-selection UX from pull-to-refresh or defers async refresh polish."
+    allowed_files: []
+    verify: []
+    stop_if:
+      - "Judge did not define this task's allowed_files and verification."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same reason."
+    receipt:
+      result: blocked
+      summary: "No second Worker slice is required for this tranche. Judge approved a single vertical slice, and T003 implemented repo search/filter UX plus provider-backed PRs/Releases refresh with unit and UI coverage."
+      reason: "superseded_by_T003"
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether repo selection and PRs/Releases refresh satisfy the original tranche outcome."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "Goal oracle"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if repository selection is not meaningfully improved for many repos."
+      - "Reject completion if PRs/Releases do not trigger provider-backed refresh."
+      - "Reject completion if CI/previews require live GitHub credentials."
+      - "Reject completion while required Worker tasks remain queued, active, or unreceipted."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Evidence mapped to the oracle"
+      - "Missing evidence"
+      - "Next task if not complete"
+    receipt:
+      result: done
+      decision: "complete"
+      full_outcome_complete: true
+      summary: "The tranche satisfies the requested outcome: repository selection is meaningfully improved for many-repo accounts, PRs/Releases can refresh provider-backed activity in place, deterministic tests prove data replacement, and CI/previews remain credential-free."
+      evidence_mapped_to_oracle:
+        - "Repository selection usability: visible search, clear action, selected/total summary, All/Selected/Available/Blocked filters, and empty state are implemented in RepositorySetupView."
+        - "PRs refresh: PRsView has native .refreshable and a toolbar refresh action; UI test proves refreshed PR data appears."
+        - "Releases refresh: ReleasesView has native .refreshable and a toolbar refresh action; UI test proves refreshed release data appears."
+        - "Provider-backed replacement: PRBarStore.refreshActivity() calls GitHubActivityProviding and replaces pullRequests/releases; PRBarModelTests prove included-repo filtering, replacement, and in-place failure handling."
+        - "Deterministic CI/previews: StaticGitHubActivityProvider remains default for sample mode, and SequencedGitHubActivityProvider is used only for deterministic tests."
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "42 tests passed."
+        - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/RepoSearchRefreshUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases"
+          status: pass
+          details: "2 UI tests passed."
+      residual_risks:
+        - "The live GitHub provider is still synchronous, so a future polish slice should move network refresh off the main thread."
+        - "For extremely large accounts, owner/org grouping or virtualized sections may still be useful after real-user testing."
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/RepoSearchRefreshUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases"

@@ -1,11 +1,21 @@
 import SwiftUI
 
 struct RepositorySetupView: View {
+  private enum RepositoryFilter: String, CaseIterable, Identifiable {
+    case all = "All"
+    case selected = "Selected"
+    case available = "Available"
+    case blocked = "Blocked"
+
+    var id: String { rawValue }
+  }
+
   private var store: PRBarStore?
   private var fallbackRepositories: [Repository]
   private var title: String
   private var showsFinishButton: Bool
   @State private var searchText = ""
+  @State private var filter: RepositoryFilter = .all
 
   init(store: PRBarStore, title: String = "Repos", showsFinishButton: Bool = false) {
     self.store = store
@@ -38,9 +48,54 @@ struct RepositorySetupView: View {
         }
       }
 
-      Section("Included") {
-        ForEach(filteredRepositories) { repository in
-          repositoryRow(repository)
+      Section {
+        VStack(alignment: .leading, spacing: 12) {
+          HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+              .foregroundStyle(.secondary)
+            TextField("Search repos", text: $searchText)
+              .textInputAutocapitalization(.never)
+              .autocorrectionDisabled()
+              .accessibilityIdentifier("repo-search-field")
+            if searchText.isEmpty == false {
+              Button {
+                searchText = ""
+              } label: {
+                Label("Clear repo search", systemImage: "xmark.circle.fill")
+                  .labelStyle(.iconOnly)
+              }
+              .foregroundStyle(.secondary)
+            }
+          }
+          .padding(10)
+          .background(Color(.tertiarySystemFill))
+          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+          HStack {
+            Label("\(includedCount) selected", systemImage: "checkmark.circle")
+            Spacer()
+            Text("\(repositories.count) total")
+              .foregroundStyle(.secondary)
+          }
+          .font(.subheadline)
+
+          Picker("Repo filter", selection: $filter) {
+            ForEach(RepositoryFilter.allCases) { filter in
+              Text(filter.rawValue).tag(filter)
+            }
+          }
+          .pickerStyle(.segmented)
+          .accessibilityIdentifier("repo-filter-picker")
+        }
+      }
+
+      Section(filteredSectionTitle) {
+        if filteredRepositories.isEmpty {
+          emptyState
+        } else {
+          ForEach(filteredRepositories) { repository in
+            repositoryRow(repository)
+          }
         }
       }
 
@@ -56,7 +111,6 @@ struct RepositorySetupView: View {
 
     }
     .navigationTitle(title)
-    .searchable(text: $searchText, prompt: "Search repos")
     .toolbar {
       if showsFinishButton {
         ToolbarItem(placement: .topBarTrailing) {
@@ -74,10 +128,57 @@ struct RepositorySetupView: View {
   }
 
   private var filteredRepositories: [Repository] {
-    guard !searchText.isEmpty else { return repositories }
-    return repositories.filter {
-      $0.name.localizedCaseInsensitiveContains(searchText) ||
-        $0.owner.localizedCaseInsensitiveContains(searchText)
+    repositories.filter { repository in
+      matchesSearch(repository) && matchesFilter(repository)
+    }
+  }
+
+  private var includedCount: Int {
+    repositories.filter(\.included).count
+  }
+
+  private var filteredSectionTitle: String {
+    if searchText.isEmpty {
+      return filter.rawValue
+    }
+    return "Results"
+  }
+
+  private var emptyState: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text("No repos found")
+        .font(.subheadline.weight(.semibold))
+      Text("Try another search or filter.")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.vertical, 8)
+    .accessibilityIdentifier("repo-empty-state")
+  }
+
+  private func matchesSearch(_ repository: Repository) -> Bool {
+    let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard query.isEmpty == false else {
+      return true
+    }
+
+    return repository.name.localizedCaseInsensitiveContains(query) ||
+      repository.owner.localizedCaseInsensitiveContains(query) ||
+      repository.id.localizedCaseInsensitiveContains(query) ||
+      repository.reason.localizedCaseInsensitiveContains(query)
+  }
+
+  private func matchesFilter(_ repository: Repository) -> Bool {
+    switch filter {
+    case .all:
+      return true
+    case .selected:
+      return repository.included
+    case .available:
+      return repository.access == .ready && repository.included == false
+    case .blocked:
+      return repository.access != .ready
     }
   }
 

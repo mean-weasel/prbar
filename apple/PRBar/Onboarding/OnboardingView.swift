@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct OnboardingView: View {
   var store: PRBarStore
@@ -8,11 +9,90 @@ struct OnboardingView: View {
       Group {
         if store.routeState == .onboarding(.repositories) {
           RepositorySetupView(store: store, title: "Choose repos", showsFinishButton: true)
+        } else if case let .authorizing(authorization) = store.routeState {
+          authorizationList(authorization)
         } else {
           signInList
         }
       }
     }
+  }
+
+  private func authorizationList(_ authorization: GitHubDeviceAuthorization) -> some View {
+    List {
+      Section {
+        VStack(alignment: .leading, spacing: 12) {
+          Label("Authorize GitHub", systemImage: "key.horizontal")
+            .font(.title3.weight(.semibold))
+
+          Text("Open GitHub on any device, enter this code, then return here.")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+
+          Text(authorization.userCode)
+            .font(.system(.largeTitle, design: .monospaced).weight(.bold))
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 10)
+            .textSelection(.enabled)
+            .accessibilityLabel("GitHub device code \(authorization.userCode)")
+            .accessibilityIdentifier("github-device-code")
+
+          HStack(spacing: 10) {
+            Button {
+              UIPasteboard.general.string = authorization.userCode
+            } label: {
+              Label("Copy code", systemImage: "doc.on.doc")
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("copy-github-device-code")
+
+            Button {
+              UIPasteboard.general.string = authorization.verificationURI.absoluteString
+            } label: {
+              Label("Copy link", systemImage: "link")
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("copy-github-device-url")
+          }
+
+          Link(destination: authorization.verificationURI) {
+            Label("Open here", systemImage: "arrow.up.forward.app")
+              .frame(maxWidth: .infinity)
+          }
+          .buttonStyle(.bordered)
+          .accessibilityIdentifier("open-github-device-url")
+
+          VStack(alignment: .leading, spacing: 4) {
+            Text("Verification URL")
+              .font(.caption.weight(.semibold))
+              .foregroundStyle(.secondary)
+
+            Link(destination: authorization.verificationURI) {
+              Text(authorization.verificationURI.absoluteString)
+                .font(.footnote.monospaced())
+            }
+            .accessibilityIdentifier("github-device-url")
+          }
+        }
+        .padding(.vertical, 6)
+      }
+
+      Section {
+        Button("I authorized GitHub") {
+          store.continueGitHubAuthorization()
+        }
+        .buttonStyle(.borderedProminent)
+
+        Button("Start over") {
+          store.connectGitHub()
+        }
+
+        Button("Use sample data") {
+          store.routeState = .authenticated
+        }
+      }
+    }
+    .navigationTitle("GitHub")
   }
 
   private var signInList: some View {

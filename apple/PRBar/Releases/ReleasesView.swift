@@ -31,6 +31,8 @@ struct ReleasesView: View {
         VStack(alignment: .leading, spacing: 24) {
           header
 
+          refreshIssue
+
           RangePickerView(selection: $store.releaseRange)
 
           calendar
@@ -41,7 +43,36 @@ struct ReleasesView: View {
         }
         .padding()
       }
+      .refreshable {
+        await store.refreshActivity()
+      }
       .navigationTitle("Releases")
+      .toolbar {
+        ToolbarItem(placement: .topBarTrailing) {
+          Button {
+            Task {
+              await store.refreshActivity()
+            }
+          } label: {
+            Label("Refresh activity", systemImage: "arrow.clockwise")
+          }
+          .disabled(store.isRefreshingActivity)
+        }
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var refreshIssue: some View {
+    if let issue = store.activityRefreshIssue {
+      Label(issue.message, systemImage: "exclamationmark.triangle")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .accessibilityIdentifier("releases-refresh-issue")
     }
   }
 

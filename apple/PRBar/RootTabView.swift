@@ -8,7 +8,7 @@ struct RootTabView: View {
       switch store.routeState {
       case .authenticated:
         tabs
-      case .signedOut, .onboarding, .issue:
+      case .signedOut, .authorizing, .onboarding, .issue:
         OnboardingView(store: store)
       }
     }

@@ -16,6 +16,8 @@ final class PRBarStore {
   var cardDraft: WorkCardDraft
   var routeState: AppRouteState
   var githubConnection: GitHubConnection
+  var isRefreshingActivity = false
+  var activityRefreshIssue: AuthIssue?
   private let authService: GitHubAuthServicing
   private let repositoryProvider: GitHubRepositoryProviding
   private let activityProvider: GitHubActivityProviding
@@ -111,9 +113,16 @@ final class PRBarStore {
     do {
       if let connection = try authService.restoreConnection() {
         githubConnection = connection
-        try loadRepositoriesForConnectedUser()
-        try refreshActivityForIncludedRepositories()
-        routeState = .authenticated
+        let hasStoredSelection = try loadRepositoriesForConnectedUser()
+        if hasStoredSelection {
+          try refreshActivityForIncludedRepositories()
+          routeState = .authenticated
+        } else {
+          routeState = .onboarding(.repositories)
+        }
+      } else {
+        githubConnection = .signedOut
+        routeState = .signedOut
       }
     } catch {
       routeState = authIssue(for: error)
@@ -125,18 +134,73 @@ final class PRBarStore {
     do {
       githubConnection = try authService.connect()
       try loadRepositoriesForConnectedUser()
-      try refreshActivityForIncludedRepositories()
       routeState = .onboarding(.repositories)
     } catch {
-      githubConnection = .signedOut
-      routeState = authIssue(for: error)
+      handleAuth(error)
+    }
+  }
+
+  func continueGitHubAuthorization() {
+    guard case let .authorizing(authorization) = routeState else {
+      return
+    }
+
+    githubConnection = GitHubConnection(status: .signingIn, user: nil)
+    do {
+      githubConnection = try authService.continueDeviceAuthorization(authorization)
+      try loadRepositoriesForConnectedUser()
+      routeState = .onboarding(.repositories)
+    } catch {
+      handleAuth(error)
     }
   }
 
   func finishRepositorySetup() {
     try? repositorySelectionStore.saveIncludedRepositoryIDs(includedRepositories.map(\.id))
-    try? refreshActivityForIncludedRepositories()
-    routeState = .authenticated
+    do {
+      try refreshActivityForIncludedRepositories()
+      routeState = .authenticated
+    } catch {
+      routeState = authIssue(for: error)
+    }
+  }
+
+  @MainActor
+  func refreshActivity() async {
+    guard isRefreshingActivity == false else {
+      return
+    }
+
+    isRefreshingActivity = true
+    activityRefreshIssue = nil
+    let selectedPRDate = selectedPRDate
+    let selectedReleaseDate = selectedReleaseDate
+    let selectedReleaseID = selectedReleaseID
+    let repositories = includedRepositories
+    let anchorDate = activityAnchorDate
+    let activityProvider = activityProvider
+
+    defer {
+      isRefreshingActivity = false
+    }
+
+    do {
+      let snapshot = try await activityProvider.activityAsync(
+        for: repositories,
+        endingAt: anchorDate,
+        lookbackDays: 30
+      )
+      applyActivitySnapshot(snapshot)
+      self.selectedPRDate = selectedPRDate
+      self.selectedReleaseDate = selectedReleaseDate
+      if let selectedReleaseID, releases.contains(where: { $0.id == selectedReleaseID }) {
+        self.selectedReleaseID = selectedReleaseID
+      } else {
+        self.selectedReleaseID = releases.first { CalendarDay.isSameDay($0.date, selectedReleaseDate) }?.id ?? releases.first?.id
+      }
+    } catch {
+      activityRefreshIssue = authIssue(for: error).issue
+    }
   }
 
   func disconnectGitHub() {
@@ -151,8 +215,11 @@ final class PRBarStore {
     routeState = .signedOut
   }
 
-  private func loadRepositoriesForConnectedUser() throws {
-    repositories = try applyStoredSelection(to: repositoryProvider.repositories())
+  @discardableResult
+  private func loadRepositoriesForConnectedUser() throws -> Bool {
+    let storedIDs = try repositorySelectionStore.loadIncludedRepositoryIDs()
+    repositories = try applyStoredSelection(to: repositoryProvider.repositories(), storedIDs: storedIDs)
+    return storedIDs != nil
   }
 
   private func refreshActivityForIncludedRepositories() throws {
@@ -161,6 +228,10 @@ final class PRBarStore {
       endingAt: activityAnchorDate,
       lookbackDays: 30
     )
+    applyActivitySnapshot(snapshot)
+  }
+
+  private func applyActivitySnapshot(_ snapshot: GitHubActivitySnapshot) {
     pullRequests = snapshot.pullRequests
     releases = snapshot.releases
     activityAnchorDate = snapshot.anchorDate
@@ -169,8 +240,7 @@ final class PRBarStore {
     selectedReleaseID = snapshot.releases.first?.id
   }
 
-  private func applyStoredSelection(to repositories: [Repository]) throws -> [Repository] {
-    let storedIDs = try repositorySelectionStore.loadIncludedRepositoryIDs()
+  private func applyStoredSelection(to repositories: [Repository], storedIDs: [Repository.ID]?) -> [Repository] {
     return repositories.map { repository in
       var repository = repository
       if let storedIDs {
@@ -201,5 +271,24 @@ final class PRBarStore {
       )
     }
     return .issue(issue)
+  }
+
+  private func handleAuth(_ error: Error) {
+    if case let GitHubAuthError.authorizationPending(authorization) = error {
+      routeState = .authorizing(authorization)
+      return
+    }
+
+    githubConnection = .signedOut
+    routeState = authIssue(for: error)
+  }
+}
+
+private extension AppRouteState {
+  var issue: AuthIssue? {
+    if case let .issue(issue) = self {
+      return issue
+    }
+    return nil
   }
 }

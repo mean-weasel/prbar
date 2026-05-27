@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-struct GitHubAuthSession: Codable, Equatable {
+struct GitHubAuthSession: Codable, Equatable, Sendable {
   var accessToken: String
   var tokenType: String
   var scopes: [String]
@@ -21,30 +21,77 @@ extension GitHubAuthSession {
   )
 }
 
-enum GitHubAuthError: Error, Equatable {
+enum GitHubAuthError: Error, Equatable, Sendable {
   case missingConfiguration
   case authorizationPending(GitHubDeviceAuthorization)
   case storageFailed
   case failed(String)
 }
 
-struct GitHubDeviceAuthorization: Codable, Equatable {
+struct GitHubDeviceAuthorization: Codable, Equatable, Sendable {
   var deviceCode: String
   var userCode: String
   var verificationURI: URL
   var expiresIn: Int
   var interval: Int
+
+  enum CodingKeys: String, CodingKey {
+    case deviceCode = "device_code"
+    case userCode = "user_code"
+    case verificationURI = "verification_uri"
+    case expiresIn = "expires_in"
+    case interval
+  }
+}
+
+extension GitHubDeviceAuthorization {
+  static let fixture = GitHubDeviceAuthorization(
+    deviceCode: "fixture-device-code",
+    userCode: "ABCD-EFGH",
+    verificationURI: URL(string: "https://github.com/login/device")!,
+    expiresIn: 900,
+    interval: 5
+  )
 }
 
 struct GitHubOAuthConfiguration: Equatable {
   var clientID: String?
   var scopes: [String]
+  var maxTokenPollAttempts: Int
 
-  static func appDefault(environment: [String: String] = ProcessInfo.processInfo.environment) -> GitHubOAuthConfiguration {
+  init(clientID: String?, scopes: [String], maxTokenPollAttempts: Int = 1) {
+    self.clientID = clientID
+    self.scopes = scopes
+    self.maxTokenPollAttempts = maxTokenPollAttempts
+  }
+
+  static func appDefault(
+    environment: [String: String] = ProcessInfo.processInfo.environment,
+    bundleInfo: [String: Any]? = Bundle.main.infoDictionary
+  ) -> GitHubOAuthConfiguration {
     GitHubOAuthConfiguration(
-      clientID: environment["PRBAR_IOS_GITHUB_CLIENT_ID"],
-      scopes: ["public_repo"]
+      clientID: configuredClientID(environment: environment, bundleInfo: bundleInfo),
+      scopes: ["public_repo"],
+      maxTokenPollAttempts: 1
     )
+  }
+
+  private static func configuredClientID(
+    environment: [String: String],
+    bundleInfo: [String: Any]?
+  ) -> String? {
+    normalizedClientID(environment["PRBAR_IOS_GITHUB_CLIENT_ID"]) ??
+      normalizedClientID(bundleInfo?["PRBarGitHubOAuthClientID"] as? String)
+  }
+
+  private static func normalizedClientID(_ value: String?) -> String? {
+    guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), value.isEmpty == false else {
+      return nil
+    }
+    guard value.hasPrefix("$(") == false else {
+      return nil
+    }
+    return value
   }
 }
 
@@ -68,6 +115,19 @@ enum GitHubDeviceFlowRequest {
         "grant_type": "urn:ietf:params:oauth:grant-type:device_code"
       ]
     )
+  }
+
+  static func user(token: String) throws -> URLRequest {
+    guard let url = URL(string: "https://api.github.com/user") else {
+      throw GitHubAuthError.failed("Invalid GitHub user URL")
+    }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET"
+    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+    request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+    return request
   }
 
   private static func formRequest(url: String, fields: [String: String]) throws -> URLRequest {
@@ -189,12 +249,20 @@ final class KeychainGitHubSessionStore: GitHubSessionStoring {
 protocol GitHubAuthServicing {
   func restoreConnection() throws -> GitHubConnection?
   func connect() throws -> GitHubConnection
+  func continueDeviceAuthorization(_ authorization: GitHubDeviceAuthorization) throws -> GitHubConnection
   func disconnect() throws
+}
+
+extension GitHubAuthServicing {
+  func continueDeviceAuthorization(_ authorization: GitHubDeviceAuthorization) throws -> GitHubConnection {
+    try connect()
+  }
 }
 
 struct StaticGitHubAuthService: GitHubAuthServicing {
   var sessionStore: GitHubSessionStoring
   var result: Result<GitHubAuthSession, GitHubAuthError>
+  var continuationResult: Result<GitHubAuthSession, GitHubAuthError>?
 
   init(
     sessionStore: GitHubSessionStoring,
@@ -210,6 +278,17 @@ struct StaticGitHubAuthService: GitHubAuthServicing {
   ) {
     self.sessionStore = sessionStore
     self.result = result
+    self.continuationResult = nil
+  }
+
+  init(
+    sessionStore: GitHubSessionStoring,
+    result: Result<GitHubAuthSession, GitHubAuthError>,
+    continuationResult: Result<GitHubAuthSession, GitHubAuthError>
+  ) {
+    self.sessionStore = sessionStore
+    self.result = result
+    self.continuationResult = continuationResult
   }
 
   func restoreConnection() throws -> GitHubConnection? {
@@ -222,6 +301,12 @@ struct StaticGitHubAuthService: GitHubAuthServicing {
     return session.connection
   }
 
+  func continueDeviceAuthorization(_ authorization: GitHubDeviceAuthorization) throws -> GitHubConnection {
+    let session = try (continuationResult ?? result).get()
+    try sessionStore.saveSession(session)
+    return session.connection
+  }
+
   func disconnect() throws {
     try sessionStore.deleteSession()
   }
@@ -230,19 +315,113 @@ struct StaticGitHubAuthService: GitHubAuthServicing {
 struct GitHubDeviceFlowAuthService: GitHubAuthServicing {
   var configuration: GitHubOAuthConfiguration
   var sessionStore: GitHubSessionStoring
+  var transport: GitHubRepositoryTransport = URLSessionGitHubRepositoryTransport()
 
   func restoreConnection() throws -> GitHubConnection? {
     try sessionStore.loadSession()?.connection
   }
 
   func connect() throws -> GitHubConnection {
-    guard configuration.clientID?.isEmpty == false else {
+    guard let clientID = configuration.clientID, clientID.isEmpty == false else {
       throw GitHubAuthError.missingConfiguration
     }
-    throw GitHubAuthError.failed("GitHub device authorization is not wired to the network transport yet.")
+
+    let authorization = try requestDeviceAuthorization(clientID: clientID)
+    return try continueDeviceAuthorization(authorization)
+  }
+
+  func continueDeviceAuthorization(_ authorization: GitHubDeviceAuthorization) throws -> GitHubConnection {
+    guard let clientID = configuration.clientID, clientID.isEmpty == false else {
+      throw GitHubAuthError.missingConfiguration
+    }
+
+    let token = try pollToken(clientID: clientID, authorization: authorization)
+    let user = try fetchUser(accessToken: token.accessToken)
+    let session = GitHubAuthSession(
+      accessToken: token.accessToken,
+      tokenType: token.tokenType,
+      scopes: token.scopes,
+      user: user
+    )
+    try sessionStore.saveSession(session)
+    return session.connection
   }
 
   func disconnect() throws {
     try sessionStore.deleteSession()
   }
+
+  private func requestDeviceAuthorization(clientID: String) throws -> GitHubDeviceAuthorization {
+    let request = try GitHubDeviceFlowRequest.deviceCode(clientID: clientID, scopes: configuration.scopes)
+    let data = try transport.data(for: request)
+    return try JSONDecoder().decode(GitHubDeviceAuthorization.self, from: data)
+  }
+
+  private func pollToken(clientID: String, authorization: GitHubDeviceAuthorization) throws -> GitHubDeviceTokenPayload {
+    let attempts = max(configuration.maxTokenPollAttempts, 1)
+    let decoder = JSONDecoder()
+    decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+    for attempt in 0..<attempts {
+      let request = try GitHubDeviceFlowRequest.token(clientID: clientID, deviceCode: authorization.deviceCode)
+      let data = try transport.data(for: request)
+      let tokenResponse = try decoder.decode(GitHubDeviceTokenResponse.self, from: data)
+      if let token = tokenResponse.token {
+        return token
+      }
+
+      if tokenResponse.error == "authorization_pending" {
+        if attempt == attempts - 1 {
+          throw GitHubAuthError.authorizationPending(authorization)
+        }
+        continue
+      }
+
+      if tokenResponse.error == "slow_down" {
+        continue
+      }
+
+      throw GitHubAuthError.failed(tokenResponse.errorDescription ?? tokenResponse.error ?? "GitHub token polling failed")
+    }
+
+    throw GitHubAuthError.authorizationPending(authorization)
+  }
+
+  private func fetchUser(accessToken: String) throws -> GitHubUser {
+    let request = try GitHubDeviceFlowRequest.user(token: accessToken)
+    let data = try transport.data(for: request)
+    let payload = try JSONDecoder().decode(GitHubUserPayload.self, from: data)
+    return GitHubUser(login: payload.login, displayName: payload.name ?? payload.login)
+  }
+}
+
+private struct GitHubDeviceTokenResponse: Decodable {
+  var accessToken: String?
+  var tokenType: String?
+  var scope: String?
+  var error: String?
+  var errorDescription: String?
+
+  var token: GitHubDeviceTokenPayload? {
+    guard let accessToken else {
+      return nil
+    }
+
+    return GitHubDeviceTokenPayload(
+      accessToken: accessToken,
+      tokenType: tokenType ?? "bearer",
+      scopes: scope?.split(whereSeparator: { $0 == "," || $0 == " " }).map(String.init) ?? []
+    )
+  }
+}
+
+private struct GitHubDeviceTokenPayload: Equatable {
+  var accessToken: String
+  var tokenType: String
+  var scopes: [String]
+}
+
+private struct GitHubUserPayload: Decodable {
+  var login: String
+  var name: String?
 }

@@ -1,13 +1,14 @@
 import Foundation
 
-enum AppRouteState: Equatable {
+enum AppRouteState: Equatable, Sendable {
   case authenticated
   case signedOut
+  case authorizing(GitHubDeviceAuthorization)
   case onboarding(OnboardingStep)
   case issue(AuthIssue)
 }
 
-enum OnboardingStep: String, CaseIterable, Identifiable {
+enum OnboardingStep: String, CaseIterable, Identifiable, Sendable {
   case github
   case repositories
   case privacy
@@ -16,14 +17,14 @@ enum OnboardingStep: String, CaseIterable, Identifiable {
   var id: String { rawValue }
 }
 
-struct AuthIssue: Identifiable, Equatable {
+struct AuthIssue: Identifiable, Equatable, Sendable {
   var id: String
   var title: String
   var message: String
 }
 
-struct GitHubConnection: Equatable {
-  enum Status: String, Equatable {
+struct GitHubConnection: Equatable, Sendable {
+  enum Status: String, Equatable, Sendable {
     case signedOut
     case signingIn
     case connected
@@ -36,19 +37,19 @@ struct GitHubConnection: Equatable {
   static let signedOut = GitHubConnection(status: .signedOut, user: nil)
 }
 
-struct GitHubUser: Identifiable, Codable, Equatable {
+struct GitHubUser: Identifiable, Codable, Equatable, Sendable {
   var id: String { login }
   var login: String
   var displayName: String
 }
 
-struct Repository: Identifiable, Equatable {
-  enum Visibility: String, CaseIterable, Codable {
+struct Repository: Identifiable, Equatable, Sendable {
+  enum Visibility: String, CaseIterable, Codable, Sendable {
     case `public`
     case `private`
   }
 
-  enum Access: String, CaseIterable, Codable {
+  enum Access: String, CaseIterable, Codable, Sendable {
     case ready
     case sso
   }
@@ -64,7 +65,7 @@ struct Repository: Identifiable, Equatable {
   var reason: String
 }
 
-struct PullRequest: Identifiable, Equatable {
+struct PullRequest: Identifiable, Equatable, Sendable {
   var id: String
   var title: String
   var repoID: Repository.ID
@@ -72,8 +73,8 @@ struct PullRequest: Identifiable, Equatable {
   var mergedAt: Date
 }
 
-struct ReleaseMoment: Identifiable, Equatable {
-  enum Source: String, CaseIterable, Codable {
+struct ReleaseMoment: Identifiable, Equatable, Sendable {
+  enum Source: String, CaseIterable, Codable, Sendable {
     case release
     case tag
   }
@@ -88,7 +89,7 @@ struct ReleaseMoment: Identifiable, Equatable {
   var url: URL
 }
 
-enum ActivityRange: String, CaseIterable, Identifiable {
+enum ActivityRange: String, CaseIterable, Identifiable, Sendable {
   case day
   case week
   case month
@@ -96,7 +97,7 @@ enum ActivityRange: String, CaseIterable, Identifiable {
   var id: String { rawValue }
 }
 
-struct CalendarDay: Identifiable, Equatable {
+struct CalendarDay: Identifiable, Equatable, Sendable {
   var date: Date
   var count: Int
 

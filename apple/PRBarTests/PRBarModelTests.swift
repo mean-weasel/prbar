@@ -71,7 +71,7 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.githubConnection.status, .signedOut)
   }
 
-  func testRestoringGitHubSessionUsesStoredUser() throws {
+  func testRestoringGitHubSessionWithoutStoredSelectionReturnsToRepoSetup() throws {
     let sessionStore = InMemoryGitHubSessionStore()
     try sessionStore.saveSession(.fixture)
     let store = PRBarStore.sample(
@@ -84,7 +84,35 @@ final class PRBarModelTests: XCTestCase {
 
     XCTAssertEqual(store.githubConnection.status, .connected)
     XCTAssertEqual(store.githubConnection.user?.login, "neonwatty")
+    XCTAssertEqual(store.routeState, .onboarding(.repositories))
+  }
+
+  func testRestoringGitHubSessionWithStoredSelectionRefreshesActivity() throws {
+    let sessionStore = InMemoryGitHubSessionStore()
+    try sessionStore.saveSession(.fixture)
+    let store = PRBarStore.sample(
+      authService: StaticGitHubAuthService(sessionStore: sessionStore),
+      repositorySelectionStore: InMemoryRepositorySelectionStore(includedRepositoryIDs: ["prbar"])
+    )
+    store.githubConnection = .signedOut
+    store.routeState = .signedOut
+
+    store.restoreGitHubSession()
+
+    XCTAssertEqual(store.githubConnection.status, .connected)
     XCTAssertEqual(store.routeState, .authenticated)
+    XCTAssertEqual(store.includedRepositories.map(\.id), ["prbar"])
+  }
+
+  func testRestoringMissingGitHubSessionReturnsToSignedOut() {
+    let store = PRBarStore.sample(
+      authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore())
+    )
+
+    store.restoreGitHubSession()
+
+    XCTAssertEqual(store.githubConnection.status, .signedOut)
+    XCTAssertEqual(store.routeState, .signedOut)
   }
 
   func testDisconnectingGitHubClearsIncludedReposAndReturnsToSignedOut() throws {
@@ -109,6 +137,40 @@ final class PRBarModelTests: XCTestCase {
     try sessionStore.saveSession(.fixture)
 
     XCTAssertEqual(try sessionStore.loadSession(), .fixture)
+  }
+
+  func testGitHubOAuthConfigurationReadsClientIDFromEnvironmentBeforeBundleInfo() {
+    let configuration = GitHubOAuthConfiguration.appDefault(
+      environment: ["PRBAR_IOS_GITHUB_CLIENT_ID": "env-client-id"],
+      bundleInfo: ["PRBarGitHubOAuthClientID": "bundle-client-id"]
+    )
+
+    XCTAssertEqual(configuration.clientID, "env-client-id")
+    XCTAssertEqual(configuration.scopes, ["public_repo"])
+  }
+
+  func testGitHubOAuthConfigurationReadsClientIDFromBundleInfo() {
+    let configuration = GitHubOAuthConfiguration.appDefault(
+      environment: [:],
+      bundleInfo: ["PRBarGitHubOAuthClientID": "bundle-client-id"]
+    )
+
+    XCTAssertEqual(configuration.clientID, "bundle-client-id")
+  }
+
+  func testGitHubOAuthConfigurationTreatsEmptyAndUnexpandedClientIDsAsMissing() {
+    XCTAssertNil(
+      GitHubOAuthConfiguration.appDefault(
+        environment: [:],
+        bundleInfo: ["PRBarGitHubOAuthClientID": "$(PRBAR_IOS_GITHUB_CLIENT_ID)"]
+      ).clientID
+    )
+    XCTAssertNil(
+      GitHubOAuthConfiguration.appDefault(
+        environment: ["PRBAR_IOS_GITHUB_CLIENT_ID": "  "],
+        bundleInfo: ["PRBarGitHubOAuthClientID": ""]
+      ).clientID
+    )
   }
 
   func testDeviceFlowAuthRequiresClientIDBeforeStarting() {
@@ -144,6 +206,219 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(request.url?.absoluteString, "https://github.com/login/oauth/access_token")
     XCTAssertEqual(request.httpMethod, "POST")
     XCTAssertEqual(String(data: try XCTUnwrap(request.httpBody), encoding: .utf8), "client_id=client-id&device_code=device-code&grant_type=urn:ietf:params:oauth:grant-type:device_code")
+  }
+
+  func testDeviceFlowBuildsUserRequest() throws {
+    let request = try GitHubDeviceFlowRequest.user(token: "token")
+
+    XCTAssertEqual(request.url?.absoluteString, "https://api.github.com/user")
+    XCTAssertEqual(request.httpMethod, "GET")
+    XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer token")
+    XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/vnd.github+json")
+    XCTAssertEqual(request.value(forHTTPHeaderField: "X-GitHub-Api-Version"), "2022-11-28")
+  }
+
+  func testDeviceFlowAuthConnectRequestsDeviceCodeTokenAndUserAndStoresSession() throws {
+    let sessionStore = InMemoryGitHubSessionStore()
+    let transport = RecordingGitHubRepositoryTransport(
+      responses: [
+        Data(
+          """
+          {
+            "device_code": "device-code",
+            "user_code": "ABCD-EFGH",
+            "verification_uri": "https://github.com/login/device",
+            "expires_in": 900,
+            "interval": 5
+          }
+          """.utf8
+        ),
+        Data(
+          """
+          {
+            "access_token": "live-token",
+            "token_type": "bearer",
+            "scope": "public_repo read:user"
+          }
+          """.utf8
+        ),
+        Data(
+          """
+          {
+            "login": "octocat",
+            "name": "Octo Cat"
+          }
+          """.utf8
+        )
+      ]
+    )
+    let authService = GitHubDeviceFlowAuthService(
+      configuration: GitHubOAuthConfiguration(
+        clientID: "client-id",
+        scopes: ["public_repo", "read:user"],
+        maxTokenPollAttempts: 1
+      ),
+      sessionStore: sessionStore,
+      transport: transport
+    )
+
+    let connection = try authService.connect()
+    let savedSession = try XCTUnwrap(sessionStore.loadSession())
+
+    XCTAssertEqual(connection.status, .connected)
+    XCTAssertEqual(connection.user?.login, "octocat")
+    XCTAssertEqual(connection.user?.displayName, "Octo Cat")
+    XCTAssertEqual(savedSession.accessToken, "live-token")
+    XCTAssertEqual(savedSession.tokenType, "bearer")
+    XCTAssertEqual(savedSession.scopes, ["public_repo", "read:user"])
+    XCTAssertEqual(
+      transport.requests.map { $0.url?.absoluteString },
+      [
+        "https://github.com/login/device/code",
+        "https://github.com/login/oauth/access_token",
+        "https://api.github.com/user"
+      ]
+    )
+    XCTAssertEqual(transport.requests.last?.value(forHTTPHeaderField: "Authorization"), "Bearer live-token")
+  }
+
+  func testDeviceFlowAuthReturnsPendingAuthorizationWhenTokenIsPending() throws {
+    let transport = RecordingGitHubRepositoryTransport(
+      responses: [
+        Data(
+          """
+          {
+            "device_code": "device-code",
+            "user_code": "ABCD-EFGH",
+            "verification_uri": "https://github.com/login/device",
+            "expires_in": 900,
+            "interval": 5
+          }
+          """.utf8
+        ),
+        Data(
+          """
+          {
+            "error": "authorization_pending",
+            "error_description": "authorization pending"
+          }
+          """.utf8
+        )
+      ]
+    )
+    let authService = GitHubDeviceFlowAuthService(
+      configuration: GitHubOAuthConfiguration(
+        clientID: "client-id",
+        scopes: ["public_repo"],
+        maxTokenPollAttempts: 1
+      ),
+      sessionStore: InMemoryGitHubSessionStore(),
+      transport: transport
+    )
+
+    XCTAssertThrowsError(try authService.connect()) { error in
+      guard case let GitHubAuthError.authorizationPending(authorization) = error else {
+        return XCTFail("Expected authorization pending")
+      }
+      XCTAssertEqual(authorization.deviceCode, "device-code")
+      XCTAssertEqual(authorization.userCode, "ABCD-EFGH")
+      XCTAssertEqual(authorization.verificationURI.absoluteString, "https://github.com/login/device")
+    }
+    XCTAssertEqual(
+      transport.requests.map { $0.url?.absoluteString },
+      [
+        "https://github.com/login/device/code",
+        "https://github.com/login/oauth/access_token"
+      ]
+    )
+  }
+
+  func testConnectingGitHubCanResumePendingDeviceAuthorizationIntoRepoSetup() throws {
+    let transport = RecordingGitHubRepositoryTransport(
+      responses: [
+        Data(
+          """
+          {
+            "device_code": "device-code",
+            "user_code": "ABCD-EFGH",
+            "verification_uri": "https://github.com/login/device",
+            "expires_in": 900,
+            "interval": 5
+          }
+          """.utf8
+        ),
+        Data(
+          """
+          {
+            "error": "authorization_pending",
+            "error_description": "authorization pending"
+          }
+          """.utf8
+        ),
+        Data(
+          """
+          {
+            "access_token": "live-token",
+            "token_type": "bearer",
+            "scope": "public_repo"
+          }
+          """.utf8
+        ),
+        Data(
+          """
+          {
+            "login": "octocat",
+            "name": "Octo Cat"
+          }
+          """.utf8
+        )
+      ]
+    )
+    let sessionStore = InMemoryGitHubSessionStore()
+    let store = PRBarStore.sample(
+      authService: GitHubDeviceFlowAuthService(
+        configuration: GitHubOAuthConfiguration(
+          clientID: "client-id",
+          scopes: ["public_repo"],
+          maxTokenPollAttempts: 1
+        ),
+        sessionStore: sessionStore,
+        transport: transport
+      ),
+      repositoryProvider: StaticGitHubRepositoryProvider(
+        repositories: [
+          Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+        ]
+      ),
+      activityProvider: StaticGitHubActivityProvider(),
+      repositorySelectionStore: InMemoryRepositorySelectionStore()
+    )
+    store.routeState = .signedOut
+    store.githubConnection = .signedOut
+
+    store.connectGitHub()
+
+    guard case let .authorizing(authorization) = store.routeState else {
+      return XCTFail("Expected pending device authorization")
+    }
+    XCTAssertEqual(authorization.userCode, "ABCD-EFGH")
+    XCTAssertEqual(store.githubConnection.status, .signingIn)
+
+    store.continueGitHubAuthorization()
+
+    XCTAssertEqual(store.routeState, .onboarding(.repositories))
+    XCTAssertEqual(store.githubConnection.user?.login, "octocat")
+    XCTAssertEqual(try sessionStore.loadSession()?.accessToken, "live-token")
+    XCTAssertEqual(store.includedRepositories.map(\.id), ["mean-weasel/prbar"])
+    XCTAssertEqual(
+      transport.requests.map { $0.url?.absoluteString },
+      [
+        "https://github.com/login/device/code",
+        "https://github.com/login/oauth/access_token",
+        "https://github.com/login/oauth/access_token",
+        "https://api.github.com/user"
+      ]
+    )
   }
 
   func testGitHubRepositoryRequestUsesAuthenticatedReposEndpoint() throws {
@@ -276,7 +551,7 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(try selectionStore.loadIncludedRepositoryIDs(), ["mean-weasel/prbar"])
   }
 
-  func testConnectingGitHubRefreshesActivityForIncludedRepositories() {
+  func testFinishingRepositorySetupRefreshesActivityForIncludedRepositories() {
     let store = PRBarStore.sample(
       authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore(), session: .fixture),
       repositoryProvider: StaticGitHubRepositoryProvider(
@@ -301,6 +576,7 @@ final class PRBarModelTests: XCTestCase {
     )
 
     store.connectGitHub()
+    store.finishRepositorySetup()
 
     XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#39"])
     XCTAssertEqual(store.releases.map(\.id), ["mean-weasel/prbar@release:v1.4.0"])
@@ -319,12 +595,55 @@ final class PRBarModelTests: XCTestCase {
     )
 
     store.connectGitHub()
+    store.finishRepositorySetup()
 
     guard case let .issue(issue) = store.routeState else {
       return XCTFail("Expected an activity sync issue")
     }
     XCTAssertEqual(issue.id, "github-auth-failed")
     XCTAssertEqual(store.pullRequests.map(\.id), SampleData.pullRequests.map(\.id))
+  }
+
+  @MainActor
+  func testRefreshingActivityReplacesPRsAndReleasesForIncludedRepositories() async {
+    let refreshedSnapshot = GitHubActivitySnapshot(
+      pullRequests: [
+        PullRequest(id: "mean-weasel/prbar#90", title: "Refresh merged PR", repoID: "mean-weasel/prbar", number: 90, mergedAt: SampleData.dateTime("2026-05-24T19:00:00Z")),
+        PullRequest(id: "example/client-api#22", title: "Excluded PR", repoID: "example/client-api", number: 22, mergedAt: SampleData.dateTime("2026-05-24T20:00:00Z"))
+      ],
+      releases: [
+        ReleaseMoment(id: "mean-weasel/prbar@release:v2.0.0", repoID: "mean-weasel/prbar", title: "Refresh release", tag: "v2.0.0", date: SampleData.date("2026-05-24"), source: .release, notes: "Refreshed release notes", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v2.0.0")!),
+        ReleaseMoment(id: "example/client-api@release:v1.0.0", repoID: "example/client-api", title: "Excluded release", tag: "v1.0.0", date: SampleData.date("2026-05-24"), source: .release, notes: "Should stay out", url: URL(string: "https://github.com/example/client-api/releases/tag/v1.0.0")!)
+      ],
+      anchorDate: SampleData.date("2026-05-24")
+    )
+    let store = PRBarStore.sample(
+      activityProvider: SequencedGitHubActivityProvider(snapshots: [refreshedSnapshot])
+    )
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#90"])
+    XCTAssertEqual(store.releases.map(\.id), ["mean-weasel/prbar@release:v2.0.0"])
+    XCTAssertEqual(store.activityAnchorDate, SampleData.date("2026-05-24"))
+    XCTAssertNil(store.activityRefreshIssue)
+    XCTAssertFalse(store.isRefreshingActivity)
+  }
+
+  @MainActor
+  func testRefreshingActivityFailureStaysInPlaceAndRecordsRefreshIssue() async {
+    let store = PRBarStore.sample(activityProvider: ThrowingGitHubActivityProvider())
+    let originalPullRequests = store.pullRequests
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(store.pullRequests, originalPullRequests)
+    XCTAssertEqual(store.activityRefreshIssue?.id, "github-auth-failed")
+    XCTAssertFalse(store.isRefreshingActivity)
   }
 }
 
@@ -337,5 +656,22 @@ private struct ThrowingGitHubRepositoryProvider: GitHubRepositoryProviding {
 private struct ThrowingGitHubActivityProvider: GitHubActivityProviding {
   func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
     throw GitHubActivityError.invalidResponse
+  }
+}
+
+private final class RecordingGitHubRepositoryTransport: GitHubRepositoryTransport {
+  private var responses: [Data]
+  private(set) var requests: [URLRequest] = []
+
+  init(responses: [Data]) {
+    self.responses = responses
+  }
+
+  func data(for request: URLRequest) throws -> Data {
+    requests.append(request)
+    guard responses.isEmpty == false else {
+      throw GitHubRepositoryError.invalidResponse
+    }
+    return responses.removeFirst()
   }
 }
