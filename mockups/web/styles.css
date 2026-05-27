@@ -371,6 +371,14 @@ button {
   padding: 18px;
 }
 
+.profile-card,
+.release-card,
+.talent-card,
+.apps-section article,
+.apps-grid article {
+  border-radius: 8px;
+}
+
 .profile-header {
   gap: 12px;
 }
@@ -821,15 +829,23 @@ svg {
 .proof-card p,
 .feed-card p,
 .source-panel p,
+.source-card p,
 .profile-side p,
 .receipt-proof p,
+.receipt-card p,
 .table-card p,
 .traction-panel p,
+.traction-card p,
 .featured-receipt p,
+.featured-card p,
 .next-action p,
+.next-card p,
 .evidence-panel p,
+.evidence-card p,
 .editor-panel p,
+.editor-card p,
 .share-output p,
+.share-card p,
 .trust-card p,
 .trust-grid article p {
   color: #475569;
@@ -852,15 +868,23 @@ svg {
 .proof-card,
 .feed-card,
 .source-panel,
+.source-card,
 .profile-side,
 .receipt-proof,
+.receipt-card,
 .table-card,
 .traction-panel,
+.traction-card,
 .featured-receipt,
+.featured-card,
 .next-action,
+.next-card,
 .evidence-panel,
+.evidence-card,
 .editor-panel,
+.editor-card,
 .share-output,
+.share-card,
 .trust-card,
 .trust-grid article {
   min-width: 0;
@@ -877,24 +901,40 @@ svg {
 .feed-card h3,
 .source-panel h2,
 .source-panel h3,
+.source-card h2,
+.source-card h3,
 .profile-side h2,
 .profile-side h3,
 .receipt-proof h2,
 .receipt-proof h3,
+.receipt-card h2,
+.receipt-card h3,
 .table-card h2,
 .table-card h3,
 .traction-panel h2,
 .traction-panel h3,
+.traction-card h2,
+.traction-card h3,
 .featured-receipt h2,
 .featured-receipt h3,
+.featured-card h2,
+.featured-card h3,
 .next-action h2,
 .next-action h3,
+.next-card h2,
+.next-card h3,
 .evidence-panel h2,
 .evidence-panel h3,
+.evidence-card h2,
+.evidence-card h3,
 .editor-panel h2,
 .editor-panel h3,
+.editor-card h2,
+.editor-card h3,
 .share-output h2,
 .share-output h3,
+.share-card h2,
+.share-card h3,
 .trust-card h2,
 .trust-card h3,
 .trust-grid article h2,
@@ -916,7 +956,8 @@ svg {
 }
 
 .receipt-hero-card,
-.featured-receipt {
+.featured-receipt,
+.featured-card {
   padding: 28px;
   color: var(--paper);
   background: var(--ink);
@@ -925,16 +966,19 @@ svg {
 }
 
 .receipt-hero-card p,
-.featured-receipt p {
+.featured-receipt p,
+.featured-card p {
   color: var(--soft);
 }
 
 .feed-layout,
 .profile-shell,
+.profile-layout,
 .receipt-layout,
 .project-layout,
 .repo-layout,
 .dashboard-grid,
+.dashboard-layout,
 .studio-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
@@ -1000,6 +1044,7 @@ svg {
 .repo-row button,
 .repo-button,
 .share-output button,
+.share-card button,
 .share-button {
   min-height: 36px;
   padding: 8px 12px;
@@ -1014,6 +1059,7 @@ svg {
 .repo-row button.active,
 .repo-button.active,
 .share-output button.active,
+.share-card button.active,
 .share-button.active {
   color: var(--violet-dark);
   background: var(--violet);
@@ -1029,6 +1075,7 @@ svg {
 }
 
 .editor-panel textarea,
+.editor-card textarea,
 .profile-card textarea {
   width: 100%;
   min-height: 120px;
@@ -1095,10 +1142,12 @@ svg {
   .app-hero,
   .feed-layout,
   .profile-shell,
+  .profile-layout,
   .receipt-layout,
   .project-layout,
   .repo-layout,
   .dashboard-grid,
+  .dashboard-layout,
   .studio-layout,
   .studio-grid,
   .trust-grid,
@@ -1114,6 +1163,7 @@ svg {
 
   .receipt-hero-card,
   .featured-receipt,
+  .featured-card,
   .modal-panel {
     padding: 22px;
   }
@@ -1128,6 +1178,7 @@ svg {
   .repo-row button,
   .repo-button,
   .share-output button,
+  .share-card button,
   .share-button {
     width: 100%;
   }
