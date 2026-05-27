@@ -558,6 +558,91 @@ final class PRBarModelTests: XCTestCase {
     )
   }
 
+  func testDeviceAuthorizationTracksExpiryFromIssuedAt() throws {
+    let issuedAt = Date(timeIntervalSince1970: 1_000)
+    let authorization = GitHubDeviceAuthorization(
+      deviceCode: "device-code",
+      userCode: "ABCD-EFGH",
+      verificationURI: try XCTUnwrap(URL(string: "https://github.com/login/device")),
+      expiresIn: 900,
+      interval: 5,
+      issuedAt: issuedAt
+    )
+
+    XCTAssertEqual(authorization.expiresAt, Date(timeIntervalSince1970: 1_900))
+    XCTAssertEqual(authorization.remainingSeconds(at: Date(timeIntervalSince1970: 1_060)), 840)
+    XCTAssertFalse(authorization.isExpired(at: Date(timeIntervalSince1970: 1_899)))
+    XCTAssertTrue(authorization.isExpired(at: Date(timeIntervalSince1970: 1_900)))
+  }
+
+  func testDeviceFlowAuthServiceStampsAuthorizationIssueTime() throws {
+    let issuedAt = Date(timeIntervalSince1970: 2_000)
+    let transport = RecordingGitHubRepositoryTransport(
+      responses: [
+        Data(
+          """
+          {
+            "device_code": "device-code",
+            "user_code": "ABCD-EFGH",
+            "verification_uri": "https://github.com/login/device",
+            "expires_in": 900,
+            "interval": 5
+          }
+          """.utf8
+        ),
+        Data(
+          """
+          {
+            "error": "authorization_pending",
+            "error_description": "authorization pending"
+          }
+          """.utf8
+        )
+      ]
+    )
+    let service = GitHubDeviceFlowAuthService(
+      configuration: GitHubOAuthConfiguration(
+        clientID: "client-id",
+        scopes: ["public_repo"],
+        maxTokenPollAttempts: 1
+      ),
+      sessionStore: InMemoryGitHubSessionStore(),
+      transport: transport,
+      currentDate: { issuedAt }
+    )
+
+    XCTAssertThrowsError(try service.connect()) { error in
+      guard case let GitHubAuthError.authorizationPending(authorization) = error else {
+        return XCTFail("Expected pending authorization")
+      }
+      XCTAssertEqual(authorization.issuedAt, issuedAt)
+      XCTAssertEqual(authorization.remainingSeconds(at: issuedAt.addingTimeInterval(10)), 890)
+    }
+  }
+
+  func testExpiredDeviceAuthorizationRequiresFreshCodeBeforePolling() throws {
+    let now = Date(timeIntervalSince1970: 2_000)
+    let expiredAuthorization = GitHubDeviceAuthorization(
+      deviceCode: "expired-device-code",
+      userCode: "OLD-CODE",
+      verificationURI: try XCTUnwrap(URL(string: "https://github.com/login/device")),
+      expiresIn: 900,
+      interval: 5,
+      issuedAt: now.addingTimeInterval(-901)
+    )
+    let store = PRBarStore.sample(currentDate: { now })
+    store.routeState = .authorizing(expiredAuthorization)
+    store.githubConnection = GitHubConnection(status: .signingIn, user: nil)
+
+    store.continueGitHubAuthorization()
+
+    XCTAssertEqual(store.githubConnection, .signedOut)
+    guard case let .issue(issue) = store.routeState else {
+      return XCTFail("Expected expired-code issue")
+    }
+    XCTAssertEqual(issue.id, "github-device-code-expired")
+  }
+
   func testGitHubRepositoryRequestUsesAuthenticatedReposEndpoint() throws {
     let request = try GitHubRepositoryRequest.userRepositories(token: "token", page: 2)
 

@@ -166,6 +166,18 @@ final class PRBarStore {
       return
     }
 
+    guard authorization.isExpired(at: currentDate()) == false else {
+      githubConnection = .signedOut
+      routeState = .issue(
+        AuthIssue(
+          id: "github-device-code-expired",
+          title: "GitHub code expired",
+          message: "GitHub device codes expire after a few minutes. Request a new code and try again."
+        )
+      )
+      return
+    }
+
     githubConnection = GitHubConnection(status: .signingIn, user: nil)
     do {
       githubConnection = try authService.continueDeviceAuthorization(authorization)
@@ -174,6 +186,10 @@ final class PRBarStore {
     } catch {
       handleAuth(error)
     }
+  }
+
+  func refreshGitHubAuthorization() {
+    connectGitHub()
   }
 
   func finishRepositorySetup() {
