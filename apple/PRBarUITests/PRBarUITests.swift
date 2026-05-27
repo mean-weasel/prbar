@@ -117,6 +117,22 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testPullToRefreshFailureShowsStaleDataStatus() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-refresh-failure"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 2))
+    app.buttons["Refresh activity"].tap()
+
+    XCTAssertTrue(app.staticTexts["Showing last synced data"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Retry failed")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Showing data from")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts["#39 Connect GitHub auth fallback"].exists)
+  }
+
+  @MainActor
   func testSignedOutGitHubConnectShowsRepoSelection() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing", "--signed-out"]

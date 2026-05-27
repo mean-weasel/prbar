@@ -19,6 +19,7 @@ final class PRBarStore {
   var isRefreshingActivity = false
   var activityRefreshIssue: AuthIssue?
   var lastActivityRefreshAt: Date?
+  var lastActivityRefreshAttemptAt: Date?
   private let authService: GitHubAuthServicing
   private let repositoryProvider: GitHubRepositoryProviding
   private let activityProvider: GitHubActivityProviding
@@ -179,6 +180,8 @@ final class PRBarStore {
 
     isRefreshingActivity = true
     activityRefreshIssue = nil
+    let attemptedAt = currentDate()
+    lastActivityRefreshAttemptAt = attemptedAt
     let selectedPRDate = selectedPRDate
     let selectedReleaseDate = selectedReleaseDate
     let selectedReleaseID = selectedReleaseID
@@ -197,7 +200,7 @@ final class PRBarStore {
         lookbackDays: 30
       )
       applyActivitySnapshot(snapshot)
-      lastActivityRefreshAt = currentDate()
+      lastActivityRefreshAt = attemptedAt
       self.selectedPRDate = selectedPRDate
       self.selectedReleaseDate = selectedReleaseDate
       if let selectedReleaseID, releases.contains(where: { $0.id == selectedReleaseID }) {
@@ -230,13 +233,15 @@ final class PRBarStore {
   }
 
   private func refreshActivityForIncludedRepositories() throws {
+    let attemptedAt = currentDate()
+    lastActivityRefreshAttemptAt = attemptedAt
     let snapshot = try activityProvider.activity(
       for: includedRepositories,
       endingAt: activityAnchorDate,
       lookbackDays: 30
     )
     applyActivitySnapshot(snapshot)
-    lastActivityRefreshAt = currentDate()
+    lastActivityRefreshAt = attemptedAt
     activityRefreshIssue = nil
   }
 
@@ -272,14 +277,75 @@ final class PRBarStore {
         title: "GitHub sign-in is not configured",
         message: "Add a GitHub OAuth client ID before using live GitHub sign-in. Sample data is still available."
       )
+    } else if error is DecodingError {
+      issue = AuthIssue(
+        id: "github-response-changed",
+        title: "GitHub response changed",
+        message: "PRBar could not read the latest GitHub response. Try again after updating the app."
+      )
+    } else if let apiError = error as? GitHubAPIError {
+      issue = authIssue(for: apiError)
+    } else if error as? GitHubActivityError == .missingSession || error as? GitHubRepositoryError == .missingSession {
+      issue = AuthIssue(
+        id: "github-session-expired",
+        title: "GitHub session expired",
+        message: "Sign in to GitHub again to refresh PRs and releases."
+      )
     } else {
       issue = AuthIssue(
-        id: "github-auth-failed",
-        title: "GitHub sign-in failed",
-        message: "Try again, or continue with sample data while GitHub is unavailable."
+        id: "github-sync-failed",
+        title: "GitHub sync failed",
+        message: "Try again. Existing PR and release data stays available while GitHub is unavailable."
       )
     }
     return .issue(issue)
+  }
+
+  private func authIssue(for apiError: GitHubAPIError) -> AuthIssue {
+    switch apiError {
+    case .unauthorized:
+      return AuthIssue(
+        id: "github-session-expired",
+        title: "GitHub session expired",
+        message: "Sign in to GitHub again to refresh PRs and releases."
+      )
+    case .forbidden, .ssoRequired:
+      return AuthIssue(
+        id: "github-access-blocked",
+        title: "GitHub access needs attention",
+        message: "Authorize SSO or check repository permissions, then refresh again."
+      )
+    case .rateLimited:
+      return AuthIssue(
+        id: "github-rate-limited",
+        title: "GitHub rate limit reached",
+        message: "GitHub is asking PRBar to slow down. Wait a bit, then refresh again."
+      )
+    case .notFound:
+      return AuthIssue(
+        id: "github-resource-unavailable",
+        title: "GitHub data is unavailable",
+        message: "A repository or release could not be found. Check repo access, then refresh again."
+      )
+    case .server:
+      return AuthIssue(
+        id: "github-server-error",
+        title: "GitHub is having trouble",
+        message: "GitHub returned a server error. Existing data stays available while you retry."
+      )
+    case .networkUnavailable, .timedOut:
+      return AuthIssue(
+        id: "github-network-unavailable",
+        title: "GitHub is unreachable",
+        message: "Check your connection and refresh again. Existing data stays available."
+      )
+    case .invalidResponse:
+      return AuthIssue(
+        id: "github-invalid-response",
+        title: "GitHub sync failed",
+        message: "GitHub returned an unexpected response. Existing data stays available while you retry."
+      )
+    }
   }
 
   private func handleAuth(_ error: Error) {

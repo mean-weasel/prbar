@@ -516,7 +516,7 @@ final class PRBarModelTests: XCTestCase {
     guard case let .issue(issue) = store.routeState else {
       return XCTFail("Expected a repository fetch issue")
     }
-    XCTAssertEqual(issue.id, "github-auth-failed")
+    XCTAssertEqual(issue.id, "github-sync-failed")
     XCTAssertEqual(store.githubConnection.status, .signedOut)
   }
 
@@ -603,7 +603,7 @@ final class PRBarModelTests: XCTestCase {
     guard case let .issue(issue) = store.routeState else {
       return XCTFail("Expected an activity sync issue")
     }
-    XCTAssertEqual(issue.id, "github-auth-failed")
+    XCTAssertEqual(issue.id, "github-sync-failed")
     XCTAssertEqual(store.pullRequests.map(\.id), SampleData.pullRequests.map(\.id))
   }
 
@@ -642,7 +642,11 @@ final class PRBarModelTests: XCTestCase {
 
   @MainActor
   func testRefreshingActivityFailureStaysInPlaceAndRecordsRefreshIssue() async {
-    let store = PRBarStore.sample(activityProvider: ThrowingGitHubActivityProvider())
+    let attemptDate = SampleData.dateTime("2026-05-24T22:30:00Z")
+    let store = PRBarStore.sample(
+      activityProvider: ThrowingGitHubActivityProvider(),
+      currentDate: { attemptDate }
+    )
     let originalPullRequests = store.pullRequests
     let originalRefreshDate = SampleData.dateTime("2026-05-24T08:00:00Z")
     store.lastActivityRefreshAt = originalRefreshDate
@@ -651,8 +655,22 @@ final class PRBarModelTests: XCTestCase {
 
     XCTAssertEqual(store.pullRequests, originalPullRequests)
     XCTAssertEqual(store.lastActivityRefreshAt, originalRefreshDate)
-    XCTAssertEqual(store.activityRefreshIssue?.id, "github-auth-failed")
+    XCTAssertEqual(store.lastActivityRefreshAttemptAt, attemptDate)
+    XCTAssertEqual(store.activityRefreshIssue?.id, "github-sync-failed")
     XCTAssertFalse(store.isRefreshingActivity)
+  }
+
+  @MainActor
+  func testRefreshingActivityRateLimitShowsSpecificRecoverableIssue() async {
+    let store = PRBarStore.sample(
+      activityProvider: ThrowingGitHubActivityProvider(error: GitHubAPIError.rateLimited(resetAt: nil))
+    )
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(store.activityRefreshIssue?.id, "github-rate-limited")
+    XCTAssertEqual(store.activityRefreshIssue?.title, "GitHub rate limit reached")
+    XCTAssertTrue(store.activityRefreshIssue?.message.contains("slow down") == true)
   }
 }
 
@@ -663,7 +681,16 @@ private struct ThrowingGitHubRepositoryProvider: GitHubRepositoryProviding {
 }
 
 private struct ThrowingGitHubActivityProvider: GitHubActivityProviding {
+  var apiError: GitHubAPIError?
+
+  init(error: GitHubAPIError? = nil) {
+    self.apiError = error
+  }
+
   func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
+    if let apiError {
+      throw apiError
+    }
     throw GitHubActivityError.invalidResponse
   }
 }

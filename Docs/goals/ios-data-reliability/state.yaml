@@ -1,0 +1,328 @@
+version: 2
+
+goal:
+  title: iOS Data Reliability
+  slug: ios-data-reliability
+  kind: specific
+  tranche: "Complete one coherent product slice that makes iOS GitHub live data more reliable, recoverable, and trustworthy under auth, network, rate-limit, permission, stale-data, or offline conditions."
+  status: active
+  oracle:
+    signal: "A merged iOS PR plus automated simulator checks and physical Preview evidence demonstrate user-visible recovery behavior and deterministic data handling for the selected reliability states."
+    cadence: "After each Worker package and at final audit."
+    final_proof: "Merged PR with relevant tests, post-merge main iOS success, and successful iOS Physical Preview workflow on iPhone-preview."
+  intake:
+    original_request: "Plan the next iOS reliability slice with GoalBuddy."
+    interpreted_outcome: "The iOS app should make GitHub data failures and stale/offline conditions understandable, recoverable, and trustworthy before expanding into more product surface."
+    input_shape: specific
+    audience: "High-velocity GitHub users checking PR and release activity from iPhone while mobile or between machines."
+    authority: requested
+    proof_type: test
+    completion_proof: "A merged PR proves the selected reliability slice with tests, post-merge main iOS success, and iOS Physical Preview success on iPhone-preview."
+    likely_misfire: "Only polishing error strings while leaving last successful sync, retry state, stale data, or cached/offline value ambiguous."
+    blind_spots_considered:
+      - "GitHub failures may come from auth expiry, SSO, repo permissions, secondary rate limits, primary rate limits, network loss, or schema/API surprises."
+      - "The app may need separate last-successful-sync and last-attempted-sync semantics."
+      - "Offline value may require local caching, but persistent cache scope could be too broad for one safe PR."
+      - "Retry UX should avoid loops that repeatedly hit GitHub rate limits."
+      - "Shared PRBar models may affect macOS, so Judge must bound any shared changes carefully."
+    existing_plan_facts:
+      - "PR #61 added visible sync/freshness state and repo selection bulk polish."
+      - "PR #61 post-merge main iOS and iOS Physical Preview passed."
+      - "The recommended next direction is GitHub data reliability and trust before Share tab expansion."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: starting
+    url: "http://goalbuddy.localhost:41737/ios-data-reliability/"
+    command: "npx goalbuddy board Docs/goals/ios-data-reliability"
+
+active_task: T005
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Map the current iOS GitHub reliability surfaces without changing implementation files."
+    inputs:
+      - "Docs/goals/ios-data-reliability/goal.md"
+      - "Current repository state"
+      - "PR #61 reliability/freshness behavior as merged context"
+    constraints:
+      - "Read-only."
+      - "Do not alter product files."
+      - "Identify exact files, data flow, tests, and workflows relevant to auth expiry, SSO/permissions, rate limits, network failures, retry behavior, stale data, local cache, and offline use."
+      - "Call out shared model changes that could affect macOS."
+    expected_output:
+      - "Relevant Swift/shared/test/workflow files."
+      - "Current error taxonomy and user-visible recovery copy."
+      - "Current last-success, last-attempt, stale/offline, and cache behavior."
+      - "Existing verification commands and known flaky spots."
+      - "Risks or ambiguities requiring Judge decision."
+    receipt:
+      result: done
+      note: "notes/T001-ios-reliability-scout.md"
+      summary: "Mapped iOS GitHub reliability surfaces. The app now preserves in-memory activity on refresh failure and shows last successful refresh, but it does not track last attempted refresh, does not explicitly explain stale-but-usable data, and collapses nearly all GitHub/network/auth/repo/activity failures into one generic sign-in issue. There is no persistent activity cache. UI tests cover happy-path sync status but not failure/stale/rate-limit copy."
+      evidence:
+        - "apple/PRBarShared/PRBarStore.swift:19"
+        - "apple/PRBarShared/PRBarStore.swift:21"
+        - "apple/PRBarShared/PRBarStore.swift:175"
+        - "apple/PRBarShared/PRBarStore.swift:208"
+        - "apple/PRBarShared/PRBarStore.swift:267"
+        - "apple/PRBarShared/GitHubRepositories.swift:36"
+        - "apple/PRBarShared/GitHubRepositories.swift:47"
+        - "apple/PRBarShared/GitHubActivity.swift:3"
+        - "apple/PRBar/Components/ActivitySyncStatusView.swift:44"
+        - "apple/PRBarTests/PRBarModelTests.swift:643"
+        - "apple/PRBarUITests/PRBarUITests.swift:101"
+      risks:
+        - "Persistent activity caching may be too broad for the first reliability PR."
+        - "Shared transport changes affect auth, repo fetch, and activity fetch paths."
+        - "AuthIssue naming is broader than auth in practice, but renaming it globally could create churn."
+      spawned_tasks:
+        - T002
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the first safe implementation package for iOS GitHub data reliability."
+    inputs:
+      - "T001 receipt"
+      - "Docs/goals/ios-data-reliability/goal.md"
+    constraints:
+      - "Prefer one coherent user-visible vertical slice over scattered low-level cleanup."
+      - "Bound allowed files to the minimum SwiftUI/shared/test/workflow set needed."
+      - "Require proof that catches both data behavior and user-facing recovery regressions."
+      - "Do not choose a slice that needs new credentials, backend infrastructure, or product-policy decisions."
+    expected_output:
+      - "Decision: approved implementation package or request more scouting."
+      - "Exact Worker objective."
+      - "Allowed files."
+      - "Verification commands."
+      - "Stop conditions."
+      - "Explicit non-goals for this first PR."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      summary: "Approve one vertical reliability slice: classify GitHub/network HTTP failures at the shared transport boundary, map those failures into user-visible recovery copy, track last attempted activity refresh separately from last successful refresh, and show stale-but-usable data copy in PRs/Releases when a refresh fails after a previous success. Defer persistent activity cache to a later tranche."
+      rationale: "This is the largest safe first reliability PR because it improves real failure interpretation and stale-data trust end to end without introducing new storage/cache policy. It also creates the model/UI semantics a later persistent cache will need."
+      allowed_files:
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarShared/GitHubRepositories.swift"
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBar/Components/ActivitySyncStatusView.swift"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarTests/GitHubActivityTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "Docs/goals/ios-data-reliability/**"
+      verify:
+        - "git diff --check"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DataReliabilityUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshFailureShowsStaleDataStatus"
+      stop_if:
+        - "Need persistent activity cache or migrations."
+        - "Need files outside allowed_files."
+        - "GitHub auth/privacy/rate-limit policy requires a product decision."
+        - "Local verification fails twice for the same unexplained reason."
+      explicit_non_goals:
+        - "No persistent activity cache in this PR."
+        - "No Share tab or macOS UI changes."
+        - "No retry backoff scheduler."
+        - "No new credentials or backend infrastructure."
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: default
+    objective: "Implement the Judge-selected iOS data reliability slice."
+    inputs:
+      - "T002 receipt"
+      - "Docs/goals/ios-data-reliability/goal.md"
+    constraints:
+      - "Write only inside allowed_files selected by Judge."
+      - "Preserve existing app architecture and shared macOS compatibility."
+      - "Do not broaden scope into Share cards, navigation redesign, or unrelated visual polish."
+    allowed_files:
+      - "apple/PRBarShared/PRBarModels.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBarShared/GitHubRepositories.swift"
+      - "apple/PRBarShared/GitHubActivity.swift"
+      - "apple/PRBar/Components/ActivitySyncStatusView.swift"
+      - "apple/PRBar/PRs/PRsView.swift"
+      - "apple/PRBar/Releases/ReleasesView.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarTests/GitHubActivityTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "Docs/goals/ios-data-reliability/**"
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DataReliabilityUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshFailureShowsStaleDataStatus"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "GitHub auth semantics, privacy, or rate-limit policy requires a product decision."
+      - "Implementation requires backend infrastructure or new credentials."
+      - "Local verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      summary: "Implemented the selected iOS reliability slice. Shared GitHub transport now classifies common HTTP/network failures, the store maps those into clearer recovery issues, refresh attempts are tracked separately from successful refreshes, and PRs/Releases show stale-but-usable status when a retry fails after a previous sync."
+      changed_files:
+        - "apple/PRBarShared/GitHubRepositories.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBar/Components/ActivitySyncStatusView.swift"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarTests/GitHubActivityTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+      commands:
+        - command: "git diff --check"
+          status: pass
+          summary: "No whitespace errors."
+        - command: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          summary: "45 tests, 0 failures."
+        - command: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DataReliabilityUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshFailureShowsStaleDataStatus"
+          status: pass
+          summary: "1 UI test, 0 failures."
+      notes:
+        - "Persistent activity cache remains intentionally deferred."
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: default
+    objective: "Review the implemented reliability slice for product fit, regression risk, and verification adequacy before PR."
+    inputs:
+      - "T003 receipt"
+      - "Current diff"
+      - "Verification output"
+    constraints:
+      - "Read-only."
+      - "Prioritize bugs, unclear recovery semantics, stale-data ambiguity, cache safety, and test gaps."
+    expected_output:
+      - "approved | needs_changes"
+      - "Specific required fixes if not approved."
+      - "Whether the slice is ready for PR and merge-queue verification."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      summary: "The implemented slice is ready for PR. It cleanly separates last attempted refresh from last successful refresh, preserves existing activity after failed retries, maps common GitHub/network failures into clearer recovery issues, and adds unit plus focused UI coverage for stale-but-usable data. The only scope expansion was the necessary PRs/Releases call-site plumbing for ActivitySyncStatusView, now reflected in the allowed-file list."
+      risks:
+        - "Persistent offline cache is still intentionally deferred to a later tranche."
+        - "Rate-limit reset timestamps are parsed but not surfaced in UI yet."
+      next_task: T005
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: default
+    objective: "Prepare and publish the PR for the approved iOS data reliability slice, then monitor required checks."
+    inputs:
+      - "T004 receipt"
+      - "Current branch and diff"
+    constraints:
+      - "Do not include unrelated dirty local work."
+      - "PR body must describe user-visible reliability behavior and verification."
+      - "Use merge queue when checks are green."
+    allowed_files:
+      - "Docs/goals/ios-data-reliability/goal.md"
+      - "Docs/goals/ios-data-reliability/state.yaml"
+      - "Docs/goals/ios-data-reliability/notes/**"
+    verify:
+      - "git diff --check"
+      - "Relevant iOS unit/UI checks selected by Judge."
+      - "PR checks pass."
+    stop_if:
+      - "Unrelated dirty work would be included."
+      - "Required checks fail with a non-flaky product regression."
+      - "Merge queue reports conflicts that require implementation changes outside approved scope."
+    receipt: null
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: default
+    objective: "After merge, verify post-merge main iOS and run the iOS Physical Preview workflow on iPhone-preview."
+    inputs:
+      - "Merged PR link"
+      - "GitHub Actions run links"
+    constraints:
+      - "Do not declare the tranche complete until both normal main iOS and physical Preview iPhone evidence are known."
+      - "If physical Preview fails, identify whether the blocker is Automation Mode, device lock/offline, signing, build, or UI smoke."
+    allowed_files:
+      - "Docs/goals/ios-data-reliability/state.yaml"
+      - "Docs/goals/ios-data-reliability/notes/**"
+    verify:
+      - "main CI/iOS status check inspection"
+      - "iOS Physical Preview workflow_dispatch on main with device_name=iPhone-preview"
+    stop_if:
+      - "GitHub Actions access is unavailable."
+      - "The physical device is offline or locked and requires operator action."
+    receipt: null
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: default
+    objective: "Audit whether the current iOS data reliability tranche is complete."
+    inputs:
+      - "All task receipts"
+      - "Merged PR"
+      - "Post-merge main iOS result"
+      - "iOS Physical Preview result"
+    constraints:
+      - "Read-only."
+      - "Do not mark complete if only planning or partial implementation is done."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Missing evidence if not complete."
+      - "Next task if not complete."
+    receipt: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: passed
+    task: T003
+    commands:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/DataReliabilityUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshFailureShowsStaleDataStatus"
