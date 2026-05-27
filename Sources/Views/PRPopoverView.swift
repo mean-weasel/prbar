@@ -11,8 +11,6 @@ struct PRPopoverView: View {
   var onRefresh: () -> Void
   @State private var selectedBucketIndex = Int.max
   @State private var selectedTab = PopoverTab.activity
-  @State private var sharePayload: ShareCardPayload?
-  @State private var isShareSheetPresented = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 28) {
@@ -24,11 +22,6 @@ struct PRPopoverView: View {
       appControls
     }
     .padding(28)
-    .sheet(isPresented: $isShareSheetPresented) {
-      if let sharePayload {
-        ShareCardPreviewSheet(payload: sharePayload)
-      }
-    }
   }
 
   private var header: some View {
@@ -71,6 +64,7 @@ struct PRPopoverView: View {
         releaseStore: releaseStore,
         refreshState: releaseRefreshState,
         repositories: store.repositories,
+        revealingPrivateNamesInShare: store.showPrivateRepositoryNamesInShare,
         onEditRepos: { selectedTab = .settings },
         onShare: presentShareCard
       )
@@ -107,8 +101,7 @@ struct PRPopoverView: View {
   }
 
   private func presentShareCard(_ payload: ShareCardPayload) {
-    sharePayload = payload
-    isShareSheetPresented = true
+    ShareCardPreviewPresenter.show(payload: payload)
   }
 
   private var summary: some View {

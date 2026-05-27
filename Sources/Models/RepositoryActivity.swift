@@ -61,7 +61,10 @@ struct RepositoryActivity: Codable, Identifiable, Equatable {
       }
       return Array(dailyCounts.suffix(window.dayCount))
     case .week:
-      return Array(weeklyCounts.suffix(window.visibleBucketCount))
+      guard dailyCounts.isEmpty == false else {
+        return Array(weeklyCounts.suffix(window.visibleBucketCount))
+      }
+      return Array(dailyCounts.suffix(window.dayCount)).groupedTotals(size: 7)
     case .month:
       guard dailyCounts.isEmpty == false else {
         return Array(weeklyCounts.suffix(window.visibleBucketCount)).groupedTotals(size: 4)

@@ -3,34 +3,21 @@ import SwiftUI
 
 struct ShareCardPreviewSheet: View {
   var payload: ShareCardPayload
+  var onClose: (() -> Void)?
   @Environment(\.dismiss) private var dismiss
   @State private var message: String?
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 14) {
-      HStack {
-        Text(payload.title)
-          .font(.headline)
-        Spacer()
-        Button {
-          dismiss()
-        } label: {
-          Image(systemName: "xmark")
-        }
-        .buttonStyle(.bordered)
-      }
-
+    VStack(alignment: .leading, spacing: 12) {
       ShareCardView(payload: payload)
         .frame(maxWidth: .infinity)
 
       Label(payload.privacyMessage, systemImage: "lock.fill")
-        .font(.caption)
+        .font(.caption2)
         .foregroundStyle(.secondary)
-        .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
 
-      HStack {
+      HStack(spacing: 10) {
         Button {
           share()
         } label: {
@@ -50,6 +37,7 @@ struct ShareCardPreviewSheet: View {
         }
         .buttonStyle(.bordered)
       }
+      .controlSize(.large)
 
       if let message {
         Text(message)
@@ -57,8 +45,16 @@ struct ShareCardPreviewSheet: View {
           .foregroundStyle(.secondary)
       }
     }
-    .padding(18)
-    .frame(width: 420)
+    .padding(16)
+    .frame(width: 398, height: 448)
+  }
+
+  private func close() {
+    if let onClose {
+      onClose()
+    } else {
+      dismiss()
+    }
   }
 
   @MainActor
@@ -67,9 +63,13 @@ struct ShareCardPreviewSheet: View {
       message = "Could not render card image."
       return
     }
+    guard let contentView = NSApp.keyWindow?.contentView else {
+      message = "Could not open share sheet."
+      return
+    }
     NSSharingServicePicker(items: [image]).show(
       relativeTo: .zero,
-      of: NSApp.keyWindow?.contentView ?? NSView(),
+      of: contentView,
       preferredEdge: .minY
     )
     message = "Share sheet opened."
@@ -105,16 +105,5 @@ struct ShareCardPreviewSheet: View {
         message = "Could not save image."
       }
     }
-  }
-}
-
-extension NSImage {
-  fileprivate var pngData: Data? {
-    guard let tiffRepresentation,
-      let bitmap = NSBitmapImageRep(data: tiffRepresentation)
-    else {
-      return nil
-    }
-    return bitmap.representation(using: .png, properties: [:])
   }
 }
