@@ -29,7 +29,7 @@ struct OnboardingView: View {
           Label("Authorize GitHub", systemImage: "key.horizontal")
             .font(.title3.weight(.semibold))
 
-          Text(isExpired ? "This GitHub code expired. Request a fresh code to continue." : "Open GitHub on any device, enter this code, then return here.")
+          Text(isExpired ? "This GitHub code expired. Request a fresh code to continue." : "Open GitHub on any device and enter this code. PRBar will continue automatically after GitHub approves it.")
             .font(.subheadline)
             .foregroundStyle(isExpired ? .red : .secondary)
 
@@ -104,6 +104,9 @@ struct OnboardingView: View {
       }
     }
     .navigationTitle("GitHub")
+    .task(id: authorization.deviceCode) {
+      await store.pollGitHubAuthorization(authorization)
+    }
   }
 
   private var signInList: some View {

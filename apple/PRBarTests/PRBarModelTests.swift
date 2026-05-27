@@ -91,7 +91,7 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertGreaterThan(image?.size.height ?? 0, 0)
   }
 
-  func testGitHubConnectionStartsRepoSetupWithRecommendedReposIncluded() throws {
+  func testGitHubConnectionStartsRepoSetupWithNoReposIncludedByDefault() throws {
     let sessionStore = InMemoryGitHubSessionStore()
     let store = PRBarStore.sample(
       authService: StaticGitHubAuthService(
@@ -111,7 +111,7 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.routeState, .onboarding(.repositories))
     XCTAssertEqual(store.githubConnection.status, .connected)
     XCTAssertEqual(store.githubConnection.user?.login, "neonwatty")
-    XCTAssertEqual(store.includedRepositories.map(\.id), ["prbar", "launch-kit"])
+    XCTAssertEqual(store.includedRepositories.map(\.id), [])
     XCTAssertEqual(try sessionStore.loadSession()?.user.login, "neonwatty")
   }
 
@@ -149,7 +149,7 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.routeState, .onboarding(.repositories))
   }
 
-  func testRestoringGitHubSessionWithStoredSelectionRefreshesActivity() throws {
+  func testRestoringGitHubSessionWithStoredSelectionDoesNotBlockOnActivityRefresh() throws {
     let sessionStore = InMemoryGitHubSessionStore()
     try sessionStore.saveSession(.fixture)
     let store = PRBarStore.sample(
@@ -164,9 +164,10 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.githubConnection.status, .connected)
     XCTAssertEqual(store.routeState, .authenticated)
     XCTAssertEqual(store.includedRepositories.map(\.id), ["prbar"])
+    XCTAssertNil(store.lastActivityRefreshAttemptAt)
   }
 
-  func testRestoringGitHubSessionUsesCachedActivityWhenRefreshFails() throws {
+  func testRestoringGitHubSessionUsesCachedActivityWithoutBlockingOnRefresh() throws {
     let sessionStore = InMemoryGitHubSessionStore()
     try sessionStore.saveSession(.fixture)
     let cachedRefreshDate = SampleData.dateTime("2026-05-24T18:30:00Z")
@@ -202,10 +203,11 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.pullRequests.map(\.id), ["prbar#424"])
     XCTAssertEqual(store.releases.map(\.id), ["prbar@release:v4.2.4"])
     XCTAssertEqual(store.lastActivityRefreshAt, cachedRefreshDate)
-    XCTAssertEqual(store.activityRefreshIssue?.id, "github-network-unavailable")
+    XCTAssertNil(store.lastActivityRefreshAttemptAt)
+    XCTAssertNil(store.activityRefreshIssue)
   }
 
-  func testRestoringGitHubSessionWithoutMatchingCacheKeepsIssueOnRefreshFailure() throws {
+  func testRestoringGitHubSessionWithoutMatchingCacheStillOpensAuthenticatedApp() throws {
     let sessionStore = InMemoryGitHubSessionStore()
     try sessionStore.saveSession(.fixture)
     let cacheStore = InMemoryGitHubActivityCacheStore(
@@ -225,10 +227,10 @@ final class PRBarModelTests: XCTestCase {
 
     store.restoreGitHubSession()
 
-    guard case let .issue(issue) = store.routeState else {
-      return XCTFail("Expected issue without a matching cache")
-    }
-    XCTAssertEqual(issue.id, "github-network-unavailable")
+    XCTAssertEqual(store.routeState, .authenticated)
+    XCTAssertEqual(store.includedRepositories.map(\.id), ["prbar"])
+    XCTAssertNil(store.lastActivityRefreshAttemptAt)
+    XCTAssertNil(store.activityRefreshIssue)
   }
 
   func testRestoringMissingGitHubSessionReturnsToSignedOut() {
@@ -546,7 +548,7 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.routeState, .onboarding(.repositories))
     XCTAssertEqual(store.githubConnection.user?.login, "octocat")
     XCTAssertEqual(try sessionStore.loadSession()?.accessToken, "live-token")
-    XCTAssertEqual(store.includedRepositories.map(\.id), ["mean-weasel/prbar"])
+    XCTAssertEqual(store.includedRepositories.map(\.id), [])
     XCTAssertEqual(
       transport.requests.map { $0.url?.absoluteString },
       [
@@ -675,7 +677,7 @@ final class PRBarModelTests: XCTestCase {
 
     XCTAssertEqual(repositories.map(\.id), ["mean-weasel/prbar", "example/client-api"])
     XCTAssertEqual(repositories.map(\.visibility), [.public, .private])
-    XCTAssertEqual(repositories.map(\.included), [true, false])
+    XCTAssertEqual(repositories.map(\.included), [false, false])
   }
 
   func testGitHubRepositoryClientFetchesAdditionalPages() throws {
@@ -724,7 +726,7 @@ final class PRBarModelTests: XCTestCase {
     store.connectGitHub()
 
     XCTAssertEqual(store.repositories.map(\.id), ["mean-weasel/prbar", "example/client-api"])
-    XCTAssertEqual(store.includedRepositories.map(\.id), ["mean-weasel/prbar"])
+    XCTAssertEqual(store.includedRepositories.map(\.id), [])
   }
 
   func testConnectingGitHubShowsIssueWhenRepositoryFetchFails() {
@@ -760,7 +762,8 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.includedRepositories.map(\.id), ["example/client-api"])
   }
 
-  func testFinishingRepositorySetupPersistsIncludedRepositories() throws {
+  @MainActor
+  func testFinishingRepositorySetupPersistsIncludedRepositories() async throws {
     let selectionStore = InMemoryRepositorySelectionStore()
     let store = PRBarStore.sample(repositorySelectionStore: selectionStore)
     store.repositories = [
@@ -768,12 +771,13 @@ final class PRBarModelTests: XCTestCase {
       Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub")
     ]
 
-    store.finishRepositorySetup()
+    await store.finishRepositorySetup()
 
     XCTAssertEqual(try selectionStore.loadIncludedRepositoryIDs(), ["mean-weasel/prbar"])
   }
 
-  func testFinishingRepositorySetupRefreshesActivityForIncludedRepositories() {
+  @MainActor
+  func testFinishingRepositorySetupRefreshesActivityForIncludedRepositories() async {
     let refreshDate = SampleData.dateTime("2026-05-24T21:15:00Z")
     let store = PRBarStore.sample(
       authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore(), session: .fixture),
@@ -800,7 +804,12 @@ final class PRBarModelTests: XCTestCase {
     )
 
     store.connectGitHub()
-    store.finishRepositorySetup()
+    store.repositories = store.repositories.map { repository in
+      var repository = repository
+      repository.included = repository.id == "mean-weasel/prbar"
+      return repository
+    }
+    await store.finishRepositorySetup()
 
     XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#39"])
     XCTAssertEqual(store.releases.map(\.id), ["mean-weasel/prbar@release:v1.4.0"])
@@ -837,7 +846,8 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(cacheStore.record?.lastRefreshedAt, refreshDate)
   }
 
-  func testActivityRefreshFailureKeepsSampleActivityAndShowsIssue() {
+  @MainActor
+  func testActivityRefreshFailureKeepsSampleActivityAndShowsIssue() async {
     let store = PRBarStore.sample(
       authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore(), session: .fixture),
       repositoryProvider: StaticGitHubRepositoryProvider(
@@ -849,12 +859,15 @@ final class PRBarModelTests: XCTestCase {
     )
 
     store.connectGitHub()
-    store.finishRepositorySetup()
-
-    guard case let .issue(issue) = store.routeState else {
-      return XCTFail("Expected an activity sync issue")
+    store.repositories = store.repositories.map { repository in
+      var repository = repository
+      repository.included = true
+      return repository
     }
-    XCTAssertEqual(issue.id, "github-sync-failed")
+    await store.finishRepositorySetup()
+
+    XCTAssertEqual(store.routeState, .authenticated)
+    XCTAssertEqual(store.activityRefreshIssue?.id, "github-sync-failed")
     XCTAssertEqual(store.pullRequests.map(\.id), SampleData.pullRequests.map(\.id))
   }
 
