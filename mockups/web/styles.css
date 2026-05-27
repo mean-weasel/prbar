@@ -65,7 +65,11 @@ button {
 .stat-pills,
 .board-tabs,
 .metric-strip,
-.tag-row {
+.tag-row,
+.post-actor,
+.post-actions,
+.network-tabs,
+.board-actions {
   display: flex;
   align-items: center;
 }
@@ -393,6 +397,8 @@ p {
 .receipt-card,
 .builder-card,
 .side-panel,
+.network-post,
+.network-brief,
 .board-spotlight,
 .momentum-card,
 .talent-card,
@@ -442,8 +448,30 @@ p {
 }
 
 .network-layout {
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.75fr);
+  grid-template-columns: minmax(0, 1.16fr) minmax(320px, 0.68fr);
   align-items: start;
+}
+
+.network-tabs {
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.network-tabs button {
+  min-height: 38px;
+  padding: 0 12px;
+  color: #475569;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 850;
+}
+
+.network-tabs button.active {
+  color: #061611;
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .feed,
@@ -454,6 +482,130 @@ p {
 
 .side-panel {
   padding: 14px;
+}
+
+.network-post {
+  padding: 18px;
+}
+
+.post-actor {
+  gap: 12px;
+}
+
+.post-actor h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.post-actor p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.post-actor > a {
+  margin-left: auto;
+  padding: 8px 10px;
+  color: #061611;
+  background: var(--accent);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.post-note {
+  margin: 16px 0;
+  color: #334155;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.post-proof {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f6fbf8 0%, #eef4ff 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.post-proof span,
+.network-brief > span {
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.post-proof h3 {
+  margin: 6px 0 0;
+  font-size: 25px;
+}
+
+.mini-proof-histogram {
+  display: flex;
+  align-items: end;
+  gap: 5px;
+  height: 94px;
+  padding: 10px;
+  background: var(--dark);
+  border-radius: 8px;
+}
+
+.mini-proof-histogram i {
+  flex: 1;
+  min-width: 0;
+  background: linear-gradient(to top, var(--accent), var(--gold));
+  border-radius: 4px 4px 2px 2px;
+}
+
+.post-actions {
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.board-actions {
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.board-actions span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.board-actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  color: #061611;
+  background: var(--accent);
+  border: 0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.network-brief {
+  padding: 18px;
+  box-shadow: none;
+}
+
+.network-brief h2 {
+  margin: 8px 0;
+  font-size: 26px;
+  line-height: 1.05;
+}
+
+.network-brief p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .receipt-card {

@@ -1,6 +1,6 @@
 const routes = [
   { path: "/home", label: "Home" },
-  { path: "/network", label: "Network" },
+  { path: "/network", label: "Connect" },
   { path: "/boards", label: "Boards" },
   { path: "/talent", label: "Talent" },
   { path: "/dashboard", label: "Dashboard" },
@@ -96,6 +96,17 @@ const releases = [
   },
 ];
 
+const networkPosts = releases.map((release, index) => ({
+  release,
+  action: ["shipped a release", "published a launch receipt", "tagged a proof milestone"][index],
+  note: [
+    "Seven-day sprint: discovery filters, imported release notes, and scoring tests moved from PR stack to public release.",
+    "A founder-ready launch kit landed with billing metrics, onboarding checklists, and a cleaner handoff path.",
+    "The iOS receipt flow now supports private repo redaction and native share previews from selected sources.",
+  ][index],
+  ask: ["Ask about workflow", "Ask about launch sprint", "Ask about iOS proof"][index],
+}));
+
 const repoSources = [
   { name: "maya/sideproject-radar", visibility: "public", status: "included", lastRelease: "v2.1.0", activity: "18 PRs in 14 days" },
   { name: "maya/radar-ios", visibility: "private", status: "included", lastRelease: "v1.4.1", activity: "9 PRs in 14 days" },
@@ -112,33 +123,34 @@ const timeline = [
 const boardViews = {
   rising: {
     label: "Rising builders",
-    eyebrow: "7-day proof velocity",
-    description: "Builders gaining visible momentum from releases, merged PRs, and project launches.",
+    eyebrow: "Community-ranked momentum",
+    description: "Community votes and PRBar picks spotlight the builders gaining real proof velocity.",
     items: [
-      { builder: builders[0], why: "4 releases this week", detail: "Latest receipt ties 8 PRs to a tagged release.", score: "+38%" },
-      { builder: builders[1], why: "Launch sprint closed", detail: "Moved billing analytics from PR stack to public release.", score: "+29%" },
-      { builder: builders[2], why: "11-day active streak", detail: "iOS proof flow shipped across app and shared package.", score: "+21%" },
+      { builder: builders[0], why: "4 releases this week", detail: "Latest receipt ties 8 PRs to a tagged release.", score: "128 votes", pick: "PRBar pick" },
+      { builder: builders[1], why: "Launch sprint closed", detail: "Moved billing analytics from PR stack to public release.", score: "97 votes", pick: "Community" },
+      { builder: builders[2], why: "11-day active streak", detail: "iOS proof flow shipped across app and shared package.", score: "84 votes", pick: "Rising" },
     ],
   },
   projects: {
     label: "Active projects",
-    eyebrow: "Projects shipping now",
-    description: "Projects with recent releases, visible cadence, and source-linked proof.",
+    eyebrow: "Curated project radar",
+    description: "Browse projects nominated by the community and featured by PRBar for visible shipping cadence.",
     items: [
-      { builder: builders[0], why: "SideProject Radar", detail: "Release cadence: 4 tags in 30 days. Latest: v2.1.0.", score: "92" },
-      { builder: builders[1], why: "Launch Sprint Kit", detail: "Founder-ready kit with billing, onboarding, and handoff receipts.", score: "87" },
-      { builder: builders[2], why: "iOS Proof Cards", detail: "Mobile receipt studio with redaction and native share previews.", score: "81" },
+      { builder: builders[0], why: "SideProject Radar", detail: "Release cadence: 4 tags in 30 days. Latest: v2.1.0.", score: "Featured", pick: "PRBar pick" },
+      { builder: builders[1], why: "Launch Sprint Kit", detail: "Founder-ready kit with billing, onboarding, and handoff receipts.", score: "92 votes", pick: "Community" },
+      { builder: builders[2], why: "iOS Proof Cards", detail: "Mobile receipt studio with redaction and native share previews.", score: "71 votes", pick: "Nominated" },
     ],
   },
   releases: {
     label: "New receipts",
-    eyebrow: "Fresh release evidence",
-    description: "Receipts that show what changed, which PRs landed, and where the source came from.",
+    eyebrow: "Fresh featured receipts",
+    description: "Vote on proof-backed releases and browse the receipts PRBar thinks deserve a closer look.",
     items: releases.map((release) => ({
       builder: release.builder,
       why: release.title,
       detail: release.summary,
       score: release.facts[0],
+      pick: "Fresh",
     })),
   },
 };
@@ -221,6 +233,53 @@ function builderCard(builder, options = {}) {
   `;
 }
 
+function miniProofHistogram() {
+  return `
+    <div class="mini-proof-histogram" aria-label="PR distribution by day">
+      <i style="height: 34%"></i>
+      <i style="height: 58%"></i>
+      <i style="height: 42%"></i>
+      <i style="height: 76%"></i>
+      <i style="height: 64%"></i>
+      <i style="height: 100%"></i>
+      <i style="height: 82%"></i>
+    </div>
+  `;
+}
+
+function networkPost(post) {
+  const { release } = post;
+  return `
+    <article class="network-post">
+      <div class="post-actor">
+        <span class="avatar">${release.builder.initials}</span>
+        <div>
+          <h2>${release.builder.handle} ${post.action}</h2>
+          <p>${release.project} · ${release.date} · ${release.builder.domains.join(" / ")}</p>
+        </div>
+        <a href="#/profile">Follow</a>
+      </div>
+      <p class="post-note">${post.note}</p>
+      <div class="post-proof">
+        <div>
+          <span>Receipt</span>
+          <h3>${release.title}</h3>
+          ${statPills(release.facts)}
+        </div>
+        ${miniProofHistogram()}
+      </div>
+      <div class="source-row">
+        <code>${release.builder.repo} ${release.builder.tag}</code>
+        <div class="post-actions">
+          <a href="#/receipt">Inspect receipt</a>
+          <a href="#/project">View project</a>
+          <a href="#/talent">${post.ask}</a>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
 function homePage() {
   return shell(`
     <section class="hero">
@@ -229,7 +288,7 @@ function homePage() {
         <h1>You ship (real) fast with AI.</h1>
         <p class="lede">Show the world your receipts.</p>
         <div class="action-row">
-          <a class="primary" href="#/network">Explore proof network</a>
+          <a class="primary" href="#/network">Open Connect</a>
           <a class="secondary" href="#/boards">See what is shipping</a>
         </div>
       </div>
@@ -299,8 +358,8 @@ function homePage() {
       </div>
     </section>
     <section class="surface-grid">
-      <a class="surface-card" href="#/network"><span>01</span><h2>Proof Network</h2><p>Follow high-velocity AI builders.</p></a>
-      <a class="surface-card" href="#/boards"><span>02</span><h2>Momentum Boards</h2><p>Find the builders, projects, and releases moving fastest this week.</p></a>
+      <a class="surface-card" href="#/network"><span>01</span><h2>Connect</h2><p>Follow high-velocity AI builders.</p></a>
+      <a class="surface-card" href="#/boards"><span>02</span><h2>Momentum Boards</h2><p>Community-ranked momentum, curated by PRBar.</p></a>
       <a class="surface-card" href="#/talent"><span>03</span><h2>Talent Board</h2><p>Scout builders with recent proof, relevant stacks, and clear availability.</p></a>
     </section>
   `);
@@ -309,20 +368,31 @@ function homePage() {
 function networkPage() {
   return shell(`
     <section class="page-hero">
-      <p class="eyebrow">Proof Network</p>
-      <h1>Work worth following.</h1>
-      <p>Every post traces back to releases, merged PRs, selected repos, and builder context.</p>
+      <p class="eyebrow">Connect</p>
+      <h1>Follow high-velocity AI builders.</h1>
+      <p>See what they shipped, ask how they did it, and keep up with people building at AI speed.</p>
+      <div class="network-tabs" aria-label="Connect filters">
+        <button class="active" type="button">Receipts</button>
+        <button type="button">Builders</button>
+        <button type="button">Projects</button>
+        <button type="button">Questions</button>
+      </div>
     </section>
     <section class="network-layout">
       <div class="feed">
-        ${releases.map((release) => receiptCard(release)).join("")}
+        ${networkPosts.map((post) => networkPost(post)).join("")}
       </div>
       <aside class="side-panel">
+        <div class="network-brief">
+          <span>Connect signal</span>
+          <h2>Receipts start conversations.</h2>
+          <p>Follow receipts, ask about workflows, and go deeper into the person and project behind each shipped thing.</p>
+        </div>
         ${builderCard(builders[0], { featured: true })}
         <div class="proof-rule">
           <h2>What counts here</h2>
-          <p>PRs merged, releases tagged, tests added, projects launched. Token totals stay out of the score.</p>
-          ${statPills(["GitHub source", "Repo selection", "Private redaction"])}
+          <p>PRs merged, releases tagged, tests added, projects launched, and source-linked receipts.</p>
+          ${statPills(["GitHub source", "Release tags", "Repo selection", "Private redaction"])}
         </div>
       </aside>
     </section>
@@ -334,7 +404,7 @@ function boardsPage(activeView = "rising") {
   return shell(`
     <section class="page-hero dark">
       <p class="eyebrow">${view.eyebrow}</p>
-      <h1>See who is shipping.</h1>
+      <h1>See what deserves attention.</h1>
       <p>${view.description}</p>
       <div class="board-tabs" role="tablist" aria-label="Momentum board views">
         ${Object.entries(boardViews).map(([key, item]) => `<button class="${key === activeView ? "active" : ""}" data-board="${key}" type="button">${item.label}</button>`).join("")}
@@ -363,13 +433,17 @@ function boardsPage(activeView = "rising") {
                   <h3>${item.builder.handle}</h3>
                   <p>${item.builder.domains.join(" / ")}</p>
                 </div>
-                <b>${item.score}</b>
+                <b>${item.pick}</b>
               </div>
               <h2>${item.why}</h2>
               <p>${item.detail}</p>
               <div class="source-row">
                 <code>${item.builder.repo} ${item.builder.tag}</code>
-                <a href="#/receipt">Receipts behind rank</a>
+                <div class="board-actions">
+                  <span>${item.score}</span>
+                  <a href="#/receipt">Receipts behind rank</a>
+                  <button type="button">Vote</button>
+                </div>
               </div>
             </div>
           </article>
@@ -591,7 +665,7 @@ function placeholderPage(label) {
       <p class="eyebrow">Route not found</p>
       <h1>${label}</h1>
       <p>This mockup route is not part of the current prototype walkthrough.</p>
-      <div class="action-row"><a class="primary" href="#/boards">Back to Boards</a><a class="secondary light" href="#/network">Open Network</a></div>
+      <div class="action-row"><a class="primary" href="#/boards">Back to Boards</a><a class="secondary light" href="#/network">Open Connect</a></div>
     </section>
   `);
 }
