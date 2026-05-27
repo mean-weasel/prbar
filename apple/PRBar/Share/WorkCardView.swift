@@ -31,7 +31,7 @@ struct WorkCardView: View {
       .accessibilityLabel("Card distribution chart")
 
       HStack(alignment: .firstTextBaseline) {
-        Text(draft.showHandle ? "@neonwatty" : "handle hidden")
+        Text(draft.showHandle ? source.handle : "handle hidden")
         Spacer(minLength: 12)
         Text(repoLine)
           .lineLimit(1)

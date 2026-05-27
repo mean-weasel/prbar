@@ -45,7 +45,7 @@ struct WorkCardEvidenceView: View {
       Spacer(minLength: 0)
 
       HStack {
-        Text(draft.showHandle ? "@neonwatty" : "handle hidden")
+        Text(draft.showHandle ? source.handle : "handle hidden")
         Spacer()
         Text("evidence side")
       }

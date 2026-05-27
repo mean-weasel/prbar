@@ -14,6 +14,7 @@ enum WorkCardRenderer {
     var captionKind: String
     var repoNames: [String]
     var notes: String
+    var handle: String
   }
 
   struct EvidenceItem: Identifiable, Equatable {
@@ -36,7 +37,8 @@ enum WorkCardRenderer {
         caption: "Based on \(store.prRange.rawValue) merged PR activity from selected repositories",
         captionKind: "Progress recap",
         repoNames: repoNames,
-        notes: "A visible proof-of-work snapshot from PRBar."
+        notes: "A visible proof-of-work snapshot from PRBar.",
+        handle: handle(for: store)
       )
 
     case .releaseReceipt(let releaseID):
@@ -49,7 +51,8 @@ enum WorkCardRenderer {
           caption: "Based on GitHub Release notes from selected repositories",
           captionKind: "Launch note",
           repoNames: [],
-          notes: "No release notes available."
+          notes: "No release notes available.",
+          handle: handle(for: store)
         )
       }
 
@@ -63,7 +66,8 @@ enum WorkCardRenderer {
         caption: "Based on \(sourceLabel) from \(repository?.name ?? release.repoID) on \(shortDateLabel(for: release.date))",
         captionKind: "Launch note",
         repoNames: [repository?.name ?? release.repoID],
-        notes: release.notes
+        notes: release.notes,
+        handle: handle(for: store)
       )
     }
   }
@@ -137,6 +141,13 @@ enum WorkCardRenderer {
 
   private static func repository(for id: Repository.ID, in store: PRBarStore) -> Repository? {
     store.repositories.first { $0.id == id }
+  }
+
+  private static func handle(for store: PRBarStore) -> String {
+    guard let login = store.githubConnection.user?.login, login.isEmpty == false else {
+      return "@github-user"
+    }
+    return "@\(login)"
   }
 
   private static func selectedRelease(for store: PRBarStore, draftReleaseID: ReleaseMoment.ID) -> ReleaseMoment? {
