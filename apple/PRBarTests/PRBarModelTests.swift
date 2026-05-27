@@ -552,6 +552,7 @@ final class PRBarModelTests: XCTestCase {
   }
 
   func testFinishingRepositorySetupRefreshesActivityForIncludedRepositories() {
+    let refreshDate = SampleData.dateTime("2026-05-24T21:15:00Z")
     let store = PRBarStore.sample(
       authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore(), session: .fixture),
       repositoryProvider: StaticGitHubRepositoryProvider(
@@ -572,7 +573,8 @@ final class PRBarModelTests: XCTestCase {
           anchorDate: SampleData.date("2026-05-24")
         )
       ),
-      repositorySelectionStore: InMemoryRepositorySelectionStore()
+      repositorySelectionStore: InMemoryRepositorySelectionStore(),
+      currentDate: { refreshDate }
     )
 
     store.connectGitHub()
@@ -581,6 +583,7 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#39"])
     XCTAssertEqual(store.releases.map(\.id), ["mean-weasel/prbar@release:v1.4.0"])
     XCTAssertEqual(store.activityAnchorDate, SampleData.date("2026-05-24"))
+    XCTAssertEqual(store.lastActivityRefreshAt, refreshDate)
   }
 
   func testActivityRefreshFailureKeepsSampleActivityAndShowsIssue() {
@@ -606,6 +609,7 @@ final class PRBarModelTests: XCTestCase {
 
   @MainActor
   func testRefreshingActivityReplacesPRsAndReleasesForIncludedRepositories() async {
+    let refreshDate = SampleData.dateTime("2026-05-24T22:00:00Z")
     let refreshedSnapshot = GitHubActivitySnapshot(
       pullRequests: [
         PullRequest(id: "mean-weasel/prbar#90", title: "Refresh merged PR", repoID: "mean-weasel/prbar", number: 90, mergedAt: SampleData.dateTime("2026-05-24T19:00:00Z")),
@@ -618,7 +622,8 @@ final class PRBarModelTests: XCTestCase {
       anchorDate: SampleData.date("2026-05-24")
     )
     let store = PRBarStore.sample(
-      activityProvider: SequencedGitHubActivityProvider(snapshots: [refreshedSnapshot])
+      activityProvider: SequencedGitHubActivityProvider(snapshots: [refreshedSnapshot]),
+      currentDate: { refreshDate }
     )
     store.repositories = [
       Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub"),
@@ -630,6 +635,7 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#90"])
     XCTAssertEqual(store.releases.map(\.id), ["mean-weasel/prbar@release:v2.0.0"])
     XCTAssertEqual(store.activityAnchorDate, SampleData.date("2026-05-24"))
+    XCTAssertEqual(store.lastActivityRefreshAt, refreshDate)
     XCTAssertNil(store.activityRefreshIssue)
     XCTAssertFalse(store.isRefreshingActivity)
   }
@@ -638,10 +644,13 @@ final class PRBarModelTests: XCTestCase {
   func testRefreshingActivityFailureStaysInPlaceAndRecordsRefreshIssue() async {
     let store = PRBarStore.sample(activityProvider: ThrowingGitHubActivityProvider())
     let originalPullRequests = store.pullRequests
+    let originalRefreshDate = SampleData.dateTime("2026-05-24T08:00:00Z")
+    store.lastActivityRefreshAt = originalRefreshDate
 
     await store.refreshActivity()
 
     XCTAssertEqual(store.pullRequests, originalPullRequests)
+    XCTAssertEqual(store.lastActivityRefreshAt, originalRefreshDate)
     XCTAssertEqual(store.activityRefreshIssue?.id, "github-auth-failed")
     XCTAssertFalse(store.isRefreshingActivity)
   }

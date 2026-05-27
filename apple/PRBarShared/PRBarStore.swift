@@ -18,10 +18,12 @@ final class PRBarStore {
   var githubConnection: GitHubConnection
   var isRefreshingActivity = false
   var activityRefreshIssue: AuthIssue?
+  var lastActivityRefreshAt: Date?
   private let authService: GitHubAuthServicing
   private let repositoryProvider: GitHubRepositoryProviding
   private let activityProvider: GitHubActivityProviding
   private let repositorySelectionStore: RepositorySelectionStoring
+  private let currentDate: @Sendable () -> Date
 
   private static let fixtureCalendar: Calendar = {
     var calendar = Calendar(identifier: .gregorian)
@@ -46,7 +48,8 @@ final class PRBarStore {
     authService: GitHubAuthServicing = StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore()),
     repositoryProvider: GitHubRepositoryProviding = StaticGitHubRepositoryProvider(repositories: SampleData.repositories),
     activityProvider: GitHubActivityProviding = StaticGitHubActivityProvider(),
-    repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore()
+    repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore(),
+    currentDate: @escaping @Sendable () -> Date = Date.init
   ) {
     self.repositories = repositories
     self.pullRequests = pullRequests
@@ -65,13 +68,15 @@ final class PRBarStore {
     self.repositoryProvider = repositoryProvider
     self.activityProvider = activityProvider
     self.repositorySelectionStore = repositorySelectionStore
+    self.currentDate = currentDate
   }
 
   static func sample(
     authService: GitHubAuthServicing = StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore()),
     repositoryProvider: GitHubRepositoryProviding = StaticGitHubRepositoryProvider(repositories: SampleData.repositories),
     activityProvider: GitHubActivityProviding = StaticGitHubActivityProvider(),
-    repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore()
+    repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore(),
+    currentDate: @escaping @Sendable () -> Date = Date.init
   ) -> PRBarStore {
     PRBarStore(
       repositories: SampleData.repositories,
@@ -83,7 +88,8 @@ final class PRBarStore {
       authService: authService,
       repositoryProvider: repositoryProvider,
       activityProvider: activityProvider,
-      repositorySelectionStore: repositorySelectionStore
+      repositorySelectionStore: repositorySelectionStore,
+      currentDate: currentDate
     )
   }
 
@@ -191,6 +197,7 @@ final class PRBarStore {
         lookbackDays: 30
       )
       applyActivitySnapshot(snapshot)
+      lastActivityRefreshAt = currentDate()
       self.selectedPRDate = selectedPRDate
       self.selectedReleaseDate = selectedReleaseDate
       if let selectedReleaseID, releases.contains(where: { $0.id == selectedReleaseID }) {
@@ -229,6 +236,8 @@ final class PRBarStore {
       lookbackDays: 30
     )
     applyActivitySnapshot(snapshot)
+    lastActivityRefreshAt = currentDate()
+    activityRefreshIssue = nil
   }
 
   private func applyActivitySnapshot(_ snapshot: GitHubActivitySnapshot) {

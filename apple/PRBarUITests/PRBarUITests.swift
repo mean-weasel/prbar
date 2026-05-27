@@ -86,6 +86,10 @@ final class PRBarUITests: XCTestCase {
     app.textFields["repo-search-field"].typeText("docs")
     XCTAssertTrue(app.switches["Include docs-site"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Documentation releases"].exists)
+    app.buttons["Select visible"].tap()
+    XCTAssertTrue(app.staticTexts["4 selected"].waitForExistence(timeout: 2))
+    app.buttons["Clear visible"].tap()
+    XCTAssertTrue(app.staticTexts["3 selected"].waitForExistence(timeout: 2))
 
     app.buttons["Clear repo search"].tap()
     app.buttons["Blocked"].tap()
@@ -100,11 +104,14 @@ final class PRBarUITests: XCTestCase {
     app.launch()
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Not refreshed yet"].waitForExistence(timeout: 2))
     app.buttons["Refresh activity"].tap()
+    XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
 
     app.tabBars.buttons["Releases"].tap()
     XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 2))
     app.buttons["Refresh activity"].tap()
     XCTAssertTrue(app.staticTexts["v9.9.9 UI refresh release"].waitForExistence(timeout: 4))
   }

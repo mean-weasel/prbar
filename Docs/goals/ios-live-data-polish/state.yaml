@@ -1,0 +1,370 @@
+version: 2
+
+goal:
+  title: iOS Live Data Polish
+  slug: ios-live-data-polish
+  kind: specific
+  tranche: "Complete one coherent product slice that makes iOS GitHub live data feel fresh, trustworthy, recoverable, and scalable for larger repo lists."
+  status: active
+  oracle:
+    signal: "A user-visible iOS walkthrough plus automated simulator checks demonstrate last-refreshed/sync status, loading/empty/error states, and scalable repo selection against GitHub-backed data."
+    cadence: "After each Worker package and at final audit."
+    final_proof: "Merged PR with relevant unit/UI tests, post-merge main iOS success, and a successful iOS Physical Preview workflow on iPhone-preview."
+  intake:
+    original_request: "Make a detailed plan for the next iOS app tranche: live-data polish and sync state."
+    interpreted_outcome: "The iOS app feels trustworthy with real GitHub data through visible sync state, resilient loading/error/empty states, scalable repo selection, and verified simulator plus Preview iPhone runs."
+    input_shape: specific
+    audience: "High-velocity GitHub users checking PR and release activity from iPhone."
+    authority: requested
+    proof_type: test
+    completion_proof: "A merged PR proves the iOS live-data polish slice with tests, post-merge main iOS success, and a successful iOS Physical Preview run on iPhone-preview."
+    likely_misfire: "Shipping cosmetic UI while leaving refresh freshness, GitHub failures, or repo inclusion unclear."
+    blind_spots_considered:
+      - "Refresh freshness may be ambiguous unless timestamp and failure states are explicit."
+      - "Large GitHub accounts need repo search/filter behavior, not horizontal browsing."
+      - "GitHub failures include auth expiry, rate limits, network failures, and repo permission or SSO blockers."
+      - "Physical Preview should verify the real device path after merge but should not become a fragile required PR gate without further reliability work."
+    existing_plan_facts:
+      - "Physical Preview iPhone infrastructure is now passing on main."
+      - "The next product PR should focus on live sync state, loading/error/empty states, and repo selection polish."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/ios-live-data-polish/"
+    command: "npx goalbuddy board docs/goals/ios-live-data-polish"
+
+active_task: T005
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Map the current iOS GitHub live-data, refresh, repo-selection, and test surfaces without changing implementation files."
+    inputs:
+      - "docs/goals/ios-live-data-polish/goal.md"
+      - "Current repository state"
+    constraints:
+      - "Read-only."
+      - "Do not alter product files."
+      - "Identify exact files, data flow, and existing tests relevant to sync state, errors, empty states, and repo selection."
+    expected_output:
+      - "Relevant SwiftUI/store/model/test files."
+      - "Current refresh and selected-repo data flow."
+      - "Existing verification commands and any known flaky spots."
+      - "Risks or ambiguities that require Judge decision."
+    receipt:
+      result: done
+      summary: "Mapped iOS live-data surfaces. Store already supports async refresh with isRefreshingActivity and activityRefreshIssue, PRs/Releases expose pull-to-refresh and toolbar refresh, RepositorySetupView has search/filter/selected count, and tests cover repo search plus refresh success/failure. Main gaps: no visible last-refreshed/sync timestamp, weak first-sync/loading/empty states, coarse GitHub error taxonomy, no bulk repo actions, and no UI tests for sync status or refresh failures."
+      evidence:
+        - "apple/PRBarShared/PRBarStore.swift:19"
+        - "apple/PRBarShared/PRBarStore.swift:168"
+        - "apple/PRBar/PRs/PRsView.swift:72"
+        - "apple/PRBar/Releases/ReleasesView.swift:46"
+        - "apple/PRBar/More/RepositorySetupView.swift:51"
+        - "apple/PRBarUITests/PRBarUITests.swift:75"
+        - "apple/PRBarUITests/PRBarUITests.swift:97"
+        - "apple/PRBarTests/PRBarModelTests.swift:607"
+        - "apple/PRBarTests/PRBarModelTests.swift:637"
+        - ".github/workflows/ios.yml:71"
+        - ".github/workflows/ios-physical-preview.yml:24"
+      risks:
+        - "Main checkout contains unrelated dirty macOS/web files, so implementation should use an isolated worktree or strict staging."
+        - "Regular simulator UI smoke has shown occasional tab-tap flakiness in merge queue; do not overfit product changes to one failed queue run."
+        - "GitHubActivityError and GitHubRepositoryError are coarse, so nuanced rate-limit/auth/network messaging may require shared model changes."
+      spawned_tasks:
+        - T002
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: default
+    objective: "Choose the first safe implementation package for live-data trust and repo-selection polish."
+    inputs:
+      - "T001 receipt"
+      - "docs/goals/ios-live-data-polish/goal.md"
+    constraints:
+      - "Prefer one coherent user-visible slice over tiny helper-only work."
+      - "Bound allowed files to the minimum SwiftUI/shared/test/docs set needed."
+      - "Require verification strong enough to catch refresh, error, and repo-filter regressions."
+    expected_output:
+      - "Decision: approved implementation package or request more scouting."
+      - "Exact Worker objective."
+      - "allowed_files."
+      - "verify commands."
+      - "stop_if conditions."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      summary: "Approve one vertical Worker slice: add visible iOS sync/freshness state, robust PRs/Releases loading-empty-error presentation, and repo-selection bulk polish with deterministic tests. This is the largest safe useful slice because it directly addresses the goal oracle without redesigning auth, GitHub transport, share cards, or macOS surfaces."
+      allowed_files:
+        - "apple/PRBarShared/PRBarModels.swift"
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBarShared/GitHubActivity.swift"
+        - "apple/PRBar/Components/**"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/More/RepositorySetupView.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "docs/goals/ios-live-data-polish/**"
+      verify:
+        - "git diff --check"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/LiveDataPolishUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos"
+      stop_if:
+        - "Need files outside allowed_files."
+        - "GitHub auth or privacy behavior requires a product decision."
+        - "Implementation requires backend infrastructure or new credentials."
+        - "Local verification fails twice for the same unexplained reason."
+      rationale: "The first slice should not chase lower-level transport taxonomy alone. It should make the current live-data UX trustworthy: users see when refresh is happening, when data was last refreshed, when there is nothing to show, when GitHub failed, and how many visible repos they can select or clear."
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: default
+    objective: "Implement the Judge-selected iOS live-data trust and repo-selection polish package."
+    inputs:
+      - "T002 receipt"
+      - "docs/goals/ios-live-data-polish/goal.md"
+    constraints:
+      - "Write only inside allowed_files selected by Judge."
+      - "Preserve existing app architecture and shared macOS compatibility."
+      - "Do not broaden scope into unrelated share-card, releases, or macOS polish unless Judge explicitly includes it."
+    allowed_files:
+      - "apple/PRBarShared/PRBarModels.swift"
+      - "apple/PRBarShared/PRBarStore.swift"
+      - "apple/PRBarShared/GitHubActivity.swift"
+      - "apple/PRBar/Components/**"
+      - "apple/PRBar/PRs/PRsView.swift"
+      - "apple/PRBar/Releases/ReleasesView.swift"
+      - "apple/PRBar/More/RepositorySetupView.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "docs/goals/ios-live-data-polish/**"
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/LiveDataPolishUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "GitHub auth semantics or privacy behavior become ambiguous."
+      - "Local verification fails twice for the same unexplained reason."
+      - "Implementation requires new credentials, backend infrastructure, or destructive repo changes."
+    receipt:
+      result: done
+      summary: "Implemented the first iOS live-data trust slice. PRs and Releases now show shared sync/freshness status, including refreshing, last refreshed, not-yet-refreshed, and refresh-failed states. PRs and Releases also have clearer empty states for no included activity or no selected-day release. Repository setup now supports visible bulk selection and clearing for filtered repo lists."
+      changed_files:
+        - "apple/PRBarShared/PRBarStore.swift"
+        - "apple/PRBar/Components/ActivitySyncStatusView.swift"
+        - "apple/PRBar/Components/ActivityEmptyStateView.swift"
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/Releases/ReleasesView.swift"
+        - "apple/PRBar/More/RepositorySetupView.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+      verification:
+        - command: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          result: "passed: 42 tests, 0 failures"
+        - command: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/LiveDataPolishUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos"
+          result: "passed: 2 UI tests, 0 failures"
+        - command: "git diff --check"
+          result: "passed"
+      evidence:
+        - "apple/PRBarShared/PRBarStore.swift: lastActivityRefreshAt records successful refreshes"
+        - "apple/PRBar/Components/ActivitySyncStatusView.swift: reusable sync/freshness component"
+        - "apple/PRBar/Components/ActivityEmptyStateView.swift: reusable empty-state component"
+        - "apple/PRBarUITests/PRBarUITests.swift: sync status and repo bulk-selection UI coverage"
+      notes:
+        - "The PR will need careful staging because the main checkout has unrelated dirty work and this worktree has a new GoalBuddy directory."
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: default
+    objective: "Review the implemented slice for product fit, regression risk, and verification adequacy before PR."
+    inputs:
+      - "T003 receipt"
+      - "Current diff"
+      - "Verification output"
+    constraints:
+      - "Read-only."
+      - "Prioritize bugs, missing states, unclear freshness semantics, and test gaps."
+    expected_output:
+      - "approved | needs_changes"
+      - "Specific required fixes if not approved."
+      - "Whether the slice is ready for PR and merge-queue verification."
+    receipt:
+      result: needs_changes
+      summary: "Product shape and tests are broadly good, but the shared sync card can show inconsistent copy while retrying after a failure: title/icon switch to refreshing while detail can still show the stale failure message. Require a focused fix so refreshing state owns both title and detail."
+      required_fixes:
+        - "When isRefreshing is true, ActivitySyncStatusView detail should describe the active sync instead of any previous activityRefreshIssue."
+      full_outcome_complete: false
+  - id: T003A
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: minimal
+    objective: "Fix retry-state copy in the shared iOS activity sync status card and re-verify the focused checks."
+    inputs:
+      - "T004 receipt"
+      - "apple/PRBar/Components/ActivitySyncStatusView.swift"
+    constraints:
+      - "Only edit ActivitySyncStatusView and GoalBuddy receipts unless tests require a minimal update."
+      - "Do not broaden the product slice."
+    allowed_files:
+      - "apple/PRBar/Components/ActivitySyncStatusView.swift"
+      - "Docs/goals/ios-live-data-polish/**"
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/LiveDataPolishUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos"
+    stop_if:
+      - "The fix requires changing store refresh semantics instead of display semantics."
+    receipt:
+      result: done
+      summary: "Fixed ActivitySyncStatusView so active refresh state owns both title and detail copy, avoiding stale failure text during retry."
+      changed_files:
+        - "apple/PRBar/Components/ActivitySyncStatusView.swift"
+      verification:
+        - command: "git diff --check"
+          result: "passed"
+        - command: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          result: "passed: 42 tests, 0 failures"
+        - command: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/LiveDataPolishUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos"
+          result: "passed: 2 UI tests, 0 failures"
+  - id: T004A
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: default
+    objective: "Re-review the implemented slice after retry-state copy is fixed."
+    inputs:
+      - "T003 receipt"
+      - "T003A receipt"
+      - "Current diff"
+      - "Verification output"
+    constraints:
+      - "Read-only."
+    expected_output:
+      - "approved | needs_changes"
+      - "Whether the slice is ready for PR and merge-queue verification."
+    receipt:
+      result: approved
+      summary: "Approved for PR. The slice directly addresses the live-data polish oracle with visible sync/freshness state, clearer empty states, scalable repo-selection bulk actions, deterministic model tests, and focused simulator UI coverage. The retry-state copy issue from T004 was fixed and re-verified."
+      full_outcome_complete: false
+      ready_for_pr: true
+      remaining_completion_evidence:
+        - "PR created and checks pass"
+        - "PR merges through merge queue"
+        - "Post-merge main iOS passes"
+        - "iOS Physical Preview workflow passes on iPhone-preview"
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: default
+    objective: "Prepare and publish the PR for the approved iOS live-data polish slice, then monitor required checks."
+    inputs:
+      - "T004 receipt"
+      - "Current branch and diff"
+    constraints:
+      - "Do not include unrelated dirty local work."
+      - "PR body must describe user-visible behavior and verification."
+      - "Use merge queue when checks are green."
+    allowed_files:
+      - "docs/goals/ios-live-data-polish/goal.md"
+      - "docs/goals/ios-live-data-polish/state.yaml"
+      - "docs/goals/ios-live-data-polish/notes/**"
+    verify:
+      - "git diff --check"
+      - "Relevant iOS unit/UI checks selected by Judge."
+      - "PR checks pass."
+    stop_if:
+      - "Unrelated dirty work would be included."
+      - "Required checks fail with a non-flaky product regression."
+      - "Merge queue reports conflicts that require implementation changes outside approved scope."
+    receipt: null
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: default
+    objective: "After merge, verify post-merge main iOS and run the iOS Physical Preview workflow on iPhone-preview."
+    inputs:
+      - "Merged PR link"
+      - "GitHub Actions run links"
+    constraints:
+      - "Do not declare the tranche complete until both normal main iOS and physical Preview iPhone evidence are known."
+      - "If physical Preview fails, identify whether the blocker is Automation Mode, device lock/offline, signing, build, or UI smoke."
+    allowed_files:
+      - "docs/goals/ios-live-data-polish/state.yaml"
+      - "docs/goals/ios-live-data-polish/notes/**"
+    verify:
+      - "main CI/iOS status check inspection"
+      - "iOS Physical Preview workflow_dispatch on main with device_name=iPhone-preview"
+    stop_if:
+      - "GitHub Actions access is unavailable."
+      - "The physical device is offline or locked and requires operator action."
+    receipt: null
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: default
+    objective: "Audit whether the current iOS live-data polish tranche is complete."
+    inputs:
+      - "All task receipts"
+      - "Merged PR"
+      - "Post-merge main iOS result"
+      - "iOS Physical Preview result"
+    constraints:
+      - "Read-only."
+      - "Do not mark complete if only planning or partial implementation is done."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Missing evidence if not complete."
+      - "Next task if not complete."
+    receipt: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: passed
+    task: T003
+    commands:
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/LiveDataPolishUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases -only-testing:PRBarUITests/PRBarUITests/testRepositorySetupSearchAndFiltersRepos"
+      - "git diff --check"
