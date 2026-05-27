@@ -94,4 +94,37 @@ final class GitHubActivityTests: XCTestCase {
       XCTAssertEqual(error as? GitHubActivityError, .missingSession)
     }
   }
+
+  func testGitHubAPIErrorMapperClassifiesRateLimitAndSSOResponses() {
+    let resetDate = Date(timeIntervalSince1970: 1_779_904_000)
+
+    XCTAssertEqual(
+      GitHubAPIErrorMapper.error(
+        statusCode: 403,
+        headers: ["x-ratelimit-remaining": "0", "x-ratelimit-reset": "1779904000"],
+        body: Data(#"{"message":"API rate limit exceeded"}"#.utf8)
+      ),
+      .rateLimited(resetAt: resetDate)
+    )
+
+    XCTAssertEqual(
+      GitHubAPIErrorMapper.error(
+        statusCode: 403,
+        headers: [:],
+        body: Data(#"{"message":"Resource protected by organization SAML enforcement"}"#.utf8)
+      ),
+      .ssoRequired
+    )
+  }
+
+  func testGitHubAPIErrorMapperClassifiesNetworkFailures() {
+    XCTAssertEqual(
+      GitHubAPIErrorMapper.networkError(for: URLError(.notConnectedToInternet)) as? GitHubAPIError,
+      .networkUnavailable
+    )
+    XCTAssertEqual(
+      GitHubAPIErrorMapper.networkError(for: URLError(.timedOut)) as? GitHubAPIError,
+      .timedOut
+    )
+  }
 }

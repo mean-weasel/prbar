@@ -3,6 +3,7 @@ import SwiftUI
 struct ActivitySyncStatusView: View {
   var isRefreshing: Bool
   var lastRefreshedAt: Date?
+  var lastRefreshAttemptAt: Date?
   var issue: AuthIssue?
 
   var body: some View {
@@ -32,6 +33,9 @@ struct ActivitySyncStatusView: View {
   private var statusIcon: some View {
     if isRefreshing {
       ProgressView()
+    } else if issue != nil && lastRefreshedAt != nil {
+      Image(systemName: "clock.badge.exclamationmark.fill")
+        .foregroundStyle(.orange)
     } else if issue != nil {
       Image(systemName: "exclamationmark.triangle.fill")
         .foregroundStyle(.orange)
@@ -44,6 +48,9 @@ struct ActivitySyncStatusView: View {
   private var title: String {
     if isRefreshing {
       return "Refreshing GitHub activity"
+    }
+    if issue != nil && lastRefreshedAt != nil {
+      return "Showing last synced data"
     }
     if issue != nil {
       return "Last refresh failed"
@@ -59,12 +66,22 @@ struct ActivitySyncStatusView: View {
       return "Syncing included repositories from GitHub."
     }
     if let issue {
+      if let lastRefreshedAt {
+        return "\(attemptLabel) \(issue.message) Showing data from \(dateFormatter.string(from: lastRefreshedAt))."
+      }
       return issue.message
     }
     if let lastRefreshedAt {
       return dateFormatter.string(from: lastRefreshedAt)
     }
     return "Pull to refresh or use the refresh button to sync included repos."
+  }
+
+  private var attemptLabel: String {
+    guard let lastRefreshAttemptAt else {
+      return "Retry failed."
+    }
+    return "Retry failed \(dateFormatter.string(from: lastRefreshAttemptAt))."
   }
 
   private var dateFormatter: DateFormatter {
@@ -80,9 +97,9 @@ struct ActivitySyncStatusView: View {
 
 #Preview {
   VStack {
-    ActivitySyncStatusView(isRefreshing: false, lastRefreshedAt: Date(), issue: nil)
-    ActivitySyncStatusView(isRefreshing: true, lastRefreshedAt: nil, issue: nil)
-    ActivitySyncStatusView(isRefreshing: false, lastRefreshedAt: nil, issue: AuthIssue(id: "issue", title: "Issue", message: "GitHub was unavailable."))
+    ActivitySyncStatusView(isRefreshing: false, lastRefreshedAt: Date(), lastRefreshAttemptAt: Date(), issue: nil)
+    ActivitySyncStatusView(isRefreshing: true, lastRefreshedAt: nil, lastRefreshAttemptAt: Date(), issue: nil)
+    ActivitySyncStatusView(isRefreshing: false, lastRefreshedAt: Date(), lastRefreshAttemptAt: Date(), issue: AuthIssue(id: "issue", title: "Issue", message: "GitHub was unavailable."))
   }
   .padding()
 }

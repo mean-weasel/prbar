@@ -6,6 +6,18 @@ enum GitHubRepositoryError: Error, Equatable {
   case invalidResponse
 }
 
+enum GitHubAPIError: Error, Equatable, Sendable {
+  case unauthorized
+  case forbidden
+  case ssoRequired
+  case rateLimited(resetAt: Date?)
+  case notFound
+  case server(statusCode: Int)
+  case invalidResponse(statusCode: Int)
+  case networkUnavailable
+  case timedOut
+}
+
 enum GitHubRepositoryRequest {
   static func userRepositories(token: String, page: Int) throws -> URLRequest {
     guard
@@ -41,15 +53,24 @@ struct URLSessionGitHubRepositoryTransport: GitHubRepositoryTransport {
     URLSession.shared.dataTask(with: request) { data, response, error in
       defer { semaphore.signal() }
       if let error {
-        box.result = .failure(error)
+        box.result = .failure(GitHubAPIErrorMapper.networkError(for: error))
         return
       }
       guard
         let httpResponse = response as? HTTPURLResponse,
-        (200..<300).contains(httpResponse.statusCode),
         let data
       else {
         box.result = .failure(GitHubRepositoryError.invalidResponse)
+        return
+      }
+      guard (200..<300).contains(httpResponse.statusCode) else {
+        box.result = .failure(
+          GitHubAPIErrorMapper.error(
+            statusCode: httpResponse.statusCode,
+            headers: httpResponse.allHeaderFields,
+            body: data
+          )
+        )
         return
       }
       box.result = .success(data)
@@ -60,22 +81,97 @@ struct URLSessionGitHubRepositoryTransport: GitHubRepositoryTransport {
   }
 }
 
+enum GitHubAPIErrorMapper {
+  static func networkError(for error: Error) -> Error {
+    guard let urlError = error as? URLError else {
+      return error
+    }
+
+    switch urlError.code {
+    case .notConnectedToInternet, .networkConnectionLost, .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed:
+      return GitHubAPIError.networkUnavailable
+    case .timedOut:
+      return GitHubAPIError.timedOut
+    default:
+      return error
+    }
+  }
+
+  static func error(statusCode: Int, headers: [AnyHashable: Any], body: Data?) -> GitHubAPIError {
+    switch statusCode {
+    case 401:
+      return .unauthorized
+    case 403:
+      if isRateLimited(headers: headers, body: body) {
+        return .rateLimited(resetAt: resetDate(headers: headers))
+      }
+      if bodyText(body).localizedCaseInsensitiveContains("saml") ||
+        bodyText(body).localizedCaseInsensitiveContains("sso") {
+        return .ssoRequired
+      }
+      return .forbidden
+    case 404:
+      return .notFound
+    case 429:
+      return .rateLimited(resetAt: retryDate(headers: headers) ?? resetDate(headers: headers))
+    case 500...599:
+      return .server(statusCode: statusCode)
+    default:
+      return .invalidResponse(statusCode: statusCode)
+    }
+  }
+
+  private static func isRateLimited(headers: [AnyHashable: Any], body: Data?) -> Bool {
+    headerValue("x-ratelimit-remaining", in: headers) == "0" ||
+      bodyText(body).localizedCaseInsensitiveContains("rate limit")
+  }
+
+  private static func retryDate(headers: [AnyHashable: Any]) -> Date? {
+    guard let retryAfter = headerValue("retry-after", in: headers), let seconds = TimeInterval(retryAfter) else {
+      return nil
+    }
+    return Date(timeIntervalSinceNow: seconds)
+  }
+
+  private static func resetDate(headers: [AnyHashable: Any]) -> Date? {
+    guard let reset = headerValue("x-ratelimit-reset", in: headers), let seconds = TimeInterval(reset) else {
+      return nil
+    }
+    return Date(timeIntervalSince1970: seconds)
+  }
+
+  private static func headerValue(_ key: String, in headers: [AnyHashable: Any]) -> String? {
+    headers.first { header, _ in
+      String(describing: header).caseInsensitiveCompare(key) == .orderedSame
+    }
+    .map { String(describing: $0.value) }
+  }
+
+  private static func bodyText(_ body: Data?) -> String {
+    body.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+  }
+}
+
 private final class GitHubRepositoryTransportBox: @unchecked Sendable {
   var result: Result<Data, Error>?
 }
 
 final class FixtureGitHubRepositoryTransport: GitHubRepositoryTransport {
-  private var responses: [Data]
+  private var results: [Result<Data, Error>]
 
   init(responses: [Data]) {
-    self.responses = responses
+    self.results = responses.map(Result.success)
+  }
+
+  init(results: [Result<Data, Error>]) {
+    self.results = results
   }
 
   func data(for request: URLRequest) throws -> Data {
-    guard responses.isEmpty == false else {
+    guard results.isEmpty == false else {
       return Data("[]".utf8)
     }
-    return responses.removeFirst()
+    return try results.removeFirst().get()
   }
 }
 

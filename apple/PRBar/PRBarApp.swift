@@ -21,7 +21,9 @@ struct PRBarApp: App {
         authService = StaticGitHubAuthService(sessionStore: sessionStore, session: .fixture)
       }
       repositoryProvider = StaticGitHubRepositoryProvider(repositories: SampleData.repositories)
-      if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-data") {
+      if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-failure") {
+        activityProvider = UITestingFailingGitHubActivityProvider(error: GitHubAPIError.networkUnavailable)
+      } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-data") {
         activityProvider = SequencedGitHubActivityProvider(snapshots: [Self.uiTestingRefreshSnapshot, Self.uiTestingRefreshSnapshot])
       } else {
         activityProvider = StaticGitHubActivityProvider()
@@ -57,6 +59,9 @@ struct PRBarApp: App {
     } else if isUITesting {
       store.routeState = .authenticated
       store.githubConnection = GitHubAuthSession.fixture.connection
+      if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-failure") {
+        store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T08:00:00Z")
+      }
     } else {
       store.restoreGitHubSession()
     }
@@ -67,6 +72,14 @@ struct PRBarApp: App {
     WindowGroup {
       RootTabView(store: store)
     }
+  }
+}
+
+private struct UITestingFailingGitHubActivityProvider: GitHubActivityProviding {
+  var error: GitHubAPIError
+
+  func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
+    throw error
   }
 }
 
