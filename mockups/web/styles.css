@@ -125,8 +125,44 @@ button {
 }
 
 .secondary-action {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.secondary-action:hover {
+  background: var(--white);
+  border-color: rgba(109, 40, 217, 0.34);
+}
+
+.secondary-action.active {
+  color: var(--violet-dark);
+  background: var(--violet);
+  border-color: var(--violet);
+  box-shadow: none;
+}
+
+.hero .secondary-action:not(.active),
+.boards-section .secondary-action:not(.active),
+.receipt-hero-card .secondary-action:not(.active),
+.featured-receipt .secondary-action:not(.active),
+.featured-card .secondary-action:not(.active) {
   color: var(--text);
-  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(248, 250, 252, 0.1);
+  border-color: rgba(203, 213, 225, 0.34);
+  box-shadow: none;
+}
+
+.hero .secondary-action:not(.active):hover,
+.boards-section .secondary-action:not(.active):hover,
+.receipt-hero-card .secondary-action:not(.active):hover,
+.featured-receipt .secondary-action:not(.active):hover,
+.featured-card .secondary-action:not(.active):hover {
+  background: rgba(248, 250, 252, 0.16);
+  border-color: rgba(203, 213, 225, 0.56);
 }
 
 .hero {
@@ -371,6 +407,14 @@ button {
   padding: 18px;
 }
 
+.profile-card,
+.release-card,
+.talent-card,
+.apps-section article,
+.apps-grid article {
+  border-radius: 8px;
+}
+
 .profile-header {
   gap: 12px;
 }
@@ -566,7 +610,7 @@ svg {
   padding: 13px;
   background: #f8fafc;
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: 8px;
 }
 
 .leader-row strong {
@@ -593,7 +637,7 @@ svg {
   padding: 16px;
   background: #f8fafc;
   border: 1px solid var(--line);
-  border-radius: 15px;
+  border-radius: 8px;
 }
 
 .talent-card h3 {
@@ -774,5 +818,404 @@ svg {
   .final-cta {
     margin: 0 18px 18px;
     padding: 42px 18px;
+  }
+}
+
+/* Expanded prototype route layouts */
+.app-page {
+  min-height: 100vh;
+  padding: 112px max(20px, calc((100vw - 1120px) / 2)) 72px;
+}
+
+.app-hero {
+  min-height: calc(100vh - 112px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 32px;
+  align-items: center;
+}
+
+.page-heading {
+  max-width: 860px;
+  margin: 0 0 28px;
+}
+
+.page-heading span,
+.eyebrow {
+  display: inline-flex;
+  color: #6d28d9;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.page-heading h1,
+.app-page h1 {
+  max-width: 900px;
+  margin: 8px 0 12px;
+  font-size: clamp(40px, 7vw, 92px);
+  font-weight: 950;
+  line-height: 0.95;
+}
+
+.page-heading p,
+.app-page > p,
+.proof-card p,
+.feed-card p,
+.source-panel p,
+.source-card p,
+.profile-side p,
+.receipt-proof p,
+.receipt-card p,
+.table-card p,
+.traction-panel p,
+.traction-card p,
+.featured-receipt p,
+.featured-card p,
+.next-action p,
+.next-card p,
+.evidence-panel p,
+.evidence-card p,
+.editor-panel p,
+.editor-card p,
+.share-output p,
+.share-card p,
+.trust-card p,
+.trust-grid article p {
+  color: #475569;
+  line-height: 1.6;
+}
+
+.card-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.card-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.card-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.proof-card,
+.feed-card,
+.source-panel,
+.source-card,
+.profile-side,
+.receipt-proof,
+.receipt-card,
+.table-card,
+.traction-panel,
+.traction-card,
+.featured-receipt,
+.featured-card,
+.next-action,
+.next-card,
+.evidence-panel,
+.evidence-card,
+.editor-panel,
+.editor-card,
+.share-output,
+.share-card,
+.trust-card,
+.trust-grid article {
+  min-width: 0;
+  padding: 20px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.proof-card h2,
+.proof-card h3,
+.feed-card h2,
+.feed-card h3,
+.source-panel h2,
+.source-panel h3,
+.source-card h2,
+.source-card h3,
+.profile-side h2,
+.profile-side h3,
+.receipt-proof h2,
+.receipt-proof h3,
+.receipt-card h2,
+.receipt-card h3,
+.table-card h2,
+.table-card h3,
+.traction-panel h2,
+.traction-panel h3,
+.traction-card h2,
+.traction-card h3,
+.featured-receipt h2,
+.featured-receipt h3,
+.featured-card h2,
+.featured-card h3,
+.next-action h2,
+.next-action h3,
+.next-card h2,
+.next-card h3,
+.evidence-panel h2,
+.evidence-panel h3,
+.evidence-card h2,
+.evidence-card h3,
+.editor-panel h2,
+.editor-panel h3,
+.editor-card h2,
+.editor-card h3,
+.share-output h2,
+.share-output h3,
+.share-card h2,
+.share-card h3,
+.trust-card h2,
+.trust-card h3,
+.trust-grid article h2,
+.trust-grid article h3 {
+  margin: 0 0 8px;
+}
+
+.card-link,
+.text-link {
+  color: #6d28d9;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.card-link:hover,
+.text-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.receipt-hero-card,
+.featured-receipt,
+.featured-card {
+  padding: 28px;
+  color: var(--paper);
+  background: var(--ink);
+  border-color: rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+}
+
+.receipt-hero-card p,
+.featured-receipt p,
+.featured-card p {
+  color: var(--soft);
+}
+
+.feed-layout,
+.profile-shell,
+.profile-layout,
+.receipt-layout,
+.project-layout,
+.repo-layout,
+.dashboard-grid,
+.dashboard-layout,
+.studio-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.feed-list,
+.timeline,
+.repo-list {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-main,
+.receipt-main {
+  min-width: 0;
+}
+
+.tag-row,
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-row span {
+  max-width: 100%;
+  padding: 6px 10px;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.receipt-notes {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.pr-row,
+.repo-row,
+.app-page .leader-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.pr-row > *,
+.repo-row > *,
+.app-page .leader-row > * {
+  min-width: 0;
+}
+
+.repo-row button,
+.repo-button,
+.share-output button,
+.share-card button,
+.share-button {
+  min-height: 36px;
+  padding: 8px 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.repo-row button.active,
+.repo-button.active,
+.share-output button.active,
+.share-card button.active,
+.share-button.active {
+  color: var(--violet-dark);
+  background: var(--violet);
+  border-color: var(--violet);
+}
+
+.studio-layout,
+.studio-grid,
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.editor-panel textarea,
+.editor-card textarea,
+.profile-card textarea {
+  width: 100%;
+  min-height: 120px;
+  margin: 10px 0 14px;
+  padding: 12px;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 8, 22, 0.58);
+  backdrop-filter: blur(8px);
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal-panel {
+  position: relative;
+  width: min(560px, 100%);
+  padding: 28px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.modal-panel h2 {
+  max-width: calc(100% - 52px);
+  margin: 8px 0 10px;
+  font-size: clamp(28px, 5vw, 44px);
+  line-height: 1;
+}
+
+.modal-panel p {
+  margin: 0 0 18px;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+}
+
+@media (max-width: 860px) {
+  .app-page {
+    padding: 96px 18px 56px;
+  }
+
+  .app-hero,
+  .feed-layout,
+  .profile-shell,
+  .profile-layout,
+  .receipt-layout,
+  .project-layout,
+  .repo-layout,
+  .dashboard-grid,
+  .dashboard-layout,
+  .studio-layout,
+  .studio-grid,
+  .trust-grid,
+  .card-grid.two,
+  .card-grid.three {
+    grid-template-columns: 1fr;
+  }
+
+  .page-heading h1,
+  .app-page h1 {
+    font-size: clamp(38px, 14vw, 62px);
+  }
+
+  .receipt-hero-card,
+  .featured-receipt,
+  .featured-card,
+  .modal-panel {
+    padding: 22px;
+  }
+
+  .pr-row,
+  .repo-row,
+  .app-page .leader-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .repo-row button,
+  .repo-button,
+  .share-output button,
+  .share-card button,
+  .share-button {
+    width: 100%;
   }
 }
