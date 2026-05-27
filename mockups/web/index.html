@@ -6,38 +6,12 @@
     <title>PRBar Web Mockup</title>
     <meta
       name="description"
-      content="PRBar turns PRs, releases, streaks, and repo momentum into proof cards, leaderboards, and AI builder profiles."
+      content="PRBar turns GitHub releases, merged PRs, and project momentum into public receipts for AI-native builders."
     >
-    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./styles.css?v=9">
   </head>
   <body>
-    <header class="site-header" aria-label="Primary">
-      <a class="brand" href="#/home" aria-label="PRBar home">
-        <span class="brand-mark" aria-hidden="true">PR</span>
-        <span>PRBar</span>
-      </a>
-      <nav class="nav-links" aria-label="Sections"></nav>
-      <a class="header-action" href="#/early-access">Join early access</a>
-    </header>
-
-    <main id="app" tabindex="-1"></main>
-
-    <div class="modal-backdrop" id="early-access-modal" hidden>
-      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="early-access-title">
-        <button class="icon-button modal-close" type="button" data-close-modal aria-label="Close early access panel">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-        </button>
-        <span class="eyebrow">Early access</span>
-        <h2 id="early-access-title">Claim your proof profile.</h2>
-        <p>Connect GitHub, select the repos that count, and turn releases into receipts you can share with founders, collaborators, and the world.</p>
-        <div class="modal-actions">
-          <a class="primary-action" href="#/dashboard" data-close-modal>Preview dashboard</a>
-          <a class="secondary-action" href="#/talent" data-close-modal>Scout builders</a>
-        </div>
-      </section>
-    </div>
-
-    <script src="./app.js"></script>
+    <div id="app"></div>
+    <script src="./app.js?v=9"></script>
   </body>
 </html>
