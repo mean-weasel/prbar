@@ -167,6 +167,35 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertNil(store.lastActivityRefreshAttemptAt)
   }
 
+  func testRestoringGitHubSessionResetsOversizedStoredSelection() throws {
+    let sessionStore = InMemoryGitHubSessionStore()
+    try sessionStore.saveSession(.fixture)
+    let repositories = Self.manyRepositories(count: 58)
+    let selectionStore = InMemoryRepositorySelectionStore(includedRepositoryIDs: repositories.map(\.id))
+    let cacheStore = InMemoryGitHubActivityCacheStore(
+      record: GitHubActivityCacheRecord(
+        githubLogin: "neonwatty",
+        includedRepositoryIDs: repositories.map(\.id),
+        snapshot: SampleData.activitySnapshot,
+        lastRefreshedAt: SampleData.dateTime("2026-05-24T18:30:00Z")
+      )
+    )
+    let store = PRBarStore.sample(
+      authService: StaticGitHubAuthService(sessionStore: sessionStore),
+      repositoryProvider: StaticGitHubRepositoryProvider(repositories: repositories),
+      repositorySelectionStore: selectionStore,
+      activityCacheStore: cacheStore
+    )
+
+    store.restoreGitHubSession()
+
+    XCTAssertEqual(store.routeState, .onboarding(.repositories))
+    XCTAssertTrue(store.includedRepositories.isEmpty)
+    XCTAssertNil(try selectionStore.loadIncludedRepositoryIDs())
+    XCTAssertNil(cacheStore.record)
+    XCTAssertNil(store.lastActivityRefreshAttemptAt)
+  }
+
   func testRestoringGitHubSessionUsesCachedActivityWithoutBlockingOnRefresh() throws {
     let sessionStore = InMemoryGitHubSessionStore()
     try sessionStore.saveSession(.fixture)
@@ -762,6 +791,52 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.includedRepositories.map(\.id), ["example/client-api"])
   }
 
+  func testConnectingGitHubResetsOversizedPersistedRepositorySelection() throws {
+    let repositories = Self.manyRepositories(count: 64)
+    let selectionStore = InMemoryRepositorySelectionStore(includedRepositoryIDs: repositories.map(\.id))
+    let store = PRBarStore.sample(
+      authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore(), session: .fixture),
+      repositoryProvider: StaticGitHubRepositoryProvider(repositories: repositories),
+      repositorySelectionStore: selectionStore
+    )
+
+    store.connectGitHub()
+
+    XCTAssertEqual(store.routeState, .onboarding(.repositories))
+    XCTAssertTrue(store.includedRepositories.isEmpty)
+    XCTAssertNil(try selectionStore.loadIncludedRepositoryIDs())
+  }
+
+  func testRepositoryInclusionTogglePersistsSelectionImmediately() throws {
+    let selectionStore = InMemoryRepositorySelectionStore(includedRepositoryIDs: ["mean-weasel/prbar"])
+    let store = PRBarStore.sample(repositorySelectionStore: selectionStore)
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+
+    store.setRepositoryIncluded("example/client-api", included: true)
+    XCTAssertEqual(try selectionStore.loadIncludedRepositoryIDs(), ["mean-weasel/prbar", "example/client-api"])
+
+    store.setRepositoryIncluded("mean-weasel/prbar", included: false)
+    XCTAssertEqual(try selectionStore.loadIncludedRepositoryIDs(), ["example/client-api"])
+  }
+
+  func testBatchRepositoryInclusionPersistsSelectionAndIgnoresBlockedRepos() throws {
+    let selectionStore = InMemoryRepositorySelectionStore()
+    let store = PRBarStore.sample(repositorySelectionStore: selectionStore)
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "example/sso", owner: "example", name: "sso", visibility: .private, colorHex: "#7c3aed", included: false, recommended: false, access: .sso, reason: "Needs SSO authorization")
+    ]
+
+    store.setRepositoriesIncluded(["mean-weasel/prbar", "example/client-api", "example/sso"], included: true)
+
+    XCTAssertEqual(store.includedRepositories.map(\.id), ["mean-weasel/prbar", "example/client-api"])
+    XCTAssertEqual(try selectionStore.loadIncludedRepositoryIDs(), ["mean-weasel/prbar", "example/client-api"])
+  }
+
   @MainActor
   func testFinishingRepositorySetupPersistsIncludedRepositories() async throws {
     let selectionStore = InMemoryRepositorySelectionStore()
@@ -935,6 +1010,24 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.activityRefreshIssue?.id, "github-rate-limited")
     XCTAssertEqual(store.activityRefreshIssue?.title, "GitHub rate limit reached")
     XCTAssertTrue(store.activityRefreshIssue?.message.contains("slow down") == true)
+  }
+}
+
+private extension PRBarModelTests {
+  static func manyRepositories(count: Int) -> [Repository] {
+    (0..<count).map { index in
+      Repository(
+        id: "neonwatty/repo-\(index)",
+        owner: "neonwatty",
+        name: "repo-\(index)",
+        visibility: .public,
+        colorHex: "#0ea5e9",
+        included: false,
+        recommended: false,
+        access: .ready,
+        reason: "Fetched from GitHub"
+      )
+    }
   }
 }
 

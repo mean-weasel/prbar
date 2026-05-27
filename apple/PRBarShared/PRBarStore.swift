@@ -26,6 +26,7 @@ final class PRBarStore {
   private let repositorySelectionStore: RepositorySelectionStoring
   private let activityCacheStore: GitHubActivityCacheStoring
   private let currentDate: @Sendable () -> Date
+  private static let maximumRestoredRepositorySelectionCount = 50
 
   private static let fixtureCalendar: Calendar = {
     var calendar = Calendar(identifier: .gregorian)
@@ -216,7 +217,7 @@ final class PRBarStore {
 
   @MainActor
   func finishRepositorySetup() async {
-    try? repositorySelectionStore.saveIncludedRepositoryIDs(includedRepositories.map(\.id))
+    persistIncludedRepositorySelection()
 
     routeState = .authenticated
     guard includedRepositories.isEmpty == false else {
@@ -285,11 +286,52 @@ final class PRBarStore {
     routeState = .signedOut
   }
 
+  func setRepositoryIncluded(_ repositoryID: Repository.ID, included: Bool) {
+    guard let index = repositories.firstIndex(where: { $0.id == repositoryID }),
+      repositories[index].access == .ready
+    else {
+      return
+    }
+
+    repositories[index].included = included
+    persistIncludedRepositorySelection()
+  }
+
+  func setRepositoriesIncluded(_ repositoryIDs: Set<Repository.ID>, included: Bool) {
+    var didUpdate = false
+    for index in repositories.indices where repositoryIDs.contains(repositories[index].id) && repositories[index].access == .ready {
+      repositories[index].included = included
+      didUpdate = true
+    }
+
+    if didUpdate {
+      persistIncludedRepositorySelection()
+    }
+  }
+
   @discardableResult
   private func loadRepositoriesForConnectedUser() throws -> Bool {
     let storedIDs = try repositorySelectionStore.loadIncludedRepositoryIDs()
-    repositories = try applyStoredSelection(to: repositoryProvider.repositories(), storedIDs: storedIDs)
+    let fetchedRepositories = try repositoryProvider.repositories()
+    if shouldResetStoredSelection(storedIDs, for: fetchedRepositories) {
+      try? repositorySelectionStore.clearIncludedRepositoryIDs()
+      try? activityCacheStore.clear()
+      repositories = applyStoredSelection(to: fetchedRepositories, storedIDs: nil)
+      return false
+    }
+
+    repositories = applyStoredSelection(to: fetchedRepositories, storedIDs: storedIDs)
     return storedIDs != nil
+  }
+
+  private func shouldResetStoredSelection(_ storedIDs: [Repository.ID]?, for repositories: [Repository]) -> Bool {
+    guard let storedIDs else {
+      return false
+    }
+
+    let availableRepositoryIDs = Set(repositories.filter { $0.access == .ready }.map(\.id))
+    let restorableIDs = Set(storedIDs).intersection(availableRepositoryIDs)
+    return restorableIDs.count > Self.maximumRestoredRepositorySelectionCount
   }
 
   private func refreshActivityForIncludedRepositories() throws {
@@ -336,6 +378,10 @@ final class PRBarStore {
       lastRefreshedAt: lastRefreshedAt
     )
     try? activityCacheStore.save(record)
+  }
+
+  private func persistIncludedRepositorySelection() {
+    try? repositorySelectionStore.saveIncludedRepositoryIDs(includedRepositories.map(\.id))
   }
 
   private func applyActivitySnapshot(_ snapshot: GitHubActivitySnapshot) {
