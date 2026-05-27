@@ -1,776 +1,709 @@
 const routes = [
-  { id: "home", label: "Home" },
-  { id: "network", label: "Network" },
-  { id: "boards", label: "Boards" },
-  { id: "talent", label: "Talent" },
-  { id: "dashboard", label: "Dashboard" },
-  { id: "trust", label: "Trust" },
+  { path: "/home", label: "Home" },
+  { path: "/network", label: "Connect" },
+  { path: "/boards", label: "Boards" },
+  { path: "/talent", label: "Talent" },
+  { path: "/dashboard", label: "Dashboard" },
+  { path: "/profile", label: "Profile" },
+  { path: "/receipt", label: "Receipt" },
+  { path: "/project", label: "Project" },
+  { path: "/repos", label: "Repos" },
+  { path: "/studio", label: "Studio" },
+  { path: "/trust", label: "Trust" },
 ];
 
-const secondaryRoutes = [
-  { id: "profile", label: "Profile" },
-  { id: "receipt", label: "Receipt" },
-  { id: "project", label: "Project" },
-  { id: "repos", label: "Repos" },
-  { id: "studio", label: "Studio" },
-];
-
-const builder = {
-  name: "Maya Chen",
-  handle: "@maya.codes",
-  avatar: "MC",
-  role: "AI product builder",
-  tools: ["Claude Code", "Cursor", "GitHub Actions"],
-  stats: [
-    { label: "PRs merged", value: "118" },
-    { label: "Releases", value: "14" },
-    { label: "Projects", value: "11" },
-    { label: "Day streak", value: "9" },
-  ],
-};
-
-const release = {
-  title: "SideProject Radar v2.1",
-  type: "Release Receipt",
-  summary: "8 PRs merged across 2 repos with release notes imported.",
-  signals: ["feature shipped", "tests added", "release tagged"],
-};
-
-const projects = [
+const builders = [
   {
-    name: "SideProject Radar",
-    summary: "Founder discovery dashboard with selected repo proof.",
-    status: "shipped",
-    receipts: 6,
+    name: "Maya Chen",
+    handle: "@maya.codes",
+    initials: "MC",
+    title: "AI-native mobile and micro-SaaS builder",
+    location: "Phoenix, AZ",
+    availability: "Open to launch sprints",
+    tools: ["Claude Code", "Cursor", "Xcode", "Vercel"],
+    domains: ["iOS", "Micro-SaaS", "AI search"],
+    stats: { prs: 42, releases: 4, streak: 9, repos: 6 },
+    proof: "4 releases in 7 days, 42 merged PRs, 2 public projects moved from prototype to shipped.",
+    receipt: "SideProject Radar v2.1",
+    repo: "maya/sideproject-radar",
+    tag: "v2.1.0",
+    prList: ["#184", "#188", "#191"],
+    trend: [42, 58, 51, 73, 88, 96],
   },
   {
-    name: "AI Onboarding Flow",
-    summary: "Activation workflow rebuilt from customer support findings.",
-    status: "launched",
-    receipts: 4,
-  },
-  {
-    name: "PRBar Studio",
-    summary: "Card generator for public proof-of-work artifacts.",
-    status: "building",
-    receipts: 3,
-  },
-];
-
-const feed = [
-  { actor: "@maya.codes", action: "merged 7 PRs", target: "SideProject Radar" },
-  { actor: "@nora.ship", action: "published a receipt", target: "Launch Sprint Kit" },
-  { actor: "@devon.codes", action: "tagged a release", target: "iOS Proof Cards" },
-];
-
-const boards = [
-  { rank: 1, handle: "@maya.codes", metric: "42 PRs", detail: "4 releases this week" },
-  { rank: 2, handle: "@jules.dev", metric: "31 PRs", detail: "2 releases this week" },
-  { rank: 3, handle: "@rio.ai", metric: "24 PRs", detail: "5 releases this week" },
-  { rank: 4, handle: "@devon.codes", metric: "21 PRs", detail: "11 day streak" },
-];
-
-const talent = [
-  {
+    name: "Nora Patel",
     handle: "@nora.ship",
-    summary: "Cursor, SaaS dashboards, 3 releases this month.",
-    tags: ["available", "saas", "cursor", "launch"],
+    initials: "NP",
+    title: "SaaS dashboard builder for founder-led teams",
+    location: "Remote, US",
+    availability: "Available this month",
+    tools: ["Cursor", "Supabase", "Stripe", "Next.js"],
+    domains: ["SaaS", "Billing", "Launch"],
+    stats: { prs: 31, releases: 3, streak: 6, repos: 4 },
+    proof: "Published a launch kit, shipped billing analytics, and closed 11 linked PRs.",
+    receipt: "Launch Sprint Kit",
+    repo: "nora/launch-sprint-kit",
+    tag: "v0.9.4",
+    prList: ["#72", "#74", "#80"],
+    trend: [31, 36, 40, 62, 59, 71],
   },
   {
+    name: "Devon Reyes",
     handle: "@devon.codes",
-    summary: "Claude Code, iOS, strong release-card history.",
-    tags: ["available", "mobile", "claude"],
+    initials: "DR",
+    title: "iOS product engineer using agentic workflows",
+    location: "Seattle, WA",
+    availability: "Selective advisory",
+    tools: ["Claude Code", "SwiftUI", "GitHub Actions"],
+    domains: ["Mobile", "Devtools", "AI UX"],
+    stats: { prs: 24, releases: 2, streak: 11, repos: 3 },
+    proof: "Turned a private beta into a shareable iOS receipt flow across 2 app releases.",
+    receipt: "iOS Proof Cards",
+    repo: "devon/proof-cards-ios",
+    tag: "v1.3.0",
+    prList: ["#57", "#61", "#63"],
+    trend: [22, 28, 35, 39, 46, 52],
+  },
+];
+
+const releases = [
+  {
+    title: "SideProject Radar v2.1",
+    builder: builders[0],
+    project: "SideProject Radar",
+    source: "Imported from GitHub Releases",
+    date: "May 26, 2026",
+    summary: "Discovery filters, release-note import, and scoring tests shipped from 8 merged PRs.",
+    facts: ["8 PRs merged", "2 repos selected", "v2.1.0 tagged", "34 tests added"],
   },
   {
-    handle: "@rhea.builds",
-    summary: "AI app builder with founder-friendly weekly shipping cadence.",
-    tags: ["saas", "mobile", "founder", "launch"],
+    title: "Launch Sprint Kit v0.9",
+    builder: builders[1],
+    project: "Launch Sprint Kit",
+    source: "Imported from GitHub Releases",
+    date: "May 25, 2026",
+    summary: "Stripe metrics, onboarding checklist, and founder handoff docs released in one sprint.",
+    facts: ["11 PRs merged", "1 repo selected", "v0.9.4 tagged", "docs included"],
+  },
+  {
+    title: "iOS Proof Cards v1.3",
+    builder: builders[2],
+    project: "iOS Proof Cards",
+    source: "Imported from GitHub Releases",
+    date: "May 24, 2026",
+    summary: "Share-card rendering, private repo redaction, and release receipt previews landed.",
+    facts: ["6 PRs merged", "2 releases", "SwiftUI", "CI passed"],
   },
 ];
 
-const repos = [
-  { name: "sideproject-radar", visibility: "public", selected: true, prs: 46 },
-  { name: "ai-onboarding-flow", visibility: "private", selected: true, prs: 22 },
-  { name: "proof-card-studio", visibility: "public", selected: false, prs: 18 },
+const networkPosts = releases.map((release, index) => ({
+  release,
+  action: ["shipped a release", "published a launch receipt", "tagged a proof milestone"][index],
+  note: [
+    "Seven-day sprint: discovery filters, imported release notes, and scoring tests moved from PR stack to public release.",
+    "A founder-ready launch kit landed with billing metrics, onboarding checklists, and a cleaner handoff path.",
+    "The iOS receipt flow now supports private repo redaction and native share previews from selected sources.",
+  ][index],
+  ask: ["Ask about workflow", "Ask about launch sprint", "Ask about iOS proof"][index],
+}));
+
+const repoSources = [
+  { name: "maya/sideproject-radar", visibility: "public", status: "included", lastRelease: "v2.1.0", activity: "18 PRs in 14 days" },
+  { name: "maya/radar-ios", visibility: "private", status: "included", lastRelease: "v1.4.1", activity: "9 PRs in 14 days" },
+  { name: "client/stealth-onboarding", visibility: "private", status: "redacted", lastRelease: "hidden", activity: "5 PRs counted" },
+  { name: "maya/experiments", visibility: "public", status: "excluded", lastRelease: "none", activity: "prototype only" },
 ];
 
-const sampleData = {
-  builder,
-  release,
-  projects,
-  feed,
-  boards,
-  talent,
-  repos,
-};
+const timeline = [
+  { date: "May 26", title: "SideProject Radar v2.1", detail: "8 PRs merged, release notes imported, scoring tests added." },
+  { date: "May 21", title: "Discovery filters", detail: "Search filters and saved list UI landed across 3 linked PRs." },
+  { date: "May 17", title: "Radar scoring beta", detail: "First public receipt generated from selected repo activity." },
+];
 
-const sample = {
-  ...sampleData,
-  boards: {
-    rising: sampleData.boards,
-    projects: sampleData.projects.map((project, index) => ({
-      rank: index + 1,
-      handle: project.name,
-      metric: `${project.receipts} receipts`,
-      detail: project.summary,
-    })),
-    releases: [
-      { rank: 1, handle: "@maya.codes", metric: "4 releases", detail: "SideProject Radar v2.1 leading the week" },
-      { rank: 2, handle: "@devon.codes", metric: "3 releases", detail: "iOS Proof Cards shipped twice" },
-      { rank: 3, handle: "@nora.ship", metric: "2 releases", detail: "Launch Sprint Kit update published" },
+const boardViews = {
+  rising: {
+    label: "Rising builders",
+    eyebrow: "Community-ranked momentum",
+    description: "Community votes and PRBar picks spotlight the builders gaining real proof velocity.",
+    items: [
+      { builder: builders[0], why: "4 releases this week", detail: "Latest receipt ties 8 PRs to a tagged release.", score: "128 votes", pick: "PRBar pick" },
+      { builder: builders[1], why: "Launch sprint closed", detail: "Moved billing analytics from PR stack to public release.", score: "97 votes", pick: "Community" },
+      { builder: builders[2], why: "11-day active streak", detail: "iOS proof flow shipped across app and shared package.", score: "84 votes", pick: "Rising" },
     ],
   },
+  projects: {
+    label: "Active projects",
+    eyebrow: "Curated project radar",
+    description: "Browse projects nominated by the community and featured by PRBar for visible shipping cadence.",
+    items: [
+      { builder: builders[0], why: "SideProject Radar", detail: "Release cadence: 4 tags in 30 days. Latest: v2.1.0.", score: "Featured", pick: "PRBar pick" },
+      { builder: builders[1], why: "Launch Sprint Kit", detail: "Founder-ready kit with billing, onboarding, and handoff receipts.", score: "92 votes", pick: "Community" },
+      { builder: builders[2], why: "iOS Proof Cards", detail: "Mobile receipt studio with redaction and native share previews.", score: "71 votes", pick: "Nominated" },
+    ],
+  },
+  releases: {
+    label: "New receipts",
+    eyebrow: "Fresh featured receipts",
+    description: "Vote on proof-backed releases and browse the receipts PRBar thinks deserve a closer look.",
+    items: releases.map((release) => ({
+      builder: release.builder,
+      why: release.title,
+      detail: release.summary,
+      score: release.facts[0],
+      pick: "Fresh",
+    })),
+  },
 };
 
-const repoState = sampleData.repos.map((repo) => ({ ...repo }));
-
 const app = document.querySelector("#app");
-const nav = document.querySelector(".nav-links");
-const headerAction = document.querySelector(".header-action");
-const modal = document.querySelector("#early-access-modal");
-const hasAppShell = app && nav && headerAction && modal;
 
-function routeIdFromHash() {
-  const hash = window.location.hash.replace(/^#\/?/, "").trim();
-  const id = hash.split("/")[0] || "home";
-  const routeIds = [...routes, ...secondaryRoutes].map((route) => route.id);
-
-  return routeIds.includes(id) ? id : "home";
+function routePath() {
+  const path = window.location.hash.replace("#", "") || "/home";
+  return routes.some((route) => route.path === path) ? path : "/home";
 }
 
-function linkTo(routeId) {
-  return `#/${routeId}`;
+function setRoute(path) {
+  window.location.hash = path;
 }
 
-function tags(items) {
-  return items.map((item) => `<span>${item}</span>`).join("");
-}
-
-function statGrid(stats) {
+function shell(content) {
+  const path = routePath();
   return `
-    <div class="profile-stats">
-      ${stats.map((stat) => `<div><strong>${stat.value}</strong><span>${stat.label}</span></div>`).join("")}
+    <header class="topbar">
+      <a class="brand" href="#/home" aria-label="PRBar home"><span>PR</span><strong>PRBar</strong></a>
+      <nav class="nav" aria-label="Primary navigation">
+        ${routes.slice(0, 4).map((route) => `<a class="${path === route.path ? "active" : ""}" href="#${route.path}">${route.label}</a>`).join("")}
+      </nav>
+      <a class="topbar-action" href="#/dashboard">Claim profile</a>
+    </header>
+    <main>${content}</main>
+  `;
+}
+
+function statPills(items) {
+  return `<div class="stat-pills">${items.map((item) => `<span>${item}</span>`).join("")}</div>`;
+}
+
+function sparkline(values) {
+  return `
+    <div class="sparkline" aria-hidden="true">
+      ${values.map((value) => `<span style="height: ${value}%"></span>`).join("")}
     </div>
   `;
 }
 
-function repoSummary(reposToCount = repoState) {
-  const included = reposToCount.filter((repo) => repo.selected).length;
-
-  return {
-    connected: reposToCount.length,
-    included,
-    excluded: reposToCount.length - included,
-    private: reposToCount.filter((repo) => repo.visibility === "private").length,
-    mergedPrs: reposToCount.reduce((total, repo) => total + repo.prs, 0),
-  };
-}
-
-function proofCard(title, body, routeId, meta = "Verified GitHub") {
+function receiptCard(release, options = {}) {
   return `
-    <article class="release-card">
-      <div>
-        <span>${meta}</span>
-        <h3>${title}</h3>
-        <p>${body}</p>
+    <article class="receipt-card ${options.compact ? "compact" : ""}">
+      <div class="receipt-top">
+        <span>${release.source}</span>
+        <b>${release.date}</b>
       </div>
-      <a class="secondary-action" href="${linkTo(routeId)}">Open</a>
+      <h3>${release.title}</h3>
+      <p>${release.summary}</p>
+      ${statPills(release.facts)}
+      <div class="source-row">
+        <code>${release.builder.repo}</code>
+        <a href="#/receipt">Inspect receipt</a>
+      </div>
     </article>
   `;
 }
 
-function renderBoardRows(boardId = "rising") {
-  const output = document.querySelector("[data-board-output]");
-  const rows = sample.boards[boardId] || sample.boards.rising;
-  const boardHeadings = {
-    rising: "Rising builders",
-    projects: "Active projects",
-    releases: "Recent releases",
-  };
-  const heading = boardHeadings[boardId] || boardHeadings.rising;
-
-  if (!output) {
-    return;
-  }
-
-  output.innerHTML = `
-    <h2>${heading}</h2>
-    ${rows
-      .map(
-        (row) => `
-        <article class="leader-row">
-          <strong>#${row.rank}</strong>
-          <div>
-            <strong>${row.handle}</strong>
-            <span>${row.detail}</span>
-          </div>
-          <strong>${row.metric}</strong>
-        </article>
-      `
-      )
-      .join("")}
+function builderCard(builder, options = {}) {
+  return `
+    <article class="builder-card ${options.featured ? "featured" : ""}">
+      <div class="identity-row">
+        <span class="avatar">${builder.initials}</span>
+        <div>
+          <h3>${builder.handle}</h3>
+          <p>${builder.title}</p>
+        </div>
+        <b>${builder.availability}</b>
+      </div>
+      <p>${builder.proof}</p>
+      <div class="metric-strip">
+        <span><strong>${builder.stats.prs}</strong> PRs</span>
+        <span><strong>${builder.stats.releases}</strong> releases</span>
+        <span><strong>${builder.stats.streak}</strong> day streak</span>
+      </div>
+      ${sparkline(builder.trend)}
+      <div class="tag-row">${builder.tools.map((tool) => `<span>${tool}</span>`).join("")}</div>
+    </article>
   `;
 }
 
-function renderTalentRows(filter = "all") {
-  const output = document.querySelector("[data-talent-output]");
-  const rows = filter === "all" ? sample.talent : sample.talent.filter((person) => person.tags.includes(filter));
-
-  if (!output) {
-    return;
-  }
-
-  output.innerHTML = rows
-    .map(
-      (person) => `
-        <article class="talent-card">
-          <h3>${person.handle}</h3>
-          <p>${person.summary}</p>
-          <div class="talent-tags">${tags(person.tags)}</div>
-        </article>
-      `
-    )
-    .join("");
+function miniProofHistogram() {
+  return `
+    <div class="mini-proof-histogram" aria-label="PR distribution by day">
+      <i style="height: 34%"></i>
+      <i style="height: 58%"></i>
+      <i style="height: 42%"></i>
+      <i style="height: 76%"></i>
+      <i style="height: 64%"></i>
+      <i style="height: 100%"></i>
+      <i style="height: 82%"></i>
+    </div>
+  `;
 }
 
-function bindPageInteractions() {
+function networkPost(post) {
+  const { release } = post;
+  return `
+    <article class="network-post">
+      <div class="post-actor">
+        <span class="avatar">${release.builder.initials}</span>
+        <div>
+          <h2>${release.builder.handle} ${post.action}</h2>
+          <p>${release.project} · ${release.date} · ${release.builder.domains.join(" / ")}</p>
+        </div>
+        <a href="#/profile">Follow</a>
+      </div>
+      <p class="post-note">${post.note}</p>
+      <div class="post-proof">
+        <div>
+          <span>Receipt</span>
+          <h3>${release.title}</h3>
+          ${statPills(release.facts)}
+        </div>
+        ${miniProofHistogram()}
+      </div>
+      <div class="source-row">
+        <code>${release.builder.repo} ${release.builder.tag}</code>
+        <div class="post-actions">
+          <a href="#/receipt">Inspect receipt</a>
+          <a href="#/project">View project</a>
+          <a href="#/talent">${post.ask}</a>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function homePage() {
+  return shell(`
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">GitHub proof for AI-native builders</p>
+        <h1>You ship (real) fast with AI.</h1>
+        <p class="lede">Show the world your receipts.</p>
+        <div class="action-row">
+          <a class="primary" href="#/network">Open Connect</a>
+          <a class="secondary" href="#/boards">See what is shipping</a>
+        </div>
+      </div>
+      <div class="hero-proof">
+        <div class="share-preview" aria-label="PRBar weekly proof of work share card">
+          <div class="share-kicker">PRBar · Weekly proof of work</div>
+          <div class="share-head">
+            <div>
+              <strong>42</strong>
+              <span>merged PRs</span>
+            </div>
+            <p><b>This week</b><span>6 active repos</span></p>
+          </div>
+          <div class="share-histogram">
+            <div class="share-histogram-title">
+              <span>PR histogram</span>
+              <b>by repo</b>
+            </div>
+            <div class="share-chart" aria-label="Merged pull requests over the week">
+              <i>
+                <em style="height: 34%; background:#19b394"></em>
+              </i>
+              <i>
+                <em style="height: 36%; background:#19b394"></em>
+                <em style="height: 22%; background:#f4c430"></em>
+              </i>
+              <i>
+                <em style="height: 24%; background:#19b394"></em>
+                <em style="height: 18%; background:#2f6fed"></em>
+              </i>
+              <i>
+                <em style="height: 42%; background:#19b394"></em>
+                <em style="height: 22%; background:#f4c430"></em>
+                <em style="height: 12%; background:#2f6fed"></em>
+              </i>
+              <i>
+                <em style="height: 38%; background:#19b394"></em>
+                <em style="height: 26%; background:#f4c430"></em>
+              </i>
+              <i>
+                <em style="height: 48%; background:#19b394"></em>
+                <em style="height: 30%; background:#f4c430"></em>
+                <em style="height: 22%; background:#2f6fed"></em>
+              </i>
+              <i>
+                <em style="height: 44%; background:#19b394"></em>
+                <em style="height: 24%; background:#f4c430"></em>
+                <em style="height: 14%; background:#2f6fed"></em>
+              </i>
+            </div>
+          </div>
+          <div class="share-chart-labels">
+            <span>Mon</span>
+            <span>Peak 11</span>
+            <span>Sun</span>
+          </div>
+          <div class="share-repos">
+            <span><i style="background:#19b394"></i>sideproject-radar<b>18</b></span>
+            <span><i style="background:#f4c430"></i>radar-ios<b>14</b></span>
+            <span><i style="background:#2f6fed"></i>launch-kit<b>10</b></span>
+          </div>
+          <div class="share-foot">
+            <span>@maya.codes</span>
+            <span>PRBAR.APP</span>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="surface-grid">
+      <a class="surface-card" href="#/network"><span>01</span><h2>Connect</h2><p>Follow high-velocity AI builders.</p></a>
+      <a class="surface-card" href="#/boards"><span>02</span><h2>Momentum Boards</h2><p>Community-ranked momentum, curated by PRBar.</p></a>
+      <a class="surface-card" href="#/talent"><span>03</span><h2>Talent Board</h2><p>Scout builders with recent proof, relevant stacks, and clear availability.</p></a>
+    </section>
+  `);
+}
+
+function networkPage() {
+  return shell(`
+    <section class="page-hero">
+      <p class="eyebrow">Connect</p>
+      <h1>Follow high-velocity AI builders.</h1>
+      <p>See what they shipped, ask how they did it, and keep up with people building at AI speed.</p>
+      <div class="network-tabs" aria-label="Connect filters">
+        <button class="active" type="button">Receipts</button>
+        <button type="button">Builders</button>
+        <button type="button">Projects</button>
+        <button type="button">Questions</button>
+      </div>
+    </section>
+    <section class="network-layout">
+      <div class="feed">
+        ${networkPosts.map((post) => networkPost(post)).join("")}
+      </div>
+      <aside class="side-panel">
+        <div class="network-brief">
+          <span>Connect signal</span>
+          <h2>Receipts start conversations.</h2>
+          <p>Follow receipts, ask about workflows, and go deeper into the person and project behind each shipped thing.</p>
+        </div>
+        ${builderCard(builders[0], { featured: true })}
+        <div class="proof-rule">
+          <h2>What counts here</h2>
+          <p>PRs merged, releases tagged, tests added, projects launched, and source-linked receipts.</p>
+          ${statPills(["GitHub source", "Release tags", "Repo selection", "Private redaction"])}
+        </div>
+      </aside>
+    </section>
+  `);
+}
+
+function boardsPage(activeView = "rising") {
+  const view = boardViews[activeView] || boardViews.rising;
+  return shell(`
+    <section class="page-hero dark">
+      <p class="eyebrow">${view.eyebrow}</p>
+      <h1>See what deserves attention.</h1>
+      <p>${view.description}</p>
+      <div class="board-tabs" role="tablist" aria-label="Momentum board views">
+        ${Object.entries(boardViews).map(([key, item]) => `<button class="${key === activeView ? "active" : ""}" data-board="${key}" type="button">${item.label}</button>`).join("")}
+      </div>
+    </section>
+    <section class="board-discovery">
+      <article class="board-spotlight">
+        <span>#1 rising signal</span>
+        <h2>${view.items[0].why}</h2>
+        <p>${view.items[0].detail}</p>
+        <div class="spotlight-grid">
+          <div><strong>${view.items[0].builder.stats.prs}</strong><span>merged PRs</span></div>
+          <div><strong>${view.items[0].builder.stats.releases}</strong><span>releases</span></div>
+          <div><strong>${view.items[0].builder.stats.streak}</strong><span>day streak</span></div>
+        </div>
+        ${sparkline(view.items[0].builder.trend)}
+      </article>
+      <div class="board-list">
+        ${view.items.map((item, index) => `
+          <article class="momentum-card">
+            <div class="rank">#${index + 1}</div>
+            <div>
+              <div class="identity-row compact">
+                <span class="avatar">${item.builder.initials}</span>
+                <div>
+                  <h3>${item.builder.handle}</h3>
+                  <p>${item.builder.domains.join(" / ")}</p>
+                </div>
+                <b>${item.pick}</b>
+              </div>
+              <h2>${item.why}</h2>
+              <p>${item.detail}</p>
+              <div class="source-row">
+                <code>${item.builder.repo} ${item.builder.tag}</code>
+                <div class="board-actions">
+                  <span>${item.score}</span>
+                  <a href="#/receipt">Receipts behind rank</a>
+                  <button type="button">Vote</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `);
+}
+
+function talentPage(filter = "all") {
+  const filtered = filter === "all" ? builders : builders.filter((builder) => builder.domains.map((item) => item.toLowerCase()).includes(filter));
+  return shell(`
+    <section class="page-hero">
+      <p class="eyebrow">Talent Board</p>
+      <h1>Find builders with receipts.</h1>
+      <p>Search by recent releases, stack, domain, availability, and proof of shipped work.</p>
+      <div class="search-prompt">I need someone to ship: <strong>iOS MVP / SaaS onboarding / AI agent UI</strong></div>
+      <div class="board-tabs talent-tabs" aria-label="Talent filters">
+        ${["all", "ios", "saas", "launch"].map((key) => `<button class="${key === filter ? "active" : ""}" data-filter="${key}" type="button">${key}</button>`).join("")}
+      </div>
+    </section>
+    <section class="talent-grid">
+      ${filtered.map((builder) => `
+        <article class="talent-card">
+          ${builderCard(builder)}
+          <div class="talent-decision">
+            <span><b>Best for</b>${builder.domains.join(", ")}</span>
+            <span><b>Last shipped</b>${builder.receipt}</span>
+            <span><b>Location</b>${builder.location}</span>
+          </div>
+          <div class="action-row small">
+            <a class="primary" href="#/profile">View profile</a>
+            <a class="secondary light" href="#/receipt">Latest receipt</a>
+          </div>
+        </article>
+      `).join("")}
+    </section>
+  `);
+}
+
+function dashboardPage() {
+  return shell(`
+    <section class="page-hero">
+      <p class="eyebrow">Private dashboard</p>
+      <h1>Make proof from your week.</h1>
+      <p>Review imported GitHub activity, approve receipts, and choose what becomes public.</p>
+    </section>
+    <section class="workflow-layout">
+      <article class="command-panel">
+        <div class="panel-heading"><span>Next action</span><h2>3 receipts ready for review</h2></div>
+        <ol class="checklist">
+          <li class="done"><b>GitHub connected</b><span>@maya.codes synced 11 minutes ago</span></li>
+          <li class="done"><b>Repos selected</b><span>2 public, 2 private with redaction enabled</span></li>
+          <li><b>Review SideProject Radar v2.1</b><span>Suggested receipt uses 8 merged PRs and release tag v2.1.0</span></li>
+          <li><b>Publish share card</b><span>Preview profile, board eligibility, and receipt link</span></li>
+        </ol>
+        <div class="action-row small"><a class="primary" href="#/studio">Open studio</a><a class="secondary light" href="#/repos">Manage sources</a></div>
+      </article>
+      <div class="dashboard-stack">
+        ${receiptCard(releases[0])}
+        <div class="mini-grid">
+          <div><strong>68</strong><span>proof PRs</span></div>
+          <div><strong>13</strong><span>receipts</span></div>
+          <div><strong>4</strong><span>repos counted</span></div>
+        </div>
+      </div>
+    </section>
+  `);
+}
+
+function profilePage() {
+  const builder = builders[0];
+  return shell(`
+    <section class="profile-hero">
+      <div class="profile-main">
+        <span class="avatar xl">${builder.initials}</span>
+        <div>
+          <p class="eyebrow">Proof profile</p>
+          <h1>Receipts beat resumes.</h1>
+          <p>${builder.handle} ships AI-native mobile and micro-SaaS work backed by selected GitHub repos.</p>
+          <div class="action-row small"><a class="primary" href="#/receipt">Featured receipt</a><a class="secondary light" href="#/talent">Find similar builders</a></div>
+        </div>
+      </div>
+      <aside class="profile-aside">
+        <b>${builder.availability}</b>
+        ${statPills([...builder.tools, ...builder.domains])}
+      </aside>
+    </section>
+    <section class="profile-proof-grid">
+      ${builderCard(builder, { featured: true })}
+      <div class="timeline-panel">
+        <h2>Proof timeline</h2>
+        ${timeline.map((item) => `<article><span>${item.date}</span><h3>${item.title}</h3><p>${item.detail}</p></article>`).join("")}
+      </div>
+      ${receiptCard(releases[0])}
+    </section>
+  `);
+}
+
+function receiptPage() {
+  const release = releases[0];
+  return shell(`
+    <section class="receipt-hero">
+      <div>
+        <p class="eyebrow">Release receipt</p>
+        <h1>${release.title}</h1>
+        <p>${release.summary}</p>
+        ${statPills(release.facts)}
+      </div>
+      <aside>
+        <span>Verified source</span>
+        <code>${release.builder.repo}</code>
+        <code>${release.builder.tag}</code>
+        <b>${release.date}</b>
+      </aside>
+    </section>
+    <section class="receipt-detail-grid">
+      <article class="evidence-panel">
+        <h2>Imported GitHub facts</h2>
+        <div class="pr-list">
+          ${release.builder.prList.map((pr, index) => `<div><b>${pr}</b><span>${["Discovery filters merged", "Release notes imported", "Scoring tests added"][index]}</span><em>Merged</em></div>`).join("")}
+        </div>
+      </article>
+      <article class="annotation-panel">
+        <h2>Builder annotation</h2>
+        <p>This release moved the project from useful prototype to something people can revisit weekly. The receipt keeps the facts tied to GitHub while leaving room to explain the product decision.</p>
+        <div class="action-row small"><a class="primary" href="#/studio">Edit in studio</a><a class="secondary light" href="#/project">View project</a></div>
+      </article>
+    </section>
+  `);
+}
+
+function projectPage() {
+  return shell(`
+    <section class="project-hero">
+      <p class="eyebrow">Project history</p>
+      <h1>Watch the project ship.</h1>
+      <p>Track cadence, latest releases, selected repos, and the receipts behind momentum.</p>
+      <div class="project-links"><a href="#/receipt">Latest receipt</a><a href="#/profile">Builder profile</a><a href="#/repos">Source repos</a></div>
+    </section>
+    <section class="project-grid">
+      <article class="project-visual"><span>Live proof card</span><strong>4 releases / 30 days</strong>${sparkline([34, 48, 52, 71, 79, 96])}</article>
+      <div class="timeline-panel">
+        <h2>What changed over time</h2>
+        ${timeline.map((item) => `<article><span>${item.date}</span><h3>${item.title}</h3><p>${item.detail}</p></article>`).join("")}
+      </div>
+    </section>
+  `);
+}
+
+function reposPage() {
+  return shell(`
+    <section class="page-hero">
+      <p class="eyebrow">Repo sources</p>
+      <h1>Choose which repos count.</h1>
+      <p>Control profiles, boards, receipts, and private redaction from one source list.</p>
+    </section>
+    <section class="repo-layout">
+      <aside class="source-summary">
+        <h2>@maya.codes</h2>
+        <div class="mini-grid">
+          <div><strong>4</strong><span>available repos</span></div>
+          <div><strong>3</strong><span>counted</span></div>
+        </div>
+        <p>Private names can stay hidden while merged PR counts and release receipts remain eligible.</p>
+      </aside>
+      <div class="repo-list">
+        ${repoSources.map((repo) => `
+          <article class="repo-row">
+            <div><h3>${repo.name}</h3><p>${repo.activity} / latest release ${repo.lastRelease}</p></div>
+            <span>${repo.visibility}</span>
+            <b>${repo.status}</b>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `);
+}
+
+function studioPage() {
+  return shell(`
+    <section class="page-hero">
+      <p class="eyebrow">Receipt Studio</p>
+      <h1>Shape the receipt.</h1>
+      <p>Keep GitHub facts intact, add context, and preview the public card.</p>
+    </section>
+    <section class="studio-grid">
+      <article class="evidence-panel"><h2>Raw evidence</h2><div class="pr-list"><div><b>#184</b><span>Discovery filters</span><em>Included</em></div><div><b>#188</b><span>Release notes importer</span><em>Included</em></div><div><b>#191</b><span>Scoring tests</span><em>Included</em></div></div></article>
+      <article class="editor-panel"><h2>Annotation</h2><label>Receipt title<input value="SideProject Radar v2.1"></label><label>Builder note<textarea>Moved from prototype to weekly-use product with release notes imported from GitHub.</textarea></label><label class="check"><input type="checkbox" checked> Hide private repo names</label></article>
+      <article class="preview-panel"><h2>Public preview</h2>${receiptCard(releases[0], { compact: true })}<div class="action-row small"><a class="primary" href="#/receipt">Publish receipt</a></div></article>
+    </section>
+  `);
+}
+
+function trustPage() {
+  const rules = [
+    ["What PRBar reads", "Release tags, merged PR metadata, selected repo names, labels, timestamps, and test/status context."],
+    ["What PRBar counts", "Features shipped, PRs merged, releases made, projects launched, streaks, and verified source links."],
+    ["What PRBar protects", "Private repo names, client identities, excluded repos, and any source the builder did not select."],
+    ["What PRBar does not count", "Token usage, model spend, prompt volume, screenshots without source proof, or self-reported velocity."],
+    ["Anti-gaming", "Ranks show receipts behind the score, age out stale bursts, and flag suspicious source patterns."],
+  ];
+
+  return shell(`
+    <section class="page-hero">
+      <p class="eyebrow">Trust rules</p>
+      <h1>Proof needs rules.</h1>
+      <p>Make shipping visible without exposing private work or rewarding vanity metrics.</p>
+    </section>
+    <section class="trust-grid">
+      ${rules.map(([title, copy]) => `<article><h2>${title}</h2><p>${copy}</p></article>`).join("")}
+    </section>
+  `);
+}
+
+function placeholderPage(label) {
+  return shell(`
+    <section class="page-hero">
+      <p class="eyebrow">Route not found</p>
+      <h1>${label}</h1>
+      <p>This mockup route is not part of the current prototype walkthrough.</p>
+      <div class="action-row"><a class="primary" href="#/boards">Back to Boards</a><a class="secondary light" href="#/network">Open Connect</a></div>
+    </section>
+  `);
+}
+
+function render() {
+  const path = routePath();
+  if (path === "/home") app.innerHTML = homePage();
+  if (path === "/network") app.innerHTML = networkPage();
+  if (path === "/boards") app.innerHTML = boardsPage();
+  if (path === "/talent") app.innerHTML = talentPage();
+  if (path === "/dashboard") app.innerHTML = dashboardPage();
+  if (path === "/profile") app.innerHTML = profilePage();
+  if (path === "/receipt") app.innerHTML = receiptPage();
+  if (path === "/project") app.innerHTML = projectPage();
+  if (path === "/repos") app.innerHTML = reposPage();
+  if (path === "/studio") app.innerHTML = studioPage();
+  if (path === "/trust") app.innerHTML = trustPage();
+  if (!routes.some((route) => route.path === path)) app.innerHTML = placeholderPage("Home");
+
   document.querySelectorAll("[data-board]").forEach((button) => {
     button.addEventListener("click", () => {
-      document.querySelectorAll("[data-board]").forEach((control) => control.classList.remove("active"));
-      button.classList.add("active");
-      renderBoardRows(button.dataset.board);
+      app.innerHTML = boardsPage(button.dataset.board);
+      window.scrollTo({ top: 0, behavior: "instant" });
     });
   });
 
   document.querySelectorAll("[data-filter]").forEach((button) => {
     button.addEventListener("click", () => {
-      document.querySelectorAll("[data-filter]").forEach((control) => control.classList.remove("active"));
-      button.classList.add("active");
-      renderTalentRows(button.dataset.filter);
+      app.innerHTML = talentPage(button.dataset.filter);
+      window.scrollTo({ top: 0, behavior: "instant" });
     });
   });
-
-  document.querySelectorAll("[data-repo-toggle]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const repo = repoState.find((item) => item.name === button.dataset.repoToggle);
-
-      if (!repo) {
-        return;
-      }
-
-      repo.selected = !repo.selected;
-      render();
-    });
-  });
-
-  document.querySelectorAll("[data-copy-link]").forEach((button) => {
-    button.addEventListener("click", () => {
-      button.textContent = "Receipt link copied";
-    });
-  });
-
-  renderBoardRows("rising");
-  renderTalentRows("all");
 }
 
-function render() {
-  const routeId = routeIdFromHash();
+window.addEventListener("hashchange", render);
 
-  app.innerHTML = renderRoute(routeId);
-  app.focus({ preventScroll: true });
-  bindPageInteractions();
-}
-
-function renderRoute(routeId = routeIdFromHash()) {
-  const views = {
-    home: renderHome,
-    network: renderNetwork,
-    boards: renderBoards,
-    talent: renderTalent,
-    dashboard: renderDashboard,
-    trust: renderTrust,
-    profile: renderProfile,
-    receipt: renderReceipt,
-    project: renderProject,
-    repos: renderRepos,
-    studio: renderStudio,
-  };
-
-  if (nav) {
-    nav.innerHTML = routes
-      .map(
-        (route) =>
-          `<a href="${linkTo(route.id)}" ${route.id === routeId ? 'aria-current="page"' : ""}>${route.label}</a>`
-      )
-      .join("");
-  }
-
-  return views[routeId]();
-}
-
-function renderHome() {
-  return `
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-content">
-        <p class="hero-label">Verified GitHub velocity for AI-native builders</p>
-        <h1 id="hero-title">Show the world your receipts.</h1>
-        <p class="hero-lede">
-          <strong>Token usage does not count.</strong> PRBar turns selected GitHub activity into
-          public proof of features shipped, PRs merged, releases made, and projects launched.
-        </p>
-        <div class="hero-actions">
-          <a class="primary-action" href="${linkTo("profile")}">Claim your profile</a>
-          <a class="secondary-action" href="${linkTo("network")}">Scout builders</a>
-        </div>
-      </div>
-    </section>
-    <section class="section-pad" aria-labelledby="home-proof-title">
-      <div class="section-heading compact">
-        <span>Featured receipt</span>
-        <h2 id="home-proof-title">${sampleData.release.title}</h2>
-        <p>${sampleData.release.summary}</p>
-      </div>
-      ${proofCard(
-        sampleData.release.type,
-        `${sampleData.builder.handle} shipped ${sampleData.release.signals.join(", ")} from selected repo activity.`,
-        "receipt",
-        "Release receipt"
-      )}
-      <div class="apps-grid">
-        ${proofCard("Builder profile", `${sampleData.builder.name} is showing tools, stats, and GitHub-backed shipping history.`, "profile")}
-        ${proofCard("Project operating history", `${sampleData.projects[0].name} has ${sampleData.projects[0].receipts} receipts and a visible release trail.`, "project")}
-        ${proofCard("Momentum Boards", "Rank builders by merged work, releases, projects, and recent momentum.", "boards")}
-      </div>
-    </section>
-  `;
-}
-
-function renderNetwork() {
-  return `
-    <section class="section-pad" aria-labelledby="network-title">
-      <div class="section-heading">
-        <span>Proof Network</span>
-        <h1 id="network-title">People and projects first. GitHub proof underneath.</h1>
-        <p>Scout builders by what they shipped, then inspect the receipts and source signals behind the story.</p>
-      </div>
-      <div class="apps-grid">
-        <div class="proof-stack">${sampleData.feed
-          .map(
-            (item) => `
-              <article class="release-card">
-                <div>
-                  <span>${item.actor}</span>
-                  <h3>${item.action}</h3>
-                  <p>${item.target}</p>
-                </div>
-                <a class="secondary-action" href="${linkTo("receipt")}">Receipt</a>
-              </article>
-            `
-          )
-          .join("")}</div>
-        <aside class="profile-card" aria-label="Source panel">
-          <div class="profile-header">
-            <div class="avatar">${sampleData.builder.avatar}</div>
-            <div>
-              <h3>${sampleData.builder.name}</h3>
-              <p>${sampleData.builder.role}</p>
-            </div>
-            <span>Live proof</span>
-          </div>
-          ${statGrid(sampleData.builder.stats)}
-          <div class="talent-tags">${tags(sampleData.builder.tools)}</div>
-          <p>${sampleData.repos.filter((repo) => repo.selected).length} selected repos contribute to public proof. Private details stay controlled by the builder.</p>
-        </aside>
-      </div>
-    </section>
-  `;
-}
-
-function renderProfile() {
-  const featuredProject = sampleData.projects[0];
-
-  return `
-    <section class="section-pad" aria-labelledby="profile-title">
-      <div class="section-heading compact">
-        <span>${sampleData.builder.handle}</span>
-        <h1 id="profile-title">Receipts beat resumes.</h1>
-        <p>${sampleData.builder.role} with a public trail of selected GitHub work.</p>
-      </div>
-      <article class="profile-card">
-        <div class="profile-header">
-          <div class="avatar">${sampleData.builder.avatar}</div>
-          <div>
-            <h3>${sampleData.builder.name}</h3>
-            <p>${sampleData.builder.handle}</p>
-          </div>
-          <span>Verified</span>
-        </div>
-        <div class="talent-tags">${tags(sampleData.builder.tools)}</div>
-        ${statGrid(sampleData.builder.stats)}
-        <div class="release-card">
-          <div>
-            <span>Hiring signal</span>
-            <h3>Ships AI product work in public</h3>
-            <p>${sampleData.builder.name} has ${sampleData.release.summary.toLowerCase()} Recruiters and founders can inspect receipts instead of guessing from a resume.</p>
-          </div>
-        </div>
-      </article>
-      <div class="apps-grid">
-        ${proofCard(sampleData.release.title, sampleData.release.summary, "receipt", sampleData.release.type)}
-        ${proofCard(featuredProject.name, featuredProject.summary, "project", `${featuredProject.receipts} receipts`)}
-      </div>
-    </section>
-  `;
-}
-
-function renderReceipt() {
-  const mergedPrs = [
-    { title: "Add founder discovery filters", repo: "sideproject-radar", merged: "#184" },
-    { title: "Import release notes from GitHub tags", repo: "sideproject-radar", merged: "#188" },
-    { title: "Cover radar scoring with regression tests", repo: "ai-onboarding-flow", merged: "#57" },
-  ];
-
-  return `
-    <section class="section-pad" aria-labelledby="receipt-title">
-      <div class="section-heading compact">
-        <span>${sampleData.release.type}</span>
-        <h1 id="receipt-title">${sampleData.release.title}</h1>
-        <p>Repo sideproject-radar · tag v2.1 · published this week by ${sampleData.builder.handle}</p>
-      </div>
-      <article class="release-card">
-        <div>
-          <span>Release receipt</span>
-          <h3>Notes</h3>
-          <p>${sampleData.release.summary} This receipt highlights shipped product surface, verification work, and tagged release history.</p>
-          <div class="talent-tags">${tags(sampleData.release.signals)}</div>
-        </div>
-      </article>
-      <div class="apps-grid">
-        ${proofCard("Proof summary", "8 merged PRs, 2 source repos, release tag present, and notes imported from GitHub.", "repos")}
-        ${proofCard("Builder context", `${sampleData.builder.name} connected ${sampleData.repos.filter((repo) => repo.selected).length} repos for this public proof surface.`, "profile")}
-      </div>
-      <div class="leaderboard" aria-label="Merged PR rows">
-        ${mergedPrs
-          .map(
-            (pr) => `
-              <article class="leader-row">
-                <strong>${pr.merged}</strong>
-                <div>
-                  <strong>${pr.title}</strong>
-                  <span>${pr.repo}</span>
-                </div>
-                <span>merged</span>
-              </article>
-            `
-          )
-          .join("")}
-      </div>
-    </section>
-  `;
-}
-
-function renderProject() {
-  const project = sampleData.projects[0];
-  const timeline = [
-    { label: "Discovery filters merged", detail: "Feature PRs landed in selected repo" },
-    { label: "Release notes imported", detail: "GitHub tag connected to public receipt" },
-    { label: "Radar scoring tested", detail: "Tests added before v2.1 publish" },
-  ];
-
-  return `
-    <section class="section-pad" aria-labelledby="project-title">
-      <div class="section-heading compact">
-        <span>${project.status}</span>
-        <h1 id="project-title">SideProject Radar operating history.</h1>
-        <p>${project.name}: ${project.summary}</p>
-      </div>
-      <div class="apps-grid">
-        ${proofCard("Shipping signal", `${project.receipts} receipts, ${sampleData.release.summary.toLowerCase()}`, "receipt")}
-        ${proofCard("Current status", `${project.name} is ${project.status} and backed by selected GitHub proof.`, "network")}
-      </div>
-      <div class="leaderboard" aria-label="Proof timeline">
-        ${timeline
-          .map(
-            (item, index) => `
-              <article class="leader-row">
-                <strong>${index + 1}</strong>
-                <div>
-                  <strong>${item.label}</strong>
-                  <span>${item.detail}</span>
-                </div>
-                <span>verified</span>
-              </article>
-            `
-          )
-          .join("")}
-      </div>
-    </section>
-  `;
-}
-
-function renderBoards() {
-  return `
-    <section class="boards-section section-pad" aria-labelledby="boards-title">
-      <div class="section-heading compact">
-        <span>High-vibe leaderboards</span>
-        <h1 id="boards-title">Momentum Boards</h1>
-        <p>Rank builders by PRs merged, releases made, active streaks, and project momentum.</p>
-      </div>
-      <div class="hero-actions" role="group" aria-label="Board views">
-        <button class="secondary-action active" type="button" data-board="rising">Rising builders</button>
-        <button class="secondary-action" type="button" data-board="projects">Projects</button>
-        <button class="secondary-action" type="button" data-board="releases">Releases</button>
-      </div>
-      <div class="leaderboard" data-board-output></div>
-    </section>
-  `;
-}
-
-function renderTalent() {
-  return `
-    <section class="talent-section section-pad" aria-labelledby="talent-title">
-      <div class="section-heading compact">
-        <span>AI Builder Talent Board</span>
-        <h1 id="talent-title">Who can help me ship this?</h1>
-        <p>Filter builders by availability, launch surface, mobile skill, and SaaS shipping history.</p>
-      </div>
-      <div class="hero-actions" role="group" aria-label="Talent filters">
-        <button class="secondary-action active" type="button" data-filter="all">All</button>
-        <button class="secondary-action" type="button" data-filter="available">Available</button>
-        <button class="secondary-action" type="button" data-filter="launch">Launch</button>
-        <button class="secondary-action" type="button" data-filter="mobile">Mobile</button>
-        <button class="secondary-action" type="button" data-filter="saas">SaaS</button>
-      </div>
-      <div class="talent-grid" data-talent-output></div>
-    </section>
-  `;
-}
-
-function renderDashboard() {
-  const proofStats = [
-    { label: "Active repos", value: sampleData.repos.filter((repo) => repo.selected).length },
-    { label: "Proof PRs", value: sampleData.repos.filter((repo) => repo.selected).reduce((total, repo) => total + repo.prs, 0) },
-    { label: "Receipts", value: sampleData.projects.reduce((total, project) => total + project.receipts, 0) },
-    { label: "Release", value: "v2.1" },
-  ];
-
-  return `
-    <section class="section-pad" aria-labelledby="dashboard-title">
-      <div class="section-heading compact">
-        <span>Receipt Command Center</span>
-        <h1 id="dashboard-title">Turn this week's work into proof.</h1>
-        <p>Select repos, review evidence, and publish a clear receipt without exposing private work.</p>
-      </div>
-      <div class="dashboard-grid">
-        <article class="release-card">
-          <div>
-            <span>Featured receipt</span>
-            <h3>${sampleData.release.title}</h3>
-            <p>${sampleData.release.summary} Review the release card before sharing it to your profile.</p>
-            <div class="talent-tags">${tags(sampleData.release.signals)}</div>
-          </div>
-          <a class="secondary-action" href="${linkTo("receipt")}">Review</a>
-        </article>
-        <aside class="profile-card" aria-label="Next action">
-          <div class="profile-header">
-            <div class="avatar">${sampleData.builder.avatar}</div>
-            <div>
-              <h3>Next action</h3>
-              <p>Confirm repo sources, then generate the share card.</p>
-            </div>
-            <span>Ready</span>
-          </div>
-          <p>${sampleData.repos.filter((repo) => repo.selected).length} repos are currently included in public proof for ${sampleData.builder.handle}.</p>
-          <div class="hero-actions">
-            <a class="primary-action" href="${linkTo("studio")}">Open studio</a>
-            <a class="secondary-action" href="${linkTo("repos")}">Sources</a>
-          </div>
-        </aside>
-      </div>
-      ${statGrid(proofStats)}
-      <div class="apps-grid">
-        ${proofCard("Builder profile", "Check how the selected proof appears on your public builder profile.", "profile")}
-        ${proofCard("Proof sources", "Choose which GitHub repos count toward public stats and receipts.", "repos")}
-        ${proofCard("Receipt Studio", "Edit evidence, generate a card, and prepare the share link.", "studio")}
-      </div>
-    </section>
-  `;
-}
-
-function renderRepos() {
-  const summary = repoSummary();
-
-  return `
-    <section class="section-pad" aria-labelledby="repos-title">
-      <div class="section-heading compact">
-        <span>Proof Sources</span>
-        <h1 id="repos-title">Choose which repos count.</h1>
-        <p>Included repos power receipts, profile stats, project history, and momentum boards.</p>
-      </div>
-      <aside class="profile-card" aria-label="Source panel">
-        <div class="profile-header">
-          <div class="avatar">${sampleData.builder.avatar}</div>
-          <div>
-            <h3>GitHub source panel</h3>
-            <p>${sampleData.builder.handle} controls what becomes public proof.</p>
-          </div>
-          <span>${summary.included} active</span>
-        </div>
-        ${statGrid([
-          { label: "Connected", value: summary.connected },
-          { label: "Included", value: summary.included },
-          { label: "Excluded", value: summary.excluded },
-          { label: "Private", value: summary.private },
-          { label: "Merged PRs", value: summary.mergedPrs },
-        ])}
-      </aside>
-      <div class="leaderboard" aria-label="Repository proof sources">${repoState
-        .map(
-          (repo) => `
-            <article class="leader-row" data-repo-row="${repo.name}">
-              <div>
-                <strong>${repo.name}</strong>
-                <span>${repo.visibility} repo · ${repo.prs} merged PRs</span>
-              </div>
-              <span data-repo-status="${repo.name}">${repo.selected ? "included" : "excluded"}</span>
-              <strong>${repo.prs} PRs</strong>
-              <button class="secondary-action${repo.selected ? " active" : ""}" type="button" data-repo-toggle="${repo.name}">
-                ${repo.selected ? "Included" : "Excluded"}
-              </button>
-            </article>
-          `
-        )
-        .join("")}</div>
-    </section>
-  `;
-}
-
-function renderStudio() {
-  return `
-    <section class="section-pad" aria-labelledby="studio-title">
-      <div class="section-heading compact">
-        <span>Receipt Studio</span>
-        <h1 id="studio-title">Edit the evidence. Generate the card.</h1>
-        <p>Polish the receipt copy, choose what evidence appears, and prepare a share link.</p>
-      </div>
-      <div class="dashboard-grid">
-        <article class="release-card" aria-label="Evidence panel">
-          <div>
-            <span>Evidence panel</span>
-            <h3>${sampleData.release.title}</h3>
-            <p>${sampleData.release.summary} Source repos: ${sampleData.repos
-              .filter((repo) => repo.selected)
-              .map((repo) => repo.name)
-              .join(", ")}.</p>
-            <div class="talent-tags">${tags(sampleData.release.signals)}</div>
-          </div>
-          <a class="secondary-action" href="${linkTo("repos")}">Sources</a>
-        </article>
-        <form class="profile-card" aria-label="Editor panel">
-          <div class="profile-header">
-            <div class="avatar">${sampleData.builder.avatar}</div>
-            <div>
-              <h3>Editor panel</h3>
-              <p>Write the proof card that appears on your profile.</p>
-            </div>
-            <span>Draft</span>
-          </div>
-          <label>
-            Receipt copy
-            <textarea rows="6">${sampleData.release.title}: ${sampleData.release.summary}</textarea>
-          </label>
-          <label>
-            <input type="checkbox" checked>
-            Include selected repo names
-          </label>
-          <label>
-            <input type="checkbox" checked>
-            Include merged PR count
-          </label>
-        </form>
-      </div>
-      <article class="release-card share-output">
-        <div>
-          <span>Share output</span>
-          <h3>${sampleData.builder.handle}/${sampleData.release.title.toLowerCase().replace(/\s+/g, "-")}</h3>
-          <p>Generated card is ready for profile, project page, and outbound updates.</p>
-        </div>
-        <button class="primary-action" type="button" data-copy-link>Copy link</button>
-      </article>
-    </section>
-  `;
-}
-
-function renderTrust() {
-  return `
-    <section class="section-pad" aria-labelledby="trust-title">
-      <div class="section-heading compact">
-        <span>Trust Center</span>
-        <h1 id="trust-title">Clear rules for GitHub proof.</h1>
-        <p>PRBar turns selected GitHub activity into public proof while keeping private code and token usage out of the score.</p>
-      </div>
-      <div class="trust-grid">
-        <article class="release-card">
-          <div>
-            <span>What PRBar reads</span>
-            <h3>Selected GitHub metadata</h3>
-            <p>Repository names, merged PR counts, release tags, timestamps, titles, and public proof fields chosen by the builder.</p>
-          </div>
-        </article>
-        <article class="release-card">
-          <div>
-            <span>What PRBar counts</span>
-            <h3>Shipping activity</h3>
-            <p>Merged PRs, releases, project receipts, tests added, and recent momentum from repos the builder includes.</p>
-          </div>
-        </article>
-        <article class="release-card">
-          <div>
-            <span>What PRBar protects</span>
-            <h3>Private work stays private</h3>
-            <p>Builders can pause repos, hide private source details, and decide which proof appears on public pages.</p>
-          </div>
-        </article>
-        <article class="release-card">
-          <div>
-            <span>What PRBar does not count</span>
-            <h3>No token scoreboard</h3>
-            <p>Token usage, prompt volume, vanity commits, and unmerged work do not become proof of shipping.</p>
-          </div>
-        </article>
-        <article class="release-card">
-          <div>
-            <span>Anti-gaming</span>
-            <h3>Receipts need durable signals</h3>
-            <p>Proof favors merged work, release history, project context, and source consistency over noisy activity spikes.</p>
-          </div>
-        </article>
-      </div>
-    </section>
-  `;
-}
-
-function openModal() {
-  modal.hidden = false;
-}
-
-if (hasAppShell) {
-  window.addEventListener("hashchange", render);
-
-  headerAction.addEventListener("click", (event) => {
-    event.preventDefault();
-    openModal();
-  });
-
-  document.querySelectorAll("[data-close-modal]").forEach((control) => {
-    control.addEventListener("click", () => {
-      modal.hidden = true;
-    });
-  });
-
-  if (!window.location.hash) {
-    window.location.hash = linkTo("home");
-  } else {
-    render();
-  }
+if (!window.location.hash) {
+  setRoute("/home");
+} else {
+  render();
 }
