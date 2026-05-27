@@ -1,35 +1,34 @@
-# PRBar Web Prototype
+# PRBar Web Mockup
 
-Static expanded product prototype for PRBar, deployed through GitHub Pages at `/web/`.
+Static proof-first web product mockup for PRBar.
 
-Run locally:
-
-```bash
-python3 -m http.server 4181 --directory mockups/web
-```
-
-Visit:
-
-```text
-http://127.0.0.1:4181/#/home
-```
-
-Smoke test:
+Open `index.html` through a local server so relative assets and scripts load consistently:
 
 ```bash
-/Users/neonwatty/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node mockups/web/smoke-test.js
+python3 -m http.server 4174 --directory mockups/web
 ```
 
-The prototype includes:
+Then visit `http://127.0.0.1:4174`.
 
-- Home / Product Story
-- Proof Network
-- Builder Profile
-- Release Receipt
-- Project Page
-- Momentum Boards
-- Talent Board
-- Private Dashboard / Receipt Command Center
-- Repo Picker / Proof Sources
-- Receipt Studio
-- Trust Center
+The prototype uses hash routes:
+
+- `#/home`
+- `#/network`
+- `#/boards`
+- `#/talent`
+- `#/dashboard`
+- `#/profile`
+- `#/receipt`
+- `#/project`
+- `#/repos`
+- `#/studio`
+- `#/trust`
+
+The mockup centers the web product around:
+
+- proof-of-work profiles
+- PR and release receipts
+- momentum boards for builders, projects, and releases
+- AI builder talent discovery
+- private dashboard/source-selection workflows
+- PRBar's Mac, iOS, and web app family
