@@ -139,7 +139,7 @@ button {
   box-shadow: 0 0 0 1px rgba(25, 179, 148, 0.14);
 }
 
-.toc-nav h2 {
+.tree-parent {
   position: relative;
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
@@ -150,8 +150,8 @@ button {
   padding: 4px 0;
 }
 
-.toc-nav h2::before,
-.toc-nav a::before {
+.tree-parent::before,
+.tree-children a::before {
   content: "";
   left: -13px;
   top: 50%;
@@ -164,8 +164,8 @@ button {
   box-shadow: 0 0 0 1px rgba(25, 179, 148, 0.14);
 }
 
-.toc-nav h2 span,
-.toc-nav a::after {
+.tree-parent > span,
+.tree-children a::after {
   display: grid;
   place-items: center;
   width: 32px;
@@ -177,7 +177,7 @@ button {
   font-weight: 950;
 }
 
-.toc-nav a::after {
+.tree-children a::after {
   content: "";
   width: 10px;
   height: 10px;
@@ -187,12 +187,12 @@ button {
   border-radius: 50%;
 }
 
-.toc-nav a.active::after {
+.tree-children a.active::after {
   background: var(--gold);
   box-shadow: 0 0 0 4px rgba(244, 196, 48, 0.18);
 }
 
-.toc-nav h2 strong {
+.tree-parent strong {
   min-width: 0;
   font-size: 13px;
 }
@@ -203,7 +203,7 @@ button {
   padding: 0 0 0 18px;
 }
 
-.toc-nav a {
+.tree-children a {
   position: relative;
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
@@ -215,19 +215,21 @@ button {
   border-radius: 8px;
 }
 
-.toc-nav a:hover,
-.toc-nav a.active {
+.tree-parent:hover,
+.tree-parent.active,
+.tree-children a:hover,
+.tree-children a.active {
   color: #f8fafc;
   background: rgba(255, 255, 255, 0.08);
 }
 
-.toc-nav a span,
-.toc-nav a strong {
+.tree-children a span,
+.tree-children a strong {
   display: block;
   min-width: 0;
 }
 
-.toc-nav a strong {
+.tree-children a strong {
   font-size: 13px;
 }
 

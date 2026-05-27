@@ -12,31 +12,49 @@ const routes = [
   { path: "/trust", label: "Trust" },
 ];
 
+const primaryNavPaths = ["/home", "/network", "/boards", "/talent", "/profile"];
+
 const routeGroups = [
   {
-    title: "Discover",
+    title: "Home",
+    path: "/home",
+    routes: [],
+  },
+  {
+    title: "Connect",
+    path: "/network",
     routes: [
-      { path: "/home", label: "Home", copy: "Landing page and product story." },
-      { path: "/network", label: "Connect", copy: "Social feed for following high-velocity AI builders." },
-      { path: "/boards", label: "Showcase", copy: "Apps, builders, and receipts worth watching." },
-      { path: "/talent", label: "Talent", copy: "Find builders by proof, stack, and availability." },
+      { path: "/network", label: "Feed" },
+      { path: "/profile", label: "Builder Profile" },
+      { path: "/receipt", label: "Receipt" },
     ],
   },
   {
-    title: "Inspect Proof",
+    title: "Showcase",
+    path: "/boards",
     routes: [
-      { path: "/profile", label: "Profile", copy: "Public proof profile with featured apps and receipts." },
-      { path: "/receipt", label: "Receipt", copy: "GitHub-backed release receipt with attached app context." },
-      { path: "/project", label: "Project", copy: "Public app page backed by selected receipts." },
+      { path: "/boards", label: "Apps" },
+      { path: "/project", label: "App Page" },
+      { path: "/receipt", label: "Receipt" },
     ],
   },
   {
-    title: "Manage Proof",
+    title: "Talent",
+    path: "/talent",
     routes: [
-      { path: "/dashboard", label: "Dashboard", copy: "Review imported activity and add app context." },
-      { path: "/repos", label: "Repos", copy: "Choose sources and attach repos to apps." },
-      { path: "/studio", label: "Studio", copy: "Edit receipt context while preserving GitHub facts." },
-      { path: "/trust", label: "Trust", copy: "Rules for what counts, what is hidden, and what is ignored." },
+      { path: "/talent", label: "Talent Board" },
+      { path: "/profile", label: "Builder Profile" },
+    ],
+  },
+  {
+    title: "Profile",
+    path: "/profile",
+    routes: [
+      { path: "/profile", label: "Public Profile" },
+      { path: "/dashboard", label: "Dashboard" },
+      { path: "/repos", label: "Sources" },
+      { path: "/studio", label: "Receipt Studio" },
+      { path: "/trust", label: "Trust" },
     ],
   },
 ];
@@ -237,6 +255,36 @@ function setRoute(path) {
   window.location.hash = path;
 }
 
+function routeBelongsToGroup(path, group) {
+  return group.path === path || group.routes.some((route) => route.path === path);
+}
+
+function canonicalSectionFor(path) {
+  return routeGroups.find((group) => group.path === path)?.path
+    || routeGroups.find((group) => routeBelongsToGroup(path, group))?.path
+    || "/home";
+}
+
+function readActiveSection(path) {
+  try {
+    const stored = window.sessionStorage?.getItem("prbar-active-section");
+    const group = routeGroups.find((item) => item.path === stored);
+    if (group && routeBelongsToGroup(path, group)) return group.path;
+  } catch {
+    // Fall through to the canonical section when browser storage is unavailable.
+  }
+
+  return canonicalSectionFor(path);
+}
+
+function writeActiveSection(sectionPath) {
+  try {
+    window.sessionStorage?.setItem("prbar-active-section", sectionPath);
+  } catch {
+    // Context is optional; direct routes still use canonical sections.
+  }
+}
+
 function readTocCollapsed() {
   try {
     return window.localStorage?.getItem("prbar-toc-collapsed") === "true";
@@ -255,9 +303,10 @@ function writeTocCollapsed(collapsed) {
 
 function shell(content) {
   const path = routePath();
+  const activeSection = readActiveSection(path);
   return `
     <div class="mockup-shell">
-      ${tableOfContents(path)}
+      ${tableOfContents(path, activeSection)}
       <div class="mockup-main">
         <header class="topbar">
           <button class="toc-toggle" type="button" aria-label="Hide table of contents" aria-pressed="false" data-toc-toggle>
@@ -265,7 +314,7 @@ function shell(content) {
           </button>
           <a class="brand" href="#/home" aria-label="PRBar home"><span>PR</span><strong>PRBar</strong></a>
           <nav class="nav" aria-label="Primary navigation">
-            ${routes.slice(0, 4).map((route) => `<a class="${path === route.path ? "active" : ""}" href="#${route.path}">${route.label}</a>`).join("")}
+            ${routes.filter((route) => primaryNavPaths.includes(route.path)).map((route) => `<a class="${activeSection === route.path ? "active" : ""}" data-section="${route.path}" href="#${route.path}">${route.label}</a>`).join("")}
           </nav>
           <a class="topbar-action" href="#/dashboard">Claim profile</a>
         </header>
@@ -275,7 +324,7 @@ function shell(content) {
   `;
 }
 
-function tableOfContents(path) {
+function tableOfContents(path, activeSection) {
   return `
     <aside class="toc-sidebar" aria-label="Mockup table of contents">
       <div class="toc-brand">
@@ -286,13 +335,13 @@ function tableOfContents(path) {
         <div class="toc-root"><span>PRBar Web</span></div>
         ${routeGroups.map((group, groupIndex) => `
           <section class="tree-group">
-            <h2>
+            <a class="tree-parent ${activeSection === group.path ? "active" : ""}" data-section="${group.path}" href="#${group.path}">
               <span>${String(groupIndex + 1).padStart(2, "0")}</span>
               <strong>${group.title}</strong>
-            </h2>
+            </a>
             <div class="tree-children">
               ${group.routes.map((route) => `
-                <a class="${path === route.path ? "active" : ""}" href="#${route.path}">
+                <a class="${activeSection === group.path && path === route.path ? "active" : ""}" data-section="${group.path}" href="#${route.path}">
                   <span>
                     <strong>${route.label}</strong>
                   </span>
@@ -965,6 +1014,12 @@ function render() {
     button.addEventListener("click", () => {
       app.innerHTML = talentPage(button.dataset.filter);
       window.scrollTo({ top: 0, behavior: "instant" });
+    });
+  });
+
+  document.querySelectorAll("[data-section]").forEach((link) => {
+    link.addEventListener("click", () => {
+      writeActiveSection(link.dataset.section);
     });
   });
 
