@@ -75,6 +75,25 @@ enum WorkCardRenderer {
   static func evidence(for store: PRBarStore) -> [EvidenceItem] {
     switch store.cardDraft.source {
     case .shippingSnapshot:
+      let pullRequestEvidence = pullRequestsInRange(for: store)
+        .prefix(4)
+        .compactMap { pullRequest -> EvidenceItem? in
+          guard let repository = repository(for: pullRequest.repoID, in: store), repository.included else {
+            return nil
+          }
+
+          return EvidenceItem(
+            id: pullRequest.id,
+            title: pullRequest.title,
+            detail: "\(repository.name) #\(pullRequest.number)",
+            isPrivate: repository.visibility == .private
+          )
+        }
+
+      if pullRequestEvidence.isEmpty == false {
+        return pullRequestEvidence
+      }
+
       return Array(store.releases.prefix(4)).compactMap { release in
         guard let repository = repository(for: release.repoID, in: store), repository.included else {
           return nil

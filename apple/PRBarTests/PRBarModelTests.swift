@@ -80,6 +80,29 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertTrue(export.evidence.contains { $0.isPrivate })
   }
 
+  func testShippingSnapshotEvidenceIncludesPrivatePullRequestsWithoutReleases() {
+    let store = PRBarStore.sample()
+    store.repositories = [
+      Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+    store.pullRequests = [
+      PullRequest(id: "example/client-api#77", title: "Private proof PR", repoID: "example/client-api", number: 77, mergedAt: SampleData.dateTime("2026-05-24T17:42:00Z"))
+    ]
+    store.releases = []
+    store.prRange = .week
+    store.activityAnchorDate = SampleData.date("2026-05-24")
+
+    let export = WorkCardExportBuilder.export(for: store)
+
+    XCTAssertEqual(export.source.metric, "1 merged")
+    XCTAssertTrue(export.includesPrivateEvidence)
+    XCTAssertTrue(export.evidence.contains {
+      $0.title == "Private proof PR" &&
+        $0.detail == "client-api #77" &&
+        $0.isPrivate
+    })
+  }
+
   @MainActor
   func testWorkCardImageRendererProducesNativeImageArtifact() {
     let export = WorkCardExportBuilder.export(for: PRBarStore.sample(), side: .publicSide)
