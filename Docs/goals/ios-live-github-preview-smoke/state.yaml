@@ -69,7 +69,7 @@ visual_board:
     command: "npx goalbuddy board docs/goals/ios-live-github-preview-smoke"
     blocked_reason: "npx/npm/goalbuddy CLI are not on PATH in this environment; the file-backed board is ready and the local visual board can be started once the CLI is available."
 
-active_task: T003
+active_task: T005
 
 tasks:
   - id: T001
@@ -183,7 +183,7 @@ tasks:
   - id: T003
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: medium
     objective: "Create a clean implementation branch from origin/main and add a persisted-auth live physical-preview smoke profile for one configured GitHub repo."
     allowed_files:
@@ -195,6 +195,7 @@ tasks:
       - "scripts/ios-preview-live-smoke*.sh"
       - ".github/workflows/ios-physical-preview.yml"
       - "docs/goals/ios-live-github-preview-smoke/**"
+      - "Docs/goals/ios-live-github-preview-smoke/**"
     verify:
       - "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/ios-live-github-preview-smoke/state.yaml"
       - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
@@ -206,7 +207,50 @@ tasks:
       - "Need to change production auth behavior rather than test/preview behavior."
       - "Device workflow cannot run because iPhone-preview is locked, offline, or untrusted."
       - "Verification fails twice with the same unexplained failure."
-    receipt: null
+    receipt:
+      result: done
+      summary: "Implemented and pushed a live physical-preview smoke path for one configured GitHub repo. The branch now has an XCTest-driven live profile plus a devicectl-driven live-headless profile that avoids the physical iPhone Automation Mode blocker, seeds exactly one repo, launches the real preview app, and emits explicit PRBAR_LIVE_SMOKE_RESULT success/failure markers. Physical verification reached the installed app on iPhone-preview; the current remaining blocker is missing live GitHub auth on that app install and no PRBAR_IOS_LIVE_GITHUB_TOKEN secret configured yet."
+      commits:
+        - "255dce7 Add iOS live GitHub preview smoke"
+        - "f134d86 Harden iOS live preview smoke retry"
+        - "c8c8150 Add headless iOS live preview smoke"
+        - "c8974dc Support secret-backed iOS live smoke auth"
+      changed_files:
+        - ".github/workflows/ios-physical-preview.yml"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarPreviewUITests/PRBarPreviewUITests.swift"
+        - "scripts/ios-preview-device-smoke.sh"
+        - "Docs/goals/ios-live-github-preview-smoke/goal.md"
+        - "Docs/goals/ios-live-github-preview-smoke/notes/profile-seeded-preview-plan.md"
+      commands:
+        - cmd: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs Docs/goals/ios-live-github-preview-smoke/state.yaml"
+          status: pass
+        - cmd: "bash -n scripts/ios-preview-device-smoke.sh"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          status: pass
+          details: "62 tests passed."
+        - cmd: "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBarPreview -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/PreviewUITestBuild -resultBundlePath apple/PreviewUITestResults.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarPreviewUITests/PRBarPreviewUITests/testPreviewDeviceCanLaunchCoreTabs"
+          status: pass
+          details: "1 preview UI test passed on simulator."
+        - cmd: "xcodebuild build -project apple/PRBar.xcodeproj -scheme PRBarPreview -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/PreviewHeadlessBuild CODE_SIGNING_ALLOWED=NO"
+          status: pass
+          details: "Preview app builds with headless smoke code."
+      local_verification:
+        - "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs Docs/goals/ios-live-github-preview-smoke/state.yaml: pass"
+        - "bash -n scripts/ios-preview-device-smoke.sh: pass"
+        - "git diff --check: pass"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh: pass, 62 tests"
+        - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBarPreview -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/PreviewUITestBuild -resultBundlePath apple/PreviewUITestResults.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarPreviewUITests/PRBarPreviewUITests/testPreviewDeviceCanLaunchCoreTabs: pass"
+        - "xcodebuild build -project apple/PRBar.xcodeproj -scheme PRBarPreview -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/PreviewHeadlessBuild CODE_SIGNING_ALLOWED=NO: pass"
+      physical_verification:
+        - "https://github.com/mean-weasel/prbar/actions/runs/26572866113: live XCTest profile built and signed but failed before app launch with 'Timed out while enabling automation mode'."
+        - "https://github.com/mean-weasel/prbar/actions/runs/26573246684: retry logic confirmed device remained unlocked and retried once; still failed before app launch with Automation Mode timeout."
+        - "https://github.com/mean-weasel/prbar/actions/runs/26573575991: live-headless profile built, installed, and launched PRBarPreview on iPhone-preview; app emitted PRBAR_LIVE_SMOKE_RESULT failure reason=missing-github-session login=neonwatty."
+      blocker: "Repo secrets currently include PRBAR_IOS_GITHUB_CLIENT_ID and IOS_PREVIEW_KEYCHAIN_PASSWORD, but not PRBAR_IOS_LIVE_GITHUB_TOKEN. Either configure that least-privilege secret or sign in to GitHub in the preview app on iPhone-preview, then rerun smoke_profile=live-headless."
+      full_outcome_complete: false
 
   - id: T004
     type: worker
@@ -225,6 +269,25 @@ tasks:
     stop_if:
       - "Documentation would expose secrets or private token values."
       - "The implementation package has not yet established the actual run shape."
+    receipt: null
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: medium
+    objective: "After a live auth source is available, rerun the live-headless physical iPhone smoke and capture the one-repo refresh proof."
+    allowed_files:
+      - "Docs/goals/ios-live-github-preview-smoke/**"
+      - "docs/goals/ios-live-github-preview-smoke/**"
+    verify:
+      - "gh secret list --repo mean-weasel/prbar | rg PRBAR_IOS_LIVE_GITHUB_TOKEN || confirm preview app is manually signed in"
+      - "gh workflow run ios-physical-preview.yml --repo mean-weasel/prbar --ref codex/ios-live-github-preview-smoke -f smoke_profile=live-headless -f device_name=iPhone-preview -f github_login=neonwatty -f included_repo=mean-weasel/prbar"
+      - "gh run view <run-id> --repo mean-weasel/prbar --log | rg 'PRBAR_LIVE_SMOKE_RESULT success'"
+    stop_if:
+      - "PRBAR_IOS_LIVE_GITHUB_TOKEN is not configured and the preview app is not manually signed in."
+      - "The run reaches the app but reports a GitHub API blocker such as rate limit, SSO, or repo permission."
+      - "The run cannot reach the app because iPhone-preview is locked, offline, or install/launch fails."
     receipt: null
 
   - id: T999
