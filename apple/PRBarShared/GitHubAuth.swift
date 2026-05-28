@@ -100,7 +100,7 @@ struct GitHubOAuthConfiguration: Equatable {
   ) -> GitHubOAuthConfiguration {
     GitHubOAuthConfiguration(
       clientID: configuredClientID(environment: environment, bundleInfo: bundleInfo),
-      scopes: ["public_repo"],
+      scopes: [],
       maxTokenPollAttempts: 1
     )
   }
@@ -126,12 +126,14 @@ struct GitHubOAuthConfiguration: Equatable {
 
 enum GitHubDeviceFlowRequest {
   static func deviceCode(clientID: String, scopes: [String]) throws -> URLRequest {
-    try formRequest(
+    var fields = ["client_id": clientID]
+    if scopes.isEmpty == false {
+      fields["scope"] = scopes.joined(separator: " ")
+    }
+
+    return try formRequest(
       url: "https://github.com/login/device/code",
-      fields: [
-        "client_id": clientID,
-        "scope": scopes.joined(separator: " ")
-      ]
+      fields: fields
     )
   }
 
