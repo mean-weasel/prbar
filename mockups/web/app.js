@@ -5,6 +5,7 @@ const routes = [
   { path: "/talent", label: "Talent" },
   { path: "/dashboard", label: "Dashboard" },
   { path: "/profile", label: "Profile" },
+  { path: "/card", label: "Builder Card" },
   { path: "/receipt", label: "Receipt" },
   { path: "/project", label: "Project" },
   { path: "/repos", label: "Repos" },
@@ -52,8 +53,9 @@ const routeGroups = [
     routes: [
       { path: "/profile", label: "Public Profile" },
       { path: "/dashboard", label: "Dashboard" },
-      { path: "/repos", label: "Sources" },
-      { path: "/studio", label: "Receipt Studio" },
+      { path: "/card", label: "Builder Card" },
+      { path: "/repos", label: "GitHub Sources" },
+      { path: "/studio", label: "Create Receipt" },
       { path: "/trust", label: "Trust" },
     ],
   },
@@ -199,7 +201,7 @@ const networkPosts = releases.map((release, index) => ({
     "A founder-ready launch kit landed with billing metrics, onboarding checklists, and a cleaner handoff path.",
     "The iOS receipt flow now supports private repo redaction and native share previews from selected sources.",
   ][index],
-  ask: ["Ask about workflow", "Ask about launch sprint", "Ask about iOS proof"][index],
+  ask: ["View proof resume", "Open proof profile", "Inspect proof profile"][index],
 }));
 
 const repoSources = [
@@ -244,7 +246,39 @@ const boardPicks = [
   { label: "Needs votes", title: "iOS Proof Cards", copy: "Strong native proof surface, currently climbing in Mobile + Devtools." },
 ];
 
+const magicSteps = [
+  {
+    step: "01",
+    title: "Claim your card",
+    copy: "Reserve a compact proof link you can use in bios, resumes, intros, and launch posts.",
+    path: "/card",
+  },
+  {
+    step: "02",
+    title: "Connect GitHub",
+    copy: "Import release tags, merged PRs, checks, and repo activity from the sources you approve.",
+    path: "/dashboard",
+  },
+  {
+    step: "03",
+    title: "Choose what counts",
+    copy: "Pick the repos and apps that count, redact private work, and leave experiments out of the public story.",
+    path: "/repos",
+  },
+  {
+    step: "04",
+    title: "Publish proof resume",
+    copy: "Turn selected repos, apps, releases, and receipts into a proof profile you can share anywhere.",
+    path: "/profile",
+  },
+];
+
 const app = document.querySelector("#app");
+let lastRenderedPath = null;
+
+if ("scrollRestoration" in window.history) {
+  window.history.scrollRestoration = "manual";
+}
 
 function routePath() {
   const path = window.location.hash.replace("#", "") || "/home";
@@ -357,33 +391,50 @@ function tableOfContents(path, activeSection) {
 
 function routeIndex() {
   return `
-    <section class="route-index" aria-label="Mockup page index">
-      <div class="route-index-heading">
-        <p class="eyebrow">Mockup index</p>
-        <h2>Open every page from here.</h2>
-        <p>Use this as the review map while we keep expanding the concept.</p>
-      </div>
+    <details class="route-index" aria-label="Mockup page index">
+      <summary>
+        <span>Mockup review map</span>
+        <b>Open all pages</b>
+      </summary>
       <div class="route-index-groups">
         ${routeGroups.map((group) => `
           <article>
             <h3>${group.title}</h3>
             <div class="route-link-list">
               ${group.routes.map((route) => `
-                <a href="#${route.path}">
-                  <strong>${route.label}</strong>
-                  <span>${route.copy}</span>
-                </a>
+                <a href="#${route.path}"><strong>${route.label}</strong></a>
               `).join("")}
             </div>
           </article>
         `).join("")}
       </div>
-    </section>
+    </details>
   `;
 }
 
 function statPills(items) {
   return `<div class="stat-pills">${items.map((item) => `<span>${item}</span>`).join("")}</div>`;
+}
+
+function publishJourney(activeIndex = 0, options = {}) {
+  return `
+    <section class="journey-strip ${options.compact ? "compact" : ""}" aria-label="Proof resume workflow">
+      <div class="journey-heading">
+        <p class="eyebrow">First magic moment</p>
+        <h2>${options.title || "Turn a week of GitHub work into proof people can inspect."}</h2>
+        <p>${options.copy || "The private flow starts with sources and ends with public receipts attached to your builder profile and apps."}</p>
+      </div>
+      <div class="journey-steps">
+        ${magicSteps.map((item, index) => `
+          <a class="${index === activeIndex ? "active" : ""}" href="#${item.path}">
+            <span>${item.step}</span>
+            <strong>${item.title}</strong>
+            <small>${item.copy}</small>
+          </a>
+        `).join("")}
+      </div>
+    </section>
+  `;
 }
 
 function sparkline(values) {
@@ -409,6 +460,94 @@ function receiptCard(release, options = {}) {
         <a href="#/receipt">Inspect receipt</a>
       </div>
     </article>
+  `;
+}
+
+function proofChain(items = ["GitHub release", "Merged PRs", "Builder context", "Public receipt"]) {
+  return `
+    <div class="proof-chain" aria-label="Proof chain">
+      ${items.map((item, index) => `
+        <span>
+          <b>${String(index + 1).padStart(2, "0")}</b>
+          ${item}
+        </span>
+      `).join("")}
+    </div>
+  `;
+}
+
+function builderLinkCard(options = {}) {
+  const builder = builders[0];
+  const cardId = options.id || `builder-card-${Math.random().toString(36).slice(2)}`;
+  return `
+    <div class="builder-link-card-wrap ${options.compact ? "compact" : ""}" data-builder-link-card id="${cardId}">
+      <div class="builder-link-stage">
+        <div class="builder-link-ghost"></div>
+        <div class="builder-link-ghost second"></div>
+        <div class="builder-link-flip" data-card-flip>
+          <section class="builder-link-face builder-link-front">
+            <span class="builder-link-glare" aria-hidden="true"></span>
+            <div class="builder-link-identity">
+              <div>
+                <span>${builder.handle}</span>
+                <h3>${builder.name}</h3>
+              </div>
+              <div class="avatar">${builder.initials}</div>
+            </div>
+            <p>AI-native mobile and micro-SaaS builder. This week’s proof from selected GitHub repos.</p>
+            <div class="builder-link-chart" aria-label="PR distribution by day">
+              <i style="height:34%"></i><i style="height:58%"></i><i style="height:42%"></i><i style="height:76%"></i><i style="height:64%"></i><i style="height:100%"></i><i style="height:82%"></i>
+            </div>
+            <div class="builder-link-stats">
+              <div><b>${builder.stats.prs}</b><span>merged PRs</span></div>
+              <div><b>${builder.stats.repos}</b><span>active repos</span></div>
+              <div><b>${builder.stats.streak}</b><span>day streak</span></div>
+            </div>
+            <small>Front: PR distribution</small>
+          </section>
+          <section class="builder-link-face builder-link-back">
+            <span class="builder-link-glare" aria-hidden="true"></span>
+            <div class="builder-link-identity">
+              <div>
+                <span>Proof links</span>
+                <h3>Receipts and apps</h3>
+              </div>
+              <div class="avatar">${builder.initials}</div>
+            </div>
+            <p>The back keeps the linktree job: inspect releases, open apps, or jump to the full proof profile.</p>
+            <div class="builder-link-tabs" role="tablist" aria-label="Builder card back tabs">
+              <button class="active" type="button" role="tab" aria-selected="true" data-link-card-tab="releases">Releases</button>
+              <button type="button" role="tab" aria-selected="false" data-link-card-tab="apps">Apps</button>
+            </div>
+            <div class="builder-link-list active" data-link-card-panel="releases">
+              ${releases.map((release) => `
+                <a href="#/receipt">
+                  <span><strong>${release.title}</strong><em>${release.facts.slice(0, 2).join(" · ")}</em></span>
+                  <b>View</b>
+                </a>
+              `).join("")}
+            </div>
+            <div class="builder-link-list" data-link-card-panel="apps">
+              ${showcaseApps.slice(0, 2).map((item) => `
+                <a href="#/project">
+                  <span><strong>${item.name}</strong><em>${item.status} · latest receipt</em></span>
+                  <b>Open</b>
+                </a>
+              `).join("")}
+              <a href="#/profile">
+                <span><strong>Maya’s proof profile</strong><em>Receipts, apps, timeline</em></span>
+                <b>View</b>
+              </a>
+            </div>
+            <small>Back: Releases / Apps</small>
+          </section>
+        </div>
+      </div>
+      <div class="builder-link-controls" aria-label="Builder card controls">
+        <button class="active" type="button" data-card-side="front">Front: PRs</button>
+        <button type="button" data-card-side="back">Back: Links</button>
+      </div>
+    </div>
   `;
 }
 
@@ -514,7 +653,7 @@ function networkPost(post) {
           <h2>${release.builder.handle} ${post.action}</h2>
           <p>${release.project} · ${release.date} · ${release.builder.domains.join(" / ")}</p>
         </div>
-        <a href="#/profile">Follow</a>
+        <a href="#/profile">View proof</a>
       </div>
       <p class="post-note">${post.note}</p>
       <div class="post-proof">
@@ -541,83 +680,30 @@ function homePage() {
   return shell(`
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">GitHub proof for AI-native builders</p>
-        <h1>You ship (real) fast with AI.</h1>
-        <p class="lede">Show the world your receipts.</p>
+        <p class="eyebrow">The resume for AI-native builders</p>
+        <h1>Resumes are garbage.</h1>
+        <p class="lede">Your real resume is what you ship.</p>
+        <p class="hero-proof-line">PRBar turns your PRs, releases, app updates, and shipped features into a living proof profile you can share anywhere.</p>
         <div class="action-row">
-          <a class="primary" href="#/network">Open Connect</a>
-          <a class="secondary" href="#/boards">Open Showcase</a>
+          <a class="primary" href="#/card">Claim your card</a>
+          <a class="secondary" href="#/profile">View proof profile</a>
         </div>
       </div>
       <div class="hero-proof">
-        <div class="share-preview" aria-label="PRBar weekly proof of work share card">
-          <div class="share-kicker">PRBar · Weekly proof of work</div>
-          <div class="share-head">
-            <div>
-              <strong>42</strong>
-              <span>merged PRs</span>
-            </div>
-            <p><b>This week</b><span>6 active repos</span></p>
-          </div>
-          <div class="share-histogram">
-            <div class="share-histogram-title">
-              <span>PR histogram</span>
-              <b>by repo</b>
-            </div>
-            <div class="share-chart" aria-label="Merged pull requests over the week">
-              <i>
-                <em style="height: 34%; background:#19b394"></em>
-              </i>
-              <i>
-                <em style="height: 36%; background:#19b394"></em>
-                <em style="height: 22%; background:#f4c430"></em>
-              </i>
-              <i>
-                <em style="height: 24%; background:#19b394"></em>
-                <em style="height: 18%; background:#2f6fed"></em>
-              </i>
-              <i>
-                <em style="height: 42%; background:#19b394"></em>
-                <em style="height: 22%; background:#f4c430"></em>
-                <em style="height: 12%; background:#2f6fed"></em>
-              </i>
-              <i>
-                <em style="height: 38%; background:#19b394"></em>
-                <em style="height: 26%; background:#f4c430"></em>
-              </i>
-              <i>
-                <em style="height: 48%; background:#19b394"></em>
-                <em style="height: 30%; background:#f4c430"></em>
-                <em style="height: 22%; background:#2f6fed"></em>
-              </i>
-              <i>
-                <em style="height: 44%; background:#19b394"></em>
-                <em style="height: 24%; background:#f4c430"></em>
-                <em style="height: 14%; background:#2f6fed"></em>
-              </i>
-            </div>
-          </div>
-          <div class="share-chart-labels">
-            <span>Mon</span>
-            <span>Peak 11</span>
-            <span>Sun</span>
-          </div>
-          <div class="share-repos">
-            <span><i style="background:#19b394"></i>sideproject-radar<b>18</b></span>
-            <span><i style="background:#f4c430"></i>radar-ios<b>14</b></span>
-            <span><i style="background:#2f6fed"></i>launch-kit<b>10</b></span>
-          </div>
-          <div class="share-foot">
-            <span>@maya.codes</span>
-            <span>PRBAR.APP</span>
-          </div>
-        </div>
+        ${builderLinkCard({ id: "home-builder-card" })}
       </div>
     </section>
+    ${publishJourney(0, {
+      title: "Claim your card. Connect GitHub. Publish your proof resume.",
+      copy: "Start with the builder card, choose what counts, then turn selected repos, apps, and releases into a profile you can share anywhere."
+    })}
+    <section class="proof-manifesto">
+      <p>No feed. No threads. No productivity theater. Just proof.</p>
+    </section>
     <section class="surface-grid">
-      <a class="surface-card" href="#/network"><span>01</span><h2>Connect</h2><p>Follow high-velocity AI builders.</p></a>
-      <a class="surface-card" href="#/boards"><span>02</span><h2>Showcase</h2><p>Builders, projects, and receipts worth watching.</p></a>
-      <a class="surface-card" href="#/talent"><span>03</span><h2>Talent Board</h2><p>Scout builders with recent proof, relevant stacks, and clear availability.</p></a>
+      <a class="surface-card" href="#/card"><span>01</span><h2>Builder Card</h2><p>Your compact proof link for bios, resumes, and intros.</p></a>
+      <a class="surface-card" href="#/profile"><span>02</span><h2>Proof Resume</h2><p>A living profile built from PRs, releases, apps, and shipped features.</p></a>
+      <a class="surface-card" href="#/boards"><span>03</span><h2>App Showcase</h2><p>Simple project pages with the receipts behind the work.</p></a>
     </section>
     ${routeIndex()}
   `);
@@ -627,13 +713,13 @@ function networkPage() {
   return shell(`
     <section class="page-hero">
       <p class="eyebrow">Connect</p>
-      <h1>Follow high-velocity AI builders.</h1>
-      <p>See what they shipped, ask how they did it, and keep up with people building at AI speed.</p>
+      <h1>Follow proof, not posts.</h1>
+      <p>Track builders by releases, app updates, and shipped work. No threads required.</p>
       <div class="network-tabs" aria-label="Connect filters">
         <button class="active" type="button">Receipts</button>
         <button type="button">Builders</button>
         <button type="button">Projects</button>
-        <button type="button">Questions</button>
+        <button type="button">Apps</button>
       </div>
     </section>
     <section class="network-layout">
@@ -643,8 +729,8 @@ function networkPage() {
       <aside class="side-panel">
         <div class="network-brief">
           <span>Connect signal</span>
-          <h2>Receipts start conversations.</h2>
-          <p>Follow receipts, ask about workflows, and go deeper into the person and project behind each shipped thing.</p>
+          <h2>Work is the surface.</h2>
+          <p>Open the receipt, inspect the app, or view the proof resume behind each shipped thing.</p>
         </div>
         ${builderCard(builders[0], { featured: true })}
         <div class="proof-rule">
@@ -663,8 +749,9 @@ function boardsPage(activeView = "apps") {
   return shell(`
     <section class="page-hero dark">
       <p class="eyebrow">${view.eyebrow}</p>
-      <h1>Apps, builders, and receipts worth watching.</h1>
-      <p>${view.description}</p>
+      <h1>Apps with receipts.</h1>
+      <p>Browse projects backed by releases, PRs, and app updates.</p>
+      ${proofChain(["Builder publishes proof", "App gets attached", "Community votes", "PRBar can feature it"])}
       <div class="board-filterbar" aria-label="Showcase filters">
         ${boardFilters.map((filter, index) => `<button class="${index === 0 ? "active" : ""}" type="button">${filter}</button>`).join("")}
       </div>
@@ -691,7 +778,7 @@ function boardsPage(activeView = "apps") {
         <div class="app-links spotlight-links">
           <a href="#/project">Open app page</a>
           <a href="#/receipt">View receipt</a>
-          <a href="#/profile">Follow builder</a>
+          <a href="#/profile">View proof resume</a>
         </div>
       </article>
       <div class="board-main">
@@ -723,8 +810,9 @@ function talentPage(filter = "all") {
   return shell(`
     <section class="page-hero">
       <p class="eyebrow">Talent Board</p>
-      <h1>Find builders with receipts.</h1>
-      <p>Search by recent releases, stack, domain, availability, and proof of shipped work.</p>
+      <h1>Find builders by what they shipped.</h1>
+      <p>Search proof resumes, not polished claims.</p>
+      ${proofChain(["Recent receipts", "Relevant stack", "App outcomes", "Availability"])}
       <div class="search-prompt">I need someone to ship: <strong>iOS MVP / SaaS onboarding / AI agent UI</strong></div>
       <div class="board-tabs talent-tabs" aria-label="Talent filters">
         ${["all", "ios", "saas", "launch"].map((key) => `<button class="${key === filter ? "active" : ""}" data-filter="${key}" type="button">${key}</button>`).join("")}
@@ -753,21 +841,31 @@ function dashboardPage() {
   return shell(`
     <section class="page-hero">
       <p class="eyebrow">Private dashboard</p>
-      <h1>Make proof from your week.</h1>
-      <p>Review imported GitHub activity, approve receipts, and choose what becomes public.</p>
+      <h1>Choose what counts.</h1>
+      <p>Connect GitHub, pick your repos and apps, then publish a proof resume you can share anywhere.</p>
     </section>
+    ${publishJourney(1, {
+      compact: true,
+      title: "Your proof resume starts with selected sources.",
+      copy: "PRBar has the facts. You choose the repos, app links, and releases that belong on the public surface."
+    })}
     <section class="workflow-layout">
       <article class="command-panel">
-        <div class="panel-heading"><span>Next action</span><h2>3 receipts ready for review</h2></div>
+        <div class="panel-heading"><span>Next action</span><h2>Publish SideProject Radar v2.1</h2></div>
         <ol class="checklist">
           <li class="done"><b>GitHub connected</b><span>@maya.codes synced 11 minutes ago</span></li>
           <li class="done"><b>Repos selected</b><span>2 public, 2 private with redaction enabled</span></li>
-          <li><b>Review SideProject Radar v2.1</b><span>Suggested receipt uses 8 merged PRs and release tag v2.1.0</span></li>
-          <li><b>Publish share card</b><span>Preview profile, board eligibility, and receipt link</span></li>
+          <li><b>Create builder card</b><span>Start with PR distribution, releases, and app links in one shareable object</span></li>
+          <li><b>Publish profile and receipts</b><span>Preview profile, board eligibility, and receipt links</span></li>
         </ol>
-        <div class="action-row small"><a class="primary" href="#/studio">Open studio</a><a class="secondary light" href="#/repos">Manage sources</a></div>
+        <div class="action-row small"><a class="primary" href="#/card">Build card</a><a class="secondary light" href="#/repos">Manage sources</a></div>
       </article>
       <div class="dashboard-stack">
+        <article class="card-ready-panel">
+          <div class="panel-heading"><span>First shareable asset</span><h2>Your builder card is ready.</h2></div>
+          <p>Use it as a bio link, email signature, recruiting proof, launch post, or compact preview of the full profile.</p>
+          <div class="action-row small"><a class="primary" href="#/card">Customize card</a><a class="secondary light" href="#/profile">View profile</a></div>
+        </article>
         <article class="app-builder-panel">
           <div class="panel-heading"><span>New surface</span><h2>Add what GitHub cannot see</h2></div>
           <p>Show the app, product, TestFlight build, demo, or customer-facing thing your receipts helped ship.</p>
@@ -797,10 +895,11 @@ function profilePage() {
       <div class="profile-main">
         <span class="avatar xl">${builder.initials}</span>
         <div>
-          <p class="eyebrow">Proof profile</p>
-          <h1>Receipts beat resumes.</h1>
-          <p>${builder.handle} ships AI-native mobile and micro-SaaS work backed by selected GitHub repos.</p>
-          <div class="action-row small"><a class="primary" href="#/receipt">Featured receipt</a><a class="secondary light" href="#/talent">Find similar builders</a></div>
+          <p class="eyebrow">Proof Resume</p>
+          <h1>PRBar is the resume for AI-native builders.</h1>
+          <p>A living profile built from what ${builder.handle} actually shipped: selected repos, releases, app updates, and public receipts.</p>
+          ${proofChain(["Selected repos", "Released apps", "Merged PRs", "Public receipts"])}
+          <div class="action-row small"><a class="primary" href="#/receipt">Featured receipt</a><a class="secondary light" href="#/card">Customize card</a></div>
         </div>
       </div>
       <aside class="profile-aside">
@@ -809,6 +908,11 @@ function profilePage() {
       </aside>
     </section>
     <section class="profile-proof-grid">
+      <article class="profile-card-panel">
+        <div class="panel-heading"><span>Portable proof</span><h2>Builder card</h2></div>
+        ${builderLinkCard({ id: "profile-builder-card", compact: true })}
+        <div class="action-row small"><a class="primary" href="#/card">Customize card</a></div>
+      </article>
       ${builderCard(builder, { featured: true })}
       <div class="featured-apps-panel">
         <h2>Featured apps</h2>
@@ -843,6 +947,7 @@ function receiptPage() {
         <h1>${release.title}</h1>
         <p>${release.summary}</p>
         ${statPills(release.facts)}
+        ${proofChain(["Release tag v2.1.0", "8 merged PRs", "34 tests added", "Public app proof"])}
       </div>
       <aside>
         <span>Verified source</span>
@@ -883,10 +988,16 @@ function projectPage() {
       <p class="eyebrow">${item.status} · ${item.category}</p>
       <h1>${item.name}</h1>
       <p>${item.description}</p>
+      ${proofChain(["App added by builder", "Repos attached", "Latest receipt published", "Eligible for Showcase"])}
       <div class="project-links"><a href="#/receipt">Latest receipt</a><a href="#/profile">Builder profile</a><a href="#/repos">Source repos</a></div>
     </section>
     <section class="project-grid">
       <article class="project-visual"><span>Live app page</span><strong>${item.tagline}</strong>${appPreview(item)}${statPills(item.proof)}</article>
+      <article class="proof-trail-panel">
+        <h2>Proof trail</h2>
+        <p>This is the part GitHub cannot assemble on its own: the app, status, launch links, selected repos, and latest receipt in one inspectable page.</p>
+        ${receiptCard(item.receipt, { compact: true })}
+      </article>
       <div class="timeline-panel">
         <h2>What changed over time</h2>
         ${timeline.map((item) => `<article><span>${item.date}</span><h3>${item.title}</h3><p>${item.detail}</p></article>`).join("")}
@@ -904,10 +1015,15 @@ function reposPage() {
 
   return shell(`
     <section class="page-hero">
-      <p class="eyebrow">Repo sources</p>
+      <p class="eyebrow">GitHub Sources</p>
       <h1>Choose which repos count.</h1>
       <p>Control profiles, boards, receipts, and private redaction from one source list.</p>
     </section>
+    ${publishJourney(2, {
+      compact: true,
+      title: "Select the inputs before anything goes public.",
+      copy: "Sources are the control layer: include product repos, attach them to apps, and redact private work before receipts are published."
+    })}
     <section class="repo-layout">
       <aside class="source-summary">
         <h2>@maya.codes</h2>
@@ -944,14 +1060,61 @@ function reposPage() {
 function studioPage() {
   return shell(`
     <section class="page-hero">
-      <p class="eyebrow">Receipt Studio</p>
-      <h1>Shape the receipt.</h1>
-      <p>Keep GitHub facts intact, add context, and preview the public card.</p>
+      <p class="eyebrow">Create Receipt</p>
+      <h1>Lock the facts. Shape the story.</h1>
+      <p>Keep GitHub evidence intact, add context, and preview the public receipt before it feeds your profile and app page.</p>
     </section>
+    ${publishJourney(2, {
+      compact: true,
+      title: "This is where activity becomes a receipt.",
+      copy: "Facts stay source-linked. Your note explains what changed, why it mattered, and what the shipped work unlocked."
+    })}
     <section class="studio-grid">
       <article class="evidence-panel"><h2>Raw evidence</h2><div class="pr-list"><div><b>#184</b><span>Discovery filters</span><em>Included</em></div><div><b>#188</b><span>Release notes importer</span><em>Included</em></div><div><b>#191</b><span>Scoring tests</span><em>Included</em></div></div></article>
       <article class="editor-panel"><h2>Annotation</h2><label>Receipt title<input value="SideProject Radar v2.1"></label><label>Builder note<textarea>Moved from prototype to weekly-use product with release notes imported from GitHub.</textarea></label><label class="check"><input type="checkbox" checked> Hide private repo names</label></article>
-      <article class="preview-panel"><h2>Public preview</h2>${receiptCard(releases[0], { compact: true })}<div class="action-row small"><a class="primary" href="#/receipt">Publish receipt</a></div></article>
+      <article class="fact-split-panel">
+        <div><span>Locked</span><b>PRs, tags, checks, timestamps</b></div>
+        <div><span>Editable</span><b>Title, builder note, app context</b></div>
+        <div><span>Private</span><b>Repo names, client work, excluded sources</b></div>
+      </article>
+      <article class="preview-panel"><h2>Public preview</h2>${receiptCard(releases[0], { compact: true })}<div class="action-row small"><a class="primary" href="#/receipt">Publish receipt</a><a class="secondary light" href="#/profile">Preview profile</a></div></article>
+    </section>
+  `);
+}
+
+function builderCardPage() {
+  return shell(`
+    <section class="page-hero">
+      <p class="eyebrow">Builder Card</p>
+      <h1>Stop sending resumes.</h1>
+      <p class="lede">Send proof.</p>
+      <p>Claim a dynamic builder card backed by GitHub releases, merged PRs, and shipped apps.</p>
+    </section>
+    ${publishJourney(0, {
+      compact: true,
+      title: "Your card works before the network exists.",
+      copy: "Use it as a bio link, profile preview, and proof resume teaser before Connect, Showcase, or Talent matter."
+    })}
+    <section class="builder-card-layout">
+      <article class="builder-card-demo-panel">
+        ${builderLinkCard({ id: "setup-builder-card" })}
+      </article>
+      <aside class="builder-card-settings">
+        <div class="panel-heading"><span>Setup</span><h2>Four obvious steps</h2></div>
+        <ol class="checklist">
+          <li class="done"><b>Claim your card</b><span>@maya.codes proof link reserved</span></li>
+          <li class="done"><b>Connect GitHub</b><span>OAuth connected with selected repo access</span></li>
+          <li class="done"><b>Choose what counts</b><span>2 public repos, 1 private repo with redaction</span></li>
+          <li><b>Publish your proof resume</b><span>Share in bio, resume, email signature, X, LinkedIn, or personal site</span></li>
+        </ol>
+        <div class="card-setting-grid">
+          <label><span>Theme</span><b>Midnight proof</b></label>
+          <label><span>Front</span><b>PR distribution</b></label>
+          <label><span>Back tabs</span><b>Releases + Apps</b></label>
+          <label><span>Privacy</span><b>Private repo names hidden</b></label>
+        </div>
+        <div class="action-row small"><a class="primary" href="#/profile">Publish proof resume</a><a class="secondary light" href="#/studio">Create receipt</a></div>
+      </aside>
     </section>
   `);
 }
@@ -988,6 +1151,55 @@ function placeholderPage(label) {
   `);
 }
 
+function initializeBuilderLinkCards() {
+  document.querySelectorAll("[data-builder-link-card]").forEach((card) => {
+    const frontButton = card.querySelector('[data-card-side="front"]');
+    const backButton = card.querySelector('[data-card-side="back"]');
+    const tabs = Array.from(card.querySelectorAll("[data-link-card-tab]"));
+    const panels = Array.from(card.querySelectorAll("[data-link-card-panel]"));
+
+    const setFlipped = (flipped) => {
+      card.classList.toggle("flipped", flipped);
+      frontButton?.classList.toggle("active", !flipped);
+      backButton?.classList.toggle("active", flipped);
+    };
+
+    frontButton?.addEventListener("click", () => setFlipped(false));
+    backButton?.addEventListener("click", () => setFlipped(true));
+
+    tabs.forEach((button) => {
+      button.addEventListener("click", () => {
+        tabs.forEach((item) => {
+          const active = item === button;
+          item.classList.toggle("active", active);
+          item.setAttribute("aria-selected", String(active));
+        });
+        panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.linkCardPanel === button.dataset.linkCardTab));
+      });
+    });
+
+    card.addEventListener("pointermove", (event) => {
+      if (card.classList.contains("flipped")) return;
+      const rect = card.getBoundingClientRect();
+      const px = (event.clientX - rect.left) / rect.width;
+      const py = (event.clientY - rect.top) / rect.height;
+      card.style.setProperty("--tilt-x", `${(px - 0.5) * 9}deg`);
+      card.style.setProperty("--tilt-y", `${(0.5 - py) * 7}deg`);
+      card.style.setProperty("--glare-x", `${px * 100}%`);
+      card.style.setProperty("--glare-y", `${py * 100}%`);
+      card.style.setProperty("--glare-opacity", "0.22");
+    });
+
+    card.addEventListener("pointerleave", () => {
+      card.style.setProperty("--tilt-x", "0deg");
+      card.style.setProperty("--tilt-y", "0deg");
+      card.style.setProperty("--glare-x", "50%");
+      card.style.setProperty("--glare-y", "30%");
+      card.style.setProperty("--glare-opacity", "0.14");
+    });
+  });
+}
+
 function render() {
   const path = routePath();
   if (path === "/home") app.innerHTML = homePage();
@@ -996,12 +1208,20 @@ function render() {
   if (path === "/talent") app.innerHTML = talentPage();
   if (path === "/dashboard") app.innerHTML = dashboardPage();
   if (path === "/profile") app.innerHTML = profilePage();
+  if (path === "/card") app.innerHTML = builderCardPage();
   if (path === "/receipt") app.innerHTML = receiptPage();
   if (path === "/project") app.innerHTML = projectPage();
   if (path === "/repos") app.innerHTML = reposPage();
   if (path === "/studio") app.innerHTML = studioPage();
   if (path === "/trust") app.innerHTML = trustPage();
   if (!routes.some((route) => route.path === path)) app.innerHTML = placeholderPage("Home");
+
+  if (lastRenderedPath !== path) {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 50);
+    lastRenderedPath = path;
+  }
 
   document.querySelectorAll("[data-board]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1022,6 +1242,8 @@ function render() {
       writeActiveSection(link.dataset.section);
     });
   });
+
+  initializeBuilderLinkCards();
 
   const toggle = document.querySelector("[data-toc-toggle]");
   const collapsed = readTocCollapsed();

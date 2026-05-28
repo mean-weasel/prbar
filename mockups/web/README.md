@@ -18,18 +18,20 @@ The prototype uses hash routes:
 - `#/talent`
 - `#/dashboard`
 - `#/profile`
+- `#/card`
 - `#/receipt`
 - `#/project`
 - `#/repos`
 - `#/studio`
 - `#/trust`
 
-The mockup centers the web product around:
+The mockup positions PRBar as the resume for AI-native builders and centers the product around:
 
-- proof-of-work profiles
+- proof resumes built from shipped work
+- interactive builder cards for a first shareable proof link
 - PR and release receipts
-- a showcase for apps, builders, and receipts worth watching
+- a simple showcase for apps with receipts
 - user-curated app pages backed by selected GitHub repos and release receipts
-- AI builder talent discovery
+- optional AI builder talent discovery
 - private dashboard/source-selection workflows
 - PRBar's Mac, iOS, and web app family
