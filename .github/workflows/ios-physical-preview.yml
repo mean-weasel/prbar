@@ -8,7 +8,7 @@ on:
         required: true
         default: pr
         type: choice
-        options: [fast, pr, full, live]
+        options: [fast, pr, full, live, live-headless]
       device_name:
         description: Physical iPhone name reported by Xcode
         required: true

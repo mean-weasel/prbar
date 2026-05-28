@@ -11,9 +11,11 @@ DEVICE_NAME="${IOS_DEVICE_NAME:-iPhone-preview}"
 UI_TEST_TARGET="${IOS_UI_TEST_TARGET:-PRBarPreviewUITests}"
 DERIVED_DATA_PATH="${IOS_DERIVED_DATA_PATH:-apple/PreviewSmokeBuild}"
 RESULT_BUNDLE="${IOS_PREVIEW_SMOKE_RESULT_BUNDLE:-apple/PreviewDeviceSmokeResults.xcresult}"
+PRODUCT_BUNDLE_IDENTIFIER="${PRODUCT_BUNDLE_IDENTIFIER:-com.neonwatty.PRBar.ios.preview}"
 PROFILE="${IOS_UI_SMOKE_PROFILE:-pr}"
 DEVICE_READY_TIMEOUT="${IOS_DEVICE_READY_TIMEOUT:-45}"
 XCODEBUILD_EXTRA_ARGS=()
+HEADLESS_LIVE_SMOKE=0
 
 if [[ -z "${IOS_DESTINATION:-}" ]]; then
   echo "Resolving physical preview device by name: $DEVICE_NAME"
@@ -43,16 +45,21 @@ case "$PROFILE" in
   fast|pr)
     TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testPreviewDeviceCanLaunchCoreTabs")
     ;;
-  live)
+  live|live-headless)
     if [[ -z "${IOS_LIVE_GITHUB_LOGIN:-}" ]]; then
-      echo "IOS_LIVE_GITHUB_LOGIN is required for IOS_UI_SMOKE_PROFILE=live." >&2
+      echo "IOS_LIVE_GITHUB_LOGIN is required for IOS_UI_SMOKE_PROFILE=$PROFILE." >&2
       exit 64
     fi
     if [[ -z "${IOS_LIVE_INCLUDED_REPO:-}" ]]; then
-      echo "IOS_LIVE_INCLUDED_REPO is required for IOS_UI_SMOKE_PROFILE=live." >&2
+      echo "IOS_LIVE_INCLUDED_REPO is required for IOS_UI_SMOKE_PROFILE=$PROFILE." >&2
       exit 64
     fi
-    TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testLiveGitHubOneRepositoryRefresh")
+    if [[ "$PROFILE" == "live-headless" ]]; then
+      HEADLESS_LIVE_SMOKE=1
+      TESTS=()
+    else
+      TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testLiveGitHubOneRepositoryRefresh")
+    fi
     ;;
   full)
     TESTS=()
@@ -72,11 +79,14 @@ echo "Checking physical iOS device readiness for: $IOS_DEVICE_ID"
 echo "Device role: $DEVICE_NAME"
 echo "Xcode destination: $IOS_DESTINATION"
 echo "Keep the iPhone unlocked and awake until the UI test starts."
-if [[ "$PROFILE" == "live" ]]; then
+if [[ "$PROFILE" == live* ]]; then
   echo "Live GitHub smoke profile:"
   echo "  GitHub login: $IOS_LIVE_GITHUB_LOGIN"
   echo "  Included repo: $IOS_LIVE_INCLUDED_REPO"
   echo "  Auth source: existing PRBar Keychain session on the target iPhone"
+  if [[ "$HEADLESS_LIVE_SMOKE" == "1" ]]; then
+    echo "  Driver: devicectl app launch"
+  fi
 fi
 
 ready_deadline=$((SECONDS + DEVICE_READY_TIMEOUT))
@@ -113,6 +123,65 @@ fi
 
 ./scripts/ios-generate.sh
 rm -rf "$RESULT_BUNDLE"
+
+if [[ "$HEADLESS_LIVE_SMOKE" == "1" ]]; then
+  build_args=(
+    build
+    -project "$PROJECT"
+    -scheme "$SCHEME"
+    -configuration "$CONFIGURATION"
+    -destination "$IOS_DESTINATION"
+    -derivedDataPath "$DERIVED_DATA_PATH"
+  )
+  build_args+=("${XCODEBUILD_EXTRA_ARGS[@]}")
+
+  xcodebuild "${build_args[@]}"
+
+  app_path="$DERIVED_DATA_PATH/Build/Products/${CONFIGURATION}-iphoneos/PRBarPreview.app"
+  if [[ ! -d "$app_path" ]]; then
+    echo "Expected built preview app at $app_path." >&2
+    exit 66
+  fi
+
+  echo "Installing $PRODUCT_BUNDLE_IDENTIFIER on $DEVICE_NAME."
+  xcrun devicectl device install app --device "$IOS_DEVICE_ID" "$app_path" --timeout 120
+
+  launch_environment="$(
+    jq -cn \
+      --arg login "$IOS_LIVE_GITHUB_LOGIN" \
+      --arg repo "$IOS_LIVE_INCLUDED_REPO" \
+      '{PRBAR_LIVE_SMOKE_GITHUB_LOGIN: $login, PRBAR_LIVE_SMOKE_INCLUDED_REPO: $repo}'
+  )"
+  mkdir -p "$RESULT_BUNDLE"
+  launch_log="$RESULT_BUNDLE/headless-live.log"
+  : >"$launch_log"
+  trap 'rm -f "$lock_json"' EXIT
+
+  echo "Launching headless live GitHub smoke on $DEVICE_NAME."
+  set +e
+  xcrun devicectl device process launch \
+    --device "$IOS_DEVICE_ID" \
+    --terminate-existing \
+    --console \
+    --timeout "${IOS_LIVE_HEADLESS_TIMEOUT:-180}" \
+    --environment-variables "$launch_environment" \
+    "$PRODUCT_BUNDLE_IDENTIFIER" \
+    --live-github-smoke-headless 2>&1 | tee "$launch_log"
+  launch_status=${PIPESTATUS[0]}
+  set -e
+
+  if grep -q "PRBAR_LIVE_SMOKE_RESULT success" "$launch_log"; then
+    exit 0
+  fi
+
+  if grep -q "PRBAR_LIVE_SMOKE_RESULT failure" "$launch_log"; then
+    echo "Headless live GitHub smoke reported a PRBar failure." >&2
+    exit 65
+  fi
+
+  echo "Headless live GitHub smoke did not emit a PRBAR_LIVE_SMOKE_RESULT marker." >&2
+  exit "$launch_status"
+fi
 
 args=(
   test
