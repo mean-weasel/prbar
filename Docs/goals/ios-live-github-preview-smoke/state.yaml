@@ -8,7 +8,7 @@ goal:
   slug: "ios-live-github-preview-smoke"
   kind: specific
   tranche: "Implement and verify a repeatable physical-iPhone live GitHub smoke path with exactly one included repository."
-  status: active
+  status: done
   oracle:
     signal: "A physical-device GitHub Actions run on iPhone-preview uses a configured single repo, proves exactly that repo is included, refreshes live GitHub PR/release activity, and reports success or a precise blocker."
     cadence: "after each Worker package and at final audit"
@@ -69,7 +69,7 @@ visual_board:
     command: "npx goalbuddy board docs/goals/ios-live-github-preview-smoke"
     blocked_reason: "npx/npm/goalbuddy CLI are not on PATH in this environment; the file-backed board is ready and the local visual board can be started once the CLI is available."
 
-active_task: T005
+active_task: null
 
 tasks:
   - id: T001
@@ -288,7 +288,7 @@ tasks:
   - id: T005
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: medium
     objective: "After a live auth source is available, rerun the live-headless physical iPhone smoke and capture the one-repo refresh proof."
     allowed_files:
@@ -325,12 +325,41 @@ tasks:
           - "gh secret list --repo mean-weasel/prbar still shows IOS_PREVIEW_KEYCHAIN_PASSWORD and PRBAR_IOS_GITHUB_CLIENT_ID, but not PRBAR_IOS_LIVE_GITHUB_TOKEN."
           - "T004 documentation completed while T005 remains gated on live auth."
         next_action: "Configure PRBAR_IOS_LIVE_GITHUB_TOKEN or manually sign in the preview app, then dispatch the live-headless physical workflow."
-    receipt: null
+      - checked_at: "2026-05-28T14:59:18Z"
+        result: "live_headless_physical_smoke_passed"
+        evidence:
+          - "gh secret list --repo mean-weasel/prbar showed PRBAR_IOS_LIVE_GITHUB_TOKEN, PRBAR_IOS_GITHUB_CLIENT_ID, and IOS_PREVIEW_KEYCHAIN_PASSWORD."
+          - "Dispatched https://github.com/mean-weasel/prbar/actions/runs/26582735446 with smoke_profile=live-headless, device_name=iPhone-preview, github_login=neonwatty, included_repo=mean-weasel/prbar."
+          - "Physical Device Smoke completed successfully on runner prbar-iphone-preview."
+          - "Run logs emitted PRBAR_LIVE_SMOKE_RESULT success login=neonwatty repo=mean-weasel/prbar selected_repo_count=1 pull_requests=70 releases=2."
+        next_action: "Run final audit."
+    receipt:
+      result: done
+      summary: "The live-headless physical iPhone smoke now passes with secret-backed live GitHub auth. The workflow installed and launched PRBarPreview on iPhone-preview, seeded exactly mean-weasel/prbar, refreshed live GitHub activity for neonwatty, and emitted the required success marker with selected_repo_count=1."
+      workflow_run: "https://github.com/mean-weasel/prbar/actions/runs/26582735446"
+      job: "https://github.com/mean-weasel/prbar/actions/runs/26582735446/job/78320029462"
+      success_marker: "PRBAR_LIVE_SMOKE_RESULT success login=neonwatty repo=mean-weasel/prbar selected_repo_count=1 pull_requests=70 releases=2"
+      changed_files:
+        - "Docs/goals/ios-live-github-preview-smoke/state.yaml"
+      commands:
+        - cmd: "gh secret list --repo mean-weasel/prbar | rg 'PRBAR_IOS_LIVE_GITHUB_TOKEN|PRBAR_IOS_GITHUB_CLIENT_ID|IOS_PREVIEW_KEYCHAIN_PASSWORD' || true"
+          status: pass
+          details: "PRBAR_IOS_LIVE_GITHUB_TOKEN, PRBAR_IOS_GITHUB_CLIENT_ID, and IOS_PREVIEW_KEYCHAIN_PASSWORD are present."
+        - cmd: "gh workflow run ios-physical-preview.yml --repo mean-weasel/prbar --ref codex/ios-live-github-preview-smoke -f smoke_profile=live-headless -f device_name=iPhone-preview -f github_login=neonwatty -f included_repo=mean-weasel/prbar"
+          status: pass
+          details: "Dispatched run 26582735446."
+        - cmd: "gh run watch 26582735446 --repo mean-weasel/prbar --exit-status"
+          status: pass
+          details: "Physical Device Smoke passed in 48s."
+        - cmd: "gh run view 26582735446 --repo mean-weasel/prbar --job 78320029462 --log | rg 'PRBAR_LIVE_SMOKE_RESULT|Live GitHub smoke profile|Included repo|GitHub login|Auth source|Driver|Physical Device Smoke|Run physical device smoke'"
+          status: pass
+          details: "Logs confirmed the success marker and masked PRBAR_IOS_LIVE_GITHUB_TOKEN as *** in workflow environment output."
+      full_outcome_complete: false
 
   - id: T999
     type: judge
     assignee: Judge
-    status: queued
+    status: done
     reasoning_hint: high
     objective: "Audit whether the live one-repo physical-device GitHub smoke goal is complete."
     inputs:
@@ -349,13 +378,41 @@ tasks:
       - "mapped evidence against oracle"
       - "missing evidence"
       - "next task if not complete"
-    receipt: null
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "Final audit accepts completion. The goal oracle required a physical iPhone-preview GitHub Actions run that uses a configured single repo, proves exactly that repo is included, refreshes live GitHub PR/release activity, and reports success or a precise blocker. Run 26582735446 proves the success path."
+      mapped_evidence:
+        - requirement: "Physical-device GitHub Actions run on iPhone-preview"
+          evidence: "https://github.com/mean-weasel/prbar/actions/runs/26582735446 completed successfully on Physical Device Smoke."
+          status: proved
+        - requirement: "Configured single repo is used"
+          evidence: "Workflow inputs and logs used included_repo=mean-weasel/prbar."
+          status: proved
+        - requirement: "Exactly one repo included"
+          evidence: "Success marker reported selected_repo_count=1."
+          status: proved
+        - requirement: "Live GitHub activity refresh completes"
+          evidence: "Success marker reported pull_requests=70 and releases=2 for login=neonwatty repo=mean-weasel/prbar."
+          status: proved
+        - requirement: "Install workflows remain simple and non-mutating"
+          evidence: "Implementation and docs keep live one-repo seeding scoped to ios-physical-preview live-headless, not ios-preview-install."
+          status: proved
+        - requirement: "Secrets are not logged"
+          evidence: "GitHub Actions log shows PRBAR_IOS_LIVE_GITHUB_TOKEN masked as ***; success marker contains only login, repo, counts."
+          status: proved
+        - requirement: "PR baseline remains healthy"
+          evidence: "PR #71 is draft, mergeable, and latest CI/iOS checks are successful or skipped as expected."
+          status: proved
+      missing_evidence: []
+      next_task: null
 
 checks:
-  dirty_fingerprint: "clean codex/ios-live-github-preview-smoke...origin/codex/ios-live-github-preview-smoke before recording T005 progress at 2026-05-28T12:14:33Z"
+  dirty_fingerprint: "clean codex/ios-live-github-preview-smoke...origin/codex/ios-live-github-preview-smoke before final receipt update at 2026-05-28T14:59:18Z"
   last_verification:
-    result: waiting_on_live_auth_source
-    task: T005
+    result: complete
+    task: T999
     commands:
       - cmd: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-update.mjs --json"
         status: pass
@@ -365,13 +422,13 @@ checks:
         details: "Worktree clean on codex/ios-live-github-preview-smoke tracking origin/codex/ios-live-github-preview-smoke."
       - cmd: "gh secret list --repo mean-weasel/prbar | rg 'PRBAR_IOS_LIVE_GITHUB_TOKEN|PRBAR_IOS_GITHUB_CLIENT_ID|IOS_PREVIEW_KEYCHAIN_PASSWORD' || true"
         status: pass
-        details: "PRBAR_IOS_LIVE_GITHUB_TOKEN absent; IOS_PREVIEW_KEYCHAIN_PASSWORD and PRBAR_IOS_GITHUB_CLIENT_ID present."
-      - cmd: "gh run view 26573831430 --repo mean-weasel/prbar --json status,conclusion,url,updatedAt,jobs"
+        details: "PRBAR_IOS_LIVE_GITHUB_TOKEN, IOS_PREVIEW_KEYCHAIN_PASSWORD, and PRBAR_IOS_GITHUB_CLIENT_ID present."
+      - cmd: "gh run view 26582735446 --repo mean-weasel/prbar --json status,conclusion,url,updatedAt,jobs"
         status: pass
-        details: "iOS Build, Test, UI Smoke completed successfully; URL https://github.com/mean-weasel/prbar/actions/runs/26573831430."
+        details: "iOS Physical Preview live-headless completed successfully; URL https://github.com/mean-weasel/prbar/actions/runs/26582735446."
       - cmd: "gh pr view 71 --repo mean-weasel/prbar --json number,isDraft,mergeable,statusCheckRollup,url"
         status: pass
         details: "PR #71 is draft, mergeable, and all reported checks are success or skipped as expected."
       - cmd: "git diff --check"
         status: pass
-        details: "Documentation and board updates are whitespace-clean."
+        details: "Final board update is whitespace-clean."
