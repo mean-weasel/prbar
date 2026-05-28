@@ -1,62 +1,54 @@
 const routes = [
   { path: "/home", label: "Home" },
-  { path: "/network", label: "Connect" },
-  { path: "/boards", label: "Showcase" },
-  { path: "/talent", label: "Talent" },
-  { path: "/dashboard", label: "Dashboard" },
-  { path: "/profile", label: "Profile" },
+  { path: "/signup", label: "Sign Up" },
+  { path: "/signin", label: "Sign In" },
+  { path: "/login", label: "Login" },
+  { path: "/logout", label: "Logout" },
+  { path: "/onboarding", label: "Onboarding" },
+  { path: "/connect-github", label: "Connect GitHub" },
+  { path: "/network", label: "Archived Browser" },
+  { path: "/boards", label: "App Pages" },
+  { path: "/talent", label: "Future Search" },
+  { path: "/dashboard", label: "Sources & Privacy" },
+  { path: "/profile", label: "Builder Proof" },
+  { path: "/user", label: "User Profile" },
+  { path: "/edit-profile", label: "Edit Profile" },
+  { path: "/account", label: "Account & Permissions" },
   { path: "/card", label: "Builder Card" },
   { path: "/receipt", label: "Receipt" },
-  { path: "/project", label: "Project" },
-  { path: "/repos", label: "Repos" },
-  { path: "/studio", label: "Studio" },
-  { path: "/trust", label: "Trust" },
+  { path: "/project", label: "App Page" },
+  { path: "/repos", label: "Sources & Privacy" },
+  { path: "/studio", label: "Edit Receipt" },
+  { path: "/trust", label: "Trust Rules" },
 ];
 
-const primaryNavPaths = ["/home", "/network", "/boards", "/talent", "/profile"];
+const primaryNavPaths = ["/home", "/profile", "/repos"];
 
 const routeGroups = [
   {
     title: "Home",
     path: "/home",
-    routes: [],
-  },
-  {
-    title: "Connect",
-    path: "/network",
     routes: [
-      { path: "/network", label: "Feed" },
-      { path: "/profile", label: "Builder Profile" },
-      { path: "/receipt", label: "Receipt" },
+      { path: "/signup", label: "Sign Up" },
+      { path: "/signin", label: "Sign In" },
+      { path: "/login", label: "Login" },
+      { path: "/onboarding", label: "Onboarding" },
+      { path: "/connect-github", label: "Connect GitHub" },
     ],
   },
   {
-    title: "Showcase",
-    path: "/boards",
-    routes: [
-      { path: "/boards", label: "Apps" },
-      { path: "/project", label: "App Page" },
-      { path: "/receipt", label: "Receipt" },
-    ],
-  },
-  {
-    title: "Talent",
-    path: "/talent",
-    routes: [
-      { path: "/talent", label: "Talent Board" },
-      { path: "/profile", label: "Builder Profile" },
-    ],
-  },
-  {
-    title: "Profile",
+    title: "Builder Proof",
     path: "/profile",
     routes: [
-      { path: "/profile", label: "Public Profile" },
-      { path: "/dashboard", label: "Dashboard" },
-      { path: "/card", label: "Builder Card" },
-      { path: "/repos", label: "GitHub Sources" },
-      { path: "/studio", label: "Create Receipt" },
-      { path: "/trust", label: "Trust" },
+      { path: "/user", label: "User Profile" },
+      { path: "/edit-profile", label: "Edit Profile" },
+    ],
+  },
+  {
+    title: "Sources & Privacy",
+    path: "/repos",
+    routes: [
+      { path: "/account", label: "Account & Permissions" },
     ],
   },
 ];
@@ -71,8 +63,8 @@ const builders = [
     availability: "Open to launch sprints",
     tools: ["Claude Code", "Cursor", "Xcode", "Vercel"],
     domains: ["iOS", "Micro-SaaS", "AI search"],
-    stats: { prs: 42, releases: 4, streak: 9, repos: 6 },
-    proof: "4 releases in 7 days, 42 merged PRs, 2 public projects moved from prototype to shipped.",
+    stats: { prs: 42, releases: 4, repos: 6, apps: 2 },
+    proof: "42 merged PRs, 4 releases, and 2 public apps moved from prototype to shipped.",
     receipt: "SideProject Radar v2.1",
     repo: "maya/sideproject-radar",
     tag: "v2.1.0",
@@ -88,7 +80,7 @@ const builders = [
     availability: "Available this month",
     tools: ["Cursor", "Supabase", "Stripe", "Next.js"],
     domains: ["SaaS", "Billing", "Launch"],
-    stats: { prs: 31, releases: 3, streak: 6, repos: 4 },
+    stats: { prs: 31, releases: 3, repos: 4, apps: 1 },
     proof: "Published a launch kit, shipped billing analytics, and closed 11 linked PRs.",
     receipt: "Launch Sprint Kit",
     repo: "nora/launch-sprint-kit",
@@ -105,7 +97,7 @@ const builders = [
     availability: "Selective advisory",
     tools: ["Claude Code", "SwiftUI", "GitHub Actions"],
     domains: ["Mobile", "Devtools", "AI UX"],
-    stats: { prs: 24, releases: 2, streak: 11, repos: 3 },
+    stats: { prs: 24, releases: 2, repos: 3, apps: 1 },
     proof: "Turned a private beta into a shareable iOS receipt flow across 2 app releases.",
     receipt: "iOS Proof Cards",
     repo: "devon/proof-cards-ios",
@@ -154,11 +146,11 @@ const showcaseApps = [
     tagline: "A weekly radar for indie products before they trend.",
     description: "Maya connects two selected repos, release notes, and app screenshots so people can inspect the product and the proof behind it.",
     links: ["Web app", "GitHub", "Receipt"],
-    proof: ["42 PRs", "4 releases", "v2.1.0", "9-day streak"],
+    proof: ["42 PRs", "4 releases", "v2.1.0", "2 apps"],
     repos: ["maya/sideproject-radar", "maya/radar-ios"],
     receipt: releases[0],
-    score: "128 votes",
-    pick: "PRBar pick",
+    score: "3 receipts",
+    pick: "Verified app",
     color: "#19b394",
   },
   {
@@ -169,11 +161,11 @@ const showcaseApps = [
     tagline: "Billing, onboarding, and launch handoff patterns for fast SaaS teams.",
     description: "A curated app page lets Nora show the thing she built, then back it with the release trail imported from GitHub.",
     links: ["Demo", "Docs", "Receipt"],
-    proof: ["31 PRs", "3 releases", "Stripe", "6-day streak"],
+    proof: ["31 PRs", "3 releases", "Stripe", "source linked"],
     repos: ["nora/launch-sprint-kit"],
     receipt: releases[1],
-    score: "97 votes",
-    pick: "Community",
+    score: "2 receipts",
+    pick: "Source linked",
     color: "#f4c430",
   },
   {
@@ -184,31 +176,20 @@ const showcaseApps = [
     tagline: "Native share cards for builders who want receipts instead of claims.",
     description: "Devon can show the iOS app, attach the public package and private app repo, and keep client-sensitive proof redacted.",
     links: ["App Store", "TestFlight", "Receipt"],
-    proof: ["24 PRs", "2 releases", "SwiftUI", "11-day streak"],
+    proof: ["24 PRs", "2 releases", "SwiftUI", "redacted proof"],
     repos: ["devon/proof-cards-ios", "devon/proof-card-renderer"],
     receipt: releases[2],
-    score: "84 votes",
-    pick: "Rising",
+    score: "2 receipts",
+    pick: "Recently shipped",
     color: "#2f6fed",
   },
 ];
 
-const networkPosts = releases.map((release, index) => ({
-  release,
-  action: ["shipped a release", "published a launch receipt", "tagged a proof milestone"][index],
-  note: [
-    "Seven-day sprint: discovery filters, imported release notes, and scoring tests moved from PR stack to public release.",
-    "A founder-ready launch kit landed with billing metrics, onboarding checklists, and a cleaner handoff path.",
-    "The iOS receipt flow now supports private repo redaction and native share previews from selected sources.",
-  ][index],
-  ask: ["View proof resume", "Open proof profile", "Inspect proof profile"][index],
-}));
-
 const repoSources = [
-  { name: "maya/sideproject-radar", visibility: "public", status: "included", lastRelease: "v2.1.0", activity: "18 PRs in 14 days" },
-  { name: "maya/radar-ios", visibility: "private", status: "included", lastRelease: "v1.4.1", activity: "9 PRs in 14 days" },
-  { name: "client/stealth-onboarding", visibility: "private", status: "redacted", lastRelease: "hidden", activity: "5 PRs counted" },
-  { name: "maya/experiments", visibility: "public", status: "excluded", lastRelease: "none", activity: "prototype only" },
+  { name: "maya/sideproject-radar", visibility: "public", status: "included", lastRelease: "v2.1.0", activity: "18 PRs in 14 days", app: "SideProject Radar", publicImpact: "Shows repo name, release tags, and receipt links." },
+  { name: "maya/radar-ios", visibility: "private", status: "included", lastRelease: "v1.4.1", activity: "9 PRs in 14 days", app: "SideProject Radar", publicImpact: "Counts PRs and releases; repo name hidden until approved." },
+  { name: "client/stealth-onboarding", visibility: "private", status: "redacted", lastRelease: "hidden", activity: "5 PRs counted", app: "Private client app", publicImpact: "Counts selected facts only; client and repo names hidden." },
+  { name: "maya/experiments", visibility: "public", status: "excluded", lastRelease: "none", activity: "prototype only", app: "Prototype Lab", publicImpact: "Does not appear on Builder Proof." },
 ];
 
 const timeline = [
@@ -217,58 +198,60 @@ const timeline = [
   { date: "May 17", title: "Radar scoring beta", detail: "First public receipt generated from selected repo activity." },
 ];
 
+const trustRules = [
+  ["What PRBar reads", "Release tags, merged PR metadata, selected repo names, labels, timestamps, and test/status context."],
+  ["What PRBar counts", "Features shipped, PRs merged, releases made, projects launched, selected sources, and verified source links."],
+  ["What PRBar protects", "Private repo names, client identities, excluded repos, and any source the builder did not select."],
+  ["How redaction works", "Public receipts can count selected facts while hiding repo names, client labels, and sensitive app context."],
+  ["No vanity metrics", "PRBar does not count token usage, model spend, prompt volume, screenshots without source proof, or self-reported velocity."],
+];
+
 const boardViews = {
   apps: {
     label: "Apps",
-    eyebrow: "App showcase",
-    description: "Discover what AI-native builders are making, with GitHub proof behind every product.",
-    items: showcaseApps,
-  },
-  builders: {
-    label: "Builders",
-    eyebrow: "Builder momentum",
-    description: "Follow people whose apps, releases, and merged PRs show real velocity.",
-    items: showcaseApps,
-  },
-  receipts: {
-    label: "Receipts",
-    eyebrow: "Fresh proof",
-    description: "Browse the release receipts behind the apps and builders getting attention.",
+    eyebrow: "App pages",
+    description: "Inspect apps with selected repos, release receipts, and shipped feature proof attached.",
     items: showcaseApps,
   },
 };
 
-const boardFilters = ["This week", "AI apps", "iOS", "SaaS", "Devtools", "Public beta", "Hiring signal"];
+const boardFilters = ["Recent proof", "AI apps", "iOS", "SaaS", "Devtools", "Public beta", "Available builders"];
 
 const boardPicks = [
-  { label: "PRBar Pick", title: "SideProject Radar", copy: "Best product page this week: real app, selected repos, release notes, and visible cadence." },
-  { label: "Community Nominee", title: "Launch Sprint Kit", copy: "Founders keep saving this because the product story is easy to inspect." },
-  { label: "Needs votes", title: "iOS Proof Cards", copy: "Strong native proof surface, currently climbing in Mobile + Devtools." },
+  { label: "Verified app page", title: "SideProject Radar", copy: "Real app, selected repos, release notes, and inspectable shipped-feature proof." },
+  { label: "Source-linked", title: "Launch Sprint Kit", copy: "The product story is easy to inspect because every receipt points back to selected sources." },
+  { label: "Recently shipped", title: "iOS Proof Cards", copy: "Strong native proof surface with app context and private-source redaction." },
 ];
 
 const magicSteps = [
   {
     step: "01",
-    title: "Claim your card",
-    copy: "Reserve a compact proof link you can use in bios, resumes, intros, and launch posts.",
-    path: "/card",
+    title: "Claim builder card",
+    copy: "Reserve a compact proof link you can use in bios, resumes, intros, and launch notes.",
+    path: "/profile",
   },
   {
     step: "02",
     title: "Connect GitHub",
     copy: "Import release tags, merged PRs, checks, and repo activity from the sources you approve.",
-    path: "/dashboard",
+    path: "/repos",
   },
   {
     step: "03",
-    title: "Choose what counts",
+    title: "Choose sources",
     copy: "Pick the repos and apps that count, redact private work, and leave experiments out of the public story.",
     path: "/repos",
   },
   {
     step: "04",
-    title: "Publish proof resume",
-    copy: "Turn selected repos, apps, releases, and receipts into a proof profile you can share anywhere.",
+    title: "Publish Builder Proof",
+    copy: "Turn selected repos, apps, releases, and receipts into Builder Proof.",
+    path: "/profile",
+  },
+  {
+    step: "05",
+    title: "Share anywhere",
+    copy: "Copy the card link, Builder Proof link, or receipt URL into bios, resumes, intros, and launch notes.",
     path: "/profile",
   },
 ];
@@ -294,6 +277,13 @@ function routeBelongsToGroup(path, group) {
 }
 
 function canonicalSectionFor(path) {
+  if (path === "/dashboard") return "/repos";
+  if (["/signup", "/signin", "/login", "/logout", "/onboarding", "/connect-github"].includes(path)) return "/home";
+  if (["/card", "/receipt", "/project"].includes(path)) return "/profile";
+  if (["/user", "/edit-profile"].includes(path)) return "/profile";
+  if (["/studio", "/trust"].includes(path)) return "/repos";
+  if (path === "/account") return "/repos";
+
   return routeGroups.find((group) => group.path === path)?.path
     || routeGroups.find((group) => routeBelongsToGroup(path, group))?.path
     || "/home";
@@ -319,38 +309,440 @@ function writeActiveSection(sectionPath) {
   }
 }
 
+function writePendingScrollTarget(target) {
+  try {
+    window.sessionStorage?.setItem("prbar-scroll-target", target);
+  } catch {
+    // Same-page scrolling is a convenience; routing still works without storage.
+  }
+}
+
+function takePendingScrollTarget() {
+  try {
+    const target = window.sessionStorage?.getItem("prbar-scroll-target");
+    if (target) window.sessionStorage?.removeItem("prbar-scroll-target");
+    return target;
+  } catch {
+    return null;
+  }
+}
+
+function scrollToTarget(target) {
+  window.requestAnimationFrame(() => {
+    document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 function readTocCollapsed() {
   try {
-    return window.localStorage?.getItem("prbar-toc-collapsed") === "true";
+    const stored = window.localStorage?.getItem("prbar-review-map-collapsed");
+    if (stored !== null) return stored === "true";
   } catch {
-    return false;
+    // Fall back to the viewport-aware default below.
   }
+
+  return true;
 }
 
 function writeTocCollapsed(collapsed) {
   try {
-    window.localStorage?.setItem("prbar-toc-collapsed", String(collapsed));
+    window.localStorage?.setItem("prbar-review-map-collapsed", String(collapsed));
   } catch {
     // The mockup still works if browser storage is unavailable.
   }
 }
 
+function readSessionState() {
+  try {
+    const stored = window.localStorage?.getItem("prbar-session");
+    if (!stored) return { isAuthenticated: false, githubConnected: false };
+    const parsed = JSON.parse(stored);
+    return {
+      isAuthenticated: Boolean(parsed?.isAuthenticated),
+      githubConnected: Boolean(parsed?.githubConnected),
+    };
+  } catch {
+    return { isAuthenticated: false, githubConnected: false };
+  }
+}
+
+function writeSessionState(nextState) {
+  try {
+    const current = readSessionState();
+    window.localStorage?.setItem("prbar-session", JSON.stringify({ ...current, ...nextState }));
+  } catch {
+    // Auth state is only for the static mockup. Pages remain directly reachable.
+  }
+}
+
+function resetSessionState() {
+  try {
+    window.localStorage?.removeItem("prbar-session");
+  } catch {
+    // Direct routes still work without local storage.
+  }
+}
+
+const publicPreviewStorageKey = "prbar-public-preview";
+
+function readPublicPreviewMode() {
+  try {
+    return window.sessionStorage?.getItem(publicPreviewStorageKey) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writePublicPreviewMode(enabled) {
+  try {
+    if (enabled) {
+      window.sessionStorage?.setItem(publicPreviewStorageKey, "true");
+    } else {
+      window.sessionStorage?.removeItem(publicPreviewStorageKey);
+    }
+  } catch {
+    // Preview mode is a mock-only convenience.
+  }
+}
+
+const profileStorageKey = "prbar-profile";
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;",
+  }[character]));
+}
+
+function initialsFromName(name) {
+  const parts = String(name || "")
+    .replace(/[^a-z0-9\s]/gi, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) return "PR";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function linkFromHandle(handle) {
+  const slug = String(handle || "")
+    .replace(/^@/, "")
+    .replace(/[^a-z0-9._-]/gi, "")
+    .toLowerCase();
+
+  return `prbar.dev/${slug || "maya"}`;
+}
+
+function shortProfilePath(profile = readProfileState()) {
+  const path = String(profile.link || "")
+    .replace(/^https?:\/\//, "")
+    .replace(/^prbar\.dev\/?/, "");
+
+  return `/${path || "maya"}`;
+}
+
+function defaultProfileState() {
+  const builder = builders[0];
+  return {
+    availability: builder.availability,
+    handle: builder.handle,
+    link: linkFromHandle(builder.handle),
+    name: builder.name,
+    note: "Builder Proof built from selected repos, releases, app updates, and public receipts.",
+    title: builder.title,
+  };
+}
+
+function normalizeProfileState(stored) {
+  const defaults = defaultProfileState();
+  const next = {
+    availability: typeof stored?.availability === "string" && stored.availability.trim() ? stored.availability.trim() : defaults.availability,
+    handle: typeof stored?.handle === "string" && stored.handle.trim() ? stored.handle.trim() : defaults.handle,
+    name: typeof stored?.name === "string" && stored.name.trim() ? stored.name.trim() : defaults.name,
+    note: typeof stored?.note === "string" && stored.note.trim() ? stored.note.trim() : defaults.note,
+    title: typeof stored?.title === "string" && stored.title.trim() ? stored.title.trim() : defaults.title,
+  };
+
+  next.link = typeof stored?.link === "string" && stored.link.trim() ? stored.link.trim() : linkFromHandle(next.handle);
+  next.initials = initialsFromName(next.name);
+  return next;
+}
+
+function readProfileState() {
+  try {
+    const stored = window.localStorage?.getItem(profileStorageKey);
+    return normalizeProfileState(stored ? JSON.parse(stored) : null);
+  } catch {
+    return normalizeProfileState(null);
+  }
+}
+
+function writeProfileState(nextState) {
+  try {
+    window.localStorage?.setItem(profileStorageKey, JSON.stringify(normalizeProfileState(nextState)));
+  } catch {
+    // Profile edits are mock-only; public pages still render from defaults.
+  }
+}
+
+const proofWorkflowStorageKey = "prbar-proof-workflow";
+const sourceModes = ["included", "redacted", "excluded"];
+
+function defaultProofWorkflowState() {
+  return {
+    published: false,
+    shareFeedback: "",
+    sources: Object.fromEntries(repoSources.map((repo) => {
+      const mode = repo.status === "excluded" ? "excluded" : repo.status === "redacted" ? "redacted" : "included";
+      const attached = ["maya/sideproject-radar", "maya/radar-ios"].includes(repo.name);
+
+      return [repo.name, {
+        attached,
+        hidden: repo.visibility === "private" || mode === "redacted",
+        mode,
+      }];
+    })),
+  };
+}
+
+function normalizeProofWorkflowState(stored) {
+  const defaults = defaultProofWorkflowState();
+  const savedSources = stored?.sources || {};
+
+  return {
+    published: Boolean(stored?.published),
+    shareFeedback: typeof stored?.shareFeedback === "string" ? stored.shareFeedback : "",
+    sources: Object.fromEntries(repoSources.map((repo) => {
+      const base = defaults.sources[repo.name];
+      const saved = savedSources[repo.name] || {};
+      const mode = sourceModes.includes(saved.mode) ? saved.mode : base.mode;
+
+      return [repo.name, {
+        attached: typeof saved.attached === "boolean" ? saved.attached : base.attached,
+        hidden: typeof saved.hidden === "boolean" ? saved.hidden : base.hidden,
+        mode,
+      }];
+    })),
+  };
+}
+
+function readProofWorkflowState() {
+  try {
+    const stored = window.localStorage?.getItem(proofWorkflowStorageKey);
+    return normalizeProofWorkflowState(stored ? JSON.parse(stored) : null);
+  } catch {
+    return defaultProofWorkflowState();
+  }
+}
+
+function writeProofWorkflowState(nextState) {
+  try {
+    window.localStorage?.setItem(proofWorkflowStorageKey, JSON.stringify(normalizeProofWorkflowState(nextState)));
+  } catch {
+    // Source decisions are mock-only; the page still renders from defaults.
+  }
+}
+
+function proofSourceMetrics(workflow = readProofWorkflowState()) {
+  const items = repoSources.map((repo) => ({ repo, state: workflow.sources[repo.name] }));
+  const counted = items.filter((item) => item.state.mode !== "excluded");
+  const attached = counted.filter((item) => item.state.attached);
+  const hidden = counted.filter((item) => item.state.hidden || item.state.mode === "redacted");
+  const excluded = items.filter((item) => item.state.mode === "excluded");
+
+  return {
+    attached: attached.length,
+    counted: counted.length,
+    excluded: excluded.length,
+    hidden: hidden.length,
+    total: items.length,
+  };
+}
+
+function sourceStatusLabel(mode) {
+  return {
+    included: "included",
+    redacted: "redacted",
+    excluded: "excluded",
+  }[mode] || "included";
+}
+
+function sourceImpact(repo, state) {
+  if (state.mode === "excluded") return "Excluded from public proof, receipts, cards, and source counts.";
+  if (state.mode === "redacted") return `${repo.activity} counts publicly, while sensitive names and context stay hidden.`;
+  if (state.attached) return `${repo.publicImpact} Attached to Builder Proof.`;
+  return `${repo.publicImpact} Counts without an app attachment.`;
+}
+
+function sourceRow(repo, workflow) {
+  const state = workflow.sources[repo.name];
+  const countActive = state.mode === "included";
+  const redactActive = state.mode === "redacted";
+  const excludeActive = state.mode === "excluded";
+
+  return `
+    <article class="source-table-row" data-source-row="${repo.name}">
+      <div>
+        <h3>${repo.name}</h3>
+        <p>${repo.activity} / latest release ${repo.lastRelease}</p>
+      </div>
+      <span>${repo.visibility}</span>
+      <b>${sourceStatusLabel(state.mode)}</b>
+      <em>${state.attached ? repo.app : "No app attached"}</em>
+      <div class="repo-controls" aria-label="${repo.name} source controls">
+        <button class="${countActive ? "active" : ""}" type="button" data-source-id="${repo.name}" data-source-action="include">Include</button>
+        <button class="${redactActive ? "active" : ""}" type="button" data-source-id="${repo.name}" data-source-action="redact">Redact</button>
+        <button class="${excludeActive ? "active" : ""}" type="button" data-source-id="${repo.name}" data-source-action="exclude">Exclude</button>
+        <button class="${state.attached ? "active" : ""}" type="button" data-source-id="${repo.name}" data-source-action="attach">${state.attached ? "Attached" : "Attach app"}</button>
+      </div>
+      <p class="repo-impact">${sourceImpact(repo, state)}</p>
+    </article>
+  `;
+}
+
+function publishStatusCard(workflow) {
+  const metrics = proofSourceMetrics(workflow);
+  const profile = readProfileState();
+
+  if (workflow.published) {
+    return `
+      <div class="control-status-card publish-status-card">
+        <span>Publish status</span>
+        <b>Builder Proof is live</b>
+        <p>Share link ready: ${escapeHtml(profile.link)}. ${metrics.counted} selected sources and ${metrics.attached} attached apps now power the public page.</p>
+        <div class="action-row small">
+          <a class="primary" href="#/profile" data-proof-action="open-public">Open public Builder Proof</a>
+          <button class="secondary light" type="button" data-proof-action="draft">Return to draft</button>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="control-status-card publish-status-card">
+      <span>Publish status</span>
+      <b>Draft Builder Proof</b>
+      <p>${metrics.counted} selected sources and ${metrics.attached} attached apps are ready. Publish when the public proof resume should go live.</p>
+      <button class="primary wide" type="button" data-proof-action="publish">Publish Builder Proof</button>
+    </div>
+  `;
+}
+
+function setupChecklist() {
+  const session = readSessionState();
+  const workflow = readProofWorkflowState();
+  const profile = readProfileState();
+  const metrics = proofSourceMetrics(workflow);
+  const items = [
+    {
+      done: session.isAuthenticated && Boolean(profile.name),
+      href: "#/edit-profile",
+      label: "Profile claimed",
+      note: `${profile.handle} is reserved and ready for Builder Proof.`,
+    },
+    {
+      done: session.githubConnected,
+      href: "#/connect-github",
+      label: "GitHub connected",
+      note: session.githubConnected ? "Release tags, merged PRs, and checks are available." : "Connect selected repos before proof can be published.",
+    },
+    {
+      done: session.githubConnected && metrics.counted > 0,
+      href: "#/repos",
+      label: "Sources chosen",
+      note: `${metrics.counted} selected sources, ${metrics.attached} attached apps, ${metrics.excluded} excluded.`,
+    },
+    {
+      done: workflow.published,
+      href: "#/repos",
+      label: "Builder Proof published",
+      note: workflow.published ? "The public proof page is live." : "Publish after sources and profile copy look right.",
+    },
+    {
+      done: workflow.shareFeedback.includes("Copied"),
+      href: "#/profile",
+      label: "Share link copied",
+      note: workflow.shareFeedback || "Copy the card or full Builder Proof link when it is ready.",
+    },
+  ];
+  const completed = items.filter((item) => item.done).length;
+  const complete = completed === items.length;
+
+  return `
+    <section class="setup-checklist-panel" aria-label="Builder Proof setup checklist">
+      <div class="setup-checklist-heading">
+        <span>${complete ? "Setup complete" : "Finish setup"}</span>
+        <b>${completed}/${items.length} complete</b>
+      </div>
+      <ol class="setup-checklist">
+        ${items.map((item) => `
+          <li class="${item.done ? "done" : "pending"}">
+            <a href="${item.href}">
+              <span>${item.done ? "Done" : "Next"}</span>
+              <b>${escapeHtml(item.label)}</b>
+              <em>${escapeHtml(item.note)}</em>
+            </a>
+          </li>
+        `).join("")}
+      </ol>
+    </section>
+  `;
+}
+
+function topbarAccountControls() {
+  const session = readSessionState();
+  const profile = readProfileState();
+  const previewingPublic = routePath() === "/profile" && session.isAuthenticated && readPublicPreviewMode();
+
+  if (previewingPublic) {
+    return `
+      <div class="topbar-account" data-auth-state="public-preview">
+        <span class="topbar-preview-pill">Public preview</span>
+        <button class="topbar-link topbar-button" type="button" data-preview-action="exit">Exit preview</button>
+      </div>
+    `;
+  }
+
+  if (session.isAuthenticated) {
+    return `
+      <div class="topbar-account" data-auth-state="signed-in">
+        <a class="topbar-profile" href="#/user"><span class="avatar mini">${escapeHtml(profile.initials)}</span><b>Profile</b></a>
+        <a class="topbar-link" href="${session.githubConnected ? "#/repos" : "#/connect-github"}">${session.githubConnected ? "GitHub connected" : "Connect GitHub"}</a>
+        <button class="topbar-link topbar-button" type="button" data-auth-action="logout">Log out</button>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="topbar-account" data-auth-state="signed-out">
+      <a class="topbar-link" href="#/signin">Sign in</a>
+      <a class="topbar-action" href="#/signup">Claim builder card</a>
+    </div>
+  `;
+}
+
 function shell(content) {
   const path = routePath();
   const activeSection = readActiveSection(path);
+  const navPaths = !readSessionState().isAuthenticated && path === "/profile" ? ["/home", "/profile"] : primaryNavPaths;
   return `
     <div class="mockup-shell">
       ${tableOfContents(path, activeSection)}
       <div class="mockup-main">
         <header class="topbar">
-          <button class="toc-toggle" type="button" aria-label="Hide table of contents" aria-pressed="false" data-toc-toggle>
+          <button class="toc-toggle" type="button" aria-label="Show review map" aria-pressed="true" data-toc-toggle title="Toggle review map">
             <span class="panel-icon" aria-hidden="true"><i></i><b></b></span>
           </button>
           <a class="brand" href="#/home" aria-label="PRBar home"><span>PR</span><strong>PRBar</strong></a>
           <nav class="nav" aria-label="Primary navigation">
-            ${routes.filter((route) => primaryNavPaths.includes(route.path)).map((route) => `<a class="${activeSection === route.path ? "active" : ""}" data-section="${route.path}" href="#${route.path}">${route.label}</a>`).join("")}
+            ${navPaths.map((path) => routes.find((route) => route.path === path)).filter(Boolean).map((route) => `<a class="${activeSection === route.path ? "active" : ""}" data-section="${route.path}" href="#${route.path}">${route.label}</a>`).join("")}
           </nav>
-          <a class="topbar-action" href="#/dashboard">Claim profile</a>
+          ${topbarAccountControls()}
         </header>
         <main>${content}</main>
       </div>
@@ -363,7 +755,7 @@ function tableOfContents(path, activeSection) {
     <aside class="toc-sidebar" aria-label="Mockup table of contents">
       <div class="toc-brand">
         <a class="brand" href="#/home" aria-label="PRBar home"><span>PR</span><strong>PRBar</strong></a>
-        <p>Mockup tree</p>
+        <p>Review map</p>
       </div>
       <nav class="toc-nav">
         <div class="toc-root"><span>PRBar Web</span></div>
@@ -389,40 +781,34 @@ function tableOfContents(path, activeSection) {
   `;
 }
 
-function routeIndex() {
-  return `
-    <details class="route-index" aria-label="Mockup page index">
-      <summary>
-        <span>Mockup review map</span>
-        <b>Open all pages</b>
-      </summary>
-      <div class="route-index-groups">
-        ${routeGroups.map((group) => `
-          <article>
-            <h3>${group.title}</h3>
-            <div class="route-link-list">
-              ${group.routes.map((route) => `
-                <a href="#${route.path}"><strong>${route.label}</strong></a>
-              `).join("")}
-            </div>
-          </article>
-        `).join("")}
-      </div>
-    </details>
-  `;
-}
-
 function statPills(items) {
   return `<div class="stat-pills">${items.map((item) => `<span>${item}</span>`).join("")}</div>`;
 }
 
+function proofLinks(release, options = {}) {
+  const prItems = release.builder.prList.slice(0, options.compact ? 2 : 3).map((pr) => `PR ${pr}`);
+  const items = [
+    "GitHub release",
+    `tag ${release.builder.tag}`,
+    ...prItems,
+    "repo selected",
+    "CI passed",
+  ];
+
+  return `
+    <div class="source-proof-links ${options.compact ? "compact" : ""}" aria-label="Inspectable GitHub proof">
+      ${items.map((item) => `<a href="#/profile" data-scroll-target="latest-receipt">${item}</a>`).join("")}
+    </div>
+  `;
+}
+
 function publishJourney(activeIndex = 0, options = {}) {
   return `
-    <section class="journey-strip ${options.compact ? "compact" : ""}" aria-label="Proof resume workflow">
+    <section class="journey-strip ${options.compact ? "compact" : ""}" aria-label="Builder Proof workflow">
       <div class="journey-heading">
         <p class="eyebrow">First magic moment</p>
-        <h2>${options.title || "Turn a week of GitHub work into proof people can inspect."}</h2>
-        <p>${options.copy || "The private flow starts with sources and ends with public receipts attached to your builder profile and apps."}</p>
+        <h2>${options.title || "Turn GitHub-backed shipped work into Builder Proof people can inspect."}</h2>
+        <p>${options.copy || "The private setup starts with sources and ends with a public builder card, receipts, app pages, and Builder Proof."}</p>
       </div>
       <div class="journey-steps">
         ${magicSteps.map((item, index) => `
@@ -455,9 +841,10 @@ function receiptCard(release, options = {}) {
       <h3>${release.title}</h3>
       <p>${release.summary}</p>
       ${statPills(release.facts)}
+      ${proofLinks(release, { compact: true })}
       <div class="source-row">
         <code>${release.builder.repo}</code>
-        <a href="#/receipt">Inspect receipt</a>
+        <a href="#/profile" data-scroll-target="latest-receipt">Inspect receipt</a>
       </div>
     </article>
   `;
@@ -476,8 +863,23 @@ function proofChain(items = ["GitHub release", "Merged PRs", "Builder context", 
   `;
 }
 
+function shareOutputGrid(options = {}) {
+  const compact = options.compact ? " compact" : "";
+  const profile = options.profile || readProfileState();
+  return `
+    <div class="share-output-grid${compact}" aria-label="Share outputs">
+      <button type="button"><span>Card link</span><b>Copy ${escapeHtml(shortProfilePath(profile))}</b></button>
+      <button type="button"><span>Proof link</span><b>Copy Builder Proof</b></button>
+      <button type="button"><span>Image</span><b>Download card</b></button>
+      <button type="button"><span>Embed</span><b>Copy snippet</b></button>
+    </div>
+  `;
+}
+
 function builderLinkCard(options = {}) {
   const builder = builders[0];
+  const profile = options.profile || readProfileState();
+  const appCount = Number.isFinite(options.apps) ? options.apps : builder.stats.apps;
   const cardId = options.id || `builder-card-${Math.random().toString(36).slice(2)}`;
   return `
     <div class="builder-link-card-wrap ${options.compact ? "compact" : ""}" data-builder-link-card id="${cardId}">
@@ -489,69 +891,59 @@ function builderLinkCard(options = {}) {
             <span class="builder-link-glare" aria-hidden="true"></span>
             <div class="builder-link-identity">
               <div>
-                <span>${builder.handle}</span>
-                <h3>${builder.name}</h3>
+                <span>${escapeHtml(profile.handle)}</span>
+                <h3>${escapeHtml(profile.name)}</h3>
               </div>
-              <div class="avatar">${builder.initials}</div>
+              <div class="avatar">${escapeHtml(profile.initials)}</div>
             </div>
-            <p>AI-native mobile and micro-SaaS builder. This week’s proof from selected GitHub repos.</p>
-            <div class="builder-link-chart" aria-label="PR distribution by day">
+            <p>${escapeHtml(profile.title)}. Proof from selected GitHub repos, releases, and app updates.</p>
+            <div class="builder-link-chart" aria-label="Selected GitHub proof summary">
               <i style="height:34%"></i><i style="height:58%"></i><i style="height:42%"></i><i style="height:76%"></i><i style="height:64%"></i><i style="height:100%"></i><i style="height:82%"></i>
             </div>
             <div class="builder-link-stats">
               <div><b>${builder.stats.prs}</b><span>merged PRs</span></div>
               <div><b>${builder.stats.repos}</b><span>active repos</span></div>
-              <div><b>${builder.stats.streak}</b><span>day streak</span></div>
+              <div><b>${appCount}</b><span>shipped apps</span></div>
             </div>
-            <small>Front: PR distribution</small>
+            <small>Front: shipped proof</small>
           </section>
           <section class="builder-link-face builder-link-back">
             <span class="builder-link-glare" aria-hidden="true"></span>
             <div class="builder-link-identity">
               <div>
                 <span>Proof links</span>
-                <h3>Receipts and apps</h3>
+                <h3>Open the full proof</h3>
               </div>
-              <div class="avatar">${builder.initials}</div>
+              <div class="avatar">${escapeHtml(profile.initials)}</div>
             </div>
-            <p>The back keeps the linktree job: inspect releases, open apps, or jump to the full proof profile.</p>
-            <div class="builder-link-tabs" role="tablist" aria-label="Builder card back tabs">
-              <button class="active" type="button" role="tab" aria-selected="true" data-link-card-tab="releases">Releases</button>
-              <button type="button" role="tab" aria-selected="false" data-link-card-tab="apps">Apps</button>
-            </div>
-            <div class="builder-link-list active" data-link-card-panel="releases">
-              ${releases.map((release) => `
-                <a href="#/receipt">
-                  <span><strong>${release.title}</strong><em>${release.facts.slice(0, 2).join(" · ")}</em></span>
-                  <b>View</b>
-                </a>
-              `).join("")}
-            </div>
-            <div class="builder-link-list" data-link-card-panel="apps">
-              ${showcaseApps.slice(0, 2).map((item) => `
-                <a href="#/project">
-                  <span><strong>${item.name}</strong><em>${item.status} · latest receipt</em></span>
-                  <b>Open</b>
-                </a>
-              `).join("")}
+            <p>The back stays short: one current receipt, one app page, and one path into full Builder Proof.</p>
+            <div class="builder-link-list active">
+              <a href="#/profile" data-scroll-target="latest-receipt">
+                <span><strong>${releases[0].title}</strong><em>${releases[0].facts.slice(0, 2).join(" · ")}</em></span>
+                <b>Receipt</b>
+              </a>
+              <a href="#/profile" data-scroll-target="app-proof">
+                <span><strong>${showcaseApps[0].name}</strong><em>${showcaseApps[0].status} · app page</em></span>
+                <b>App</b>
+              </a>
               <a href="#/profile">
-                <span><strong>Maya’s proof profile</strong><em>Receipts, apps, timeline</em></span>
-                <b>View</b>
+                <span><strong>Maya’s Builder Proof</strong><em>Receipts, apps, timeline</em></span>
+                <b>Full</b>
               </a>
             </div>
-            <small>Back: Releases / Apps</small>
+            <small>Back: card links</small>
           </section>
         </div>
       </div>
       <div class="builder-link-controls" aria-label="Builder card controls">
-        <button class="active" type="button" data-card-side="front">Front: PRs</button>
+        <button class="active" type="button" data-card-side="front">Front: Proof</button>
         <button type="button" data-card-side="back">Back: Links</button>
       </div>
     </div>
   `;
 }
 
-function builderCard(builder, options = {}) {
+function proofSummaryCard(builder, options = {}) {
   return `
     <article class="builder-card ${options.featured ? "featured" : ""}">
       <div class="identity-row">
@@ -566,7 +958,7 @@ function builderCard(builder, options = {}) {
       <div class="metric-strip">
         <span><strong>${builder.stats.prs}</strong> PRs</span>
         <span><strong>${builder.stats.releases}</strong> releases</span>
-        <span><strong>${builder.stats.streak}</strong> day streak</span>
+        <span><strong>${builder.stats.apps}</strong> apps</span>
       </div>
       ${sparkline(builder.trend)}
       <div class="tag-row">${builder.tools.map((tool) => `<span>${tool}</span>`).join("")}</div>
@@ -596,7 +988,7 @@ function showcaseAppCard(app, index) {
     <article class="app-showcase-card">
       <div class="rank">
         <span>#${index + 1}</span>
-        <button type="button" aria-label="Vote for ${app.name}">▲</button>
+        <a href="#/receipt" aria-label="Inspect proof for ${app.name}">Proof</a>
       </div>
       <div class="app-card-body">
         ${appPreview(app)}
@@ -609,7 +1001,8 @@ function showcaseAppCard(app, index) {
             </div>
             <b>${app.pick}</b>
           </div>
-          <p>${app.description}</p>
+        <p>${app.description}</p>
+          ${proofLinks(app.receipt, { compact: true })}
           <div class="board-proof-row">
             ${app.proof.map((item) => `<span>${item}</span>`).join("")}
           </div>
@@ -620,7 +1013,7 @@ function showcaseAppCard(app, index) {
             <code>${app.repos.join(" + ")}</code>
             <div class="board-actions">
               <span>${app.score}</span>
-              <a href="#/receipt">Receipts behind rank</a>
+              <a href="#/receipt">Receipts behind this app</a>
             </div>
           </div>
         </div>
@@ -631,7 +1024,7 @@ function showcaseAppCard(app, index) {
 
 function miniProofHistogram() {
   return `
-    <div class="mini-proof-histogram" aria-label="PR distribution by day">
+    <div class="mini-proof-histogram" aria-label="Receipt proof summary">
       <i style="height: 34%"></i>
       <i style="height: 58%"></i>
       <i style="height: 42%"></i>
@@ -643,102 +1036,86 @@ function miniProofHistogram() {
   `;
 }
 
-function networkPost(post) {
-  const { release } = post;
-  return `
-    <article class="network-post">
-      <div class="post-actor">
-        <span class="avatar">${release.builder.initials}</span>
-        <div>
-          <h2>${release.builder.handle} ${post.action}</h2>
-          <p>${release.project} · ${release.date} · ${release.builder.domains.join(" / ")}</p>
-        </div>
-        <a href="#/profile">View proof</a>
-      </div>
-      <p class="post-note">${post.note}</p>
-      <div class="post-proof">
-        <div>
-          <span>Receipt</span>
-          <h3>${release.title}</h3>
-          ${statPills(release.facts)}
-        </div>
-        ${miniProofHistogram()}
-      </div>
-      <div class="source-row">
-        <code>${release.builder.repo} ${release.builder.tag}</code>
-        <div class="post-actions">
-          <a href="#/receipt">Inspect receipt</a>
-          <a href="#/project">View project</a>
-          <a href="#/talent">${post.ask}</a>
-        </div>
-      </div>
-    </article>
-  `;
-}
-
 function homePage() {
+  const profile = readProfileState();
   return shell(`
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">The resume for AI-native builders</p>
-        <h1>Resumes are garbage.</h1>
-        <p class="lede">Your real resume is what you ship.</p>
-        <p class="hero-proof-line">PRBar turns your PRs, releases, app updates, and shipped features into a living proof profile you can share anywhere.</p>
+        <p class="eyebrow">The new resume for AI-native builders</p>
+        <h1>Turn shipped work into Builder Proof.</h1>
+        <p class="lede">PRBar is a proof resume built from PRs, releases, app updates, and shipped features.</p>
+        <p class="hero-proof-line">Claim a builder card, connect GitHub, choose what counts, publish Builder Proof, and share one inspectable link anywhere.</p>
         <div class="action-row">
-          <a class="primary" href="#/card">Claim your card</a>
-          <a class="secondary" href="#/profile">View proof profile</a>
+          <a class="primary" href="#/signup">Claim builder card</a>
+          <a class="secondary" href="#/profile">Open Builder Proof</a>
         </div>
       </div>
       <div class="hero-proof">
         ${builderLinkCard({ id: "home-builder-card" })}
       </div>
     </section>
-    ${publishJourney(0, {
-      title: "Claim your card. Connect GitHub. Publish your proof resume.",
-      copy: "Start with the builder card, choose what counts, then turn selected repos, apps, and releases into a profile you can share anywhere."
-    })}
+    <section class="home-doorway" aria-label="PRBar product preview">
+      <div class="doorway-intro">
+        <h2>One link that opens into proof.</h2>
+        <p>PRBar stays useful before any network exists: claim the card, connect GitHub, choose the sources that count, and publish a proof surface people can inspect.</p>
+      </div>
+      <div class="doorway-grid">
+        <a class="doorway-panel card-preview" href="#/profile" data-scroll-target="builder-card">
+          <span>01 / Builder card</span>
+          <strong>Short enough for a bio.</strong>
+          <p>A compact share card previews the current proof and points to the full Builder Proof page.</p>
+          <div class="mini-card-preview">
+            <b>${escapeHtml(profile.initials)}</b>
+            <i></i><i></i><i></i>
+          </div>
+        </a>
+        <a class="doorway-panel proof-preview" href="#/profile">
+          <span>02 / Builder Proof</span>
+          <strong>Deep enough to inspect.</strong>
+          <p>Receipts, app proof, releases, PRs, and timeline sit together as a new resume for shipped work.</p>
+          <div class="proof-mini-list">
+            <em>42 merged PRs</em>
+            <em>4 releases</em>
+            <em>2 shipped apps</em>
+          </div>
+        </a>
+        <a class="doorway-panel sources-preview" href="#/repos">
+          <span>03 / Sources</span>
+          <strong>Controlled by the builder.</strong>
+          <p>Private source selection and redaction keep proof useful without exposing work that should stay private.</p>
+          <div class="source-mini-table">
+            <b>Included</b><small>3 sources</small>
+            <b>Hidden names</b><small>2 private</small>
+          </div>
+        </a>
+      </div>
+    </section>
     <section class="proof-manifesto">
       <p>No feed. No threads. No productivity theater. Just proof.</p>
     </section>
-    <section class="surface-grid">
-      <a class="surface-card" href="#/card"><span>01</span><h2>Builder Card</h2><p>Your compact proof link for bios, resumes, and intros.</p></a>
-      <a class="surface-card" href="#/profile"><span>02</span><h2>Proof Resume</h2><p>A living profile built from PRs, releases, apps, and shipped features.</p></a>
-      <a class="surface-card" href="#/boards"><span>03</span><h2>App Showcase</h2><p>Simple project pages with the receipts behind the work.</p></a>
+    <section class="home-flow">
+      <div>
+        <span>Path to value</span>
+        <h2>From card to proof in one pass.</h2>
+      </div>
+      <ol>
+        ${magicSteps.map((item) => `<li><b>${item.step}</b><strong>${item.title}</strong><p>${item.copy}</p></li>`).join("")}
+      </ol>
     </section>
-    ${routeIndex()}
   `);
 }
 
 function networkPage() {
   return shell(`
     <section class="page-hero">
-      <p class="eyebrow">Connect</p>
-      <h1>Follow proof, not posts.</h1>
-      <p>Track builders by releases, app updates, and shipped work. No threads required.</p>
-      <div class="network-tabs" aria-label="Connect filters">
-        <button class="active" type="button">Receipts</button>
-        <button type="button">Builders</button>
-        <button type="button">Projects</button>
-        <button type="button">Apps</button>
-      </div>
+      <p class="eyebrow">Archived concept</p>
+      <h1>Proof browsing is not the core product.</h1>
+      <p>The current mockup keeps discovery out of the main IA. Start with Builder Proof, then inspect individual receipts or app pages.</p>
     </section>
-    <section class="network-layout">
-      <div class="feed">
-        ${networkPosts.map((post) => networkPost(post)).join("")}
-      </div>
-      <aside class="side-panel">
-        <div class="network-brief">
-          <span>Connect signal</span>
-          <h2>Work is the surface.</h2>
-          <p>Open the receipt, inspect the app, or view the proof resume behind each shipped thing.</p>
-        </div>
-        ${builderCard(builders[0], { featured: true })}
-        <div class="proof-rule">
-          <h2>What counts here</h2>
-          <p>PRs merged, releases tagged, tests added, projects launched, and source-linked receipts.</p>
-          ${statPills(["GitHub source", "Release tags", "Repo selection", "Private redaction"])}
-        </div>
-      </aside>
+    <section class="surface-grid">
+      <a class="surface-card" href="#/profile"><span>01</span><h2>Builder Proof</h2><p>The canonical full record for a builder.</p></a>
+      <a class="surface-card" href="#/receipt"><span>02</span><h2>Receipt</h2><p>One source-linked proof event.</p></a>
+      <a class="surface-card" href="#/project"><span>03</span><h2>App Page</h2><p>What the proof shipped.</p></a>
     </section>
   `);
 }
@@ -749,14 +1126,11 @@ function boardsPage(activeView = "apps") {
   return shell(`
     <section class="page-hero dark">
       <p class="eyebrow">${view.eyebrow}</p>
-      <h1>Apps with receipts.</h1>
+      <h1>App pages show what shipped.</h1>
       <p>Browse projects backed by releases, PRs, and app updates.</p>
-      ${proofChain(["Builder publishes proof", "App gets attached", "Community votes", "PRBar can feature it"])}
+      ${proofChain(["Builder publishes proof", "App gets attached", "Receipts verify it", "Builder Proof links out"])}
       <div class="board-filterbar" aria-label="Showcase filters">
         ${boardFilters.map((filter, index) => `<button class="${index === 0 ? "active" : ""}" type="button">${filter}</button>`).join("")}
-      </div>
-      <div class="board-tabs" role="tablist" aria-label="Showcase views">
-        ${Object.entries(boardViews).map(([key, item]) => `<button class="${key === activeView ? "active" : ""}" data-board="${key}" type="button">${item.label}</button>`).join("")}
       </div>
     </section>
     <section class="board-discovery">
@@ -772,13 +1146,13 @@ function boardsPage(activeView = "apps") {
         <div class="spotlight-grid">
           <div><strong>${featured.builder.stats.prs}</strong><span>merged PRs</span></div>
           <div><strong>${featured.builder.stats.releases}</strong><span>releases</span></div>
-          <div><strong>${featured.score}</strong><span>showcase signal</span></div>
+          <div><strong>${featured.score}</strong><span>source receipts</span></div>
         </div>
         ${sparkline(featured.builder.trend)}
         <div class="app-links spotlight-links">
           <a href="#/project">Open app page</a>
           <a href="#/receipt">View receipt</a>
-          <a href="#/profile">View proof resume</a>
+          <a href="#/profile">View Builder Proof</a>
         </div>
       </article>
       <div class="board-main">
@@ -786,7 +1160,7 @@ function boardsPage(activeView = "apps") {
           ${view.items.map((item, index) => showcaseAppCard(item, index)).join("")}
         </div>
         <aside class="board-rail">
-          <h2>How apps make the board</h2>
+          <h2>How apps become proof</h2>
           <article>
             <span>User curated</span>
             <h3>Add the product GitHub cannot see</h3>
@@ -806,167 +1180,536 @@ function boardsPage(activeView = "apps") {
 }
 
 function talentPage(filter = "all") {
-  const filtered = filter === "all" ? builders : builders.filter((builder) => builder.domains.map((item) => item.toLowerCase()).includes(filter));
   return shell(`
     <section class="page-hero">
-      <p class="eyebrow">Talent Board</p>
-      <h1>Find builders by what they shipped.</h1>
-      <p>Search proof resumes, not polished claims.</p>
-      ${proofChain(["Recent receipts", "Relevant stack", "App outcomes", "Availability"])}
-      <div class="search-prompt">I need someone to ship: <strong>iOS MVP / SaaS onboarding / AI agent UI</strong></div>
-      <div class="board-tabs talent-tabs" aria-label="Talent filters">
-        ${["all", "ios", "saas", "launch"].map((key) => `<button class="${key === filter ? "active" : ""}" data-filter="${key}" type="button">${key}</button>`).join("")}
+      <p class="eyebrow">Future concept</p>
+      <h1>Builder search comes later.</h1>
+      <p>PRBar's immediate value is a builder-owned proof surface. Search and discovery can build on that once people have proof worth finding.</p>
+    </section>
+    <section class="surface-grid">
+      <a class="surface-card" href="#/profile"><span>01</span><h2>Builder Proof</h2><p>Show the work before asking anyone to search it.</p></a>
+      <a class="surface-card" href="#/card"><span>02</span><h2>Builder Card</h2><p>Share a compact proof link anywhere.</p></a>
+      <a class="surface-card" href="#/repos"><span>03</span><h2>Sources</h2><p>Choose the proof inputs first.</p></a>
+    </section>
+  `);
+}
+
+function setupStepper(activePath) {
+  const steps = [
+    ["/signup", "Claim card"],
+    ["/connect-github", "Connect GitHub"],
+    ["/repos", "Choose sources"],
+    ["/profile", "Publish Builder Proof"],
+  ];
+
+  return `
+    <ol class="setup-stepper" aria-label="Builder Proof setup steps">
+      ${steps.map(([path, label], index) => `<li class="${path === activePath ? "active" : ""}"><span>${String(index + 1).padStart(2, "0")}</span><a href="#${path}">${label}</a></li>`).join("")}
+    </ol>
+  `;
+}
+
+function authPage(mode = "signup") {
+  const isSignup = mode === "signup";
+  return shell(`
+    <section class="auth-layout">
+      <div class="auth-copy">
+        <p class="eyebrow">${isSignup ? "Claim builder card" : "Welcome back"}</p>
+        <h1>${isSignup ? "Start with the short proof link." : "Sign in to manage Builder Proof."}</h1>
+        <p>${isSignup ? "Reserve your builder card, then connect GitHub and choose the sources that power Builder Proof." : "Log in to reach your profile, GitHub connection, account controls, and logout state."}</p>
+        ${setupStepper(isSignup ? "/signup" : "/profile")}
+      </div>
+      <form class="auth-panel">
+        <h2>${isSignup ? "Create your PRBar account" : "Sign in"}</h2>
+        <label>Email<input type="email" value="${isSignup ? "maya@example.com" : "maya@example.com"}"></label>
+        <label>Password<input type="password" value="builderproof"></label>
+        ${isSignup ? `<label>Builder handle<input value="@maya.codes"></label>` : ""}
+        <a class="primary wide" href="${isSignup ? "#/connect-github" : "#/user"}" data-auth-action="${isSignup ? "signup" : "login"}">${isSignup ? "Continue to GitHub" : "Sign in"}</a>
+        ${isSignup ? "" : `<div class="auth-next-links"><a href="#/user">Profile</a><a href="#/connect-github">Connect GitHub</a><a href="#/account">Account</a></div>`}
+        <p>${isSignup ? "Already claimed a card?" : "Need a builder card?"} <a href="#/${isSignup ? "signin" : "signup"}">${isSignup ? "Sign in" : "Create account"}</a></p>
+      </form>
+    </section>
+  `);
+}
+
+function onboardingPage() {
+  return shell(`
+    <section class="page-hero">
+      <p class="eyebrow">Onboarding</p>
+      <h1>Publish Builder Proof in four moves.</h1>
+      <p>PRBar keeps setup narrow: claim the card, connect GitHub, choose sources, then publish the proof resume.</p>
+      ${setupStepper("/signup")}
+    </section>
+    <section class="onboarding-panels">
+      <a href="#/signup"><span>01</span><h2>Claim card</h2><p>Reserve the short proof link for bios, resumes, and intros.</p></a>
+      <a href="#/connect-github"><span>02</span><h2>Connect GitHub</h2><p>Import release tags, merged PR metadata, and checks from approved sources.</p></a>
+      <a href="#/repos"><span>03</span><h2>Choose sources</h2><p>Count, attach, redact, or exclude sources before anything goes public.</p></a>
+      <a href="#/profile"><span>04</span><h2>Publish proof</h2><p>Share the builder card or full Builder Proof anywhere.</p></a>
+    </section>
+  `);
+}
+
+function connectGithubPage() {
+  return shell(`
+    <section class="connect-layout">
+      <div class="connect-copy">
+        <p class="eyebrow">Connect GitHub</p>
+        <h1>Bring in the facts, then choose what counts.</h1>
+        <p>PRBar reads release tags, merged PR metadata, checks, and selected repo names. You decide which sources appear publicly.</p>
+        ${setupStepper("/connect-github")}
+      </div>
+      <aside class="connect-panel">
+        <h2>github.com/maya</h2>
+        <p>Selected repo access requested. Private repositories remain hidden until you choose to count or reveal them.</p>
+        <div class="permission-list">
+          <span>Release tags</span>
+          <span>Merged PR metadata</span>
+          <span>Status checks</span>
+          <span>Selected repo names</span>
+        </div>
+        <a class="primary wide" href="#/repos" data-auth-action="connect-github">Authorize and choose sources</a>
+      </aside>
+    </section>
+  `);
+}
+
+function ownerGatePage(kind = "profile") {
+  const profile = readProfileState();
+  const gates = {
+    account: {
+      eyebrow: "Account locked",
+      title: "Sign in to manage account permissions.",
+      copy: "Account permissions, exports, private source defaults, and deletion controls stay behind the owner session.",
+      primary: "Sign in to account",
+    },
+    edit: {
+      eyebrow: "Owner tools locked",
+      title: "Sign in to edit this profile.",
+      copy: "The public Builder Proof can stay visible while profile copy, handle, availability, and source-backed settings stay owner-only.",
+      primary: "Sign in to edit",
+    },
+    profile: {
+      eyebrow: "Owner profile locked",
+      title: "Sign in to manage Builder Proof.",
+      copy: "Visitors can inspect the public proof. Owners sign in to edit profile copy, connect GitHub, choose sources, and publish updates.",
+      primary: "Sign in",
+    },
+  };
+  const gate = gates[kind] || gates.profile;
+
+  return shell(`
+    <section class="auth-layout owner-gate-layout">
+      <div class="auth-copy">
+        <p class="eyebrow">${gate.eyebrow}</p>
+        <h1>${gate.title}</h1>
+        <p>${gate.copy}</p>
+        <div class="action-row"><a class="primary" href="#/signin">${gate.primary}</a><a class="secondary light" href="#/profile">View public Builder Proof</a></div>
+      </div>
+      <aside class="owner-gate-card">
+        <span class="avatar xl">${escapeHtml(profile.initials)}</span>
+        <h2>${escapeHtml(profile.name)}</h2>
+        <p>${escapeHtml(profile.handle)} · ${escapeHtml(profile.link)}</p>
+        <div class="owner-gate-list">
+          <b>Public visitors see proof.</b>
+          <b>Signed-in owners edit it.</b>
+          <b>Potential users can claim their own card.</b>
+        </div>
+        <a class="primary wide" href="#/signup">Claim your builder card</a>
+      </aside>
+    </section>
+  `);
+}
+
+function userProfilePage() {
+  const session = readSessionState();
+  const workflow = readProofWorkflowState();
+  const profile = readProfileState();
+  if (!session.isAuthenticated) return ownerGatePage("profile");
+
+  return shell(`
+    <section class="account-layout">
+      <aside class="account-rail">
+        <span class="avatar xl">${escapeHtml(profile.initials)}</span>
+        <h2>${escapeHtml(profile.name)}</h2>
+        <p>${escapeHtml(profile.handle)} · ${escapeHtml(profile.link)}</p>
+        <a class="primary wide" href="#/profile">View public Builder Proof</a>
+      </aside>
+      <div class="account-main">
+        <div class="control-section-heading">
+          <span>User profile</span>
+          <h1>Manage the identity behind Builder Proof.</h1>
+        </div>
+        <div class="session-strip">
+          <b>${session.isAuthenticated ? "Signed in" : "Static preview"}</b>
+          <span>${session.githubConnected ? `${workflow.published ? "Published Builder Proof is live." : "Draft Builder Proof is ready to publish."} ${proofSourceMetrics(workflow).counted} selected sources are available.` : "Connect GitHub to import release tags, merged PRs, and source proof."}</span>
+        </div>
+        ${setupChecklist()}
+        <div class="account-grid">
+          <a href="#/edit-profile"><b>Edit profile</b><span>Name, handle, title, availability, and links.</span></a>
+          <a href="#/connect-github"><b>${session.githubConnected ? "GitHub connected" : "Connect GitHub"}</b><span>Import PRs, releases, checks, and selected repo names.</span></a>
+          <a href="#/account"><b>Account permissions</b><span>GitHub access, private source controls, and export settings.</span></a>
+          <a href="#/repos"><b>Sources & Privacy</b><span>Choose what powers public proof.</span></a>
+          <a href="#/home" data-auth-action="logout"><b>Log out</b><span>Clear the local mock session and return home.</span></a>
+        </div>
       </div>
     </section>
-    <section class="talent-grid">
-      ${filtered.map((builder) => `
-        <article class="talent-card">
-          ${builderCard(builder)}
-          <div class="talent-decision">
-            <span><b>Best for</b>${builder.domains.join(", ")}</span>
-            <span><b>Last shipped</b>${builder.receipt}</span>
-            <span><b>Location</b>${builder.location}</span>
+  `);
+}
+
+function editProfilePage() {
+  if (!readSessionState().isAuthenticated) return ownerGatePage("edit");
+
+  const profile = readProfileState();
+  return shell(`
+    <section class="account-layout">
+      <aside class="account-rail">
+        <span class="avatar xl">${escapeHtml(profile.initials)}</span>
+        <h2>Public identity</h2>
+        <p>This copy appears on the builder card and Builder Proof.</p>
+        <a class="secondary light wide" href="#/profile">Preview Builder Proof</a>
+      </aside>
+      <form class="account-main profile-edit-form" data-profile-form>
+        <div class="control-section-heading">
+          <span>Edit profile</span>
+          <h1>Tune the public resume layer.</h1>
+        </div>
+        <div class="profile-form-grid">
+          <div class="profile-field-stack">
+            <label>Name<input name="profile-name" value="${escapeHtml(profile.name)}"></label>
+            <label>Handle<input name="profile-handle" value="${escapeHtml(profile.handle)}"></label>
+            <label>Proof link<input name="profile-link" value="${escapeHtml(profile.link)}"></label>
+            <label>Title<input name="profile-title" value="${escapeHtml(profile.title)}"></label>
+            <label>Availability<input name="profile-availability" value="${escapeHtml(profile.availability)}"></label>
+            <label>Builder note<textarea name="profile-note">${escapeHtml(profile.note)}</textarea></label>
           </div>
-          <div class="action-row small">
-            <a class="primary" href="#/profile">View profile</a>
-            <a class="secondary light" href="#/receipt">Latest receipt</a>
-          </div>
-        </article>
-      `).join("")}
+          <aside class="profile-live-preview">
+            <span>Public preview</span>
+            <div class="mini-public-card">
+              <b>${escapeHtml(profile.name)}</b>
+              <em>${escapeHtml(profile.handle)}</em>
+              <p>${escapeHtml(profile.title)}</p>
+              <strong>${escapeHtml(profile.availability)}</strong>
+            </div>
+            <p>Saving updates the builder card, the account profile, and the published Builder Proof page.</p>
+          </aside>
+        </div>
+        <div class="action-row"><button class="primary" type="button" data-profile-action="save">Save profile</button><a class="secondary light" href="#/profile">Preview Builder Proof</a></div>
+      </form>
+    </section>
+  `);
+}
+
+function accountPage() {
+  const session = readSessionState();
+  const profile = readProfileState();
+  if (!session.isAuthenticated) return ownerGatePage("account");
+
+  return shell(`
+    <section class="account-layout">
+      <aside class="account-rail">
+        <h2>Account</h2>
+        <p>Permissions and data controls for ${escapeHtml(profile.name)}.</p>
+        <a class="primary wide" href="#/repos">Open source controls</a>
+      </aside>
+      <div class="account-main">
+        <div class="control-section-heading">
+          <span>Account & permissions</span>
+          <h1>Control access, exports, and privacy defaults.</h1>
+        </div>
+        <div class="permission-cards">
+          <article><b>Session</b><span>${session.isAuthenticated ? "Signed in as maya@example.com" : "Signed out preview"}</span><em>${session.isAuthenticated ? "Active" : "Preview"}</em></article>
+          <article><b>GitHub</b><span>${session.githubConnected ? "Connected with selected repo access" : "Not connected yet"}</span><em>${session.githubConnected ? "Manage" : "Connect"}</em></article>
+          <article><b>Private sources</b><span>Names hidden by default</span><em>Protected</em></article>
+          <article><b>Exports</b><span>Card image, embed, and proof link enabled</span><em>Active</em></article>
+          <article><b>Delete data</b><span>Remove imported metadata and revoke GitHub</span><em>Available</em></article>
+        </div>
+        <div class="action-row small"><a class="primary" href="#/connect-github">Connect GitHub</a><button class="secondary light" type="button" data-auth-action="logout">Log out</button></div>
+      </div>
+    </section>
+  `);
+}
+
+function logoutPage() {
+  return shell(`
+    <section class="auth-layout">
+      <div class="auth-copy">
+        <p class="eyebrow">Signed out</p>
+        <h1>You're signed out.</h1>
+        <p>The local mock session has been cleared. The public Builder Proof remains shareable, and account controls are one sign-in away.</p>
+      </div>
+      <aside class="auth-panel">
+        <h2>Return to PRBar</h2>
+        <a class="primary wide" href="#/signin">Sign in again</a>
+        <a class="secondary light wide" href="#/home">Back home</a>
+      </aside>
     </section>
   `);
 }
 
 function dashboardPage() {
+  return reposPage();
+}
+
+function unpublishedProfilePage() {
+  const profile = readProfileState();
+  const session = readSessionState();
+  const firstName = profile.name.split(/\s+/).filter(Boolean)[0] || "The builder";
+  const actions = session.isAuthenticated
+    ? `<a class="primary" href="#/repos">Open owner tools</a><a class="secondary light" href="#/user">Setup checklist</a>`
+    : `<a class="primary" href="#/signup">Claim your builder card</a><a class="secondary light" href="#/signin">Sign in to publish</a>`;
+
   return shell(`
-    <section class="page-hero">
-      <p class="eyebrow">Private dashboard</p>
-      <h1>Choose what counts.</h1>
-      <p>Connect GitHub, pick your repos and apps, then publish a proof resume you can share anywhere.</p>
-    </section>
-    ${publishJourney(1, {
-      compact: true,
-      title: "Your proof resume starts with selected sources.",
-      copy: "PRBar has the facts. You choose the repos, app links, and releases that belong on the public surface."
-    })}
-    <section class="workflow-layout">
-      <article class="command-panel">
-        <div class="panel-heading"><span>Next action</span><h2>Publish SideProject Radar v2.1</h2></div>
-        <ol class="checklist">
-          <li class="done"><b>GitHub connected</b><span>@maya.codes synced 11 minutes ago</span></li>
-          <li class="done"><b>Repos selected</b><span>2 public, 2 private with redaction enabled</span></li>
-          <li><b>Create builder card</b><span>Start with PR distribution, releases, and app links in one shareable object</span></li>
-          <li><b>Publish profile and receipts</b><span>Preview profile, board eligibility, and receipt links</span></li>
-        </ol>
-        <div class="action-row small"><a class="primary" href="#/card">Build card</a><a class="secondary light" href="#/repos">Manage sources</a></div>
-      </article>
-      <div class="dashboard-stack">
-        <article class="card-ready-panel">
-          <div class="panel-heading"><span>First shareable asset</span><h2>Your builder card is ready.</h2></div>
-          <p>Use it as a bio link, email signature, recruiting proof, launch post, or compact preview of the full profile.</p>
-          <div class="action-row small"><a class="primary" href="#/card">Customize card</a><a class="secondary light" href="#/profile">View profile</a></div>
-        </article>
-        <article class="app-builder-panel">
-          <div class="panel-heading"><span>New surface</span><h2>Add what GitHub cannot see</h2></div>
-          <p>Show the app, product, TestFlight build, demo, or customer-facing thing your receipts helped ship.</p>
-          <div class="app-form-preview">
-            <label>App name<span>SideProject Radar</span></label>
-            <label>Status<span>Public beta</span></label>
-            <label>Links<span>Web app · GitHub · latest receipt</span></label>
-            <label>Receipts attached<span>v2.1.0 · 8 PRs merged · 34 tests added</span></label>
-          </div>
-          <div class="action-row small"><a class="primary" href="#/project">Preview app page</a><a class="secondary light" href="#/repos">Attach repos</a></div>
-        </article>
-        ${receiptCard(releases[0])}
-        <div class="mini-grid">
-          <div><strong>68</strong><span>proof PRs</span></div>
-          <div><strong>13</strong><span>receipts</span></div>
-          <div><strong>4</strong><span>repos counted</span></div>
-        </div>
+    <section class="public-empty-state">
+      <div>
+        <p class="eyebrow">Public Builder Proof</p>
+        <h1>Builder Proof is not published yet.</h1>
+        <p>${escapeHtml(firstName)} has not made this proof resume public. The owner can connect GitHub, choose sources, publish Builder Proof, then share the public link anywhere.</p>
+        ${setupStepper("/profile")}
+        <div class="action-row">${actions}</div>
       </div>
+      <aside class="empty-proof-card">
+        <span>Waiting for proof</span>
+        <b>Draft only</b>
+        <p>No PRs, releases, apps, or receipts are public until the builder publishes.</p>
+      </aside>
     </section>
   `);
+}
+
+function profileHeroActions(ownerView, publicPreview) {
+  if (ownerView) {
+    return `
+      <div class="action-row small">
+        <a class="primary" href="#/profile" data-scroll-target="latest-receipt">Featured receipt</a>
+        <button class="secondary light" type="button" data-share-action="proof">Copy Builder Proof link</button>
+        <a class="secondary light" href="#/edit-profile">Edit profile</a>
+        <a class="secondary light" href="#/repos">Sources & Privacy</a>
+      </div>
+    `;
+  }
+
+  if (publicPreview) {
+    return `
+      <div class="action-row small">
+        <a class="primary" href="#/profile" data-scroll-target="latest-receipt">Featured receipt</a>
+        <button class="secondary light" type="button" data-share-action="proof">Copy Builder Proof link</button>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="action-row small">
+      <a class="primary" href="#/profile" data-scroll-target="latest-receipt">Featured receipt</a>
+      <button class="secondary light" type="button" data-share-action="proof">Copy Builder Proof link</button>
+      <a class="secondary light" href="#/signup">Create your Builder Proof</a>
+    </div>
+  `;
+}
+
+function ownerProofBar(profile, metrics) {
+  return `
+    <section class="owner-proof-bar">
+      <div>
+        <span>Owner view</span>
+        <h2>Owner controls</h2>
+        <p>You are signed in as the builder. Edit the identity, adjust selected sources, or preview what signed-out visitors see.</p>
+      </div>
+      <div class="owner-proof-actions">
+        <a href="#/edit-profile"><b>Edit profile</b><em>Name, handle, title, and availability.</em></a>
+        <a href="#/repos"><b>Sources & Privacy</b><em>${metrics.counted} selected sources power this proof.</em></a>
+        <button type="button" data-preview-action="enter"><b>View as public</b><em>Hide owner tools without losing your session.</em></button>
+      </div>
+    </section>
+  `;
+}
+
+function publicPreviewBar() {
+  return `
+    <section class="owner-proof-bar public-preview-bar">
+      <div>
+        <span>Public preview</span>
+        <h2>This is how signed-out visitors see Builder Proof.</h2>
+        <p>Editing tools are hidden in this preview. Exit preview to keep editing.</p>
+      </div>
+      <div class="action-row small"><button class="primary" type="button" data-preview-action="exit">Exit public preview</button></div>
+    </section>
+  `;
+}
+
+function visitorProofCTA(profile) {
+  return `
+    <section class="visitor-proof-cta">
+      <div>
+        <span>Potential user view</span>
+        <h2>Want proof like this?</h2>
+        <p>PRBar turns PRs, releases, app updates, and shipped features into a Builder Proof page you can share anywhere.</p>
+      </div>
+      <div class="visitor-proof-steps">
+        <b>Claim card</b>
+        <b>Connect GitHub</b>
+        <b>Choose sources</b>
+        <b>Publish proof</b>
+      </div>
+      <div class="action-row small"><a class="primary" href="#/signup">Create your Builder Proof</a><a class="secondary light" href="#/signin">Sign in</a><a class="secondary light" href="#/profile" data-scroll-target="builder-card">Inspect ${escapeHtml(shortProfilePath(profile))}</a></div>
+    </section>
+  `;
 }
 
 function profilePage() {
   const builder = builders[0];
+  const profile = readProfileState();
+  const release = releases[0];
+  const attachedApp = showcaseApps[0];
+  const workflow = readProofWorkflowState();
+  const metrics = proofSourceMetrics(workflow);
+  const session = readSessionState();
+  const publicPreview = session.isAuthenticated && readPublicPreviewMode();
+  const ownerView = session.isAuthenticated && !publicPreview;
+
+  if (routePath() === "/profile" && !workflow.published) return unpublishedProfilePage();
+
   return shell(`
-    <section class="profile-hero">
+    <section class="profile-hero proof-resume-hero">
       <div class="profile-main">
-        <span class="avatar xl">${builder.initials}</span>
+        <span class="avatar xl">${escapeHtml(profile.initials)}</span>
         <div>
-          <p class="eyebrow">Proof Resume</p>
-          <h1>PRBar is the resume for AI-native builders.</h1>
-          <p>A living profile built from what ${builder.handle} actually shipped: selected repos, releases, app updates, and public receipts.</p>
+          <p class="eyebrow">${workflow.published ? "Published Builder Proof" : "Builder Proof"}</p>
+          <h1>${escapeHtml(profile.name)}</h1>
+          <p class="profile-handle-line">${escapeHtml(profile.handle)} · ${escapeHtml(profile.link)}</p>
+          <p>${escapeHtml(profile.title)}. Shipped 42 merged PRs, 4 releases, and ${metrics.attached} public apps from ${metrics.counted} selected GitHub sources.</p>
+          <p class="profile-builder-note">${escapeHtml(profile.note)}</p>
           ${proofChain(["Selected repos", "Released apps", "Merged PRs", "Public receipts"])}
-          <div class="action-row small"><a class="primary" href="#/receipt">Featured receipt</a><a class="secondary light" href="#/card">Customize card</a></div>
+          ${profileHeroActions(ownerView, publicPreview)}
         </div>
       </div>
       <aside class="profile-aside">
-        <b>${builder.availability}</b>
+        <b>${escapeHtml(profile.availability)}</b>
         ${statPills([...builder.tools, ...builder.domains])}
       </aside>
     </section>
-    <section class="profile-proof-grid">
-      <article class="profile-card-panel">
-        <div class="panel-heading"><span>Portable proof</span><h2>Builder card</h2></div>
-        ${builderLinkCard({ id: "profile-builder-card", compact: true })}
-        <div class="action-row small"><a class="primary" href="#/card">Customize card</a></div>
-      </article>
-      ${builderCard(builder, { featured: true })}
-      <div class="featured-apps-panel">
-        <h2>Featured apps</h2>
-        ${showcaseApps.slice(0, 2).map((item) => `
-          <article>
-            ${appPreview(item)}
-            <div>
-              <span>${item.status}</span>
-              <h3>${item.name}</h3>
-              <p>${item.tagline}</p>
-              ${statPills(item.proof.slice(0, 3))}
+    ${ownerView ? ownerProofBar(profile, metrics) : publicPreview ? publicPreviewBar() : visitorProofCTA(profile)}
+    <section class="proof-resume-layout">
+      <div class="proof-resume-main">
+        <article class="resume-summary-panel">
+          <div>
+            <span>What this proves</span>
+            <h2>42 PRs, 4 releases, ${metrics.attached} apps shipped.</h2>
+            <p>${builder.stats.prs} merged PRs, ${builder.stats.releases} releases, and ${metrics.attached} public apps moved from prototype to shipped.</p>
+          </div>
+          <div class="resume-stat-grid">
+            <b><strong>${builder.stats.prs}</strong><span>Merged PRs</span></b>
+            <b><strong>${builder.stats.releases}</strong><span>Releases</span></b>
+            <b><strong>${metrics.attached}</strong><span>Shipped apps</span></b>
+          </div>
+        </article>
+        <article class="resume-receipt-panel" id="latest-receipt">
+          <div class="resume-section-heading">
+            <span>Current shipped thing</span>
+            <h2>${release.title}</h2>
+            <p>${release.summary}</p>
+          </div>
+          <div class="receipt-proof-layout">
+            <div class="receipt-proof-stack">
+              ${statPills(release.facts)}
+              ${proofLinks(release)}
+              <p class="trust-note">Facts are locked from GitHub. Builder annotations add context, but cannot rewrite PRs, tags, checks, or timestamps.</p>
             </div>
-          </article>
-        `).join("")}
+            <div class="pr-list">
+              ${release.builder.prList.map((pr, index) => `<div><b>${pr}</b><span>${["Discovery filters merged", "Release notes imported", "Scoring tests added"][index]}</span><em>Merged · CI passed</em></div>`).join("")}
+            </div>
+          </div>
+          <blockquote>“This release moved the project from useful prototype to something people can revisit weekly.”</blockquote>
+        </article>
+        <article class="app-proof-panel" id="app-proof">
+          <div class="resume-section-heading">
+            <span>App proof</span>
+            <h2>Proof attaches to the things Maya shipped.</h2>
+          </div>
+          <div class="app-proof-strip">
+            ${showcaseApps.slice(0, 2).map((item) => `
+              <article>
+                ${appPreview(item)}
+                <div>
+                  <span>${item.status}</span>
+                  <h3>${item.name}</h3>
+                  <p>${item.tagline}</p>
+                  ${statPills(item.proof.slice(0, 3))}
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        </article>
+        <article class="resume-timeline-panel">
+          <div class="resume-section-heading">
+            <span>Proof timeline</span>
+            <h2>Recent shipped work, in order.</h2>
+          </div>
+          <div class="resume-timeline">
+            ${timeline.map((item) => `<article><span>${item.date}</span><div><h3>${item.title}</h3><p>${item.detail}</p></div></article>`).join("")}
+          </div>
+        </article>
       </div>
-      <div class="timeline-panel">
-        <h2>Proof timeline</h2>
-        ${timeline.map((item) => `<article><span>${item.date}</span><h3>${item.title}</h3><p>${item.detail}</p></article>`).join("")}
-      </div>
-      ${receiptCard(releases[0])}
+      <aside class="proof-share-rail" id="builder-card">
+        <div class="rail-sticky">
+          <div class="panel-heading"><span>Short version</span><h2>Builder card</h2></div>
+          <p>The card is the portable version of this page. It previews the proof, then opens the full Builder Proof when someone wants receipts and source context.</p>
+          ${builderLinkCard({ id: "profile-builder-card", compact: true, apps: metrics.attached, profile })}
+          <div class="share-output-grid">
+            <button type="button" data-share-action="card"><span>Card link</span><b>Copy ${escapeHtml(shortProfilePath(profile))}</b></button>
+            <button type="button" data-share-action="proof"><span>Full proof</span><b>Copy Builder Proof</b></button>
+            <button type="button" data-share-action="image"><span>Image</span><b>Download card</b></button>
+            <button type="button" data-share-action="embed"><span>Embed</span><b>Copy snippet</b></button>
+          </div>
+          <p class="share-feedback" data-share-feedback>${workflow.shareFeedback || "Share links are ready."}</p>
+          <div class="rail-source-note">
+            <b>Source controlled</b>
+            <span>${metrics.counted} selected sources power the card, receipt, app proof, and timeline.</span>
+          </div>
+        </div>
+      </aside>
     </section>
   `);
 }
 
-function receiptPage() {
+function receiptPage(options = {}) {
   const release = releases[0];
   const attachedApp = showcaseApps[0];
+  const editMode = options.edit === true;
   return shell(`
     <section class="receipt-hero">
       <div>
-        <p class="eyebrow">Release receipt</p>
+        <p class="eyebrow">${editMode ? "Edit receipt" : "Release receipt"}</p>
         <h1>${release.title}</h1>
         <p>${release.summary}</p>
         ${statPills(release.facts)}
         ${proofChain(["Release tag v2.1.0", "8 merged PRs", "34 tests added", "Public app proof"])}
+        ${proofLinks(release)}
       </div>
       <aside>
         <span>Verified source</span>
-        <code>${release.builder.repo}</code>
-        <code>${release.builder.tag}</code>
+        <a href="#/receipt">GitHub release</a>
+        <a href="#/receipt">${release.builder.repo}</a>
+        <a href="#/receipt">${release.builder.tag}</a>
         <b>${release.date}</b>
       </aside>
     </section>
     <section class="receipt-detail-grid">
       <article class="evidence-panel">
         <h2>Imported GitHub facts</h2>
+        <p class="trust-note">Facts are locked from GitHub. Builder annotations can explain what changed, but they cannot rewrite PR, tag, check, or timestamp evidence.</p>
         <div class="pr-list">
-          ${release.builder.prList.map((pr, index) => `<div><b>${pr}</b><span>${["Discovery filters merged", "Release notes imported", "Scoring tests added"][index]}</span><em>Merged</em></div>`).join("")}
+          ${release.builder.prList.map((pr, index) => `<div><b>${pr}</b><span>${["Discovery filters merged", "Release notes imported", "Scoring tests added"][index]}</span><em>Merged · CI passed</em></div>`).join("")}
         </div>
       </article>
       <article class="annotation-panel">
-        <h2>Builder annotation</h2>
+        <h2>${editMode ? "Edit annotation" : "Builder annotation"}</h2>
         <p>This release moved the project from useful prototype to something people can revisit weekly. The receipt keeps the facts tied to GitHub while leaving room to explain the product decision.</p>
-        <div class="action-row small"><a class="primary" href="#/studio">Edit in studio</a><a class="secondary light" href="#/project">View project</a></div>
+        ${editMode ? `
+          <label>Receipt title<input value="SideProject Radar v2.1"></label>
+          <label>Builder note<textarea>Moved from prototype to weekly-use product with release notes imported from GitHub.</textarea></label>
+          <label class="check"><input type="checkbox" checked> Hide private repo names</label>
+        ` : ""}
+        <div class="action-row small"><a class="primary" href="${editMode ? "#/receipt" : "#/studio"}">${editMode ? "Save receipt" : "Edit receipt"}</a><a class="secondary light" href="#/project">View app page</a></div>
       </article>
       <article class="receipt-app-panel">
         ${appPreview(attachedApp)}
@@ -989,7 +1732,7 @@ function projectPage() {
       <h1>${item.name}</h1>
       <p>${item.description}</p>
       ${proofChain(["App added by builder", "Repos attached", "Latest receipt published", "Eligible for Showcase"])}
-      <div class="project-links"><a href="#/receipt">Latest receipt</a><a href="#/profile">Builder profile</a><a href="#/repos">Source repos</a></div>
+      <div class="project-links"><a href="#/receipt">Latest receipt</a><a href="#/profile">Builder Proof</a><a href="#/repos">Source repos</a></div>
     </section>
     <section class="project-grid">
       <article class="project-visual"><span>Live app page</span><strong>${item.tagline}</strong>${appPreview(item)}${statPills(item.proof)}</article>
@@ -1006,114 +1749,160 @@ function projectPage() {
   `);
 }
 
-function reposPage() {
-  const repoApps = [
-    { repos: "maya/sideproject-radar + maya/radar-ios", app: "SideProject Radar", mode: "Public app page" },
-    { repos: "nora/launch-sprint-kit", app: "Launch Sprint Kit", mode: "Demo + docs" },
-    { repos: "client/stealth-onboarding", app: "Private client app", mode: "Counts only, names hidden" },
-  ];
+function sourcesEmptyPage() {
+  return shell(`
+    <section class="public-empty-state">
+      <div>
+        <p class="eyebrow">Sources & Privacy</p>
+        <h1>Connect GitHub to choose sources.</h1>
+        <p>Source controls stay private until the builder signs in and authorizes selected repository access.</p>
+        ${setupStepper("/connect-github")}
+        <div class="action-row"><a class="primary" href="#/connect-github">Connect GitHub</a><a class="secondary light" href="#/signin">Sign in</a></div>
+      </div>
+      <aside class="empty-proof-card">
+        <span>No source access</span>
+        <b>0 sources selected</b>
+        <p>PR velocity, releases, apps, and receipts appear after GitHub is connected.</p>
+      </aside>
+    </section>
+  `);
+}
+
+function reposPage(options = {}) {
+  const session = readSessionState();
+  const profile = readProfileState();
+  const workflow = readProofWorkflowState();
+  const metrics = proofSourceMetrics(workflow);
+  const sourceRows = repoSources.map((repo) => sourceRow(repo, workflow)).join("");
+  const repoApps = repoSources
+    .filter((repo) => workflow.sources[repo.name].mode !== "excluded" && workflow.sources[repo.name].attached)
+    .map((repo) => ({
+      repos: repo.name,
+      app: repo.app,
+      mode: workflow.sources[repo.name].mode === "redacted" ? "Counts only, names hidden" : "Attached to public proof",
+    }));
+
+  if (!session.githubConnected && !options.forceConnected) return sourcesEmptyPage();
 
   return shell(`
     <section class="page-hero">
-      <p class="eyebrow">GitHub Sources</p>
-      <h1>Choose which repos count.</h1>
-      <p>Control profiles, boards, receipts, and private redaction from one source list.</p>
+      <p class="eyebrow">Sources & Privacy</p>
+      <h1>Choose what powers Builder Proof.</h1>
+      <p>Only selected GitHub sources become public proof. Everything else stays private, redacted, or excluded.</p>
     </section>
-    ${publishJourney(2, {
-      compact: true,
-      title: "Select the inputs before anything goes public.",
-      copy: "Sources are the control layer: include product repos, attach them to apps, and redact private work before receipts are published."
-    })}
-    <section class="repo-layout">
-      <aside class="source-summary">
-        <h2>@maya.codes</h2>
-        <div class="mini-grid">
-          <div><strong>4</strong><span>available repos</span></div>
-          <div><strong>3</strong><span>counted</span></div>
+    <section class="control-room">
+      <aside class="control-rail">
+        <div class="source-summary">
+          <h2>${escapeHtml(profile.handle)}</h2>
+          <div class="mini-grid">
+            <div><strong>${metrics.total}</strong><span>available repos</span></div>
+            <div><strong>${metrics.counted}</strong><span>counted</span></div>
+            <div><strong>${metrics.hidden}</strong><span>private hidden</span></div>
+          </div>
+          <p>Private names can stay hidden while merged PR counts and release receipts remain eligible.</p>
         </div>
-        <p>Private names can stay hidden while merged PR counts and release receipts remain eligible.</p>
+        <div class="control-status-card">
+          <span>Connection</span>
+          <b>GitHub connected</b>
+          <p>Selected repo access. Release tags, PR metadata, and checks are available for approved sources only.</p>
+        </div>
+        ${publishStatusCard(workflow)}
+        <div class="control-status-card">
+          <span>Public preview impact</span>
+          <b>${metrics.counted} sources power Builder Proof</b>
+          <p>${metrics.attached} attached apps, ${metrics.hidden} private hidden, ${metrics.excluded} excluded. Card, receipt, app proof, and timeline update from the same approved source set.</p>
+        </div>
       </aside>
-      <div class="repo-list">
-        <article class="repo-attach-panel">
-          <h2>Attach repos to apps</h2>
-          <p>Receipts can power a public product page, a private proof trail, or both.</p>
-          ${repoApps.map((item) => `
-            <div>
-              <code>${item.repos}</code>
-              <span>${item.app}</span>
-              <b>${item.mode}</b>
+      <div class="control-workbench">
+        <section class="source-matrix">
+          <div class="control-section-heading">
+            <span>Source matrix</span>
+            <h2>Choose what counts.</h2>
+            <p>Each source has count, app attachment, and redaction controls in one row.</p>
+          </div>
+          <div class="source-table">
+            ${sourceRows}
+          </div>
+        </section>
+        <section class="attachment-editor-grid">
+          <article class="app-attachment-panel">
+            <div class="control-section-heading">
+              <span>App attachments</span>
+              <h2>Map sources to what shipped.</h2>
             </div>
-          `).join("")}
-        </article>
-        ${repoSources.map((repo) => `
-          <article class="repo-row">
-            <div><h3>${repo.name}</h3><p>${repo.activity} / latest release ${repo.lastRelease}</p></div>
-            <span>${repo.visibility}</span>
-            <b>${repo.status}</b>
+            ${repoApps.map((item) => `
+              <div class="attachment-row">
+                <code>${item.repos}</code>
+                <span>${item.app}</span>
+                <b>${item.mode}</b>
+              </div>
+            `).join("") || `<div class="attachment-row empty"><code>No app attachments</code><span>Choose sources</span><b>Draft</b></div>`}
           </article>
-        `).join("")}
+          <article class="receipt-editor-panel annotation-panel" id="edit-receipt">
+            <div class="control-section-heading">
+              <span>Receipt editor</span>
+              <h2>Edit latest receipt.</h2>
+            </div>
+            <p>Receipt editing lives with source controls because this is where public context, redaction, and locked GitHub facts meet.</p>
+            <label>Receipt title<input value="SideProject Radar v2.1"></label>
+            <label>Builder note<textarea>Moved from prototype to weekly-use product with release notes imported from GitHub.</textarea></label>
+            <label class="check"><input type="checkbox" checked> Hide private repo names</label>
+            <div class="action-row small"><a class="primary" href="#/profile" data-scroll-target="latest-receipt">Preview on Builder Proof</a><button class="secondary light" type="button">Save receipt</button></div>
+          </article>
+        </section>
+        <section class="trust-rules-panel">
+          <div class="control-section-heading">
+            <span>Trust rules</span>
+            <h2>Trust rules for public proof.</h2>
+            <p>Make proof inspectable without turning private work public.</p>
+          </div>
+          <div class="trust-rule-list">
+            ${trustRules.map(([title, copy]) => `
+              <article>
+                <b>${title}</b>
+                <p>${copy}</p>
+              </article>
+            `).join("")}
+          </div>
+        </section>
       </div>
     </section>
   `);
 }
 
 function studioPage() {
-  return shell(`
-    <section class="page-hero">
-      <p class="eyebrow">Create Receipt</p>
-      <h1>Lock the facts. Shape the story.</h1>
-      <p>Keep GitHub evidence intact, add context, and preview the public receipt before it feeds your profile and app page.</p>
-    </section>
-    ${publishJourney(2, {
-      compact: true,
-      title: "This is where activity becomes a receipt.",
-      copy: "Facts stay source-linked. Your note explains what changed, why it mattered, and what the shipped work unlocked."
-    })}
-    <section class="studio-grid">
-      <article class="evidence-panel"><h2>Raw evidence</h2><div class="pr-list"><div><b>#184</b><span>Discovery filters</span><em>Included</em></div><div><b>#188</b><span>Release notes importer</span><em>Included</em></div><div><b>#191</b><span>Scoring tests</span><em>Included</em></div></div></article>
-      <article class="editor-panel"><h2>Annotation</h2><label>Receipt title<input value="SideProject Radar v2.1"></label><label>Builder note<textarea>Moved from prototype to weekly-use product with release notes imported from GitHub.</textarea></label><label class="check"><input type="checkbox" checked> Hide private repo names</label></article>
-      <article class="fact-split-panel">
-        <div><span>Locked</span><b>PRs, tags, checks, timestamps</b></div>
-        <div><span>Editable</span><b>Title, builder note, app context</b></div>
-        <div><span>Private</span><b>Repo names, client work, excluded sources</b></div>
-      </article>
-      <article class="preview-panel"><h2>Public preview</h2>${receiptCard(releases[0], { compact: true })}<div class="action-row small"><a class="primary" href="#/receipt">Publish receipt</a><a class="secondary light" href="#/profile">Preview profile</a></div></article>
-    </section>
-  `);
+  return receiptPage({ edit: true });
 }
 
 function builderCardPage() {
+  const profile = readProfileState();
   return shell(`
     <section class="page-hero">
       <p class="eyebrow">Builder Card</p>
-      <h1>Stop sending resumes.</h1>
-      <p class="lede">Send proof.</p>
-      <p>Claim a dynamic builder card backed by GitHub releases, merged PRs, and shipped apps.</p>
+      <h1>Builder Proof starts as a builder card.</h1>
+      <p class="lede">Short shareable version of Builder Proof.</p>
+      <p>Back it with GitHub releases, merged PRs, shipped apps, and selected receipts.</p>
     </section>
-    ${publishJourney(0, {
-      compact: true,
-      title: "Your card works before the network exists.",
-      copy: "Use it as a bio link, profile preview, and proof resume teaser before Connect, Showcase, or Talent matter."
-    })}
     <section class="builder-card-layout">
       <article class="builder-card-demo-panel">
-        ${builderLinkCard({ id: "setup-builder-card" })}
+        ${builderLinkCard({ id: "setup-builder-card", profile })}
       </article>
       <aside class="builder-card-settings">
-        <div class="panel-heading"><span>Setup</span><h2>Four obvious steps</h2></div>
-        <ol class="checklist">
-          <li class="done"><b>Claim your card</b><span>@maya.codes proof link reserved</span></li>
-          <li class="done"><b>Connect GitHub</b><span>OAuth connected with selected repo access</span></li>
-          <li class="done"><b>Choose what counts</b><span>2 public repos, 1 private repo with redaction</span></li>
-          <li><b>Publish your proof resume</b><span>Share in bio, resume, email signature, X, LinkedIn, or personal site</span></li>
-        </ol>
+        <div class="panel-heading"><span>Customize card</span><h2>One compact proof link</h2></div>
+        <p class="trust-note">Use the builder card anywhere a full page is too much. It previews current proof and opens Builder Proof when someone wants the receipts.</p>
         <div class="card-setting-grid">
           <label><span>Theme</span><b>Midnight proof</b></label>
-          <label><span>Front</span><b>PR distribution</b></label>
-          <label><span>Back tabs</span><b>Releases + Apps</b></label>
+          <label><span>Front</span><b>Shipped proof</b></label>
+          <label><span>Back links</span><b>Receipt + app + proof</b></label>
           <label><span>Privacy</span><b>Private repo names hidden</b></label>
         </div>
-        <div class="action-row small"><a class="primary" href="#/profile">Publish proof resume</a><a class="secondary light" href="#/studio">Create receipt</a></div>
+        <div class="share-output-grid">
+          <button type="button"><span>Card link</span><b>Copy ${escapeHtml(shortProfilePath(profile))}</b></button>
+          <button type="button"><span>Image</span><b>Download card</b></button>
+          <button type="button"><span>Embed</span><b>Copy snippet</b></button>
+          <button type="button"><span>Full proof</span><b>Open Builder Proof</b></button>
+        </div>
+        <div class="action-row small"><a class="primary" href="#/profile">Open Builder Proof</a><a class="secondary light" href="#/repos">Edit sources</a></div>
       </aside>
     </section>
   `);
@@ -1122,10 +1911,10 @@ function builderCardPage() {
 function trustPage() {
   const rules = [
     ["What PRBar reads", "Release tags, merged PR metadata, selected repo names, labels, timestamps, and test/status context."],
-    ["What PRBar counts", "Features shipped, PRs merged, releases made, projects launched, streaks, and verified source links."],
+    ["What PRBar counts", "Features shipped, PRs merged, releases made, projects launched, selected sources, and verified source links."],
     ["What PRBar protects", "Private repo names, client identities, excluded repos, and any source the builder did not select."],
-    ["What PRBar does not count", "Token usage, model spend, prompt volume, screenshots without source proof, or self-reported velocity."],
-    ["Anti-gaming", "Ranks show receipts behind the score, age out stale bursts, and flag suspicious source patterns."],
+    ["How redaction works", "Public receipts can count selected facts while hiding repo names, client labels, and sensitive app context."],
+    ["No vanity metrics", "PRBar does not count token usage, model spend, prompt volume, screenshots without source proof, or self-reported velocity."],
   ];
 
   return shell(`
@@ -1146,7 +1935,7 @@ function placeholderPage(label) {
       <p class="eyebrow">Route not found</p>
       <h1>${label}</h1>
       <p>This mockup route is not part of the current prototype walkthrough.</p>
-      <div class="action-row"><a class="primary" href="#/boards">Back to Showcase</a><a class="secondary light" href="#/network">Open Connect</a></div>
+      <div class="action-row"><a class="primary" href="#/profile">Back to Builder Proof</a><a class="secondary light" href="#/repos">Open Sources</a></div>
     </section>
   `);
 }
@@ -1202,19 +1991,40 @@ function initializeBuilderLinkCards() {
 
 function render() {
   const path = routePath();
-  if (path === "/home") app.innerHTML = homePage();
-  if (path === "/network") app.innerHTML = networkPage();
-  if (path === "/boards") app.innerHTML = boardsPage();
-  if (path === "/talent") app.innerHTML = talentPage();
-  if (path === "/dashboard") app.innerHTML = dashboardPage();
-  if (path === "/profile") app.innerHTML = profilePage();
-  if (path === "/card") app.innerHTML = builderCardPage();
-  if (path === "/receipt") app.innerHTML = receiptPage();
-  if (path === "/project") app.innerHTML = projectPage();
-  if (path === "/repos") app.innerHTML = reposPage();
-  if (path === "/studio") app.innerHTML = studioPage();
-  if (path === "/trust") app.innerHTML = trustPage();
-  if (!routes.some((route) => route.path === path)) app.innerHTML = placeholderPage("Home");
+  if (path === "/home") {
+    app.innerHTML = homePage();
+  } else if (path === "/signup") {
+    app.innerHTML = authPage("signup");
+  } else if (["/signin", "/login"].includes(path)) {
+    app.innerHTML = authPage("signin");
+  } else if (path === "/logout") {
+    resetSessionState();
+    app.innerHTML = logoutPage();
+  } else if (path === "/onboarding") {
+    app.innerHTML = onboardingPage();
+  } else if (path === "/connect-github") {
+    app.innerHTML = connectGithubPage();
+  } else if (path === "/network") {
+    app.innerHTML = networkPage();
+  } else if (path === "/boards") {
+    app.innerHTML = boardsPage();
+  } else if (path === "/talent") {
+    app.innerHTML = talentPage();
+  } else if (["/profile", "/card", "/receipt", "/project"].includes(path)) {
+    app.innerHTML = profilePage();
+  } else if (path === "/user") {
+    app.innerHTML = userProfilePage();
+  } else if (path === "/edit-profile") {
+    app.innerHTML = editProfilePage();
+  } else if (path === "/repos") {
+    app.innerHTML = reposPage();
+  } else if (["/dashboard", "/studio", "/trust"].includes(path)) {
+    app.innerHTML = reposPage({ forceConnected: true });
+  } else if (path === "/account") {
+    app.innerHTML = accountPage();
+  } else {
+    app.innerHTML = placeholderPage("Home");
+  }
 
   if (lastRenderedPath !== path) {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -1223,23 +2033,147 @@ function render() {
     lastRenderedPath = path;
   }
 
-  document.querySelectorAll("[data-board]").forEach((button) => {
-    button.addEventListener("click", () => {
-      app.innerHTML = boardsPage(button.dataset.board);
-      window.scrollTo({ top: 0, behavior: "instant" });
-    });
-  });
-
-  document.querySelectorAll("[data-filter]").forEach((button) => {
-    button.addEventListener("click", () => {
-      app.innerHTML = talentPage(button.dataset.filter);
-      window.scrollTo({ top: 0, behavior: "instant" });
-    });
-  });
+  const pendingTarget = takePendingScrollTarget();
+  if (pendingTarget) window.setTimeout(() => scrollToTarget(pendingTarget), 80);
 
   document.querySelectorAll("[data-section]").forEach((link) => {
     link.addEventListener("click", () => {
       writeActiveSection(link.dataset.section);
+    });
+  });
+
+  document.querySelectorAll("[data-scroll-target]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const target = link.dataset.scrollTarget;
+      if (!target) return;
+
+      writePendingScrollTarget(target);
+      if (link.getAttribute("href") === window.location.hash) {
+        event.preventDefault();
+        takePendingScrollTarget();
+        scrollToTarget(target);
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-auth-action]").forEach((control) => {
+    control.addEventListener("click", (event) => {
+      const action = control.dataset.authAction;
+      const href = control.getAttribute("href");
+      const targetPath = href?.startsWith("#") ? href.replace("#", "") : null;
+
+      if (action === "login" || action === "signup") {
+        event.preventDefault();
+        writeSessionState({ isAuthenticated: true, githubConnected: false });
+        if (targetPath) setRoute(targetPath);
+        render();
+      } else if (action === "connect-github") {
+        event.preventDefault();
+        writeSessionState({ isAuthenticated: true, githubConnected: true });
+        if (targetPath) setRoute(targetPath);
+        render();
+      } else if (action === "logout") {
+        event.preventDefault();
+        resetSessionState();
+        lastRenderedPath = null;
+        setRoute("/home");
+        render();
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-profile-action]").forEach((control) => {
+    control.addEventListener("click", (event) => {
+      const action = control.dataset.profileAction;
+      if (action !== "save") return;
+
+      event.preventDefault();
+      const form = control.closest("[data-profile-form]");
+      const fieldValue = (name) => form?.querySelector(`[name="${name}"]`)?.value || "";
+      const handle = fieldValue("profile-handle").trim();
+      writeProfileState({
+        availability: fieldValue("profile-availability"),
+        handle,
+        link: fieldValue("profile-link").trim() || linkFromHandle(handle),
+        name: fieldValue("profile-name"),
+        note: fieldValue("profile-note"),
+        title: fieldValue("profile-title"),
+      });
+      setRoute("/user");
+      render();
+    });
+  });
+
+  document.querySelectorAll("[data-preview-action]").forEach((control) => {
+    control.addEventListener("click", (event) => {
+      event.preventDefault();
+      writePublicPreviewMode(control.dataset.previewAction === "enter");
+      render();
+    });
+  });
+
+  document.querySelectorAll("[data-source-action]").forEach((control) => {
+    control.addEventListener("click", () => {
+      const sourceId = control.dataset.sourceId;
+      const action = control.dataset.sourceAction;
+      const modeForAction = { exclude: "excluded", include: "included", redact: "redacted" }[action];
+      const workflow = readProofWorkflowState();
+      const repo = repoSources.find((item) => item.name === sourceId);
+      const source = workflow.sources[sourceId];
+      if (!repo || !source) return;
+
+      if (modeForAction) {
+        source.mode = modeForAction;
+        if (modeForAction === "redacted") source.hidden = true;
+        if (modeForAction === "included") source.hidden = repo.visibility === "private" ? source.hidden : false;
+        if (modeForAction === "excluded") {
+          source.attached = false;
+          source.hidden = true;
+        }
+      } else if (action === "attach") {
+        source.attached = !source.attached;
+        if (source.attached && source.mode === "excluded") source.mode = "included";
+      }
+
+      workflow.published = false;
+      workflow.shareFeedback = "";
+      writeProofWorkflowState(workflow);
+      render();
+    });
+  });
+
+  document.querySelectorAll("[data-proof-action]").forEach((control) => {
+    control.addEventListener("click", (event) => {
+      const action = control.dataset.proofAction;
+      if (action === "publish" || action === "draft") {
+        event.preventDefault();
+        const workflow = readProofWorkflowState();
+        workflow.published = action === "publish";
+        workflow.shareFeedback = "";
+        writeProofWorkflowState(workflow);
+        render();
+      } else if (action === "open-public") {
+        event.preventDefault();
+        setRoute("/profile");
+        render();
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-share-action]").forEach((control) => {
+    control.addEventListener("click", () => {
+      const labels = {
+        card: "Copied builder card link",
+        embed: "Copied embed snippet",
+        image: "Prepared card image download",
+        proof: "Copied Builder Proof link",
+      };
+      const workflow = readProofWorkflowState();
+      workflow.shareFeedback = labels[control.dataset.shareAction] || "Share action copied";
+      writeProofWorkflowState(workflow);
+      document.querySelectorAll("[data-share-feedback]").forEach((item) => {
+        item.textContent = workflow.shareFeedback;
+      });
     });
   });
 
@@ -1251,13 +2185,13 @@ function render() {
 
   if (toggle) {
     toggle.setAttribute("aria-pressed", String(collapsed));
-    toggle.setAttribute("aria-label", collapsed ? "Show table of contents" : "Hide table of contents");
+    toggle.setAttribute("aria-label", collapsed ? "Show review map" : "Hide review map");
     toggle.addEventListener("click", () => {
       const nextCollapsed = !document.body.classList.contains("toc-collapsed");
       document.body.classList.toggle("toc-collapsed", nextCollapsed);
       writeTocCollapsed(nextCollapsed);
       toggle.setAttribute("aria-pressed", String(nextCollapsed));
-      toggle.setAttribute("aria-label", nextCollapsed ? "Show table of contents" : "Hide table of contents");
+      toggle.setAttribute("aria-label", nextCollapsed ? "Show review map" : "Hide review map");
     });
   }
 }
