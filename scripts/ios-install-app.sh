@@ -12,6 +12,8 @@ DEVICE_ROLE="${IOS_DEVICE_ROLE:-iOS device}"
 DERIVED_DATA_PATH="${IOS_DERIVED_DATA_PATH:-apple/DeviceBuild}"
 PRODUCT_NAME="${IOS_PRODUCT_NAME:-$SCHEME}"
 EXPECTED_BUNDLE_ID="${PRODUCT_BUNDLE_IDENTIFIER:-com.neonwatty.PRBar.ios.preview}"
+LAUNCH_AFTER_INSTALL="${IOS_LAUNCH_AFTER_INSTALL:-0}"
+LAUNCH_TIMEOUT="${IOS_LAUNCH_TIMEOUT:-30}"
 XCODEBUILD_EXTRA_ARGS=()
 
 if [[ -n "${IOS_DEVELOPMENT_TEAM:-}" ]]; then
@@ -65,3 +67,12 @@ if [[ "${IOS_SKIP_INSTALL:-0}" == "1" ]]; then
 fi
 
 xcrun devicectl device install app --device "$device_id" "$app_path"
+
+if [[ "$LAUNCH_AFTER_INSTALL" == "1" ]]; then
+  echo "Launching $bundle_id on $DEVICE_ROLE '$DEVICE_NAME'."
+  xcrun devicectl device process launch \
+    --device "$device_id" \
+    "$bundle_id" \
+    --terminate-existing \
+    --timeout "$LAUNCH_TIMEOUT"
+fi

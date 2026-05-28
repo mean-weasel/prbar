@@ -43,6 +43,8 @@ gh workflow run ios-physical-production.yml \
   -f device_name=iPhone-prod
 ```
 
+The production install workflow is also a lightweight launch smoke: after it verifies the built app bundle id is `com.neonwatty.PRBar.ios` and installs the app, it launches that bundle on the production iPhone with `devicectl`. The physical production workflow runs the fuller XCTest UI smoke and requires Automation Mode to initialize successfully on the phone.
+
 The production scripts refuse to install if the built app bundle id is not `com.neonwatty.PRBar.ios`. If signing fails, fix Apple Developer provisioning or device registration rather than retrying with the preview bundle. If GitHub sign-in reports missing configuration, confirm `PRBAR_IOS_GITHUB_CLIENT_ID` is available to the workflow.
 
 For a local build-and-bundle-id dry run that does not install on the phone:
