@@ -288,6 +288,21 @@ tasks:
       - "PRBAR_IOS_LIVE_GITHUB_TOKEN is not configured and the preview app is not manually signed in."
       - "The run reaches the app but reports a GitHub API blocker such as rate limit, SSO, or repo permission."
       - "The run cannot reach the app because iPhone-preview is locked, offline, or install/launch fails."
+    progress:
+      - checked_at: "2026-05-28T12:14:33Z"
+        result: "waiting_on_auth_source_and_ci"
+        evidence:
+          - "gh secret list --repo mean-weasel/prbar showed IOS_PREVIEW_KEYCHAIN_PASSWORD and PRBAR_IOS_GITHUB_CLIENT_ID, but not PRBAR_IOS_LIVE_GITHUB_TOKEN."
+          - "PR #71 remains draft and mergeable."
+          - "iOS run https://github.com/mean-weasel/prbar/actions/runs/26573831430 was still in progress in Unit tests."
+        next_action: "After PRBAR_IOS_LIVE_GITHUB_TOKEN is configured or the preview app is manually signed in, rerun smoke_profile=live-headless on iPhone-preview for neonwatty and mean-weasel/prbar."
+      - checked_at: "2026-05-28T12:21:19Z"
+        result: "waiting_on_live_auth_source"
+        evidence:
+          - "PR #71 remains draft and mergeable with CI Gate success and iOS Build, Test, UI Smoke success."
+          - "iOS run https://github.com/mean-weasel/prbar/actions/runs/26573831430 completed successfully: build, unit tests, and simulator UI smoke passed."
+          - "gh secret list --repo mean-weasel/prbar still did not show PRBAR_IOS_LIVE_GITHUB_TOKEN."
+        next_action: "Configure PRBAR_IOS_LIVE_GITHUB_TOKEN or manually sign in the preview app, then dispatch the live-headless physical workflow."
     receipt: null
 
   - id: T999
@@ -315,8 +330,23 @@ tasks:
     receipt: null
 
 checks:
-  dirty_fingerprint: unknown
+  dirty_fingerprint: "clean codex/ios-live-github-preview-smoke...origin/codex/ios-live-github-preview-smoke before recording T005 progress at 2026-05-28T12:14:33Z"
   last_verification:
-    result: unknown
-    task: null
-    commands: []
+    result: waiting_on_live_auth_source
+    task: T005
+    commands:
+      - cmd: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-update.mjs --json"
+        status: pass
+        details: "GoalBuddy current_version=0.3.7 latest_version=0.3.7 update_available=false."
+      - cmd: "git status --short --branch"
+        status: pass
+        details: "Worktree clean on codex/ios-live-github-preview-smoke tracking origin/codex/ios-live-github-preview-smoke."
+      - cmd: "gh secret list --repo mean-weasel/prbar | rg 'PRBAR_IOS_LIVE_GITHUB_TOKEN|PRBAR_IOS_GITHUB_CLIENT_ID|IOS_PREVIEW_KEYCHAIN_PASSWORD' || true"
+        status: pass
+        details: "PRBAR_IOS_LIVE_GITHUB_TOKEN absent; IOS_PREVIEW_KEYCHAIN_PASSWORD and PRBAR_IOS_GITHUB_CLIENT_ID present."
+      - cmd: "gh run view 26573831430 --repo mean-weasel/prbar --json status,conclusion,url,updatedAt,jobs"
+        status: pass
+        details: "iOS Build, Test, UI Smoke completed successfully; URL https://github.com/mean-weasel/prbar/actions/runs/26573831430."
+      - cmd: "gh pr view 71 --repo mean-weasel/prbar --json number,isDraft,mergeable,statusCheckRollup,url"
+        status: pass
+        details: "PR #71 is draft, mergeable, and all reported checks are success or skipped as expected."
