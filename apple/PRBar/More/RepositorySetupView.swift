@@ -251,10 +251,7 @@ struct RepositorySetupView: View {
         store?.repositories.first(where: { $0.id == repository.id })?.included ?? repository.included
       },
       set: { isIncluded in
-        guard let index = store?.repositories.firstIndex(where: { $0.id == repository.id }) else {
-          return
-        }
-        store?.repositories[index].included = isIncluded
+        store?.setRepositoryIncluded(repository.id, included: isIncluded)
       }
     )
   }
@@ -265,9 +262,7 @@ struct RepositorySetupView: View {
     }
 
     let visibleIDs = Set(visibleReadyRepositories.map(\.id))
-    for index in store.repositories.indices where visibleIDs.contains(store.repositories[index].id) {
-      store.repositories[index].included = included
-    }
+    store.setRepositoriesIncluded(visibleIDs, included: included)
   }
 }
 
