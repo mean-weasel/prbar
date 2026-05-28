@@ -9,13 +9,13 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
 
-    app.tabBars.buttons["Releases"].tap()
+    app.tapTab("Releases")
     XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
 
-    app.tabBars.buttons["Share"].tap()
+    app.tapTab("Share")
     XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
 
-    app.tabBars.buttons["More"].tap()
+    app.tapTab("More")
     XCTAssertTrue(app.staticTexts["Menu"].waitForExistence(timeout: 2))
   }
 
@@ -37,7 +37,7 @@ final class PRBarUITests: XCTestCase {
     app.launchArguments = ["--ui-testing"]
     app.launch()
 
-    app.tabBars.buttons["Releases"].tap()
+    app.tapTab("Releases")
     XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
     app.buttons["May 21, not selected, 1 release"].tap()
     XCTAssertTrue(app.staticTexts["v1.0.0 Tagged v1.0.0"].waitForExistence(timeout: 2))
@@ -49,7 +49,7 @@ final class PRBarUITests: XCTestCase {
     app.launchArguments = ["--ui-testing"]
     app.launch()
 
-    app.tabBars.buttons["Share"].tap()
+    app.tapTab("Share")
     XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Public side"].exists)
     app.buttons["Export card"].tap()
@@ -68,7 +68,7 @@ final class PRBarUITests: XCTestCase {
     app.buttons["Refresh activity"].tap()
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
 
-    app.tabBars.buttons["Share"].tap()
+    app.tapTab("Share")
     XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["1 merged"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Proof source"].exists)
@@ -96,7 +96,7 @@ final class PRBarUITests: XCTestCase {
     app.launch()
 
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
-    app.tabBars.buttons["Share"].tap()
+    app.tapTab("Share")
     XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed")).firstMatch.exists)
     app.buttons["Export card"].tap()
@@ -110,7 +110,7 @@ final class PRBarUITests: XCTestCase {
     app.launchArguments = ["--ui-testing"]
     app.launch()
 
-    app.tabBars.buttons["More"].tap()
+    app.tapTab("More")
     XCTAssertTrue(app.buttons["Repos"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.buttons["Privacy"].exists)
     app.buttons["Repos"].tap()
@@ -123,7 +123,7 @@ final class PRBarUITests: XCTestCase {
     app.launchArguments = ["--ui-testing"]
     app.launch()
 
-    app.tabBars.buttons["More"].tap()
+    app.tapTab("More")
     XCTAssertTrue(app.buttons["Repos"].waitForExistence(timeout: 2))
     app.buttons["Repos"].tap()
 
@@ -155,7 +155,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
 
-    app.tabBars.buttons["Releases"].tap()
+    app.tapTab("Releases")
     XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 2))
     app.buttons["Refresh activity"].tap()
@@ -240,5 +240,14 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Choose repos"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.switches["Include prbar"].exists)
     XCTAssertTrue(app.buttons["Finish setup"].exists)
+  }
+}
+
+private extension XCUIApplication {
+  @MainActor
+  func tapTab(_ name: String, file: StaticString = #filePath, line: UInt = #line) {
+    let button = tabBars.firstMatch.buttons[name].firstMatch
+    XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing \(name) tab", file: file, line: line)
+    button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
   }
 }
