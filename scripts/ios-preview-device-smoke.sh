@@ -150,7 +150,11 @@ if [[ "$HEADLESS_LIVE_SMOKE" == "1" ]]; then
     jq -cn \
       --arg login "$IOS_LIVE_GITHUB_LOGIN" \
       --arg repo "$IOS_LIVE_INCLUDED_REPO" \
-      '{PRBAR_LIVE_SMOKE_GITHUB_LOGIN: $login, PRBAR_LIVE_SMOKE_INCLUDED_REPO: $repo}'
+      --arg token "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" \
+      '{
+        PRBAR_LIVE_SMOKE_GITHUB_LOGIN: $login,
+        PRBAR_LIVE_SMOKE_INCLUDED_REPO: $repo
+      } + (if $token == "" then {} else {PRBAR_IOS_LIVE_GITHUB_TOKEN: $token} end)'
   )"
   mkdir -p "$RESULT_BUNDLE"
   launch_log="$RESULT_BUNDLE/headless-live.log"

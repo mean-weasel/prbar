@@ -49,5 +49,6 @@ The board is complete only when a physical `iPhone-preview` run proves:
 ## Follow-Up Risks
 
 - Persisted device auth can expire or disappear after reinstall; if that is too flaky, evaluate a least-privilege token path through GitHub Actions secrets.
+- The implemented repeatable fallback should use `PRBAR_IOS_LIVE_GITHUB_TOKEN` as a GitHub Actions secret, pass it only to the physical app launch environment, save it only into the preview app Keychain on-device, and never echo the token in logs.
 - Automation Mode and device lock states can fail before the app starts; preflight should fail early with the right diagnosis.
 - Repo seeding must be test/preview scoped so it does not overwrite a user's real production repo choices.

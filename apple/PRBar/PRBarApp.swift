@@ -52,6 +52,18 @@ struct PRBarApp: App {
         : InMemoryGitHubActivityCacheStore()
     } else {
       let sessionStore = KeychainGitHubSessionStore()
+      if isLiveGitHubSmokeHeadless,
+        let token = Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_GITHUB_TOKEN"]),
+        let login = Self.normalizedLiveSmokeValue(environment["PRBAR_LIVE_SMOKE_GITHUB_LOGIN"]) {
+        try? sessionStore.saveSession(
+          GitHubAuthSession(
+            accessToken: token,
+            tokenType: "bearer",
+            scopes: ["repo"],
+            user: GitHubUser(login: login, displayName: login)
+          )
+        )
+      }
       authService = GitHubDeviceFlowAuthService(
         configuration: .appDefault(),
         sessionStore: sessionStore
@@ -185,7 +197,7 @@ private extension PRBarApp {
     print("PRBAR_LIVE_SMOKE_START login=\(expectedLogin) repo=\(includedRepo) driver=headless")
 
     guard let user = store.githubConnection.user else {
-      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=missing-github-session login=\(expectedLogin)\n", stderr)
+      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=missing-github-session login=\(expectedLogin) hint=sign-in-preview-device-or-set-PRBAR_IOS_LIVE_GITHUB_TOKEN\n", stderr)
       return 65
     }
 
