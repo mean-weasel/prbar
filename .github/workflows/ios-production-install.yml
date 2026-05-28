@@ -1,0 +1,43 @@
+name: iOS Production Install
+
+on:
+  workflow_dispatch:
+    inputs:
+      device_name:
+        description: Production iPhone name reported by Xcode
+        required: true
+        default: iPhone-prod
+
+concurrency:
+  group: ios-production-device
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: Build and Install Production App
+    runs-on: [self-hosted, macOS, prbar-ios, iphone-preview]
+    timeout-minutes: 30
+    env:
+      IOS_DEVICE_NAME: ${{ inputs.device_name }}
+      IOS_DEVICE_ROLE: production device
+      IOS_PROJECT: apple/PRBar.xcodeproj
+      IOS_SCHEME: PRBar
+      IOS_PRODUCT_NAME: PRBar
+      PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios
+      IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+      PRBAR_IOS_GITHUB_CLIENT_ID: ${{ secrets.PRBAR_IOS_GITHUB_CLIENT_ID }}
+      IOS_XCODEBUILD_EXTRA_ARGS: -allowProvisioningUpdates -allowProvisioningDeviceRegistration
+      IOS_PREVIEW_KEYCHAIN_PASSWORD: ${{ secrets.IOS_PREVIEW_KEYCHAIN_PASSWORD }}
+      IOS_PREVIEW_SET_KEY_PARTITION_LIST: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Runner preflight
+        run: ./scripts/ios-production-runner-preflight.sh
+      - name: List devices
+        if: always()
+        run: ./scripts/ios-list-devices.sh
+      - name: Build and install production app
+        run: ./scripts/ios-production-install.sh
