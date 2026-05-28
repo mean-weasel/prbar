@@ -31,6 +31,11 @@ gh workflow run ios-physical-preview.yml \
 Use the production workflows only when the production iPhone is connected, trusted, unlocked, and ready to receive the day-to-day app build:
 
 ```bash
+gh workflow run ios-production-runner-health.yml \
+  --repo mean-weasel/prbar \
+  --ref <branch> \
+  -f device_name=iPhone-prod
+
 gh workflow run ios-production-install.yml \
   --repo mean-weasel/prbar \
   --ref <branch> \
@@ -44,6 +49,8 @@ gh workflow run ios-physical-production.yml \
 ```
 
 The production install workflow is also a lightweight launch smoke: after it verifies the built app bundle id is `com.neonwatty.PRBar.ios` and installs the app, it launches that bundle on the production iPhone with `devicectl`. The physical production workflow runs the fuller XCTest UI smoke and requires Automation Mode to initialize successfully on the phone.
+
+Run the production runner health workflow first when debugging physical UI automation. It verifies the runner keychain, signing identity, Mac Automation Mode status, explicit `iPhone-prod` resolution, and the phone lock state without installing or launching the app. If it reports Automation Mode is disabled but does not require local authentication, keep `iPhone-prod` unlocked and awake while the XCTest workflow starts so Xcode can request Automation Mode.
 
 The production scripts refuse to install if the built app bundle id is not `com.neonwatty.PRBar.ios`. If signing fails, fix Apple Developer provisioning or device registration rather than retrying with the preview bundle. If GitHub sign-in reports missing configuration, confirm `PRBAR_IOS_GITHUB_CLIENT_ID` is available to the workflow.
 

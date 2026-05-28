@@ -1,14 +1,8 @@
-name: iOS Physical Production
+name: iOS Production Runner Health
 
 on:
   workflow_dispatch:
     inputs:
-      smoke_profile:
-        description: iOS UI smoke profile
-        required: true
-        default: fast
-        type: choice
-        options: [fast, pr, full]
       device_name:
         description: Production iPhone name reported by Xcode
         required: true
@@ -22,10 +16,10 @@ permissions:
   contents: read
 
 jobs:
-  device-smoke:
-    name: Physical Production Device Smoke
+  preflight:
+    name: Production Runner Preflight
     runs-on: [self-hosted, macOS, prbar-ios, iphone-preview]
-    timeout-minutes: 30
+    timeout-minutes: 10
     env:
       IOS_DEVICE_NAME: ${{ inputs.device_name }}
       IOS_DEVICE_ROLE: production device
@@ -33,9 +27,7 @@ jobs:
       IOS_SCHEME: PRBar
       IOS_UI_SCHEME: PRBar
       IOS_UI_TEST_TARGET: PRBarUITests
-      IOS_UI_SMOKE_TESTS: PRBarUITests/PRBarUITests/testTabsExposeReviewedPrototypeSurfaces
       PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios
-      IOS_UI_SMOKE_PROFILE: ${{ inputs.smoke_profile }}
       IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
       PRBAR_IOS_GITHUB_CLIENT_ID: ${{ secrets.PRBAR_IOS_GITHUB_CLIENT_ID }}
       IOS_XCODEBUILD_EXTRA_ARGS: -allowProvisioningUpdates -allowProvisioningDeviceRegistration
@@ -43,19 +35,8 @@ jobs:
       IOS_PREVIEW_SET_KEY_PARTITION_LIST: '1'
     steps:
       - uses: actions/checkout@v6
-      - name: Runner preflight
+      - name: Production runner preflight
         run: ./scripts/ios-production-runner-preflight.sh
       - name: List devices
         if: always()
         run: ./scripts/ios-list-devices.sh
-      - name: Resolve production device
-        run: IOS_DEVICE_ROLE="production device" IOS_DEVICE_NAME="${{ inputs.device_name }}" IOS_SCHEME=PRBar ./scripts/ios-resolve-device.sh human
-      - name: Run physical production device smoke
-        run: ./scripts/ios-production-device-smoke.sh
-      - name: Upload production smoke results
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: ios-production-device-smoke-results
-          path: apple/ProductionDeviceSmokeResults.xcresult
-          retention-days: 14

@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Runner preflight
-        run: ./scripts/ios-preview-runner-preflight.sh
+        run: ./scripts/ios-production-runner-preflight.sh
       - name: List devices
         if: always()
         run: ./scripts/ios-list-devices.sh
