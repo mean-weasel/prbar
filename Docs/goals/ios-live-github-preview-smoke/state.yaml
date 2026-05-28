@@ -255,7 +255,7 @@ tasks:
   - id: T004
     type: worker
     assignee: Worker
-    status: queued
+    status: done
     reasoning_hint: medium
     objective: "Add operator documentation or workflow summaries for running the live one-repo smoke and interpreting blockers."
     allowed_files:
@@ -269,7 +269,21 @@ tasks:
     stop_if:
       - "Documentation would expose secrets or private token values."
       - "The implementation package has not yet established the actual run shape."
-    receipt: null
+    receipt:
+      result: done
+      summary: "Added operator documentation for the live-headless physical preview smoke path, including the exact workflow dispatch shape, expected success marker, acceptable blocker markers, token-secret handling, manual-auth fallback, and the rule that normal preview installs remain install-only."
+      changed_files:
+        - "Docs/ios-live-github-smoke.md"
+        - "Docs/GitHubIntegration.md"
+      evidence:
+        - "Docs/ios-live-github-smoke.md now documents PRBAR_IOS_LIVE_GITHUB_TOKEN, live-headless dispatch, PRBAR_LIVE_SMOKE_RESULT success proof, missing-session/GitHub/device blockers, and manual-auth fallback."
+        - "Docs/GitHubIntegration.md now documents the physical preview live-headless workflow, token-secret requirement, and non-repeatability of manual persisted auth."
+      commands:
+        - cmd: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs Docs/goals/ios-live-github-preview-smoke/state.yaml"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+      full_outcome_complete: false
 
   - id: T005
     type: worker
@@ -302,6 +316,14 @@ tasks:
           - "PR #71 remains draft and mergeable with CI Gate success and iOS Build, Test, UI Smoke success."
           - "iOS run https://github.com/mean-weasel/prbar/actions/runs/26573831430 completed successfully: build, unit tests, and simulator UI smoke passed."
           - "gh secret list --repo mean-weasel/prbar still did not show PRBAR_IOS_LIVE_GITHUB_TOKEN."
+        next_action: "Configure PRBAR_IOS_LIVE_GITHUB_TOKEN or manually sign in the preview app, then dispatch the live-headless physical workflow."
+      - checked_at: "2026-05-28T12:33:20Z"
+        result: "waiting_on_live_auth_source"
+        evidence:
+          - "PR #71 remains draft and mergeable at head 643d64abdd14a50415b5ce3c40c5e5d4c1b9a73b."
+          - "CI Gate and iOS Build, Test, UI Smoke are successful on the current PR head."
+          - "gh secret list --repo mean-weasel/prbar still shows IOS_PREVIEW_KEYCHAIN_PASSWORD and PRBAR_IOS_GITHUB_CLIENT_ID, but not PRBAR_IOS_LIVE_GITHUB_TOKEN."
+          - "T004 documentation completed while T005 remains gated on live auth."
         next_action: "Configure PRBAR_IOS_LIVE_GITHUB_TOKEN or manually sign in the preview app, then dispatch the live-headless physical workflow."
     receipt: null
 
@@ -350,3 +372,6 @@ checks:
       - cmd: "gh pr view 71 --repo mean-weasel/prbar --json number,isDraft,mergeable,statusCheckRollup,url"
         status: pass
         details: "PR #71 is draft, mergeable, and all reported checks are success or skipped as expected."
+      - cmd: "git diff --check"
+        status: pass
+        details: "Documentation and board updates are whitespace-clean."

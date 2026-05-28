@@ -7,6 +7,7 @@ Use this when closing the live-data tranche. It verifies the production provider
 - A GitHub OAuth client ID that is allowed to use GitHub's device authorization flow.
 - An unlocked simulator or physical preview device.
 - No client secret in the app, repo, logs, screenshots, or workflow output.
+- For repeatable physical-device live smoke, a repo secret named `PRBAR_IOS_LIVE_GITHUB_TOKEN` with the smallest practical GitHub read scope for the target repository.
 
 ## Simulator Walkthrough
 
@@ -51,6 +52,61 @@ xcrun simctl launch booted com.neonwatty.PRBar.ios
 
 Do not uninstall the app or launch with `--signed-out` unless you intentionally want to test first-run authorization again.
 
+## Physical Preview Live Smoke
+
+Use the physical live smoke when a PR needs proof that the preview app can use a
+real GitHub session, include exactly one repository, and refresh PR/release data
+on `iPhone-preview`.
+
+Normal preview installs should stay install-only. Do not seed `neonwatty`,
+`mean-weasel/prbar`, or any other repo during ordinary install workflows. The
+one-repo setup belongs in the explicit live smoke workflow.
+
+Preferred repeatable path:
+
+1. Add `PRBAR_IOS_LIVE_GITHUB_TOKEN` as a GitHub Actions repo secret. Use a
+   fine-grained token limited to the repository under test when possible. Do not
+   print or store the token outside GitHub secrets and the preview app Keychain.
+2. Keep `PRBAR_IOS_GITHUB_CLIENT_ID`, `IOS_DEVELOPMENT_TEAM`, and
+   `IOS_PREVIEW_KEYCHAIN_PASSWORD` configured for the repo.
+3. Make sure the runner iPhone named `iPhone-preview` is connected, trusted,
+   unlocked, and awake.
+4. Dispatch the live-headless workflow from the branch or main ref under test:
+
+```sh
+gh workflow run ios-physical-preview.yml \
+  --repo mean-weasel/prbar \
+  --ref codex/ios-live-github-preview-smoke \
+  -f smoke_profile=live-headless \
+  -f device_name=iPhone-preview \
+  -f github_login=neonwatty \
+  -f included_repo=mean-weasel/prbar
+```
+
+The successful run must emit a marker like:
+
+```text
+PRBAR_LIVE_SMOKE_RESULT success login=neonwatty repo=mean-weasel/prbar selected_repo_count=1 pull_requests=<count> releases=<count>
+```
+
+Acceptable blocker markers are precise and actionable, for example:
+
+- `missing-github-session`: configure `PRBAR_IOS_LIVE_GITHUB_TOKEN` or manually
+  sign in to GitHub inside the preview app on `iPhone-preview`.
+- GitHub API permission, SSO, or rate-limit errors: adjust the token or account
+  access, then rerun the same workflow.
+- Device readiness failures: unlock, trust, or reconnect `iPhone-preview`, then
+  rerun.
+
+Fallback manual-auth path:
+
+1. Install or open the preview app on `iPhone-preview`.
+2. Complete GitHub device authorization in the app.
+3. Rerun the same `live-headless` workflow without adding a token secret.
+
+The manual path is useful for diagnosis, but it is less repeatable because a
+reinstall or Keychain reset can remove the session.
+
 ## Evidence For Final Audit
 
 Record:
@@ -60,6 +116,8 @@ Record:
 - PRs screen with fetched PR distribution.
 - Releases screen with fetched releases or tags.
 - Share screen showing a card generated from selected repo activity.
+- For physical live smoke, the workflow run URL and the
+  `PRBAR_LIVE_SMOKE_RESULT success` line.
 - `git diff --check`
 - `IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh`
 - `IOS_UI_SMOKE_PROFILE=pr ./scripts/ios-ui-smoke.sh`
