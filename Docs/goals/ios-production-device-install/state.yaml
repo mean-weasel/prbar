@@ -407,6 +407,10 @@ tasks:
 checks:
   dirty_fingerprint: unknown
   last_verification:
-    result: unknown
-    task: null
-    commands: []
+    result: pass
+    task: T006
+    commands:
+      - "gh pr view 73 --repo mean-weasel/prbar --json statusCheckRollup,mergeable,isDraft,url,headRefOid"
+      - "gh run watch 26584760362 --repo mean-weasel/prbar --exit-status"
+      - "gh run watch 26584760287 --repo mean-weasel/prbar --exit-status"
+    summary: "PR #73 is draft/mergeable. CI Gate passed and iOS Build, Test, UI Smoke passed in 5m5s. Production physical workflow dispatch remains pending explicit user approval with iPhone-prod unlocked."
