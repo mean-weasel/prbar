@@ -1,6 +1,7 @@
 import XCTest
 
 final class PRBarPreviewUITests: XCTestCase {
+  @MainActor
   func testPreviewDeviceCanLaunchCoreTabs() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]
@@ -15,6 +16,7 @@ final class PRBarPreviewUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 4))
   }
 
+  @MainActor
   func testLiveGitHubOneRepositoryRefresh() {
     let login = requiredEnvironmentValue("IOS_LIVE_GITHUB_LOGIN")
     let repoID = requiredEnvironmentValue("IOS_LIVE_INCLUDED_REPO")
@@ -68,6 +70,7 @@ final class PRBarPreviewUITests: XCTestCase {
     return value
   }
 
+  @MainActor
   private func waitForRefreshCompletion(in app: XCUIApplication, timeout: TimeInterval) -> Bool {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {

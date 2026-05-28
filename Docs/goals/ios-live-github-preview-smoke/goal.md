@@ -36,6 +36,14 @@ The PM must keep comparing task receipts to this oracle. Planning, discovery, fi
 
 Discover the safest implementation shape, then implement and verify a repeatable live physical-device smoke workflow for one GitHub repo. The initial version may rely on an existing persisted GitHub session on the preview iPhone if that is the safest path; if that makes the test non-repeatable, the board should explicitly evaluate a minimal-secret token-injection path before implementation.
 
+## Profile Setup Plan Decision
+
+The plan is to include GitHub profile and one-repository setup in preview-device tests, not as a hidden default in ordinary installs.
+
+For tests, the live physical-preview workflow should accept explicit operator inputs such as `github_login=neonwatty` and `included_repo=mean-weasel/prbar`. The app/test harness may seed only that selected repository before refresh, and the test must prove that exactly one repo is included before it treats PR/release data as valid.
+
+For installs, the workflow may optionally support a clearly named manual setup input later, but a normal install should remain install-only. This keeps production-device installs from unexpectedly mutating repo choices, avoids accidental all-repo syncs, and makes rate-limit behavior predictable. If install-time setup becomes necessary, it should be an explicit operator action with the same one-repo guardrails as the test workflow.
+
 ## Non-Negotiable Constraints
 
 - Do not log GitHub access tokens, device codes, or private repo details.

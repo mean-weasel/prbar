@@ -130,4 +130,66 @@ done
 
 args+=("${XCODEBUILD_EXTRA_ARGS[@]}")
 
-xcodebuild "${args[@]}"
+run_xcodebuild() {
+  local log_path="$1"
+  set +e
+  xcodebuild "${args[@]}" 2>&1 | tee "$log_path"
+  local status=${PIPESTATUS[0]}
+  set -e
+  return "$status"
+}
+
+check_device_unlocked() {
+  local retry_lock_json
+  retry_lock_json="$(mktemp "${TMPDIR:-/tmp}/prbar-device-lock-retry.XXXXXX")"
+  if xcrun devicectl device info lockState --device "$IOS_DEVICE_ID" --json-output "$retry_lock_json" --quiet --timeout 10 >/dev/null 2>&1; then
+    echo "Device lock state before retry:"
+    jq -r '.result | "  passcodeRequired=\(.passcodeRequired) unlockedSinceBoot=\(.unlockedSinceBoot)"' "$retry_lock_json"
+    if [[ "$(jq -r '.result.passcodeRequired' "$retry_lock_json")" == "true" ]]; then
+      rm -f "$retry_lock_json"
+      echo "The preview iPhone locked before UI automation could start. Unlock $DEVICE_NAME and retry." >&2
+      exit 69
+    fi
+  else
+    echo "Could not re-check device lock state before retry; continuing with one retry." >&2
+  fi
+  rm -f "$retry_lock_json"
+}
+
+xcodebuild_log="$(mktemp "${TMPDIR:-/tmp}/prbar-preview-xcodebuild.XXXXXX.log")"
+trap 'rm -f "$lock_json" "$xcodebuild_log"' EXIT
+
+if run_xcodebuild "$xcodebuild_log"; then
+  exit 0
+fi
+
+if grep -q "Timed out while enabling automation mode" "$xcodebuild_log"; then
+  cat <<EOF
+Xcode timed out while enabling Automation Mode for UI testing.
+
+This can happen on physical iPhones even after the runner Mac has been configured
+with automationmodetool. Re-checking that $DEVICE_NAME is still unlocked, then
+retrying the UI test once.
+EOF
+  check_device_unlocked
+  sleep "${IOS_AUTOMATION_MODE_RETRY_DELAY:-10}"
+  rm -rf "$RESULT_BUNDLE"
+  if run_xcodebuild "$xcodebuild_log"; then
+    exit 0
+  fi
+
+  if grep -q "Timed out while enabling automation mode" "$xcodebuild_log"; then
+    cat >&2 <<EOF
+Xcode still timed out while enabling Automation Mode after one retry.
+
+Likely blocker: Automation Mode or device wake state on the physical preview
+iPhone, before PRBar's live GitHub smoke test can launch. Keep $DEVICE_NAME
+unlocked and awake, then retry the workflow. If this repeats, run this once from
+an interactive admin session on the runner Mac:
+
+  automationmodetool enable-automationmode-without-authentication
+EOF
+  fi
+fi
+
+exit 65
