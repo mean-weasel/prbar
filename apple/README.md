@@ -52,7 +52,7 @@ The production install workflow is also a lightweight launch smoke: after it ver
 
 Run the production runner health workflow first when debugging physical UI automation. It verifies the runner keychain, signing identity, Mac Automation Mode status, explicit `iPhone-prod` resolution, and the phone lock state without installing or launching the app. If it reports Automation Mode is disabled but does not require local authentication, keep `iPhone-prod` unlocked and awake while the XCTest workflow starts so Xcode can request Automation Mode.
 
-The production scripts refuse to install if the built app bundle id is not `com.neonwatty.PRBar.ios`. If signing fails, fix Apple Developer provisioning or device registration rather than retrying with the preview bundle. If GitHub sign-in reports missing configuration, confirm `PRBAR_IOS_GITHUB_CLIENT_ID` is available to the workflow.
+The production scripts refuse to install if the built app bundle id is not `com.neonwatty.PRBar.ios`. If signing fails, fix Apple Developer provisioning or device registration rather than retrying with the preview bundle. If GitHub sign-in reports missing configuration, confirm `PRBAR_IOS_GITHUB_CLIENT_ID` is available to the workflow and points at the GitHub App client ID. GitHub App device-flow authorization does not request classic OAuth scopes; organization and private-repo visibility come from the app installation, app repository permissions, the signed-in user's access, and any required SSO authorization.
 
 For a local build-and-bundle-id dry run that does not install on the phone:
 

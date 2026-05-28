@@ -314,7 +314,7 @@ final class PRBarModelTests: XCTestCase {
     )
 
     XCTAssertEqual(configuration.clientID, "env-client-id")
-    XCTAssertEqual(configuration.scopes, ["public_repo"])
+    XCTAssertEqual(configuration.scopes, [])
   }
 
   func testGitHubOAuthConfigurationReadsClientIDFromBundleInfo() {
@@ -363,6 +363,15 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
     XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
     XCTAssertEqual(String(data: try XCTUnwrap(request.httpBody), encoding: .utf8), "client_id=client-id&scope=public_repo%20read:user")
+  }
+
+  func testDeviceFlowOmitsScopeForGitHubAppUserAuthorization() throws {
+    let request = try GitHubDeviceFlowRequest.deviceCode(
+      clientID: "client-id",
+      scopes: []
+    )
+
+    XCTAssertEqual(String(data: try XCTUnwrap(request.httpBody), encoding: .utf8), "client_id=client-id")
   }
 
   func testDeviceFlowBuildsTokenPollingRequest() throws {
