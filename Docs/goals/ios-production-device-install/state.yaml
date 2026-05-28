@@ -68,7 +68,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/ios-production-device-install/"
     command: "npx goalbuddy board Docs/goals/ios-production-device-install"
 
-active_task: T005
+active_task: T006
 
 tasks:
   - id: T001
@@ -328,7 +328,7 @@ tasks:
   - id: T005
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: medium
     objective: "Publish the production-device install/smoke branch for review and prepare the explicit production workflow dispatch."
     allowed_files:
@@ -341,6 +341,42 @@ tasks:
       - "User has not approved installing/updating the app on iPhone-prod."
       - "iPhone-prod is locked, offline, or untrusted when physical workflow dispatch is requested."
       - "PR checks fail in a way that affects production-device workflow safety."
+    receipt:
+      result: done
+      summary: "Published the implementation branch and opened draft PR #73 for review. The production-device workflow dispatch remains intentionally pending until iPhone-prod is unlocked and the user approves installing/updating the production app."
+      changed_files:
+        - "Docs/goals/ios-production-device-install/state.yaml"
+      commands:
+        - cmd: "git add .github/workflows/ios-production-install.yml .github/workflows/ios-physical-production.yml Docs/goals/ios-production-device-install apple/README.md scripts/ios-resolve-device.sh scripts/ios-install-app.sh scripts/ios-device-smoke.sh scripts/ios-production-install.sh scripts/ios-production-device-smoke.sh scripts/ios-resolve-preview-device.sh scripts/ios-preview-install.sh scripts/ios-preview-device-smoke.sh"
+          status: pass
+        - cmd: "git commit -m \"Add production iPhone install workflow\""
+          status: pass
+        - cmd: "git push -u origin codex/ios-production-device-install"
+          status: pass
+        - cmd: "gh pr create --repo mean-weasel/prbar --head codex/ios-production-device-install --base main --draft --title \"Add production iPhone install workflow\""
+          status: pass
+      evidence:
+        - "Commit e248c00 created on codex/ios-production-device-install."
+        - "Branch pushed to origin/codex/ios-production-device-install."
+        - "Draft PR opened: https://github.com/mean-weasel/prbar/pull/73."
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: medium
+    objective: "After CI is green and the user approves with iPhone-prod unlocked, dispatch the production physical workflow and record the run outcome."
+    allowed_files:
+      - "Docs/goals/ios-production-device-install/**"
+    verify:
+      - "gh pr view 73 --repo mean-weasel/prbar --json statusCheckRollup,mergeable,isDraft,url"
+      - "gh workflow run ios-physical-production.yml --repo mean-weasel/prbar --ref codex/ios-production-device-install -f smoke_profile=fast -f device_name=iPhone-prod"
+      - "gh run watch <run-id> --repo mean-weasel/prbar --exit-status"
+    stop_if:
+      - "User has not explicitly approved production install/smoke dispatch."
+      - "iPhone-prod is locked, offline, or untrusted."
+      - "PR checks show a failure that affects workflow or script safety."
+      - "GitHub Actions cannot see ios-physical-production.yml on the branch."
     receipt: null
 
   - id: T999
