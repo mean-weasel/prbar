@@ -8,11 +8,19 @@ on:
         required: true
         default: pr
         type: choice
-        options: [fast, pr, full]
+        options: [fast, pr, full, live]
       device_name:
         description: Physical iPhone name reported by Xcode
         required: true
         default: iPhone-preview
+      github_login:
+        description: GitHub login expected for live smoke
+        required: false
+        default: neonwatty
+      included_repo:
+        description: Single owner/repo to include for live smoke
+        required: false
+        default: mean-weasel/prbar
 
 concurrency:
   group: ios-preview-device
@@ -34,6 +42,8 @@ jobs:
       IOS_UI_TEST_TARGET: PRBarPreviewUITests
       PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.preview
       IOS_UI_SMOKE_PROFILE: ${{ inputs.smoke_profile }}
+      IOS_LIVE_GITHUB_LOGIN: ${{ inputs.github_login }}
+      IOS_LIVE_INCLUDED_REPO: ${{ inputs.included_repo }}
       IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
       PRBAR_IOS_GITHUB_CLIENT_ID: ${{ secrets.PRBAR_IOS_GITHUB_CLIENT_ID }}
       IOS_XCODEBUILD_EXTRA_ARGS: -allowProvisioningUpdates -allowProvisioningDeviceRegistration

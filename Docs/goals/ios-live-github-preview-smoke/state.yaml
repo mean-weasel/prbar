@@ -1,0 +1,259 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "iOS Live GitHub Preview Smoke"
+  slug: "ios-live-github-preview-smoke"
+  kind: specific
+  tranche: "Implement and verify a repeatable physical-iPhone live GitHub smoke path with exactly one included repository."
+  status: active
+  oracle:
+    signal: "A physical-device GitHub Actions run on iPhone-preview uses a configured single repo, proves exactly that repo is included, refreshes live GitHub PR/release activity, and reports success or a precise blocker."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Receipt-backed workflow run URL plus device/app evidence showing one included repo and completed live refresh, or a documented blocker with next action."
+  intake:
+    original_request: "Plan out setup for my GitHub profile with inclusion of a single repository in tests and installs."
+    interpreted_outcome: "Create a safe plan and board for automating real GitHub profile smoke testing on the physical iOS preview device with one selected repo."
+    input_shape: specific
+    audience: "PRBar maintainer and preview-device test operators"
+    authority: requested
+    proof_type: test
+    completion_proof: "The live physical-device smoke workflow can run against neonwatty plus one explicit repo and prove scoped refresh behavior."
+    likely_misfire: "Passing fixture-mode UI tests or install-only workflows while never exercising live GitHub auth, repo selection, or refresh."
+    blind_spots_considered:
+      - "Persisted device auth may not be repeatable after app reinstall or keychain reset."
+      - "Injected GitHub token improves repeatability but increases secret-handling risk."
+      - "Install workflows should not silently mutate repo selection unless explicitly requested."
+      - "A live smoke must prove one repo, not merely that the app launches."
+      - "Device lock/offline states can masquerade as app/test failures."
+      - "GitHub API rate limits and repo permissions need clear diagnostics."
+    existing_plan_facts:
+      - "Target GitHub profile: neonwatty."
+      - "Target initial repo candidate: mean-weasel/prbar."
+      - "Use iPhone-preview for automated physical-device smoke."
+      - "Keep iPhone-prod primarily for manual production-device verification unless explicitly needed."
+      - "Current fixture-mode UI tests should remain deterministic."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: blocked
+    url: "http://goalbuddy.localhost:41737/ios-live-github-preview-smoke/"
+    command: "npx goalbuddy board docs/goals/ios-live-github-preview-smoke"
+    blocked_reason: "npx/npm/goalbuddy CLI are not on PATH in this environment; the file-backed board is ready and the local visual board can be started once the CLI is available."
+
+active_task: T003
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Map the existing iOS auth, repo-selection, install, and physical-preview smoke surfaces relevant to a one-repo live GitHub test."
+    inputs:
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBar/More/RepositorySetupView.swift"
+      - "apple/PRBarShared/GitHubAuth.swift"
+      - "apple/PRBarShared/GitHubRepositories.swift"
+      - "apple/PRBarShared/GitHubActivity.swift"
+      - "apple/PRBarPreviewUITests/"
+      - "scripts/ios-preview-*.sh"
+      - ".github/workflows/ios-preview-install.yml"
+      - ".github/workflows/ios-physical-preview.yml"
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation files."
+      - "Identify where fixture mode starts and where live mode can safely be introduced."
+      - "Call out secrets, rate-limit, and device-state risks."
+    expected_output:
+      - "Current surface map with file-path evidence."
+      - "Recommended live-smoke architecture: persisted-auth path, token-injection path, or hybrid."
+      - "Exact evidence needed to prove one-repo scope."
+      - "Candidate Worker package with allowed files and verification commands."
+    receipt:
+      result: done
+      summary: "Mapped the relevant iOS live/fixture surfaces. The current local checkout is behind origin/main and has unrelated dirty work, so implementation should happen from a clean origin/main worktree to avoid trampling stale or unrelated app state. Existing physical preview tests are fixture-only; live one-repo proof needs a separate profile/workflow using persisted device auth first, with precise blocker output if auth, repo access, rate limits, or device readiness fail."
+      evidence:
+        - "origin/main:apple/PRBar/PRBarApp.swift:13-49 chooses fixture/static providers for --ui-testing and live KeychainGitHubSessionStore/GitHubRepositoryClient/GitHubActivityClient otherwise."
+        - "origin/main:apple/PRBar/PRBarApp.swift:18-49 means current physical preview UI tests cannot prove live GitHub behavior when launched with --ui-testing."
+        - "origin/main:apple/PRBarShared/PRBarStore.swift:312-335 resets oversized stored selections and routes back to repo onboarding, preserving the PR #70 no-all-repos safeguard."
+        - "origin/main:apple/PRBarShared/PRBarStore.swift:289-310 exposes immediate-persist selection methods for single and batch repo toggles."
+        - "origin/main:apple/PRBar/More/RepositorySetupView.swift:248-266 drives repo toggles through those persisting store APIs."
+        - "apple/PRBarPreviewUITests/PRBarPreviewUITests.swift:4-16 only launches fixture tabs with --ui-testing."
+        - "scripts/ios-preview-device-smoke.sh:38-49 only recognizes fast/pr/full profiles and maps fast/pr to the fixture core-tabs test."
+        - ".github/workflows/ios-physical-preview.yml:5-15 exposes smoke_profile/device_name only; no live profile, repo input, or GitHub login input exists yet."
+        - ".github/workflows/ios-preview-install.yml:33-40 is install-only and should remain focused on build/install."
+      recommendation: "Use a hybrid architecture: keep install-only unchanged; add an explicit live physical-preview profile with github_login and included_repo inputs. First rely on the persisted GitHub session already on iPhone-preview to avoid secrets. Consider token injection only after persisted auth proves too flaky."
+      candidate_worker:
+        objective: "On a clean origin/main worktree, add a live physical preview smoke profile that launches the preview app without fixture mode, asserts the connected GitHub user, scopes selection to one configured repo, triggers refresh, and verifies scoped activity or clear auth/repo/device blocker output."
+        allowed_files:
+          - "apple/PRBar/PRBarApp.swift"
+          - "apple/PRBarPreviewUITests/**"
+          - "apple/PRBarTests/**"
+          - "apple/PRBarShared/**"
+          - "scripts/ios-preview-device-smoke.sh"
+          - "scripts/ios-preview-live-smoke*.sh"
+          - ".github/workflows/ios-physical-preview.yml"
+          - "docs/goals/ios-live-github-preview-smoke/**"
+        verify:
+          - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+          - "Targeted PRBarPreviewUITests live-smoke test or script dry-run that reports a safe blocker when no live session is available."
+          - "gh workflow run ios-physical-preview.yml --ref <branch> -f smoke_profile=live -f device_name=iPhone-preview -f github_login=neonwatty -f included_repo=mean-weasel/prbar"
+        stop_if:
+          - "Need to expose or log a GitHub token."
+          - "Need to mutate install-only workflow behavior."
+          - "Need to overwrite unrelated dirty work in the current checkout."
+          - "iPhone-preview is locked/offline/untrusted for physical verification."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the safest first implementation package for live one-repo physical-device GitHub smoke testing."
+    inputs:
+      - "T001 receipt"
+      - "docs/goals/ios-live-github-preview-smoke/goal.md"
+    constraints:
+      - "Do not implement."
+      - "Prefer the largest safe vertical slice that can be verified on iPhone-preview."
+      - "Reject any plan that logs secrets or defaults to all repos."
+      - "Separate install-only behavior from live-smoke behavior unless there is a concrete reason to combine them."
+    expected_output:
+      - "Decision: persisted-auth, token-injection, or hybrid."
+      - "Exact Worker objective."
+      - "allowed_files."
+      - "verify commands and physical-device workflow to run."
+      - "stop_if conditions."
+    receipt:
+      result: done
+      decision: "approved"
+      full_outcome_complete: false
+      rationale: "The safest first slice is a persisted-auth live smoke profile: it proves real device/app/GitHub behavior without adding a token secret, while keeping install-only behavior unchanged. It should run from a clean origin/main worktree because the current checkout is dirty and behind origin/main."
+      worker_objective: "Create a clean implementation branch from origin/main and add a live physical-preview smoke profile that accepts github_login and included_repo, launches the preview app in live mode, verifies the connected user/repo selection path, refreshes activity, and emits a clear success/blocker signal without logging secrets."
+      allowed_files:
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarPreviewUITests/**"
+        - "apple/PRBarTests/**"
+        - "apple/PRBarShared/**"
+        - "scripts/ios-preview-device-smoke.sh"
+        - "scripts/ios-preview-live-smoke*.sh"
+        - ".github/workflows/ios-physical-preview.yml"
+        - "docs/goals/ios-live-github-preview-smoke/**"
+      verify:
+        - "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/ios-live-github-preview-smoke/state.yaml"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "Targeted PRBarPreviewUITests or script-level dry run for live-smoke configuration."
+        - "If local verification passes and branch is pushed: gh workflow run ios-physical-preview.yml --ref <branch> -f smoke_profile=live -f device_name=iPhone-preview -f github_login=neonwatty -f included_repo=mean-weasel/prbar"
+      stop_if:
+        - "A GitHub token would need to be exposed, logged, or stored outside Keychain/GitHub secrets."
+        - "Install-only workflow behavior would need to change."
+        - "Implementation would require overwriting unrelated dirty work in /Users/neonwatty/Desktop/prbar."
+        - "iPhone-preview is locked/offline/untrusted during physical verification."
+        - "Live persisted auth is missing and there is no non-secret local fallback; record blocker and propose token-injection follow-up."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: medium
+    objective: "Create a clean implementation branch from origin/main and add a persisted-auth live physical-preview smoke profile for one configured GitHub repo."
+    allowed_files:
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBarPreviewUITests/**"
+      - "apple/PRBarTests/**"
+      - "apple/PRBarShared/**"
+      - "scripts/ios-preview-device-smoke.sh"
+      - "scripts/ios-preview-live-smoke*.sh"
+      - ".github/workflows/ios-physical-preview.yml"
+      - "docs/goals/ios-live-github-preview-smoke/**"
+    verify:
+      - "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/ios-live-github-preview-smoke/state.yaml"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "Targeted PRBarPreviewUITests or script-level dry run for live-smoke configuration."
+      - "If local verification passes and branch is pushed: gh workflow run ios-physical-preview.yml --ref <branch> -f smoke_profile=live -f device_name=iPhone-preview -f github_login=neonwatty -f included_repo=mean-weasel/prbar"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Need a GitHub token or app credential that is not already available."
+      - "Need to change production auth behavior rather than test/preview behavior."
+      - "Device workflow cannot run because iPhone-preview is locked, offline, or untrusted."
+      - "Verification fails twice with the same unexplained failure."
+    receipt: null
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Add operator documentation or workflow summaries for running the live one-repo smoke and interpreting blockers."
+    allowed_files:
+      - "docs/**"
+      - "Docs/**"
+      - ".github/workflows/**"
+      - "scripts/**"
+    verify:
+      - "git diff --check"
+      - "Run any workflow/script validation selected by Judge or PM after T003."
+    stop_if:
+      - "Documentation would expose secrets or private token values."
+      - "The implementation package has not yet established the actual run shape."
+    receipt: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit whether the live one-repo physical-device GitHub smoke goal is complete."
+    inputs:
+      - "All done task receipts."
+      - "Last local verification."
+      - "Latest physical-device workflow run URL."
+      - "Current dirty diff."
+    constraints:
+      - "Do not implement."
+      - "Reject completion if only fixture-mode tests or install-only workflows passed."
+      - "Reject completion if the test can still select all repos by default."
+      - "Reject completion if the live workflow cannot distinguish auth, repo access, rate-limit, and device lock blockers."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "mapped evidence against oracle"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: unknown
+    task: null
+    commands: []

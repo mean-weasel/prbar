@@ -43,6 +43,17 @@ case "$PROFILE" in
   fast|pr)
     TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testPreviewDeviceCanLaunchCoreTabs")
     ;;
+  live)
+    if [[ -z "${IOS_LIVE_GITHUB_LOGIN:-}" ]]; then
+      echo "IOS_LIVE_GITHUB_LOGIN is required for IOS_UI_SMOKE_PROFILE=live." >&2
+      exit 64
+    fi
+    if [[ -z "${IOS_LIVE_INCLUDED_REPO:-}" ]]; then
+      echo "IOS_LIVE_INCLUDED_REPO is required for IOS_UI_SMOKE_PROFILE=live." >&2
+      exit 64
+    fi
+    TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testLiveGitHubOneRepositoryRefresh")
+    ;;
   full)
     TESTS=()
     ;;
@@ -61,6 +72,12 @@ echo "Checking physical iOS device readiness for: $IOS_DEVICE_ID"
 echo "Device role: $DEVICE_NAME"
 echo "Xcode destination: $IOS_DESTINATION"
 echo "Keep the iPhone unlocked and awake until the UI test starts."
+if [[ "$PROFILE" == "live" ]]; then
+  echo "Live GitHub smoke profile:"
+  echo "  GitHub login: $IOS_LIVE_GITHUB_LOGIN"
+  echo "  Included repo: $IOS_LIVE_INCLUDED_REPO"
+  echo "  Auth source: existing PRBar Keychain session on the target iPhone"
+fi
 
 ready_deadline=$((SECONDS + DEVICE_READY_TIMEOUT))
 while true; do

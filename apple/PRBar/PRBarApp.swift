@@ -11,7 +11,9 @@ struct PRBarApp: App {
     let repositorySelectionStore: RepositorySelectionStoring
     let activityCacheStore: GitHubActivityCacheStoring
     let arguments = ProcessInfo.processInfo.arguments
+    let environment = ProcessInfo.processInfo.environment
     let isUITesting = arguments.contains("--ui-testing")
+    let isLiveGitHubSmoke = arguments.contains("--live-github-smoke")
     let usesPersistentUITestingState =
       arguments.contains("--ui-testing-seed-activity-cache") ||
       arguments.contains("--ui-testing-cached-activity")
@@ -62,6 +64,13 @@ struct PRBarApp: App {
       )
       repositorySelectionStore = UserDefaultsRepositorySelectionStore()
       activityCacheStore = FileGitHubActivityCacheStore()
+    }
+
+    if isLiveGitHubSmoke,
+      let includedRepo = Self.normalizedLiveSmokeValue(environment["PRBAR_LIVE_SMOKE_INCLUDED_REPO"]) {
+      try? repositorySelectionStore.clearIncludedRepositoryIDs()
+      try? activityCacheStore.clear()
+      try? repositorySelectionStore.saveIncludedRepositoryIDs([includedRepo])
     }
 
     if ProcessInfo.processInfo.arguments.contains("--ui-testing-seed-activity-cache") {
@@ -134,6 +143,13 @@ private extension PRBarApp {
       ],
       anchorDate: SampleData.date("2026-05-24")
     )
+  }
+
+  static func normalizedLiveSmokeValue(_ value: String?) -> String? {
+    guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), value.isEmpty == false else {
+      return nil
+    }
+    return value
   }
 
   static var uiTestingRefreshSnapshot: GitHubActivitySnapshot {
