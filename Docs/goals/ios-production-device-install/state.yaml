@@ -365,18 +365,19 @@ tasks:
     assignee: Worker
     status: active
     reasoning_hint: medium
-    objective: "After CI is green and the user approves with iPhone-prod unlocked, dispatch the production physical workflow and record the run outcome."
+    objective: "After CI is green and the user approves with iPhone-prod unlocked, run the production physical smoke path and record the outcome."
     allowed_files:
       - "Docs/goals/ios-production-device-install/**"
     verify:
       - "gh pr view 73 --repo mean-weasel/prbar --json statusCheckRollup,mergeable,isDraft,url"
-      - "gh workflow run ios-physical-production.yml --repo mean-weasel/prbar --ref codex/ios-production-device-install -f smoke_profile=fast -f device_name=iPhone-prod"
+      - "Before merge: run ./scripts/ios-production-device-smoke.sh locally from the branch, because newly added workflow_dispatch files are not visible to GitHub Actions until present on the default branch."
+      - "After merge: gh workflow run ios-physical-production.yml --repo mean-weasel/prbar --ref main -f smoke_profile=fast -f device_name=iPhone-prod"
       - "gh run watch <run-id> --repo mean-weasel/prbar --exit-status"
     stop_if:
       - "User has not explicitly approved production install/smoke dispatch."
       - "iPhone-prod is locked, offline, or untrusted."
       - "PR checks show a failure that affects workflow or script safety."
-      - "GitHub Actions cannot see ios-physical-production.yml on the branch."
+      - "The local production smoke cannot be run and the production workflow has not landed on main yet."
     receipt: null
 
   - id: T999
@@ -411,6 +412,10 @@ checks:
     task: T006
     commands:
       - "gh pr view 73 --repo mean-weasel/prbar --json statusCheckRollup,mergeable,isDraft,url,headRefOid"
-      - "gh run watch 26584760362 --repo mean-weasel/prbar --exit-status"
-      - "gh run watch 26584760287 --repo mean-weasel/prbar --exit-status"
-    summary: "PR #73 is draft/mergeable. CI Gate passed and iOS Build, Test, UI Smoke passed in 5m5s. Production physical workflow dispatch remains pending explicit user approval with iPhone-prod unlocked."
+      - "gh run watch 26585108069 --repo mean-weasel/prbar --exit-status"
+      - "gh run watch 26585108016 --repo mean-weasel/prbar --exit-status"
+      - "gh workflow view ios-physical-production.yml --repo mean-weasel/prbar --ref codex/ios-production-device-install --yaml"
+      - "gh api 'repos/mean-weasel/prbar/contents/.github/workflows/ios-physical-production.yml?ref=codex/ios-production-device-install' --jq '.path + \" \" + .sha'"
+      - "gh api 'repos/mean-weasel/prbar/contents/.github/workflows/ios-physical-production.yml?ref=main' --jq '.path + \" \" + .sha'"
+      - "IOS_DEVICE_NAME=iPhone-prod IOS_DEVICE_ROLE='production device' IOS_SCHEME=PRBar ./scripts/ios-resolve-device.sh human"
+    summary: "PR #73 is draft/mergeable at 88c2b28. CI Gate passed and iOS Build, Test, UI Smoke passed. iPhone-prod resolves to Xcode destination 00008140-001055D83E87001C. The new ios-physical-production.yml file exists on the PR branch but is not visible as a GitHub Actions workflow until it lands on main, so pre-merge production proof must use the local production-device smoke script or wait until after merge for workflow_dispatch."
