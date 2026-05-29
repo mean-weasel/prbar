@@ -21,9 +21,20 @@ This release includes the production app updates that landed after `v1.1.0`:
 
 ## Distribution Status
 
-The GitHub release flow publishes release notes with `semantic-release`. A separate
-`Release Artifact` workflow now runs when a GitHub release is published and can
-attach a signed, notarized `PRMenuBar-macOS.zip` asset to that release.
+The GitHub release flow publishes release notes with `semantic-release`, then
+explicitly dispatches the `Release Artifact` workflow for the published tag. The
+artifact workflow also keeps its manual dispatch fallback for rebuilding an
+existing tag.
+
+GitHub release events created by the workflow's `GITHUB_TOKEN` do not trigger
+other workflows, except `workflow_dispatch` and `repository_dispatch`, so the
+release workflow must dispatch the artifact workflow directly instead of relying
+only on `release.published`. See GitHub's documented `GITHUB_TOKEN` trigger
+behavior:
+<https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/triggering-a-workflow#triggering-a-workflow-from-a-workflow>.
+
+The `Release Artifact` workflow attaches a signed, notarized
+`PRMenuBar-macOS.zip` asset to the release.
 
 The local Release build is suitable for smoke validation:
 
@@ -74,8 +85,8 @@ Manual QA for the Mac app:
 The installable Mac app path is:
 
 1. `semantic-release` publishes a GitHub release from `main`.
-2. `.github/workflows/release-artifact.yml` starts on the `release.published`
-   event.
+2. `.github/workflows/release.yml` dispatches
+   `.github/workflows/release-artifact.yml` for the newly published tag.
 3. The workflow checks out the release tag, imports the Developer ID
    certificate, builds `PRMenuBar.app`, signs with hardened runtime, submits the
    app for notarization, staples the ticket, zips the app, and uploads:
@@ -108,3 +119,14 @@ Manual artifact rebuild for an existing release:
 ```bash
 gh workflow run release-artifact.yml --repo mean-weasel/prbar -f tag=v1.2.0
 ```
+
+Release operator checklist:
+
+- Confirm `Release` completed successfully on `main`.
+- Confirm `Release Artifact` started for the new tag.
+- Confirm the release has `PRMenuBar-macOS.zip` and
+  `PRMenuBar-macOS.zip.sha256` assets.
+- Download the release asset, verify the SHA-256 checksum, and inspect the app
+  signature/notarization before installing.
+- Run only `/Applications/PRMenuBar.app` for production use; repo build
+  products are development-only.
