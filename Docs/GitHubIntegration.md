@@ -80,3 +80,22 @@ gh workflow run "iOS Preview Install" --ref main -f device_name="iPhone-preview"
 The health and preview workflows list attached devices even when preflight
 fails, which makes it easier to distinguish runner-label problems from a
 locked, untrusted, offline, or differently named iPhone.
+
+For live GitHub proof on the physical preview iPhone, use the explicit
+`live-headless` smoke profile instead of the install workflow:
+
+```bash
+gh workflow run ios-physical-preview.yml \
+  --ref main \
+  -f smoke_profile=live-headless \
+  -f device_name="iPhone-preview" \
+  -f github_login="neonwatty" \
+  -f included_repo="mean-weasel/prbar"
+```
+
+Repeatable live smoke requires the repo secret `PRBAR_IOS_LIVE_GITHUB_TOKEN`.
+Use the narrowest practical read-only GitHub token for the target repository,
+and never log it. The app receives the token only as launch environment for the
+preview smoke and stores it in the preview app Keychain on the device. Without
+that secret, the same workflow can still pass if the preview app already has a
+manual GitHub session, but that path is intentionally less repeatable.

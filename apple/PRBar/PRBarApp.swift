@@ -1,3 +1,4 @@
+import Darwin
 import SwiftUI
 
 @main
@@ -13,6 +14,7 @@ struct PRBarApp: App {
     let arguments = ProcessInfo.processInfo.arguments
     let environment = ProcessInfo.processInfo.environment
     let isUITesting = arguments.contains("--ui-testing")
+    let isLiveGitHubSmokeHeadless = arguments.contains("--live-github-smoke-headless")
     let liveGitHubSession = Self.uiTestingLiveGitHubSession(environment: environment)
     let usesPersistentUITestingState =
       arguments.contains("--ui-testing-seed-activity-cache") ||
@@ -66,6 +68,9 @@ struct PRBarApp: App {
         : InMemoryGitHubActivityCacheStore()
     } else {
       let sessionStore = KeychainGitHubSessionStore()
+      if isLiveGitHubSmokeHeadless, let liveGitHubSession {
+        try? sessionStore.saveSession(liveGitHubSession)
+      }
       authService = GitHubDeviceFlowAuthService(
         configuration: .appDefault(),
         sessionStore: sessionStore
@@ -80,6 +85,13 @@ struct PRBarApp: App {
       )
       repositorySelectionStore = UserDefaultsRepositorySelectionStore()
       activityCacheStore = FileGitHubActivityCacheStore()
+    }
+
+    if isLiveGitHubSmokeHeadless,
+      let includedRepo = Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_REPOSITORY"]) {
+      try? repositorySelectionStore.clearIncludedRepositoryIDs()
+      try? activityCacheStore.clear()
+      try? repositorySelectionStore.saveIncludedRepositoryIDs([includedRepo])
     }
 
     if ProcessInfo.processInfo.arguments.contains("--ui-testing-seed-activity-cache") {
@@ -116,6 +128,14 @@ struct PRBarApp: App {
       }
     } else {
       store.restoreGitHubSession()
+    }
+
+    if isLiveGitHubSmokeHeadless {
+      Self.startHeadlessLiveGitHubSmoke(
+        store: store,
+        expectedLogin: Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_GITHUB_LOGIN"]),
+        includedRepo: Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_REPOSITORY"])
+      )
     }
     _store = State(initialValue: store)
   }
@@ -189,6 +209,13 @@ private struct UITestingSlowGitHubActivityProvider: GitHubActivityProviding {
 }
 
 private extension PRBarApp {
+  static func normalizedLiveSmokeValue(_ value: String?) -> String? {
+    guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), value.isEmpty == false else {
+      return nil
+    }
+    return value
+  }
+
   static func uiTestingLiveGitHubSession(environment: [String: String]) -> GitHubAuthSession? {
     guard let token = environment["PRBAR_IOS_LIVE_GITHUB_TOKEN"]?.trimmingCharacters(in: .whitespacesAndNewlines),
       token.isEmpty == false
@@ -206,6 +233,63 @@ private extension PRBarApp {
       scopes: [],
       user: GitHubUser(login: normalizedLogin, displayName: displayName.flatMap { $0.isEmpty ? nil : $0 } ?? normalizedLogin)
     )
+  }
+
+  static func startHeadlessLiveGitHubSmoke(store: PRBarStore, expectedLogin: String?, includedRepo: String?) {
+    Task { @MainActor in
+      let status = await runHeadlessLiveGitHubSmoke(
+        store: store,
+        expectedLogin: expectedLogin,
+        includedRepo: includedRepo
+      )
+      fflush(stdout)
+      fflush(stderr)
+      exit(status)
+    }
+  }
+
+  @MainActor
+  static func runHeadlessLiveGitHubSmoke(store: PRBarStore, expectedLogin: String?, includedRepo: String?) async -> Int32 {
+    guard let expectedLogin, let includedRepo else {
+      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=missing-live-smoke-environment\n", stderr)
+      return 64
+    }
+
+    print("PRBAR_LIVE_SMOKE_START login=\(expectedLogin) repo=\(includedRepo) driver=headless")
+
+    guard let user = store.githubConnection.user else {
+      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=missing-github-session login=\(expectedLogin) hint=set-PRBAR_IOS_LIVE_GITHUB_TOKEN\n", stderr)
+      return 65
+    }
+
+    guard user.login == expectedLogin else {
+      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=unexpected-github-login expected=\(expectedLogin) actual=\(user.login)\n", stderr)
+      return 65
+    }
+
+    let includedRepositories = store.includedRepositories
+    guard includedRepositories.map(\.id) == [includedRepo] else {
+      let actual = includedRepositories.map(\.id).joined(separator: ",")
+      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=unexpected-included-repositories expected=\(includedRepo) actual=\(actual)\n", stderr)
+      return 65
+    }
+
+    await store.refreshActivity()
+
+    if let issue = store.activityRefreshIssue {
+      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=refresh-failed issue=\(issue.id) title=\"\(issue.title)\"\n", stderr)
+      return 65
+    }
+
+    guard store.lastActivityRefreshAt != nil else {
+      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=refresh-did-not-complete repo=\(includedRepo)\n", stderr)
+      return 65
+    }
+
+    let prCount = store.pullRequests.filter { $0.repoID == includedRepo }.count
+    let releaseCount = store.releases.filter { $0.repoID == includedRepo }.count
+    print("PRBAR_LIVE_SMOKE_RESULT success login=\(user.login) repo=\(includedRepo) selected_repo_count=\(includedRepositories.count) pull_requests=\(prCount) releases=\(releaseCount)")
+    return 0
   }
 
   static var uiTestingActivityCacheURL: URL {

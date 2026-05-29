@@ -8,11 +8,15 @@ on:
         required: true
         default: pr
         type: choice
-        options: [fast, pr, full, live]
+        options: [fast, pr, full, live, live-headless]
       device_name:
         description: Physical iPhone name reported by Xcode
         required: true
         default: iPhone-preview
+      github_login:
+        description: GitHub login expected for live smoke
+        required: false
+        default: neonwatty
       live_repository:
         description: owner/repo to select during live GitHub setup smoke
         required: true
@@ -41,6 +45,7 @@ jobs:
       IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
       PRBAR_IOS_GITHUB_CLIENT_ID: ${{ secrets.PRBAR_IOS_GITHUB_CLIENT_ID }}
       PRBAR_IOS_LIVE_GITHUB_TOKEN: ${{ secrets.PRBAR_IOS_LIVE_GITHUB_TOKEN }}
+      PRBAR_IOS_LIVE_GITHUB_LOGIN: ${{ inputs.github_login }}
       PRBAR_IOS_LIVE_REPOSITORY: ${{ inputs.live_repository }}
       IOS_XCODEBUILD_EXTRA_ARGS: -allowProvisioningUpdates -allowProvisioningDeviceRegistration
       IOS_PREVIEW_KEYCHAIN_PASSWORD: ${{ secrets.IOS_PREVIEW_KEYCHAIN_PASSWORD }}
