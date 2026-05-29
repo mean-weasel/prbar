@@ -78,6 +78,87 @@ final class GitHubActivityTests: XCTestCase {
     XCTAssertEqual(snapshot.anchorDate, SampleData.date("2026-05-24"))
   }
 
+  func testGitHubActivityClientCarriesSuccessfulReposAndPartialRepositoryIssues() throws {
+    let sessionStore = InMemoryGitHubSessionStore(session: .fixture)
+    let publicRepository = Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched")
+    let privateRepository = Repository(id: "mean-weasel/private-api", owner: "mean-weasel", name: "private-api", visibility: .private, colorHex: "#f59e0b", included: true, recommended: false, access: .ready, reason: "Fetched")
+    let client = GitHubActivityClient(
+      sessionStore: sessionStore,
+      transport: FixtureGitHubRepositoryTransport(
+        results: [
+          .success(
+            Data(
+              """
+              [
+                {"id":41,"number":41,"title":"Ship visible work","merged_at":"2026-05-24T17:42:00Z"}
+              ]
+              """.utf8
+            )
+          ),
+          .success(Data("[]".utf8)),
+          .success(Data("[]".utf8)),
+          .failure(GitHubAPIError.ssoRequired)
+        ]
+      )
+    )
+
+    let snapshot = try client.activity(
+      for: [publicRepository, privateRepository],
+      endingAt: SampleData.date("2026-05-24"),
+      lookbackDays: 30
+    )
+
+    XCTAssertEqual(snapshot.pullRequests.map(\.id), ["mean-weasel/prbar#41"])
+    XCTAssertTrue(snapshot.releases.isEmpty)
+    XCTAssertEqual(snapshot.repositoryIssues.map(\.repositoryID), ["mean-weasel/private-api"])
+    XCTAssertEqual(snapshot.repositoryIssues.first?.repositoryFullName, "mean-weasel/private-api")
+    XCTAssertEqual(snapshot.repositoryIssues.first?.title, "Repository needs attention")
+    XCTAssertTrue(snapshot.repositoryIssues.first?.message.contains("SSO") == true)
+  }
+
+  func testGitHubActivityClientTreatsUnauthorizedAsGlobalFailure() {
+    let sessionStore = InMemoryGitHubSessionStore(session: .fixture)
+    let repository = Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched")
+    let client = GitHubActivityClient(
+      sessionStore: sessionStore,
+      transport: FixtureGitHubRepositoryTransport(results: [.failure(GitHubAPIError.unauthorized)])
+    )
+
+    XCTAssertThrowsError(
+      try client.activity(
+        for: [repository],
+        endingAt: SampleData.date("2026-05-24"),
+        lookbackDays: 30
+      )
+    ) { error in
+      XCTAssertEqual(error as? GitHubAPIError, .unauthorized)
+    }
+  }
+
+  func testGitHubActivityClientAsyncUsesBoundedRepositoryConcurrency() async throws {
+    let repositories = (0..<8).map { index in
+      Repository(id: "mean-weasel/repo-\(index)", owner: "mean-weasel", name: "repo-\(index)", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched")
+    }
+    let transport = CountingDelayedActivityTransport(delay: 0.02)
+    let client = GitHubActivityClient(
+      sessionStore: InMemoryGitHubSessionStore(session: .fixture),
+      transport: transport,
+      maximumConcurrentRepositories: 3
+    )
+
+    let snapshot = try await client.activityAsync(
+      for: repositories,
+      endingAt: SampleData.date("2026-05-24"),
+      lookbackDays: 30
+    )
+
+    XCTAssertTrue(snapshot.pullRequests.isEmpty)
+    XCTAssertTrue(snapshot.releases.isEmpty)
+    XCTAssertEqual(transport.requestCount, repositories.count * 3)
+    XCTAssertGreaterThan(transport.maximumActiveRequests, 1)
+    XCTAssertLessThanOrEqual(transport.maximumActiveRequests, 3)
+  }
+
   func testGitHubActivityClientStopsScanningClosedPullsWhenUpdatedPageIsStale() throws {
     let sessionStore = InMemoryGitHubSessionStore(session: .fixture)
     let repository = Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched")
@@ -308,5 +389,33 @@ private final class RecordingActivityTransport: GitHubRepositoryTransport {
       throw GitHubRepositoryError.invalidResponse
     }
     return responses.removeFirst()
+  }
+}
+
+private final class CountingDelayedActivityTransport: GitHubRepositoryTransport {
+  private let delay: TimeInterval
+  private let lock = NSLock()
+  private var activeRequests = 0
+  private(set) var requestCount = 0
+  private(set) var maximumActiveRequests = 0
+
+  init(delay: TimeInterval) {
+    self.delay = delay
+  }
+
+  func data(for request: URLRequest) throws -> Data {
+    lock.lock()
+    activeRequests += 1
+    requestCount += 1
+    maximumActiveRequests = max(maximumActiveRequests, activeRequests)
+    lock.unlock()
+
+    Thread.sleep(forTimeInterval: delay)
+
+    lock.lock()
+    activeRequests -= 1
+    lock.unlock()
+
+    return Data("[]".utf8)
   }
 }

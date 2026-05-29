@@ -19,6 +19,7 @@ final class PRBarStore {
   var isRefreshingActivity = false
   var activityRefreshProgress: ActivityRefreshProgress?
   var activityRefreshIssue: AuthIssue?
+  var activityRepositoryIssues: [ActivityRepositoryIssue] = []
   var lastActivityRefreshAt: Date?
   var lastActivityRefreshAttemptAt: Date?
   private let authService: GitHubAuthServicing
@@ -227,6 +228,7 @@ final class PRBarStore {
       lastActivityRefreshAttemptAt = nil
       lastActivityRefreshAt = nil
       activityRefreshIssue = nil
+      activityRepositoryIssues = []
       activityRefreshProgress = nil
       return nil
     }
@@ -244,6 +246,7 @@ final class PRBarStore {
 
     isRefreshingActivity = true
     activityRefreshIssue = nil
+    activityRepositoryIssues = []
     activityRefreshProgress = ActivityRefreshProgress(
       totalRepositories: includedRepositories.count,
       completedRepositories: 0,
@@ -284,7 +287,10 @@ final class PRBarStore {
       } else {
         self.selectedReleaseID = releases.first { CalendarDay.isSameDay($0.date, selectedReleaseDate) }?.id ?? releases.first?.id
       }
+    } catch is CancellationError {
+      activityRepositoryIssues = []
     } catch {
+      activityRepositoryIssues = []
       activityRefreshIssue = authIssue(for: error).issue
     }
   }
@@ -404,6 +410,7 @@ final class PRBarStore {
     pullRequests = snapshot.pullRequests
     releases = snapshot.releases
     activityAnchorDate = snapshot.anchorDate
+    activityRepositoryIssues = snapshot.repositoryIssues
     selectedPRDate = snapshot.anchorDate
     selectedReleaseDate = snapshot.anchorDate
     selectedReleaseID = snapshot.releases.first?.id

@@ -23,6 +23,15 @@ struct AuthIssue: Identifiable, Equatable, Sendable {
   var message: String
 }
 
+struct ActivityRepositoryIssue: Identifiable, Codable, Equatable, Sendable {
+  var repositoryID: Repository.ID
+  var repositoryFullName: String
+  var title: String
+  var message: String
+
+  var id: Repository.ID { repositoryID }
+}
+
 struct GitHubConnection: Equatable, Sendable {
   enum Status: String, Equatable, Sendable {
     case signedOut
@@ -63,6 +72,10 @@ struct Repository: Identifiable, Codable, Equatable, Sendable {
   var recommended: Bool
   var access: Access
   var reason: String
+
+  var fullName: String {
+    "\(owner)/\(name)"
+  }
 }
 
 struct PullRequest: Identifiable, Codable, Equatable, Sendable {

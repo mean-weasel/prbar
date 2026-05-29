@@ -11,34 +11,50 @@ struct PRBarApp: App {
     let repositorySelectionStore: RepositorySelectionStoring
     let activityCacheStore: GitHubActivityCacheStoring
     let arguments = ProcessInfo.processInfo.arguments
+    let environment = ProcessInfo.processInfo.environment
     let isUITesting = arguments.contains("--ui-testing")
+    let liveGitHubSession = Self.uiTestingLiveGitHubSession(environment: environment)
     let usesPersistentUITestingState =
       arguments.contains("--ui-testing-seed-activity-cache") ||
       arguments.contains("--ui-testing-cached-activity")
     if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
       let sessionStore = InMemoryGitHubSessionStore()
-      if usesPersistentUITestingState {
-        try? sessionStore.saveSession(.fixture)
-      }
-      if ProcessInfo.processInfo.arguments.contains("--ui-testing-device-auth") {
-        authService = StaticGitHubAuthService(
+      if let liveGitHubSession {
+        authService = StaticGitHubAuthService(sessionStore: sessionStore, session: liveGitHubSession)
+        repositoryProvider = GitHubRepositoryClient(
           sessionStore: sessionStore,
-          result: .failure(.authorizationPending(.fixture)),
-          continuationResult: .success(.fixture)
+          transport: URLSessionGitHubRepositoryTransport()
+        )
+        activityProvider = GitHubActivityClient(
+          sessionStore: sessionStore,
+          transport: URLSessionGitHubRepositoryTransport()
         )
       } else {
-        authService = StaticGitHubAuthService(sessionStore: sessionStore, session: .fixture)
-      }
-      repositoryProvider = StaticGitHubRepositoryProvider(repositories: SampleData.repositories)
-      if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-failure") ||
-        ProcessInfo.processInfo.arguments.contains("--ui-testing-cached-activity") {
-        activityProvider = UITestingFailingGitHubActivityProvider(error: GitHubAPIError.networkUnavailable)
-      } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-seed-activity-cache") {
-        activityProvider = StaticGitHubActivityProvider(snapshot: Self.uiTestingCachedSnapshot)
-      } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-data") {
-        activityProvider = SequencedGitHubActivityProvider(snapshots: [Self.uiTestingRefreshSnapshot, Self.uiTestingRefreshSnapshot])
-      } else {
-        activityProvider = StaticGitHubActivityProvider()
+        if usesPersistentUITestingState {
+          try? sessionStore.saveSession(.fixture)
+        }
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-device-auth") {
+          authService = StaticGitHubAuthService(
+            sessionStore: sessionStore,
+            result: .failure(.authorizationPending(.fixture)),
+            continuationResult: .success(.fixture)
+          )
+        } else {
+          authService = StaticGitHubAuthService(sessionStore: sessionStore, session: .fixture)
+        }
+        repositoryProvider = StaticGitHubRepositoryProvider(repositories: SampleData.repositories)
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-failure") ||
+          ProcessInfo.processInfo.arguments.contains("--ui-testing-cached-activity") {
+          activityProvider = UITestingFailingGitHubActivityProvider(error: GitHubAPIError.networkUnavailable)
+        } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-first-run-slow-sync") {
+          activityProvider = UITestingSlowGitHubActivityProvider(snapshot: Self.uiTestingRefreshSnapshot)
+        } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-seed-activity-cache") {
+          activityProvider = StaticGitHubActivityProvider(snapshot: Self.uiTestingCachedSnapshot)
+        } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-data") {
+          activityProvider = SequencedGitHubActivityProvider(snapshots: [Self.uiTestingRefreshSnapshot, Self.uiTestingRefreshSnapshot])
+        } else {
+          activityProvider = StaticGitHubActivityProvider()
+        }
       }
       repositorySelectionStore = usesPersistentUITestingState
         ? UserDefaultsRepositorySelectionStore(key: "ui-testing.github.includedRepositoryIDs")
@@ -117,7 +133,79 @@ private struct UITestingFailingGitHubActivityProvider: GitHubActivityProviding {
   }
 }
 
+private struct UITestingSlowGitHubActivityProvider: GitHubActivityProviding {
+  var snapshot: GitHubActivitySnapshot
+
+  func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
+    filteredSnapshot(for: repositories)
+  }
+
+  func activityAsync(
+    for repositories: [Repository],
+    endingAt endDate: Date,
+    lookbackDays: Int,
+    progress: (@MainActor (ActivityRefreshProgress) -> Void)?
+  ) async throws -> GitHubActivitySnapshot {
+    let includedIDs = Set(repositories.map(\.id))
+    let repoName = repositories.first?.name
+    await progress?(
+      ActivityRefreshProgress(
+        totalRepositories: repositories.count,
+        completedRepositories: 0,
+        currentRepositoryName: repoName,
+        pullRequestCount: 0,
+        releaseCount: 0
+      )
+    )
+    try await Task.sleep(nanoseconds: 4_000_000_000)
+
+    let filtered = GitHubActivitySnapshot(
+      pullRequests: snapshot.pullRequests.filter { includedIDs.contains($0.repoID) },
+      releases: snapshot.releases.filter { includedIDs.contains($0.repoID) },
+      anchorDate: snapshot.anchorDate
+    )
+    await progress?(
+      ActivityRefreshProgress(
+        totalRepositories: repositories.count,
+        completedRepositories: repositories.count,
+        currentRepositoryName: nil,
+        pullRequestCount: filtered.pullRequests.count,
+        releaseCount: filtered.releases.count
+      )
+    )
+    return filtered
+  }
+
+  private func filteredSnapshot(for repositories: [Repository]) -> GitHubActivitySnapshot {
+    let includedIDs = Set(repositories.map(\.id))
+    return GitHubActivitySnapshot(
+      pullRequests: snapshot.pullRequests.filter { includedIDs.contains($0.repoID) },
+      releases: snapshot.releases.filter { includedIDs.contains($0.repoID) },
+      anchorDate: snapshot.anchorDate
+    )
+  }
+}
+
 private extension PRBarApp {
+  static func uiTestingLiveGitHubSession(environment: [String: String]) -> GitHubAuthSession? {
+    guard let token = environment["PRBAR_IOS_LIVE_GITHUB_TOKEN"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+      token.isEmpty == false
+    else {
+      return nil
+    }
+
+    let login = environment["PRBAR_IOS_LIVE_GITHUB_LOGIN"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+    let displayName = environment["PRBAR_IOS_LIVE_GITHUB_DISPLAY_NAME"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+    let normalizedLogin = login.flatMap { $0.isEmpty ? nil : $0 } ?? "neonwatty"
+
+    return GitHubAuthSession(
+      accessToken: token,
+      tokenType: "bearer",
+      scopes: [],
+      user: GitHubUser(login: normalizedLogin, displayName: displayName.flatMap { $0.isEmpty ? nil : $0 } ?? normalizedLogin)
+    )
+  }
+
   static var uiTestingActivityCacheURL: URL {
     FileManager.default.temporaryDirectory
       .appendingPathComponent("PRBarUITesting", isDirectory: true)

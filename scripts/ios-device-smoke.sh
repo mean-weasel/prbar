@@ -48,11 +48,19 @@ case "$PROFILE" in
       TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testPreviewDeviceCanLaunchCoreTabs")
     fi
     ;;
+  live)
+    if [[ -z "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ]]; then
+      echo "PRBAR_IOS_LIVE_GITHUB_TOKEN is required for IOS_UI_SMOKE_PROFILE=live." >&2
+      exit 64
+    fi
+    export PRBAR_IOS_LIVE_REPOSITORY="${PRBAR_IOS_LIVE_REPOSITORY:-mean-weasel/prbar}"
+    TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testLiveGitHubSelectsOneRepositoryAndSyncsActivity")
+    ;;
   full)
     TESTS=()
     ;;
   *)
-    echo "Unknown IOS_UI_SMOKE_PROFILE '$PROFILE'" >&2
+    echo "Unknown IOS_UI_SMOKE_PROFILE '$PROFILE'. Expected fast, pr, full, or live." >&2
     exit 64
     ;;
 esac
