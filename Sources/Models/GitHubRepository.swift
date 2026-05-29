@@ -1,6 +1,6 @@
 import Foundation
 
-struct GitHubRepository: Decodable, Equatable {
+struct GitHubRepository: Codable, Equatable {
   var fullName: String
   var owner: Owner
   var name: String
@@ -28,11 +28,11 @@ struct GitHubRepository: Decodable, Equatable {
     )
   }
 
-  struct Owner: Decodable, Equatable {
+  struct Owner: Codable, Equatable {
     var login: String
   }
 
-  struct Permissions: Decodable, Equatable {
+  struct Permissions: Codable, Equatable {
     var pull: Bool?
   }
 

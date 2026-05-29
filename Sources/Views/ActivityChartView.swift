@@ -20,10 +20,7 @@ struct ActivityChartView: View {
                   label: label,
                   total: store.bucketTotals[index],
                   maxTotal: store.maxBucketTotal,
-                  repositories: store.includedRepositories,
-                  bucketIndex: index,
-                  window: store.window,
-                  bin: store.bin,
+                  bucketValues: store.bucketBreakdown(at: index),
                   isSelected: selectedBucketIndex == index
                 )
                 .id(index)
@@ -138,10 +135,7 @@ private struct ActivityChartColumn: View {
   var label: String
   var total: Int
   var maxTotal: Int
-  var repositories: [RepositoryActivity]
-  var bucketIndex: Int
-  var window: ActivityWindow
-  var bin: ActivityBin
+  var bucketValues: [RepositoryBucketValue]
   var isSelected: Bool
 
   var body: some View {
@@ -153,10 +147,10 @@ private struct ActivityChartColumn: View {
         VStack(spacing: 0) {
           Spacer(minLength: 0)
           VStack(spacing: 0) {
-            ForEach(repositoriesWithValues.reversed()) { repository in
+            ForEach(bucketValues.reversed()) { item in
               Rectangle()
-                .fill(Color(hex: repository.colorHex))
-                .frame(height: segmentHeight(for: repository, in: proxy.size.height))
+                .fill(Color(hex: item.repository.colorHex))
+                .frame(height: segmentHeight(for: item.value, in: proxy.size.height))
             }
           }
           .clipShape(RoundedRectangle(cornerRadius: 4))
@@ -172,14 +166,7 @@ private struct ActivityChartColumn: View {
     .clipShape(RoundedRectangle(cornerRadius: 6))
   }
 
-  private var repositoriesWithValues: [RepositoryActivity] {
-    repositories.filter { $0.visibleCounts(for: window, bin: bin)[bucketIndex] > 0 }
-  }
-
-  private func segmentHeight(for repository: RepositoryActivity, in availableHeight: CGFloat)
-    -> CGFloat
-  {
-    let value = repository.visibleCounts(for: window, bin: bin)[bucketIndex]
+  private func segmentHeight(for value: Int, in availableHeight: CGFloat) -> CGFloat {
     return CGFloat(value) / CGFloat(maxTotal) * max(availableHeight - 28, 1)
   }
 }

@@ -132,6 +132,43 @@ final class PRActivityStoreTests: XCTestCase {
     XCTAssertEqual(store.totalPullRequests, 462)
   }
 
+  func testDailyLabelsFallBackWhenIncludedRepositoriesLackDailyCounts() {
+    var store = PRActivityStore(
+      bucketLabels: ["W1", "W2", "W3", "W4"],
+      dailyBucketLabels: (1...30).map { "D\($0)" },
+      window: .oneMonth,
+      bin: .week,
+      refreshInterval: .daily,
+      repositories: [
+        RepositoryActivity(
+          id: "owner/legacy",
+          owner: "owner",
+          name: "legacy",
+          colorHex: "#ffffff",
+          weeklyCounts: [1, 2, 3, 4],
+          isIncluded: true
+        )
+      ],
+      refreshedAt: Date()
+    )
+
+    XCTAssertEqual(store.visibleBucketLabels, ["W1", "W2", "W3", "W4"])
+    XCTAssertEqual(store.bucketTotals, [1, 2, 3, 4])
+    XCTAssertEqual(store.totalPullRequests, 10)
+    XCTAssertEqual(store.bucketBreakdown(at: 3).first?.value, 4)
+
+    let payload = ShareCardBuilder.prActivityPayload(store: store)
+
+    XCTAssertEqual(payload.chartBuckets.map(\.label), ["W1", "W2", "W3", "W4"])
+    XCTAssertEqual(payload.chartBuckets.map(\.total), [1, 2, 3, 4])
+    XCTAssertEqual(payload.repoRows.first?.count, 10)
+
+    store.bin = .month
+
+    XCTAssertEqual(store.visibleBucketLabels, ["W1-W4"])
+    XCTAssertEqual(store.bucketTotals, [10])
+  }
+
   func testSettingsSnapshotCanBeApplied() {
     let store = PRActivityStore.sample(
       now: Date(timeIntervalSince1970: 0),

@@ -36,7 +36,7 @@ extension GitHubPRActivityProvider {
   }
 }
 
-struct GitHubCachedAPIResponse {
+struct GitHubCachedAPIResponse: Codable, Equatable {
   var data: Data
   var eTag: String
 }
