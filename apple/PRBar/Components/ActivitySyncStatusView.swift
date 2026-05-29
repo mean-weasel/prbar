@@ -6,19 +6,22 @@ struct ActivitySyncStatusView: View {
   var lastRefreshedAt: Date?
   var lastRefreshAttemptAt: Date?
   var issue: AuthIssue?
+  var repositoryIssues: [ActivityRepositoryIssue]
 
   init(
     isRefreshing: Bool,
     progress: ActivityRefreshProgress? = nil,
     lastRefreshedAt: Date?,
     lastRefreshAttemptAt: Date?,
-    issue: AuthIssue?
+    issue: AuthIssue?,
+    repositoryIssues: [ActivityRepositoryIssue] = []
   ) {
     self.isRefreshing = isRefreshing
     self.progress = progress
     self.lastRefreshedAt = lastRefreshedAt
     self.lastRefreshAttemptAt = lastRefreshAttemptAt
     self.issue = issue
+    self.repositoryIssues = repositoryIssues
   }
 
   var body: some View {
@@ -48,6 +51,9 @@ struct ActivitySyncStatusView: View {
   private var statusIcon: some View {
     if isRefreshing {
       ProgressView()
+    } else if repositoryIssues.isEmpty == false {
+      Image(systemName: "exclamationmark.circle.fill")
+        .foregroundStyle(.orange)
     } else if issue != nil && lastRefreshedAt != nil {
       Image(systemName: "clock.badge.exclamationmark.fill")
         .foregroundStyle(.orange)
@@ -63,6 +69,9 @@ struct ActivitySyncStatusView: View {
   private var title: String {
     if isRefreshing {
       return "Refreshing GitHub activity"
+    }
+    if repositoryIssues.isEmpty == false {
+      return "Partial GitHub sync"
     }
     if issue != nil && lastRefreshedAt != nil {
       return "Showing cached GitHub data"
@@ -90,6 +99,14 @@ struct ActivitySyncStatusView: View {
       }
       return "\(repoText) Found \(progress.pullRequestCount) PRs and \(progress.releaseCount) releases so far."
     }
+    if repositoryIssues.isEmpty == false {
+      let issueCount = repositoryIssues.count
+      let issueText = issueCount == 1 ? "1 repository needs attention" : "\(issueCount) repositories need attention"
+      guard let firstIssue = repositoryIssues.first else {
+        return "Synced available data. \(issueText)."
+      }
+      return "Synced available data. \(issueText): \(firstIssue.message)"
+    }
     if let issue {
       if let lastRefreshedAt {
         return "\(attemptLabel) \(issue.message) Showing cached data from \(dateFormatter.string(from: lastRefreshedAt))."
@@ -99,7 +116,7 @@ struct ActivitySyncStatusView: View {
     if let lastRefreshedAt {
       return dateFormatter.string(from: lastRefreshedAt)
     }
-    return "Pull to refresh or use the refresh button to sync included repos."
+    return "Pull to refresh or use the refresh button to sync included repositories."
   }
 
   private var attemptLabel: String {
@@ -125,6 +142,15 @@ struct ActivitySyncStatusView: View {
     ActivitySyncStatusView(isRefreshing: false, lastRefreshedAt: Date(), lastRefreshAttemptAt: Date(), issue: nil)
     ActivitySyncStatusView(isRefreshing: true, lastRefreshedAt: nil, lastRefreshAttemptAt: Date(), issue: nil)
     ActivitySyncStatusView(isRefreshing: false, lastRefreshedAt: Date(), lastRefreshAttemptAt: Date(), issue: AuthIssue(id: "issue", title: "Issue", message: "GitHub was unavailable."))
+    ActivitySyncStatusView(
+      isRefreshing: false,
+      lastRefreshedAt: Date(),
+      lastRefreshAttemptAt: Date(),
+      issue: nil,
+      repositoryIssues: [
+        ActivityRepositoryIssue(repositoryID: "mean-weasel/private-api", repositoryFullName: "mean-weasel/private-api", title: "Repository needs attention", message: "Authorize SSO for mean-weasel/private-api, then refresh again.")
+      ]
+    )
   }
   .padding()
 }

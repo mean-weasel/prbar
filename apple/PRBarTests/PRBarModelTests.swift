@@ -989,6 +989,48 @@ final class PRBarModelTests: XCTestCase {
   }
 
   @MainActor
+  func testRefreshingActivityAppliesPartialSnapshotAndRecordsRepositoryIssues() async {
+    let refreshDate = SampleData.dateTime("2026-05-24T22:05:00Z")
+    let cacheStore = InMemoryGitHubActivityCacheStore()
+    let store = PRBarStore.sample(
+      activityProvider: StaticGitHubActivityProvider(
+        snapshot: GitHubActivitySnapshot(
+          pullRequests: [
+            PullRequest(id: "mean-weasel/prbar#92", title: "Partial sync PR", repoID: "mean-weasel/prbar", number: 92, mergedAt: SampleData.dateTime("2026-05-24T20:30:00Z"))
+          ],
+          releases: [
+            ReleaseMoment(id: "mean-weasel/prbar@release:v2.1.0", repoID: "mean-weasel/prbar", title: "Partial sync release", tag: "v2.1.0", date: SampleData.date("2026-05-24"), source: .release, notes: "Release notes", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v2.1.0")!)
+          ],
+          anchorDate: SampleData.date("2026-05-24"),
+          repositoryIssues: [
+            ActivityRepositoryIssue(
+              repositoryID: "mean-weasel/private-api",
+              repositoryFullName: "mean-weasel/private-api",
+              title: "Repository needs attention",
+              message: "Authorize SSO for mean-weasel/private-api, then refresh again."
+            )
+          ]
+        )
+      ),
+      activityCacheStore: cacheStore,
+      currentDate: { refreshDate }
+    )
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "mean-weasel/private-api", owner: "mean-weasel", name: "private-api", visibility: .private, colorHex: "#f59e0b", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#92"])
+    XCTAssertEqual(store.releases.map(\.id), ["mean-weasel/prbar@release:v2.1.0"])
+    XCTAssertEqual(store.activityRepositoryIssues.map(\.repositoryID), ["mean-weasel/private-api"])
+    XCTAssertNil(store.activityRefreshIssue)
+    XCTAssertEqual(store.lastActivityRefreshAt, refreshDate)
+    XCTAssertEqual(cacheStore.record?.snapshot.repositoryIssues.map(\.repositoryID), ["mean-weasel/private-api"])
+  }
+
+  @MainActor
   func testActivityRefreshFailureKeepsSampleActivityAndShowsIssue() async {
     let store = PRBarStore.sample(
       authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore(), session: .fixture),
@@ -1080,6 +1122,62 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.activityRefreshIssue?.title, "GitHub rate limit reached")
     XCTAssertTrue(store.activityRefreshIssue?.message.contains("slow down") == true)
   }
+
+  @MainActor
+  func testRefreshingActivityUnauthorizedRemainsGlobalFailure() async {
+    let store = PRBarStore.sample(
+      activityProvider: ThrowingGitHubActivityProvider(error: GitHubAPIError.unauthorized)
+    )
+    store.activityRepositoryIssues = [
+      ActivityRepositoryIssue(
+        repositoryID: "mean-weasel/private-api",
+        repositoryFullName: "mean-weasel/private-api",
+        title: "Repository needs attention",
+        message: "Authorize SSO for mean-weasel/private-api, then refresh again."
+      )
+    ]
+    let originalPullRequests = store.pullRequests
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(store.pullRequests, originalPullRequests)
+    XCTAssertTrue(store.activityRepositoryIssues.isEmpty)
+    XCTAssertEqual(store.activityRefreshIssue?.id, "github-session-expired")
+    XCTAssertEqual(store.activityRefreshIssue?.title, "GitHub session expired")
+  }
+
+  @MainActor
+  func testDuplicateRefreshWhileInFlightDoesNotStartSecondRefresh() async {
+    let provider = SuspendedGitHubActivityProvider()
+    let store = PRBarStore.sample(activityProvider: provider)
+
+    let firstRefresh = Task {
+      await store.refreshActivity()
+    }
+    for _ in 0..<10 where provider.activityAsyncCallCount == 0 {
+      await Task.yield()
+    }
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(provider.activityAsyncCallCount, 1)
+
+    provider.resume(with: GitHubActivitySnapshot(pullRequests: [], releases: [], anchorDate: SampleData.today))
+    await firstRefresh.value
+    XCTAssertFalse(store.isRefreshingActivity)
+  }
+
+  @MainActor
+  func testCancelledRefreshLeavesExistingDataWithoutRefreshIssue() async {
+    let store = PRBarStore.sample(activityProvider: CancellingGitHubActivityProvider())
+    let originalPullRequests = store.pullRequests
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(store.pullRequests, originalPullRequests)
+    XCTAssertNil(store.activityRefreshIssue)
+    XCTAssertFalse(store.isRefreshingActivity)
+  }
 }
 
 private extension PRBarModelTests {
@@ -1124,6 +1222,7 @@ private struct ThrowingGitHubActivityProvider: GitHubActivityProviding {
 private final class SuspendedGitHubActivityProvider: GitHubActivityProviding, @unchecked Sendable {
   private var continuation: CheckedContinuation<GitHubActivitySnapshot, Error>?
   private var pendingSnapshot: GitHubActivitySnapshot?
+  private(set) var activityAsyncCallCount = 0
 
   func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
     GitHubActivitySnapshot(pullRequests: [], releases: [], anchorDate: endDate)
@@ -1135,6 +1234,7 @@ private final class SuspendedGitHubActivityProvider: GitHubActivityProviding, @u
     lookbackDays: Int,
     progress: (@MainActor (ActivityRefreshProgress) -> Void)?
   ) async throws -> GitHubActivitySnapshot {
+    activityAsyncCallCount += 1
     await progress?(
       ActivityRefreshProgress(
         totalRepositories: repositories.count,
@@ -1160,6 +1260,12 @@ private final class SuspendedGitHubActivityProvider: GitHubActivityProviding, @u
     } else {
       pendingSnapshot = snapshot
     }
+  }
+}
+
+private struct CancellingGitHubActivityProvider: GitHubActivityProviding {
+  func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
+    throw CancellationError()
   }
 }
 
