@@ -73,6 +73,16 @@ case "$PROFILE" in
       TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testPreviewDeviceCanLaunchCoreTabs")
     fi
     ;;
+  setup)
+    TESTS=(
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection"
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testRepositorySetupSearchAndFiltersRepos"
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testFirstRunSelectsOneRepoFinishesSetupAndShowsSyncedActivity"
+    )
+    ;;
+  partial)
+    TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testPartialRefreshShowsRepositoryIssueAndKeepsSyncedData")
+    ;;
   live)
     if [[ -z "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ]]; then
       echo "PRBAR_IOS_LIVE_GITHUB_TOKEN is required for IOS_UI_SMOKE_PROFILE=live." >&2
@@ -85,7 +95,7 @@ case "$PROFILE" in
     TESTS=()
     ;;
   *)
-    echo "Unknown IOS_UI_SMOKE_PROFILE '$PROFILE'. Expected fast, pr, full, or live." >&2
+    echo "Unknown IOS_UI_SMOKE_PROFILE '$PROFILE'. Expected fast, pr, setup, partial, full, or live." >&2
     exit 64
     ;;
 esac

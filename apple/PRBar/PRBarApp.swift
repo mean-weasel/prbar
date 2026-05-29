@@ -50,6 +50,8 @@ struct PRBarApp: App {
           activityProvider = UITestingSlowGitHubActivityProvider(snapshot: Self.uiTestingRefreshSnapshot)
         } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-seed-activity-cache") {
           activityProvider = StaticGitHubActivityProvider(snapshot: Self.uiTestingCachedSnapshot)
+        } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-partial-sync") {
+          activityProvider = StaticGitHubActivityProvider(snapshot: Self.uiTestingPartialSnapshot)
         } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-data") {
           activityProvider = SequencedGitHubActivityProvider(snapshots: [Self.uiTestingRefreshSnapshot, Self.uiTestingRefreshSnapshot])
         } else {
@@ -233,6 +235,26 @@ private extension PRBarApp {
         ReleaseMoment(id: "prbar@release:v9.9.9", repoID: "prbar", title: "UI refresh release", tag: "v9.9.9", date: SampleData.date("2026-05-24"), source: .release, notes: "Refresh data loaded from the deterministic UI test provider.", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v9.9.9")!)
       ],
       anchorDate: SampleData.date("2026-05-24")
+    )
+  }
+
+  static var uiTestingPartialSnapshot: GitHubActivitySnapshot {
+    GitHubActivitySnapshot(
+      pullRequests: [
+        PullRequest(id: "prbar#1001", title: "Partial sync visible PR", repoID: "prbar", number: 1001, mergedAt: SampleData.dateTime("2026-05-24T18:10:00Z"))
+      ],
+      releases: [
+        ReleaseMoment(id: "prbar@release:v10.0.1", repoID: "prbar", title: "Partial sync visible release", tag: "v10.0.1", date: SampleData.date("2026-05-24"), source: .release, notes: "Visible release from the accessible repo while another repo needs attention.", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v10.0.1")!)
+      ],
+      anchorDate: SampleData.date("2026-05-24"),
+      repositoryIssues: [
+        ActivityRepositoryIssue(
+          repositoryID: "client-api",
+          repositoryFullName: "example/client-api",
+          title: "Repository needs attention",
+          message: "Authorize SSO for example/client-api, then refresh again."
+        )
+      ]
     )
   }
 }
