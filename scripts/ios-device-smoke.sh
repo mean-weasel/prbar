@@ -15,6 +15,14 @@ RESULT_BUNDLE="${IOS_DEVICE_SMOKE_RESULT_BUNDLE:-apple/DeviceSmokeResults.xcresu
 PROFILE="${IOS_UI_SMOKE_PROFILE:-pr}"
 DEVICE_READY_TIMEOUT="${IOS_DEVICE_READY_TIMEOUT:-45}"
 XCODEBUILD_EXTRA_ARGS=()
+TEMP_FILES=()
+
+cleanup() {
+  for temp_file in "${TEMP_FILES[@]}"; do
+    rm -f "$temp_file"
+  done
+}
+trap cleanup EXIT
 
 if [[ -z "${IOS_DESTINATION:-}" ]]; then
   echo "Resolving physical $DEVICE_ROLE by name: $DEVICE_NAME"
@@ -35,6 +43,23 @@ if [[ -n "${PRBAR_IOS_GITHUB_CLIENT_ID:-}" ]]; then
   XCODEBUILD_EXTRA_ARGS+=("PRBAR_IOS_GITHUB_CLIENT_ID=$PRBAR_IOS_GITHUB_CLIENT_ID")
 fi
 
+if [[ -n "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" || -n "${PRBAR_IOS_LIVE_REPOSITORY:-}" || -n "${PRBAR_IOS_LIVE_GITHUB_LOGIN:-}" ]]; then
+  live_xcconfig="$(mktemp "${TMPDIR:-/tmp}/prbar-live-smoke.XXXXXX.xcconfig")"
+  TEMP_FILES+=("$live_xcconfig")
+  {
+    if [[ -n "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ]]; then
+      printf 'PRBAR_IOS_LIVE_GITHUB_TOKEN = %s\n' "$PRBAR_IOS_LIVE_GITHUB_TOKEN"
+    fi
+    if [[ -n "${PRBAR_IOS_LIVE_REPOSITORY:-}" ]]; then
+      printf 'PRBAR_IOS_LIVE_REPOSITORY = %s\n' "$PRBAR_IOS_LIVE_REPOSITORY"
+    fi
+    if [[ -n "${PRBAR_IOS_LIVE_GITHUB_LOGIN:-}" ]]; then
+      printf 'PRBAR_IOS_LIVE_GITHUB_LOGIN = %s\n' "$PRBAR_IOS_LIVE_GITHUB_LOGIN"
+    fi
+  } >"$live_xcconfig"
+  XCODEBUILD_EXTRA_ARGS+=("-xcconfig" "$live_xcconfig")
+fi
+
 if [[ -n "${IOS_XCODEBUILD_EXTRA_ARGS:-}" ]]; then
   read -r -a USER_XCODEBUILD_EXTRA_ARGS <<<"$IOS_XCODEBUILD_EXTRA_ARGS"
   XCODEBUILD_EXTRA_ARGS+=("${USER_XCODEBUILD_EXTRA_ARGS[@]}")
@@ -48,6 +73,16 @@ case "$PROFILE" in
       TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testPreviewDeviceCanLaunchCoreTabs")
     fi
     ;;
+  setup)
+    TESTS=(
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testSignedOutGitHubDeviceAuthorizationContinuesToRepoSelection"
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testRepositorySetupSearchAndFiltersRepos"
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testFirstRunSelectsOneRepoFinishesSetupAndShowsSyncedActivity"
+    )
+    ;;
+  partial)
+    TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testPartialRefreshShowsRepositoryIssueAndKeepsSyncedData")
+    ;;
   live)
     if [[ -z "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ]]; then
       echo "PRBAR_IOS_LIVE_GITHUB_TOKEN is required for IOS_UI_SMOKE_PROFILE=live." >&2
@@ -60,7 +95,7 @@ case "$PROFILE" in
     TESTS=()
     ;;
   *)
-    echo "Unknown IOS_UI_SMOKE_PROFILE '$PROFILE'. Expected fast, pr, full, or live." >&2
+    echo "Unknown IOS_UI_SMOKE_PROFILE '$PROFILE'. Expected fast, pr, setup, partial, full, or live." >&2
     exit 64
     ;;
 esac
@@ -100,7 +135,7 @@ EOF
 done
 
 lock_json="$(mktemp "${TMPDIR:-/tmp}/prbar-device-lock.XXXXXX")"
-trap 'rm -f "$lock_json"' EXIT
+TEMP_FILES+=("$lock_json")
 if xcrun devicectl device info lockState --device "$IOS_DEVICE_ID" --json-output "$lock_json" --quiet --timeout 10 >/dev/null 2>&1; then
   echo "Device lock state:"
   jq -r '.result | "  passcodeRequired=\(.passcodeRequired) unlockedSinceBoot=\(.unlockedSinceBoot)"' "$lock_json"
@@ -121,9 +156,11 @@ args=(
   -resultBundlePath "$RESULT_BUNDLE"
 )
 
-for test_id in "${TESTS[@]}"; do
-  args+=("-only-testing:$test_id")
-done
+if ((${#TESTS[@]} > 0)); then
+  for test_id in "${TESTS[@]}"; do
+    args+=("-only-testing:$test_id")
+  done
+fi
 
 for extra_arg in "${XCODEBUILD_EXTRA_ARGS[@]+"${XCODEBUILD_EXTRA_ARGS[@]}"}"; do
   args+=("$extra_arg")

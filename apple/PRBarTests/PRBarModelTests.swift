@@ -1154,8 +1154,15 @@ final class PRBarModelTests: XCTestCase {
     let firstRefresh = Task {
       await store.refreshActivity()
     }
-    for _ in 0..<10 where provider.activityAsyncCallCount == 0 {
-      await Task.yield()
+    for _ in 0..<1_000 where provider.activityAsyncCallCount == 0 {
+      try? await Task.sleep(nanoseconds: 1_000_000)
+    }
+
+    XCTAssertEqual(provider.activityAsyncCallCount, 1)
+    guard provider.activityAsyncCallCount == 1 else {
+      provider.resume(with: GitHubActivitySnapshot(pullRequests: [], releases: [], anchorDate: SampleData.today))
+      await firstRefresh.value
+      return
     }
 
     await store.refreshActivity()

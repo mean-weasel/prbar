@@ -339,6 +339,13 @@ async function runChecks(page) {
   await page.waitForFunction(() => document.body.innerText.includes("Copied Builder Proof link"));
   await assertBodyIncludes(page, "/profile share feedback", "Copied Builder Proof link");
   await assertBodyIncludes(page, "/profile share output", "https://prbar.dev/");
+  await page.goto(`${baseUrl}/maya.codes`, { waitUntil: "networkidle" });
+  await assertBodyIncludes(page, "/maya.codes public link", "Maya R. Chen");
+  await assertBodyIncludes(page, "/maya.codes public link", "PUBLISHED BUILDER PROOF");
+  await page.goto(`${baseUrl}/maya.codes#builder-card`, { waitUntil: "networkidle" });
+  await assertBodyIncludes(page, "/maya.codes#builder-card public link", "SHORT VERSION");
+  await assertSectionNearTop(page, "/maya.codes#builder-card public link", "#builder-card");
+  await page.goto(`${baseUrl}/#/profile`, { waitUntil: "networkidle" });
   await page.locator('.proof-share-rail [data-share-action="embed"]').click();
   await page.waitForFunction(() => document.body.innerText.includes("Copied embed snippet"));
   await assertBodyIncludes(page, "/profile embed output", "data-prbar-card");
@@ -373,13 +380,19 @@ async function runChecks(page) {
   await assertLocatorExcludes(page, ".topbar-account", "/receipt public preview topbar github", "GitHub connected");
   await assertLocatorExcludes(page, ".topbar-account", "/receipt public preview topbar logout", "Log out");
   await assertLocatorCount(page, ".owner-proof-actions", "/receipt public preview owner controls", 0);
+  await page.locator('.topbar .nav button[data-section="/repos"]').click();
+  await page.waitForURL(`${baseUrl}/repos`);
+  await assertBodyExcludes(page, "/repos after public preview nav", "PUBLIC PROSPECT VIEW");
+  await assertBodyIncludes(page, "/repos after public preview nav", "PUBLISHED OWNER");
+  await assertLocatorIncludes(page, ".topbar-account", "/repos after public preview topbar owner", "GitHub connected");
+  await page.goto(`${baseUrl}/#/profile`, { waitUntil: "networkidle" });
+  await page.locator('.owner-hero-actions [data-preview-action="enter"]').click();
   await page.locator(".brand").click();
   await page.waitForURL(`${baseUrl}/home`);
   await assertActiveProofStep(page, "/home public preview proof path", "Share anywhere");
   await page.locator('.topbar .nav button[data-section="/profile"]').click();
   await page.waitForURL(`${baseUrl}/profile`);
-  await assertBodyIncludes(page, "/profile public preview restored", "This is how signed-out visitors see Builder Proof.");
-  await page.locator('[data-preview-action="exit"]').click();
+  await assertBodyExcludes(page, "/profile public preview cleared", "This is how signed-out visitors see Builder Proof.");
   await assertBodyIncludes(page, "/profile owner controls restored", "Owner controls");
 
   for (const [route, expectedText, selector] of [

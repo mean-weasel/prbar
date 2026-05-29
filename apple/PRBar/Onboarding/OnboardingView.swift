@@ -143,19 +143,27 @@ struct OnboardingView: View {
             .foregroundStyle(.secondary)
         }
       }
-
-      Section {
+    }
+    .navigationTitle("PRBar")
+    .safeAreaInset(edge: .bottom) {
+      VStack(spacing: 8) {
         Button("Continue with GitHub") {
           store.connectGitHub()
         }
         .buttonStyle(.borderedProminent)
+        .controlSize(.large)
+        .frame(maxWidth: .infinity)
 
         Button("Use sample data") {
           store.routeState = .authenticated
         }
+        .font(.subheadline)
       }
+      .padding(.horizontal)
+      .padding(.top, 10)
+      .padding(.bottom, 8)
+      .background(.bar)
     }
-    .navigationTitle("PRBar")
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) {
         Button("Done") {

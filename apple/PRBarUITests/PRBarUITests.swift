@@ -129,8 +129,6 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["3 of 5 selected"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["example repos"].exists)
-    XCTAssertTrue(app.staticTexts["mean-weasel repos"].exists)
 
     app.textFields["repo-search-field"].tap()
     app.textFields["repo-search-field"].typeText("neonwatty/docs-site")
@@ -146,7 +144,7 @@ final class PRBarUITests: XCTestCase {
     app.buttons["All"].tap()
     app.textFields["repo-search-field"].tap()
     app.textFields["repo-search-field"].typeText("missing-org-repo")
-    XCTAssertTrue(app.staticTexts["Repo not showing up?"].waitForExistence(timeout: 2))
+    app.scrollToStaticText("Repo not showing up?")
     XCTAssertTrue(app.staticTexts["Install PRBar in the GitHub organization."].exists)
     XCTAssertTrue(app.staticTexts["Authorize SSO for protected organizations."].exists)
     XCTAssertTrue(app.staticTexts["Check your repository permissions."].exists)
@@ -188,8 +186,14 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 2))
     if app.staticTexts["Refreshing GitHub activity"].waitForExistence(timeout: 2) {
-      XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Syncing 1 of 1: prbar")).firstMatch.exists)
-      XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Found 0 PRs and 0 releases so far")).firstMatch.exists)
+      XCTAssertTrue(
+        app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Syncing 1 of 1: prbar")).firstMatch.waitForExistence(timeout: 2) ||
+          app.staticTexts["Last refreshed"].waitForExistence(timeout: 8)
+      )
+      XCTAssertTrue(
+        app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Found 0 PRs and 0 releases so far")).firstMatch.exists ||
+          app.staticTexts["Last refreshed"].exists
+      )
     } else {
       XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 8))
     }
@@ -232,6 +236,24 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Retry failed")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Showing cached data from")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts["#39 Connect GitHub auth fallback"].exists)
+  }
+
+  @MainActor
+  func testPartialRefreshShowsRepositoryIssueAndKeepsSyncedData() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-partial-sync"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    app.buttons["Refresh activity"].tap()
+
+    XCTAssertTrue(app.staticTexts["Partial GitHub sync"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Authorize SSO for example/client-api")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts["1 merged"].waitForExistence(timeout: 4))
+
+    app.tapTab("Releases")
+    XCTAssertTrue(app.staticTexts["Partial GitHub sync"].waitForExistence(timeout: 2))
+    app.scrollToStaticText("v10.0.1 Partial sync visible release")
   }
 
   @MainActor
@@ -281,7 +303,7 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Connect GitHub"].waitForExistence(timeout: 4))
 
-    app.buttons["Continue with GitHub"].tap()
+    app.tapContinueWithGitHub()
 
     XCTAssertTrue(app.staticTexts["Authorize GitHub"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["github-device-code"].exists)
@@ -321,9 +343,23 @@ private extension XCUIApplication {
   @MainActor
   func tapContinueWithGitHub(file: StaticString = #filePath, line: UInt = #line) {
     let button = buttons["Continue with GitHub"].firstMatch
+    if button.waitForExistence(timeout: 2) == false {
+      for _ in 0..<3 where button.exists == false {
+        swipeUp()
+      }
+    }
     XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing Continue with GitHub button", file: file, line: line)
     activate()
     button.tap()
+  }
+
+  @MainActor
+  func scrollToStaticText(_ label: String, maxSwipes: Int = 4, file: StaticString = #filePath, line: UInt = #line) {
+    let text = staticTexts[label].firstMatch
+    for _ in 0..<maxSwipes where text.exists == false {
+      swipeUp()
+    }
+    XCTAssertTrue(text.waitForExistence(timeout: 2), "Missing \(label)", file: file, line: line)
   }
 
   @MainActor

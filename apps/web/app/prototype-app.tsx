@@ -299,9 +299,15 @@ function readStored<T>(key: string, fallback: T): T {
 
 function currentRoute() {
   if (typeof window === "undefined") return "/home";
-  const hashPath = window.location.hash.replace("#", "");
-  const path = hashPath || window.location.pathname || "/home";
-  return validRoutes.has(path) ? path : "/home";
+  const hash = window.location.hash;
+  if (hash.startsWith("#/")) {
+    const hashPath = hash.slice(1);
+    return validRoutes.has(hashPath) ? hashPath : "/home";
+  }
+
+  const path = window.location.pathname || "/home";
+  if (validRoutes.has(path)) return path;
+  return path === "/" ? "/home" : "/profile";
 }
 
 function sectionFor(path: string, session?: SessionState) {
@@ -409,17 +415,25 @@ function fullProfileLink(profile: ProfileState) {
   return `https://${profile.link.replace(/^https?:\/\//, "")}`;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function escapeHtmlAttribute(value: string) {
+  return escapeHtml(value)
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function embedSnippet(profile: ProfileState) {
-  return `<a href="${fullProfileLink(profile)}" data-prbar-card="${profile.handle}">${profile.name}'s Builder Proof</a>`;
+  return `<a href="${escapeHtmlAttribute(fullProfileLink(profile))}" data-prbar-card="${escapeHtmlAttribute(profile.handle)}">${escapeHtml(profile.name)}'s Builder Proof</a>`;
 }
 
 function builderCardSvg(profile: ProfileState, metrics: ReturnType<typeof sourceMetrics>) {
-  const escape = (value: string) =>
-    value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+  const escape = escapeHtmlAttribute;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="${escape(profile.name)} Builder Proof card">
   <rect width="960" height="540" rx="36" fill="#10141f"/>
@@ -475,6 +489,7 @@ export default function PrototypeApp() {
   }, []);
 
   const navigate = useCallback((path: string) => {
+    if (!isProofRoute(path)) setPublicPreview(false);
     window.history.pushState({}, "", path);
     setRoute(path);
     window.scrollTo({ top: 0 });
@@ -529,14 +544,15 @@ export default function PrototypeApp() {
     return <div className="loading">Loading PRBar prototype...</div>;
   }
 
-  const productState = productStateFor(session, workflow, publicPreview);
+  const publicPreviewActive = publicPreview && isProofRoute(route);
+  const productState = productStateFor(session, workflow, publicPreviewActive);
 
   return (
     <Shell
       navigate={navigate}
       profile={profile}
       productState={productState}
-      publicPreview={publicPreview}
+      publicPreview={publicPreviewActive}
       resetSession={resetSession}
       route={route}
       session={session}
@@ -553,7 +569,7 @@ export default function PrototypeApp() {
           navigate={navigate}
           productState={productState}
           profile={profile}
-          publicPreview={publicPreview}
+          publicPreview={publicPreviewActive}
           publishWorkflow={publishWorkflow}
           route={route}
           session={session}
@@ -1452,7 +1468,8 @@ function ProfilePage({
 
   const writeClipboard = async (value: string) => {
     try {
-      await window.navigator.clipboard?.writeText(value);
+      if (!window.navigator.clipboard?.writeText) return false;
+      await window.navigator.clipboard.writeText(value);
       return true;
     } catch {
       return false;
