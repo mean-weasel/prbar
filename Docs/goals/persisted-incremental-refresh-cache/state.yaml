@@ -1,0 +1,323 @@
+version: 2
+
+goal:
+  title: "Persisted Incremental Refresh Cache"
+  slug: "persisted-incremental-refresh-cache"
+  kind: specific
+  tranche: "Persist the incremental merged-PR refresh cache across relaunches, verify correctness safeguards, update fixture benchmark evidence, and attempt an optional live GitHub smoke."
+  status: done
+  oracle:
+    signal: "Fixture tests and benchmark evidence prove post-relaunch persisted incremental refresh works safely; optional live GitHub smoke records real behavior when available."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Final Judge or PM audit cites passing tests, benchmark/report output, cache invalidation/fallback coverage, overlap/dedupe coverage, and live-smoke result or skip reason."
+  intake:
+    original_request: "Use GoalBuddy to plan optimizing menu bar Refresh, choosing persisted incremental PR cache first."
+    interpreted_outcome: "PR Menu Bar manual refresh should avoid full-window merged-PR GitHub work after relaunch by using a safe persisted incremental cache."
+    input_shape: specific
+    audience: "PR Menu Bar maintainer and GitHub-backed app users"
+    authority: approved
+    proof_type: metric
+    completion_proof: "Persisted cache implementation is verified by deterministic fixture tests/benchmark and optional live GitHub smoke evidence."
+    likely_misfire: "Improving only in-memory refresh or trusting stale persisted data while relaunch refresh still redoes the full search window."
+    blind_spots_considered:
+      - "GitHub search indexing lag."
+      - "Stale, corrupt, or schema-incompatible persisted cache."
+      - "Token, user, owner, repository, or settings/window compatibility changes."
+      - "Failed refresh advancing the watermark."
+      - "Release refresh latency being mistaken for PR activity refresh latency."
+    existing_plan_facts:
+      - "User selected persisted incremental PR cache as the first target."
+      - "User selected fixture proof plus optional live GitHub smoke."
+      - "User selected a fresh implementation goal."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/persisted-incremental-refresh-cache/"
+    command: "npx goalbuddy board docs/goals/persisted-incremental-refresh-cache"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: low
+    objective: "Map the current refresh, incremental cache, persistence, settings, benchmark, and test surfaces relevant to persisted merged-PR cache work."
+    inputs:
+      - "Sources/Models/GitHubPRActivityProvider*.swift"
+      - "Sources/Models/PRActivityRefresher.swift"
+      - "Sources/App/PRMenuBarApp.swift"
+      - "Sources/Models/PRActivityStore.swift"
+      - "Tests/PRMenuBarTests/*Refresh*"
+      - "Tests/PRMenuBarTests/*Incremental*"
+      - "scripts/refresh-benchmark.sh"
+      - "Docs/goals/refresh-efficiency-measurement/notes/T010-final-report.md"
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation files."
+      - "Prefer concrete file-path evidence."
+      - "Identify how persisted cache should be scoped and invalidated."
+    expected_output:
+      - "Refresh/cache call graph."
+      - "Existing persistence mechanisms or lack thereof."
+      - "Exact correctness risks and fallback triggers."
+      - "Verification commands and benchmark hooks."
+      - "Candidate Worker slice with likely allowed files."
+    receipt:
+      result: done
+      note: "notes/T001-refresh-cache-scout.md"
+      summary: "Mapped the refresh path, in-memory discovery/ETag/merged-PR caches, existing tests, benchmark hooks, and persistence gap. Recommended a single Worker slice for a persisted merged-PR cache store with overlap/dedupe and restart/fallback tests."
+      evidence:
+        - "Sources/App/PRMenuBarApp.swift"
+        - "Sources/Models/GitHubPRActivityProvider.swift"
+        - "Sources/Models/GitHubPRActivityProvider+IncrementalSearch.swift"
+        - "Sources/Models/PRSettingsStore.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderIncrementalTests.swift"
+        - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+        - "scripts/refresh-benchmark.sh"
+      spawned_tasks:
+        - T003
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the largest safe implementation slice for persisted incremental refresh cache based on Scout evidence."
+    inputs:
+      - "T001 receipt"
+      - "Goal oracle"
+      - "Current dirty diff"
+    constraints:
+      - "Do not implement."
+      - "Reject a slice that cannot prove relaunch/post-provider-restart behavior."
+      - "Require allowed_files, verify commands, and stop conditions."
+    expected_output:
+      - "Decision."
+      - "Exact Worker objective."
+      - "allowed_files."
+      - "verify."
+      - "stop_if."
+      - "Deferred or blocked work."
+    receipt:
+      result: done
+      decision: "approved"
+      full_outcome_complete: false
+      rationale: "Scout found a clear persistence gap with existing stable PR-id dedupe and tests. The largest safe first slice is implementation plus targeted correctness tests; benchmark/report work remains queued as T004 so the implementation can land behind precise unit coverage first."
+      worker_task: T003
+      allowed_files:
+        - "Sources/Models/GitHubPRActivityProvider.swift"
+        - "Sources/Models/GitHubPRActivityProvider+IncrementalSearch.swift"
+        - "Sources/Models/GitHubMergedPullRequest.swift"
+        - "Sources/Models/GitHubGraphQLSearch.swift"
+        - "Sources/Models/GitHubMergedPullRequestCacheStore.swift"
+        - "Sources/Models/PRActivityProviderFactory.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderIncrementalTests.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderTestSupport.swift"
+        - "Tests/PRMenuBarTests/GitHubMergedPullRequestCacheStoreTests.swift"
+      verify:
+        - "./scripts/format-check.sh"
+        - "xcodegen generate && xcodebuild test -project PRMenuBar.xcodeproj -scheme PRMenuBar -configuration Debug -destination 'platform=macOS' -derivedDataPath build -only-testing:PRMenuBarTests/GitHubPRActivityProviderIncrementalTests -only-testing:PRMenuBarTests/GitHubMergedPullRequestCacheStoreTests CODE_SIGN_IDENTITY='-' CODE_SIGNING_REQUIRED=NO"
+      stop_if:
+        - "Need to edit files outside allowed_files."
+        - "Persisted cache cannot be scoped without storing or exposing secrets."
+        - "Cache invalid/corrupt/incompatible fallback behavior is ambiguous."
+        - "Verification fails twice with the same failure."
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the persisted incremental refresh cache slice selected by Judge."
+    allowed_files:
+      - "Sources/Models/GitHubPRActivityProvider.swift"
+      - "Sources/Models/GitHubPRActivityProvider+IncrementalSearch.swift"
+      - "Sources/Models/GitHubMergedPullRequest.swift"
+      - "Sources/Models/GitHubGraphQLSearch.swift"
+      - "Sources/Models/GitHubMergedPullRequestCacheStore.swift"
+      - "Sources/Models/PRActivityProviderFactory.swift"
+      - "Tests/PRMenuBarTests/GitHubPRActivityProviderIncrementalTests.swift"
+      - "Tests/PRMenuBarTests/GitHubPRActivityProviderTestSupport.swift"
+      - "Tests/PRMenuBarTests/GitHubMergedPullRequestCacheStoreTests.swift"
+    verify:
+      - "./scripts/format-check.sh"
+      - "xcodegen generate && xcodebuild test -project PRMenuBar.xcodeproj -scheme PRMenuBar -configuration Debug -destination 'platform=macOS' -derivedDataPath build -only-testing:PRMenuBarTests/GitHubPRActivityProviderIncrementalTests -only-testing:PRMenuBarTests/GitHubMergedPullRequestCacheStoreTests CODE_SIGN_IDENTITY='-' CODE_SIGNING_REQUIRED=NO"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Cache scoping or invalidation behavior is ambiguous."
+      - "Implementation would make live GitHub credentials mandatory for completion."
+      - "Verification fails twice with the same failure."
+      - "Unrelated dirty work blocks safe edits."
+    receipt:
+      result: done
+      changed_files:
+        - "Sources/Models/GitHubGraphQLSearch.swift"
+        - "Sources/Models/GitHubMergedPullRequest.swift"
+        - "Sources/Models/GitHubMergedPullRequestCacheStore.swift"
+        - "Sources/Models/GitHubPRActivityProvider.swift"
+        - "Sources/Models/GitHubPRActivityProvider+IncrementalSearch.swift"
+        - "Sources/Models/PRActivityProviderFactory.swift"
+        - "Tests/PRMenuBarTests/GitHubMergedPullRequestCacheStoreTests.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderIncrementalTests.swift"
+      commands:
+        - cmd: "./scripts/format-check.sh"
+          status: pass
+        - cmd: "xcodegen generate && xcodebuild test -project PRMenuBar.xcodeproj -scheme PRMenuBar -configuration Debug -destination 'platform=macOS' -derivedDataPath build -only-testing:PRMenuBarTests/GitHubPRActivityProviderIncrementalTests -only-testing:PRMenuBarTests/GitHubMergedPullRequestCacheStoreTests CODE_SIGN_IDENTITY='-' CODE_SIGNING_REQUIRED=NO"
+          status: pass
+      summary: "Added a UserDefaults-backed merged-PR cache keyed by token fingerprint, made cached PR/search owner models codable, persisted successful merged-PR caches, restored persisted compatible caches after provider restart, scoped compatibility by owners/merged user/repository IDs/window coverage, and added a 30-minute overlap with stable PR-id dedupe. TDD red was observed first: targeted tests failed on the missing cache store and repositoryIDs before implementation."
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Update or add benchmark/report coverage for persisted post-relaunch incremental refresh behavior."
+    allowed_files:
+      - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+      - "Docs/goals/persisted-incremental-refresh-cache/notes/T004-refresh-benchmark.md"
+    verify:
+      - "make refresh-benchmark"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Benchmark cannot distinguish cold, in-memory warm, and persisted warm refresh."
+      - "Verification fails twice with the same failure."
+    receipt:
+      result: done
+      changed_files:
+        - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+        - "Docs/goals/persisted-incremental-refresh-cache/notes/T004-refresh-benchmark.md"
+      commands:
+        - cmd: "make refresh-benchmark"
+          status: pass
+      summary: "Added a persisted_cache_refresh benchmark scenario and updated overlap-aware expectations. The report now distinguishes cold, in-memory warm, cache-expired warm, and provider-restart persisted warm refresh behavior."
+      note: "notes/T004-refresh-benchmark.md"
+  - id: T005
+    type: pm
+    assignee: PM
+    status: done
+    reasoning_hint: default
+    objective: "Attempt a best-effort live GitHub smoke or record why it was skipped."
+    inputs:
+      - "Current implementation receipts."
+      - "Available local credentials and network state."
+    constraints:
+      - "Do not require credentials for goal completion."
+      - "Do not print tokens or sensitive URLs."
+      - "If live smoke is unavailable, record a clear skip reason and continue to final audit."
+    expected_output:
+      - "Live smoke command/result or skip reason."
+      - "Any observed request/range/timing signal available without sensitive data."
+    receipt:
+      result: done
+      note: "notes/T005-live-smoke.md"
+      commands:
+        - cmd: "make build; launch PRMenuBar with PR_MENU_BAR_GITHUB_TOKEN from gh auth token and PR_MENU_BAR_INITIAL_STATE_DUMP_PATH=build/live-github-initial-state.json"
+          status: pass
+      summary: "Best-effort live GitHub smoke passed. Initial state dump used dataSourceTitle GitHub, reported 343 total PRs across 14 active repos for 2026-05-23 through 2026-05-29, and emitted no refreshError."
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: "Reduce RefreshBenchmarkTests below the file-size limit without changing benchmark behavior."
+    allowed_files:
+      - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+      - "Tests/PRMenuBarTests/GitHubPRActivityProviderTestSupport.swift"
+    verify:
+      - "./scripts/file-size-check.sh"
+      - "make refresh-benchmark"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Benchmark behavior or report semantics need to change."
+      - "Verification fails twice with the same failure."
+    receipt:
+      result: done
+      changed_files:
+        - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+      commands:
+        - cmd: "./scripts/file-size-check.sh"
+          status: pass
+        - cmd: "make refresh-benchmark"
+          status: pass
+      summary: "Reduced RefreshBenchmarkTests to 257 lines by reusing shared GitHubPRActivityProviderTestHelpers fixtures while preserving persisted_cache_refresh benchmark behavior."
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether persisted incremental refresh cache satisfies the original user outcome for this tranche."
+    inputs:
+      - "All done task receipts."
+      - "Last verification."
+      - "Current dirty diff."
+      - "Goal oracle."
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is queued or active."
+      - "Reject completion if relaunch/post-provider-restart behavior is not proven."
+      - "Reject completion if cache invalidation/fallback correctness is unproven."
+    expected_output:
+      - "complete | not_complete."
+      - "full_outcome_complete: true | false."
+      - "Evidence mapped to oracle."
+      - "Missing evidence."
+      - "Next task if not complete."
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      commands:
+        - cmd: "./scripts/format-check.sh"
+          status: pass
+        - cmd: "./scripts/file-size-check.sh"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "make refresh-benchmark"
+          status: pass
+        - cmd: "make test"
+          status: pass
+      evidence:
+        - "T003 targeted tests prove persisted cache load after provider restart, repository-set fallback, overlap/dedupe, failed-refresh watermark safety, and token-fingerprint persistence/corrupt-payload fallback."
+        - "T004/T006 benchmark report includes persisted_cache_refresh with incremental GraphQL mode after provider restart, since 2026-05-02T17:30:00Z, and requestCount 4."
+        - "T005 live GitHub smoke passed with dataSourceTitle GitHub, 343 total PRs across 14 active repos, and no refreshError."
+        - "Full make test passed 97 tests with 0 failures."
+      summary: "The original refresh optimization outcome is complete: menu-bar refresh no longer has to redo the full merged-PR search window after a provider/app restart when a compatible persisted cache exists, and deterministic tests cover the unsafe cases that must fall back."
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - "./scripts/format-check.sh"
+      - "./scripts/file-size-check.sh"
+      - "git diff --check"
+      - "make refresh-benchmark"
+      - "make test"

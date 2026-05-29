@@ -45,7 +45,9 @@ enum PRActivityProviderFactory {
       provider: GitHubPRActivityProvider(
         token: token,
         transport: URLSessionGitHubAPITransport(),
-        bucketLabels: PRActivityStore.sample().bucketLabels
+        bucketLabels: PRActivityStore.sample().bucketLabels,
+        mergedPullRequestCacheStore: UserDefaultsGitHubMergedPullRequestCacheStore(),
+        discoveryCacheStore: UserDefaultsGitHubDiscoveryCacheStore()
       ),
       releaseProvider: GitHubReleaseMomentProvider(
         token: token,

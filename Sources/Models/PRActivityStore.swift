@@ -49,17 +49,17 @@ struct PRActivityStore: Codable {
   var visibleBucketLabels: [String] {
     switch bin {
     case .day:
-      guard dailyBucketLabels.isEmpty == false else {
+      guard usesDailyBucketsForVisibleData else {
         return Array(bucketLabels.suffix(window.visibleBucketCount))
       }
       return Array(dailyBucketLabels.suffix(window.dayCount))
     case .week:
-      guard dailyBucketLabels.isEmpty == false else {
+      guard usesDailyBucketsForVisibleData else {
         return Array(bucketLabels.suffix(window.visibleBucketCount))
       }
       return Array(dailyBucketLabels.suffix(window.dayCount)).groupedLabels(size: 7)
     case .month:
-      guard dailyBucketLabels.isEmpty == false else {
+      guard usesDailyBucketsForVisibleData else {
         return Array(bucketLabels.suffix(window.visibleBucketCount)).groupedLabels(size: 4)
       }
       return Array(dailyBucketLabels.suffix(window.dayCount)).rangeLabel()
@@ -71,17 +71,17 @@ struct PRActivityStore: Codable {
   }
 
   var totalPullRequests: Int {
-    includedRepositories.reduce(0) { $0 + $1.visibleTotal(for: window, bin: bin) }
+    includedRepositories.reduce(0) { $0 + visibleTotal(for: $1) }
   }
 
   var activeRepositoryCount: Int {
-    includedRepositories.filter { $0.visibleTotal(for: window, bin: bin) > 0 }.count
+    includedRepositories.filter { visibleTotal(for: $0) > 0 }.count
   }
 
   var bucketTotals: [Int] {
     visibleBucketLabels.indices.map { index in
       includedRepositories.reduce(0) { sum, repository in
-        sum + repository.visibleCounts(for: window, bin: bin)[index]
+        sum + visibleCounts(for: repository)[index]
       }
     }
   }
@@ -111,11 +111,27 @@ struct PRActivityStore: Codable {
       .map { repository in
         RepositoryBucketValue(
           repository: repository,
-          value: repository.visibleCounts(for: window, bin: bin)[index]
+          value: visibleCounts(for: repository)[index]
         )
       }
       .filter { $0.value > 0 }
       .sorted { $0.value > $1.value }
+  }
+
+  func visibleCounts(for repository: RepositoryActivity) -> [Int] {
+    guard usesDailyBucketsForVisibleData else {
+      var fallback = repository
+      fallback.dailyCounts = []
+      return fallback.visibleCounts(for: window, bin: bin)
+    }
+    return repository.visibleCounts(for: window, bin: bin)
+  }
+
+  func visibleTotal(for repository: RepositoryActivity) -> Int {
+    guard repository.isIncluded else {
+      return 0
+    }
+    return visibleCounts(for: repository).reduce(0, +)
   }
 
   var statusTitle: String {
@@ -153,6 +169,13 @@ struct PRActivityStore: Codable {
       return updated
     }
     return copy
+  }
+
+  private var usesDailyBucketsForVisibleData: Bool {
+    guard dailyBucketLabels.isEmpty == false else {
+      return false
+    }
+    return includedRepositories.allSatisfy { $0.dailyCounts.count == dailyBucketLabels.count }
   }
 
   static func sample(

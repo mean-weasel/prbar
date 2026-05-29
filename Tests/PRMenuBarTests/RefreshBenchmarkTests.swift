@@ -3,7 +3,7 @@ import XCTest
 
 @testable import PRMenuBar
 
-final class RefreshBenchmarkTests: XCTestCase {
+final class RefreshBenchmarkTests: XCTestCase, GitHubPRActivityProviderTestHelpers {
   func testFixtureBackedRefreshBenchmarkReport() throws {
     let report = try RefreshBenchmarkReport(
       generatedAt: "fixture-backed",
@@ -11,12 +11,16 @@ final class RefreshBenchmarkTests: XCTestCase {
         coldRefreshScenario(),
         cacheHitRefreshScenario(),
         cacheExpiredRefreshScenario(),
+        persistedCacheRefreshScenario(),
+        persistedDiscoveryCacheRefreshScenario(),
       ]
     )
 
     XCTAssertEqual(report.scenarios[0].requestCount, 4)
     XCTAssertEqual(report.scenarios[1].requestCount, 1)
     XCTAssertEqual(report.scenarios[2].requestCount, 4)
+    XCTAssertEqual(report.scenarios[3].requestCount, 4)
+    XCTAssertEqual(report.scenarios[4].requestCount, 1)
     XCTAssertTrue(report.scenarios[1].metricNames.contains("discovery.cache_hit"))
     XCTAssertFalse(report.scenarios[1].metricNames.contains("discovery.repositories.page"))
     XCTAssertEqual(
@@ -32,7 +36,31 @@ final class RefreshBenchmarkTests: XCTestCase {
     )
     XCTAssertEqual(
       report.scenarios[1].metric(named: "graphql.total")?.metadata["since"],
-      "2026-05-02T18:00:00Z"
+      "2026-05-02T17:30:00Z"
+    )
+    XCTAssertEqual(
+      report.scenarios[2].metric(named: "graphql.total")?.metadata["mode"],
+      "incremental"
+    )
+    XCTAssertEqual(
+      report.scenarios[2].metric(named: "graphql.total")?.metadata["since"],
+      "2026-05-02T17:30:00Z"
+    )
+    XCTAssertEqual(
+      report.scenarios[3].metric(named: "graphql.total")?.metadata["mode"],
+      "incremental"
+    )
+    XCTAssertEqual(
+      report.scenarios[3].metric(named: "graphql.total")?.metadata["since"],
+      "2026-05-02T17:30:00Z"
+    )
+    XCTAssertEqual(
+      report.scenarios[4].requestsByPath,
+      ["/graphql": 1]
+    )
+    XCTAssertEqual(
+      report.scenarios[4].metric(named: "graphql.total")?.metadata["mode"],
+      "incremental"
     )
 
     let url = benchmarkReportURL()
@@ -118,14 +146,103 @@ final class RefreshBenchmarkTests: XCTestCase {
     )
   }
 
+  private func persistedCacheRefreshScenario() throws -> RefreshBenchmarkScenario {
+    let defaults = UserDefaults(suiteName: "RefreshBenchmarkPersistedCache")!
+    defaults.removePersistentDomain(forName: "RefreshBenchmarkPersistedCache")
+    let cacheStore = UserDefaultsGitHubMergedPullRequestCacheStore(defaults: defaults)
+    let firstTransport = FixtureGitHubAPITransport(
+      responses: [
+        repositoryDiscoveryData(),
+        authenticatedUserData(),
+        organizationsData(),
+        graphQLMergedPullRequestData(mergedAt: "2026-04-26T12:00:00.000Z"),
+      ]
+    )
+    let firstProvider = provider(
+      transport: firstTransport,
+      metrics: RefreshMetricsCollector(),
+      cacheStore: cacheStore
+    )
+
+    _ = try firstProvider.load(now: try date("2026-05-02T18:00:00Z"))
+
+    let collector = RefreshMetricsCollector()
+    let secondTransport = FixtureGitHubAPITransport(
+      responses: [
+        repositoryDiscoveryData(),
+        authenticatedUserData(),
+        organizationsData(),
+        graphQLMergedPullRequestData(mergedAt: "2026-05-02T18:04:00.000Z"),
+      ]
+    )
+    let restartedProvider = provider(
+      transport: secondTransport,
+      metrics: collector,
+      cacheStore: cacheStore
+    )
+
+    _ = try restartedProvider.load(now: try date("2026-05-02T18:05:00Z"))
+
+    return scenario(
+      name: "persisted_cache_refresh",
+      requests: secondTransport.capturedRequests,
+      metrics: collector.events
+    )
+  }
+
+  private func persistedDiscoveryCacheRefreshScenario() throws -> RefreshBenchmarkScenario {
+    let defaults = UserDefaults(suiteName: "RefreshBenchmarkPersistedDiscoveryCache")!
+    defaults.removePersistentDomain(forName: "RefreshBenchmarkPersistedDiscoveryCache")
+    let pullRequestCacheStore = UserDefaultsGitHubMergedPullRequestCacheStore(defaults: defaults)
+    let discoveryCacheStore = UserDefaultsGitHubDiscoveryCacheStore(defaults: defaults)
+    let firstProvider = provider(
+      transport: FixtureGitHubAPITransport(
+        responses: [
+          repositoryDiscoveryData(),
+          authenticatedUserData(),
+          organizationsData(),
+          graphQLMergedPullRequestData(mergedAt: "2026-04-26T12:00:00.000Z"),
+        ]
+      ),
+      metrics: RefreshMetricsCollector(),
+      cacheStore: pullRequestCacheStore,
+      discoveryCacheStore: discoveryCacheStore
+    )
+    _ = try firstProvider.load(now: try date("2026-05-02T18:00:00Z"))
+
+    let collector = RefreshMetricsCollector()
+    let transport = FixtureGitHubAPITransport(
+      responses: [
+        graphQLMergedPullRequestData(mergedAt: "2026-05-02T18:04:00.000Z")
+      ]
+    )
+    let restartedProvider = provider(
+      transport: transport,
+      metrics: collector,
+      cacheStore: pullRequestCacheStore,
+      discoveryCacheStore: discoveryCacheStore
+    )
+    _ = try restartedProvider.load(now: try date("2026-05-02T18:05:00Z"))
+
+    return scenario(
+      name: "persisted_discovery_cache_refresh",
+      requests: transport.capturedRequests,
+      metrics: collector.events
+    )
+  }
+
   private func provider(
     transport: FixtureGitHubAPITransport,
-    metrics: RefreshMetricsCollector
+    metrics: RefreshMetricsCollector,
+    cacheStore: GitHubMergedPullRequestCacheStoring? = nil,
+    discoveryCacheStore: GitHubDiscoveryCacheStoring? = nil
   ) -> GitHubPRActivityProvider {
     GitHubPRActivityProvider(
       token: "token",
       transport: transport,
       bucketLabels: ["W1"],
+      mergedPullRequestCacheStore: cacheStore,
+      discoveryCacheStore: discoveryCacheStore,
       metrics: metrics
     )
   }
@@ -144,62 +261,12 @@ final class RefreshBenchmarkTests: XCTestCase {
     )
   }
 
-  private func repositoryDiscoveryData() -> Data {
-    Data(
-      """
-      [
-        {
-          "full_name": "owner/visible",
-          "name": "visible",
-          "owner": { "login": "owner" },
-          "permissions": { "pull": true }
-        }
-      ]
-      """.utf8
-    )
-  }
-
-  private func authenticatedUserData() -> Data {
-    Data(#"{ "login": "owner" }"#.utf8)
-  }
-
-  private func organizationsData() -> Data {
-    Data("[]".utf8)
-  }
-
-  private func graphQLMergedPullRequestData(mergedAt: String) -> Data {
-    Data(
-      """
-      {
-        "data": {
-          "search": {
-            "pageInfo": { "hasNextPage": false, "endCursor": null },
-            "nodes": [
-              {
-                "id": "PR_\(mergedAt)",
-                "title": "Merged",
-                "mergedAt": "\(mergedAt)",
-                "mergedBy": { "login": "owner" },
-                "repository": { "nameWithOwner": "owner/visible" }
-              }
-            ]
-          }
-        }
-      }
-      """.utf8
-    )
-  }
-
   private func response(_ data: Data, eTag: String? = nil) -> GitHubAPIResponse {
     GitHubAPIResponse(data: data, eTag: eTag, statusCode: 200)
   }
 
   private func notModified(eTag: String) -> GitHubAPIResponse {
     GitHubAPIResponse(data: Data(), eTag: eTag, statusCode: 304)
-  }
-
-  private func date(_ text: String) throws -> Date {
-    try XCTUnwrap(ISO8601DateFormatter().date(from: text))
   }
 
   private func benchmarkReportURL() -> URL {
@@ -211,33 +278,5 @@ final class RefreshBenchmarkTests: XCTestCase {
       .deletingLastPathComponent()
       .deletingLastPathComponent()
       .appendingPathComponent("build/refresh-benchmark.json")
-  }
-}
-
-private struct RefreshBenchmarkReport: Codable {
-  var generatedAt: String
-  var scenarios: [RefreshBenchmarkScenario]
-}
-
-private struct RefreshBenchmarkScenario: Codable {
-  var name: String
-  var requestCount: Int
-  var requestsByPath: [String: Int]
-  var metrics: [RefreshMetricEvent]
-
-  var metricNames: [String] {
-    metrics.map(\.name)
-  }
-
-  func metric(named name: String) -> RefreshMetricEvent? {
-    metrics.first { $0.name == name }
-  }
-}
-
-extension JSONEncoder {
-  fileprivate static var prettyBenchmark: JSONEncoder {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    return encoder
   }
 }

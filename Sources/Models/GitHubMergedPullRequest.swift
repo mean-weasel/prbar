@@ -30,7 +30,7 @@ struct GitHubMergedPullRequestSearchResponse: Decodable, Equatable {
   }
 }
 
-struct GitHubMergedPullRequest: Decodable, Equatable {
+struct GitHubMergedPullRequest: Codable, Equatable {
   var id: String
   var title: String
   var repositoryID: String
@@ -47,7 +47,19 @@ struct GitHubMergedPullRequest: Decodable, Equatable {
     case mergedAt = "merged_at"
   }
 
+  private enum CacheCodingKeys: String, CodingKey {
+    case id
+    case title
+    case repositoryID
+    case mergedAt
+  }
+
   init(from decoder: Decoder) throws {
+    if let cached = try? GitHubMergedPullRequest.cached(from: decoder) {
+      self = cached
+      return
+    }
+
     let container = try decoder.container(keyedBy: CodingKeys.self)
     title = try container.decode(String.self, forKey: .title)
     let repositoryURL = try container.decode(String.self, forKey: .repositoryURL)
@@ -75,6 +87,24 @@ struct GitHubMergedPullRequest: Decodable, Equatable {
     self.title = title
     self.repositoryID = repositoryID
     self.mergedAt = mergedAt
+  }
+
+  func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CacheCodingKeys.self)
+    try container.encode(id, forKey: .id)
+    try container.encode(title, forKey: .title)
+    try container.encode(repositoryID, forKey: .repositoryID)
+    try container.encode(mergedAt, forKey: .mergedAt)
+  }
+
+  private static func cached(from decoder: Decoder) throws -> GitHubMergedPullRequest {
+    let container = try decoder.container(keyedBy: CacheCodingKeys.self)
+    return GitHubMergedPullRequest(
+      id: try container.decode(String.self, forKey: .id),
+      title: try container.decode(String.self, forKey: .title),
+      repositoryID: try container.decode(String.self, forKey: .repositoryID),
+      mergedAt: try container.decode(Date.self, forKey: .mergedAt)
+    )
   }
 
   private static func repositoryID(from repositoryURL: String) throws -> String {
