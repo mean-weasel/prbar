@@ -26,9 +26,12 @@ type SourceState = {
 };
 
 type WorkflowState = {
+  draftDirty: boolean;
   published: boolean;
+  publicSources: Record<string, SourceState> | null;
   shareFeedback: string;
   shareOutput: string;
+  sourcesReviewed: boolean;
   sources: Record<string, SourceState>;
 };
 
@@ -54,34 +57,50 @@ type Source = {
   visibility: "public" | "private";
 };
 
-type ProofRoute = "/profile" | "/card" | "/receipt" | "/project";
-
 const sessionKey = "prbar-session";
 const profileKey = "prbar-profile";
 const workflowKey = "prbar-proof-workflow";
 
-const primaryRoutes = [
-  { path: "/home", label: "Home" },
-  { path: "/profile", label: "Builder Proof" },
-  { path: "/repos", label: "Sources & Privacy" },
+const signedOutRoutes = [
+  { label: "Home", path: "/home" },
+  { label: "Builder Proof", path: "/profile" },
+  { label: "Sources & Privacy", path: "/repos" },
 ];
 
+const signedInRoutes = [
+  { label: "Dashboard", path: "/user" },
+  { label: "Builder Proof", path: "/profile" },
+  { label: "Sources & Privacy", path: "/repos" },
+  { label: "Account", path: "/account" },
+];
+
+const proofRoutes = ["/profile", "/card", "/receipt", "/project"] as const;
+type ProofRoute = (typeof proofRoutes)[number];
+
+function isProofRoute(path: string): path is ProofRoute {
+  return proofRoutes.includes(path as ProofRoute);
+}
+
+function proofAliasTarget(route: ProofRoute) {
+  return {
+    "/profile": null,
+    "/card": "builder-card",
+    "/receipt": "latest-receipt",
+    "/project": "app-proof",
+  }[route];
+}
+
 const validRoutes = new Set([
-  "/home",
+  ...signedOutRoutes.map((route) => route.path),
+  ...signedInRoutes.map((route) => route.path),
   "/signup",
   "/signin",
   "/login",
   "/logout",
   "/onboarding",
   "/connect-github",
-  "/profile",
-  "/card",
-  "/receipt",
-  "/project",
-  "/user",
+  ...proofRoutes,
   "/edit-profile",
-  "/repos",
-  "/account",
 ]);
 
 const builder = {
@@ -210,9 +229,12 @@ function normalizeProfile(value: Partial<ProfileState> | null): ProfileState {
 
 function defaultWorkflow(): WorkflowState {
   return {
+    draftDirty: false,
     published: false,
+    publicSources: null,
     shareFeedback: "",
     shareOutput: "",
+    sourcesReviewed: false,
     sources: Object.fromEntries(
       sources.map((source) => [
         source.name,
@@ -226,30 +248,42 @@ function defaultWorkflow(): WorkflowState {
   };
 }
 
+function normalizeSourceRecord(value: Partial<Record<string, Partial<SourceState>>> | null | undefined, fallbackRecord: Record<string, SourceState>) {
+  return Object.fromEntries(
+    sources.map((source) => {
+      const saved = value?.[source.name];
+      const fallback = fallbackRecord[source.name];
+      const mode = saved?.mode === "included" || saved?.mode === "redacted" || saved?.mode === "excluded" ? saved.mode : fallback.mode;
+      return [
+        source.name,
+        {
+          attached: typeof saved?.attached === "boolean" ? saved.attached : fallback.attached,
+          hidden: typeof saved?.hidden === "boolean" ? saved.hidden : fallback.hidden,
+          mode,
+        },
+      ];
+    }),
+  );
+}
+
 function normalizeWorkflow(value: Partial<WorkflowState> | null): WorkflowState {
   const defaults = defaultWorkflow();
-  const savedSources = value?.sources || {};
+  const normalizedSources = normalizeSourceRecord(value?.sources, defaults.sources);
+  const published = Boolean(value?.published);
+  const normalizedPublicSources = value?.publicSources
+    ? normalizeSourceRecord(value.publicSources, normalizedSources)
+    : published
+      ? normalizeSourceRecord(normalizedSources, normalizedSources)
+      : null;
 
   return {
-    published: Boolean(value?.published),
+    draftDirty: Boolean(value?.draftDirty),
+    published,
+    publicSources: normalizedPublicSources,
     shareFeedback: typeof value?.shareFeedback === "string" ? value.shareFeedback : "",
     shareOutput: typeof value?.shareOutput === "string" ? value.shareOutput : "",
-    sources: Object.fromEntries(
-      sources.map((source) => {
-        const saved = savedSources[source.name];
-        const fallback = defaults.sources[source.name];
-        const mode = saved?.mode === "included" || saved?.mode === "redacted" || saved?.mode === "excluded" ? saved.mode : fallback.mode;
-
-        return [
-          source.name,
-          {
-            attached: typeof saved?.attached === "boolean" ? saved.attached : fallback.attached,
-            hidden: typeof saved?.hidden === "boolean" ? saved.hidden : fallback.hidden,
-            mode,
-          },
-        ];
-      }),
-    ),
+    sourcesReviewed: Boolean(value?.sourcesReviewed),
+    sources: normalizedSources,
   };
 }
 
@@ -265,20 +299,28 @@ function readStored<T>(key: string, fallback: T): T {
 
 function currentRoute() {
   if (typeof window === "undefined") return "/home";
-  const hashPath = window.location.hash.replace("#", "");
-  const path = hashPath || window.location.pathname || "/home";
-  return validRoutes.has(path) ? path : "/home";
+  const hash = window.location.hash;
+  if (hash.startsWith("#/")) {
+    const hashPath = hash.slice(1);
+    return validRoutes.has(hashPath) ? hashPath : "/home";
+  }
+
+  const path = window.location.pathname || "/home";
+  if (validRoutes.has(path)) return path;
+  return path === "/" ? "/home" : "/profile";
 }
 
-function sectionFor(path: string) {
-  if (["/signup", "/signin", "/login", "/logout", "/onboarding", "/connect-github"].includes(path)) return "/home";
-  if (["/user", "/edit-profile", "/card", "/receipt", "/project"].includes(path)) return "/profile";
-  if (path === "/account") return "/repos";
-  return primaryRoutes.some((route) => route.path === path) ? path : "/home";
+function sectionFor(path: string, session?: SessionState) {
+  if (path === "/user" || path === "/edit-profile") return session?.isAuthenticated ? "/user" : "/profile";
+  if (["/card", "/receipt", "/project"].includes(path)) return "/profile";
+  if (path === "/connect-github") return session?.isAuthenticated ? "/repos" : "/home";
+  if (signedInRoutes.some((route) => route.path === path)) return path;
+  if (signedOutRoutes.some((route) => route.path === path)) return path;
+  return "/home";
 }
 
-function sourceMetrics(workflow: WorkflowState) {
-  const rows = sources.map((source) => ({ source, state: workflow.sources[source.name] }));
+function sourceMetricsFromRecord(sourceRecord: Record<string, SourceState>) {
+  const rows = sources.map((source) => ({ source, state: sourceRecord[source.name] }));
   const counted = rows.filter((row) => row.state.mode !== "excluded");
   const attached = counted.filter((row) => row.state.attached);
   const hidden = counted.filter((row) => row.state.hidden || row.state.mode === "redacted");
@@ -293,13 +335,15 @@ function sourceMetrics(workflow: WorkflowState) {
   };
 }
 
-function setupStepStates(session: SessionState, workflow: WorkflowState) {
-  const metrics = sourceMetrics(workflow);
+function sourceMetrics(workflow: WorkflowState, scope: "draft" | "public" = "draft") {
+  return sourceMetricsFromRecord(scope === "public" && workflow.publicSources ? workflow.publicSources : workflow.sources);
+}
 
+function setupStepStates(session: SessionState, workflow: WorkflowState) {
   return [
     { done: session.isAuthenticated, label: "Claim card", path: "/signup" },
     { done: session.githubConnected, label: "Connect GitHub", path: "/connect-github" },
-    { done: session.githubConnected && metrics.counted > 0, label: "Choose what counts", path: "/repos" },
+    { done: session.githubConnected && workflow.sourcesReviewed, label: "Review sources", path: "/repos" },
     { done: workflow.published, label: "Publish Builder Proof", path: "/profile" },
     { done: workflow.shareFeedback.includes("Copied") || workflow.shareFeedback.includes("Downloaded") || workflow.shareFeedback.includes("Prepared"), label: "Share anywhere", path: "/profile" },
   ];
@@ -371,17 +415,25 @@ function fullProfileLink(profile: ProfileState) {
   return `https://${profile.link.replace(/^https?:\/\//, "")}`;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function escapeHtmlAttribute(value: string) {
+  return escapeHtml(value)
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function embedSnippet(profile: ProfileState) {
-  return `<a href="${fullProfileLink(profile)}" data-prbar-card="${profile.handle}">${profile.name}'s Builder Proof</a>`;
+  return `<a href="${escapeHtmlAttribute(fullProfileLink(profile))}" data-prbar-card="${escapeHtmlAttribute(profile.handle)}">${escapeHtml(profile.name)}'s Builder Proof</a>`;
 }
 
 function builderCardSvg(profile: ProfileState, metrics: ReturnType<typeof sourceMetrics>) {
-  const escape = (value: string) =>
-    value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+  const escape = escapeHtmlAttribute;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="${escape(profile.name)} Builder Proof card">
   <rect width="960" height="540" rx="36" fill="#10141f"/>
@@ -437,6 +489,7 @@ export default function PrototypeApp() {
   }, []);
 
   const navigate = useCallback((path: string) => {
+    if (!isProofRoute(path)) setPublicPreview(false);
     window.history.pushState({}, "", path);
     setRoute(path);
     window.scrollTo({ top: 0 });
@@ -464,6 +517,18 @@ export default function PrototypeApp() {
     });
   }, []);
 
+  const publishWorkflow = useCallback(() => {
+    updateWorkflow((current) => ({
+      ...current,
+      published: true,
+      sourcesReviewed: true,
+      draftDirty: false,
+      publicSources: structuredClone(current.sources),
+      shareFeedback: current.published ? "Published updates to the public Builder Proof." : "",
+      shareOutput: current.shareOutput,
+    }));
+  }, [updateWorkflow]);
+
   const saveProfile = useCallback((next: Partial<ProfileState>) => {
     const updated = normalizeProfile(next);
     saveLocal(profileKey, updated);
@@ -479,32 +544,34 @@ export default function PrototypeApp() {
     return <div className="loading">Loading PRBar prototype...</div>;
   }
 
-  const productState = productStateFor(session, workflow, publicPreview);
+  const publicPreviewActive = publicPreview && isProofRoute(route);
+  const productState = productStateFor(session, workflow, publicPreviewActive);
 
   return (
     <Shell
       navigate={navigate}
       profile={profile}
       productState={productState}
-      publicPreview={publicPreview}
+      publicPreview={publicPreviewActive}
       resetSession={resetSession}
       route={route}
       session={session}
       setPublicPreview={setPublicPreview}
     >
       {route === "/home" && <HomePage navigate={navigate} productState={productState} profile={profile} session={session} workflow={workflow} />}
-      {route === "/signup" && <AuthPage mode="signup" navigate={navigate} updateSession={updateSession} />}
-      {(route === "/signin" || route === "/login") && <AuthPage mode="signin" navigate={navigate} updateSession={updateSession} />}
+      {route === "/signup" && <AuthPage mode="signup" navigate={navigate} profile={profile} saveProfile={saveProfile} updateSession={updateSession} />}
+      {(route === "/signin" || route === "/login") && <AuthPage mode="signin" navigate={navigate} profile={profile} saveProfile={saveProfile} updateSession={updateSession} />}
       {route === "/logout" && <LogoutPage navigate={navigate} />}
       {route === "/onboarding" && <OnboardingPage navigate={navigate} />}
       {route === "/connect-github" && <ConnectGithubPage navigate={navigate} session={session} updateSession={updateSession} />}
-      {["/profile", "/card", "/receipt", "/project"].includes(route) && (
+      {isProofRoute(route) && (
         <ProfilePage
           navigate={navigate}
           productState={productState}
           profile={profile}
-          publicPreview={publicPreview}
-          route={route as ProofRoute}
+          publicPreview={publicPreviewActive}
+          publishWorkflow={publishWorkflow}
+          route={route}
           session={session}
           setPublicPreview={setPublicPreview}
           updateWorkflow={updateWorkflow}
@@ -528,6 +595,7 @@ export default function PrototypeApp() {
       {route === "/repos" && (
         <ReposPage
           navigate={navigate}
+          publishWorkflow={publishWorkflow}
           productState={productState}
           session={session}
           updateWorkflow={updateWorkflow}
@@ -569,9 +637,9 @@ function Shell({
   session: SessionState;
   setPublicPreview: (value: boolean) => void;
 }) {
-  const activeSection = sectionFor(route);
+  const activeSection = sectionFor(route, session);
   const [workflowMapOpen, setWorkflowMapOpen] = useState(false);
-  const navRoutes = primaryRoutes;
+  const navRoutes = session.isAuthenticated ? signedInRoutes : signedOutRoutes;
 
   const logout = () => {
     resetSession();
@@ -586,7 +654,7 @@ function Shell({
             className="toc-toggle"
             aria-controls="workflow-map"
             aria-expanded={workflowMapOpen}
-            aria-label="Show workflow map"
+            aria-label={workflowMapOpen ? "Close setup map" : "Setup map"}
             onClick={() => setWorkflowMapOpen((value) => !value)}
             type="button"
           >
@@ -611,7 +679,7 @@ function Shell({
             ))}
           </nav>
           <div className="topbar-account" data-auth-state={session.isAuthenticated ? "signed-in" : "signed-out"}>
-            {session.isAuthenticated && publicPreview && route === "/profile" ? (
+            {session.isAuthenticated && publicPreview && isProofRoute(route) ? (
               <>
                 <span className="topbar-preview-pill">Public preview</span>
                 <button className="topbar-link" data-preview-action="exit" onClick={() => setPublicPreview(false)} type="button">
@@ -680,7 +748,16 @@ function HomePage({
 
   return (
     <>
-      <section className="hero">
+      {session.isAuthenticated && (
+        <SignedInHomePanel
+          navigate={navigate}
+          productState={productState}
+          profile={profile}
+          session={session}
+          workflow={workflow}
+        />
+      )}
+      <section className={`hero${session.isAuthenticated ? " hero-secondary" : ""}`}>
         <div className="hero-copy">
           <p className="eyebrow">Builder Card -&gt; Builder Proof</p>
           <h1>PRBar is the new resume for AI-native builders.</h1>
@@ -700,15 +777,6 @@ function HomePage({
           setCardSide={setCardSide}
         />
       </section>
-      {session.isAuthenticated && (
-        <SignedInHomePanel
-          navigate={navigate}
-          productState={productState}
-          profile={profile}
-          session={session}
-          workflow={workflow}
-        />
-      )}
       <section className="home-doorway" aria-label="PRBar product preview">
         <div className="doorway-intro">
           <h2>One link that opens into proof.</h2>
@@ -757,7 +825,7 @@ function SignedInHomePanel({
       : ["Review sources", "/repos"];
 
   return (
-    <section className="signed-in-home-panel" aria-label="Signed-in owner view">
+    <section className="signed-in-home-panel owner-home-panel" aria-label="Signed-in owner view">
       <div>
         <span>Signed-in owner view</span>
         <h2>Owner workspace for {profile.name}.</h2>
@@ -782,7 +850,7 @@ function SignedInHomePanel({
       </div>
       <div className="action-row small">
         <button className="primary" onClick={() => navigate(nextAction[1])} type="button">{nextAction[0]}</button>
-        <button className="secondary light" onClick={() => navigate("/user")} type="button">Open profile dashboard</button>
+        <button className="secondary light" onClick={() => navigate("/user")} type="button">Open Dashboard</button>
         <button className="secondary light" onClick={() => navigate("/profile")} type="button">Preview Builder Proof</button>
         <button className="secondary light" onClick={() => navigate("/account")} type="button">Account controls</button>
       </div>
@@ -791,20 +859,27 @@ function SignedInHomePanel({
 }
 
 function HomeProofPath({ navigate, productState }: NavigateProps & { productState: ProductState }) {
+  const activeStep = (() => {
+    if (productState.stage === "new-user") return "connect";
+    if (productState.stage === "connected-draft") return "choose";
+    if (productState.stage === "published-owner") return "share";
+    if (productState.stage === "public-prospect" && productState.nextPath === "/profile") return "share";
+    return "claim";
+  })();
   const steps = [
-    ["01", "Claim card", "/signup"],
-    ["02", "Connect GitHub", "/connect-github"],
-    ["03", "Choose what counts", "/repos"],
-    ["04", "Publish Builder Proof", "/profile"],
-    ["05", "Share anywhere", "/profile"],
+    ["claim", "01", "Claim card", "/signup"],
+    ["connect", "02", "Connect GitHub", "/connect-github"],
+    ["choose", "03", "Review sources", "/repos"],
+    ["publish", "04", "Publish Builder Proof", "/profile"],
+    ["share", "05", "Share anywhere", "/profile"],
   ] as const;
 
   return (
     <div className="home-proof-path" aria-label="Path to Builder Proof">
-      {steps.map(([number, label, path]) => (
+      {steps.map(([key, number, label, path]) => (
         <button
-          className={path === productState.nextPath ? "active" : ""}
-          key={label}
+          className={key === activeStep ? "active" : ""}
+          key={key}
           onClick={() => navigate(path)}
           type="button"
         >
@@ -888,9 +963,32 @@ function HomeFlipCard({
   );
 }
 
-function AuthPage({ mode, navigate, updateSession }: NavigateProps & { mode: "signin" | "signup"; updateSession: (next: Partial<SessionState>) => void }) {
+function AuthPage({
+  mode,
+  navigate,
+  profile,
+  saveProfile,
+  updateSession,
+}: NavigateProps & {
+  mode: "signin" | "signup";
+  profile: ProfileState;
+  saveProfile: (next: Partial<ProfileState>) => void;
+  updateSession: (next: Partial<SessionState>) => void;
+}) {
   const signup = mode === "signup";
+  const [handle, setHandle] = useState(profile.handle);
+  const [name, setName] = useState(profile.name);
   const submit = () => {
+    if (signup) {
+      const cleanHandle = (handle.trim() || profile.handle).replace(/^@+/, "");
+      const normalizedHandle = `@${cleanHandle}`;
+      saveProfile({
+        ...profile,
+        handle: normalizedHandle,
+        link: linkFromHandle(cleanHandle),
+        name,
+      });
+    }
     updateSession({ isAuthenticated: true, githubConnected: false });
     navigate(signup ? "/connect-github" : "/user");
   };
@@ -906,8 +1004,13 @@ function AuthPage({ mode, navigate, updateSession }: NavigateProps & { mode: "si
       <form className="auth-panel">
         <h2>{signup ? "Create your PRBar account" : "Sign in"}</h2>
         <label>Email<input type="email" defaultValue="maya@example.com" /></label>
-        <label>Password<input type="password" placeholder="Enter password" /></label>
-        {signup && <label>Builder handle<input defaultValue="@maya.codes" /></label>}
+        <label>Password<input type="password" defaultValue="builderproof" /></label>
+        {signup && (
+          <>
+            <label>Name<input value={name} onChange={(event) => setName(event.target.value)} /></label>
+            <label>Builder handle<input value={handle} onChange={(event) => setHandle(event.target.value)} /></label>
+          </>
+        )}
         <button className="primary wide" data-auth-action={signup ? "signup" : "login"} onClick={submit} type="button">
           {signup ? "Continue to GitHub" : "Sign in"}
         </button>
@@ -963,6 +1066,7 @@ function ConnectGithubPage({ navigate, session, updateSession }: NavigateProps &
           <span>Status checks</span>
           <span>Selected repo names</span>
         </div>
+        <p className="trust-note">GitHub proof means imported PR, release, tag, timestamp, and check metadata. Builder notes and app descriptions add context, but cannot change imported facts.</p>
         <div className="github-source-preview" aria-label="GitHub source preview">
           <span>{connected ? "Ready for source review" : "Review after authorize"}</span>
           <b>4 candidate sources found</b>
@@ -1064,8 +1168,8 @@ function UserProfilePage({ navigate, productState, profile, resetSession, sessio
       </aside>
       <div className="account-main">
         <div className="control-section-heading">
-          <span>User profile</span>
-          <h1>Manage the identity behind Builder Proof.</h1>
+          <span>Dashboard</span>
+          <h1>Manage your Builder Proof workspace.</h1>
         </div>
         <div className="session-strip">
           <b>Signed in</b>
@@ -1132,7 +1236,8 @@ function EditProfilePage({ navigate, profile, saveProfile }: NavigateProps & { p
   );
 }
 
-function ReposPage({ navigate, productState, session, updateWorkflow, workflow }: NavigateProps & {
+function ReposPage({ navigate, productState, publishWorkflow, session, updateWorkflow, workflow }: NavigateProps & {
+  publishWorkflow: () => void;
   productState: ProductState;
   session: SessionState;
   updateWorkflow: (updater: (current: WorkflowState) => WorkflowState) => void;
@@ -1179,8 +1284,11 @@ function ReposPage({ navigate, productState, session, updateWorkflow, workflow }
         if (action === "redacted") state.hidden = true;
         if (action === "included" && source.visibility === "public") state.hidden = false;
       }
-      current.published = false;
-      current.shareFeedback = "";
+      current.sourcesReviewed = false;
+      current.draftDirty = current.published;
+      current.shareFeedback = current.published
+        ? "Source changes saved to draft. Publish updates to refresh the public Builder Proof."
+        : "Source choices saved to draft. Review and publish when ready.";
       current.shareOutput = "";
       return current;
     });
@@ -1213,13 +1321,16 @@ function ReposPage({ navigate, productState, session, updateWorkflow, workflow }
             <span>Publish status</span>
             <b>{workflow.published ? "Builder Proof is live" : "Draft Builder Proof"}</b>
             <p>{metrics.counted} sources power Builder Proof. {metrics.attached} attached apps. {metrics.excluded} excluded. {workflow.published ? "Share link ready." : "Publish when the public proof resume should go live."}</p>
-            {workflow.published ? (
+            {workflow.shareFeedback && <p className="share-feedback" data-share-feedback>{workflow.shareFeedback}</p>}
+            {!workflow.sourcesReviewed && <p className="draft-warning">Review and confirm source choices before publishing.</p>}
+            {workflow.draftDirty && <p className="draft-warning">Your live Builder Proof is still public. These source changes are private until you publish updates.</p>}
+            <button className="secondary light wide" data-source-action="confirm-review" onClick={() => updateWorkflow((current) => ({ ...current, sourcesReviewed: true, shareFeedback: "Source choices reviewed. Builder Proof is ready to publish." }))} type="button">Confirm source choices</button>
+            <button className="primary wide" data-proof-action={workflow.published ? "publish-updates" : "publish"} disabled={!workflow.sourcesReviewed} onClick={publishWorkflow} type="button">{workflow.published && workflow.draftDirty ? "Publish updates" : "Publish Builder Proof"}</button>
+            {workflow.published && (
               <>
                 <button className="primary wide" data-proof-action="open-public" onClick={() => navigate("/profile")} type="button">Open public Builder Proof</button>
-                <button className="secondary light wide" data-proof-action="unpublish" onClick={() => updateWorkflow((current) => ({ ...current, published: false, shareFeedback: "", shareOutput: "" }))} type="button">Return to draft</button>
+                <button className="secondary light wide" data-proof-action="unpublish" onClick={() => updateWorkflow((current) => ({ ...current, published: false, publicSources: null, draftDirty: false, shareFeedback: "", shareOutput: "" }))} type="button">Return to draft</button>
               </>
-            ) : (
-              <button className="primary wide" data-proof-action="publish" onClick={() => updateWorkflow((current) => ({ ...current, published: true, shareFeedback: "", shareOutput: "" }))} type="button">Publish Builder Proof</button>
             )}
           </div>
           <div className="control-status-card">
@@ -1231,7 +1342,7 @@ function ReposPage({ navigate, productState, session, updateWorkflow, workflow }
         <div className="control-workbench">
           <div className="control-section-heading">
             <span>Source matrix</span>
-            <h2>Choose what counts.</h2>
+            <h2>Review sources.</h2>
             <p>Each source has count, app attachment, and privacy controls in one row.</p>
           </div>
           <div className="source-table">
@@ -1244,16 +1355,20 @@ function ReposPage({ navigate, productState, session, updateWorkflow, workflow }
                     <p>{source.activity} / latest release {source.lastRelease}</p>
                   </div>
                   <span>{source.visibility}</span>
-                  <b>{state.hidden || state.mode === "redacted" ? "hidden" : state.mode}</b>
+                  <b>{state.mode === "excluded" ? "Excluded" : state.hidden || state.mode === "redacted" ? "Hidden from public" : "Public name visible"}</b>
                   <em>{state.attached ? source.app : "No app attached"}</em>
                   <div className="repo-controls" aria-label={`${source.name} source controls`}>
-                    <button className={state.mode === "included" ? "active" : ""} data-source-action="include" data-source-id={source.name} onClick={() => setSource(source.name, "included")} type="button">Include</button>
-                    <button className={state.mode === "redacted" ? "active" : ""} data-source-action="redact" data-source-id={source.name} onClick={() => setSource(source.name, "redacted")} type="button">Redact</button>
-                    <button className={state.mode === "excluded" ? "active" : ""} data-source-action="exclude" data-source-id={source.name} onClick={() => setSource(source.name, "excluded")} type="button">Exclude</button>
-                    <button className={state.attached ? "active" : ""} data-source-action="attach" data-source-id={source.name} onClick={() => setSource(source.name, "attach")} type="button">{state.attached ? "Attached" : "Attach app"}</button>
-                    <button className={state.hidden ? "active" : ""} data-source-action="privacy" data-source-id={source.name} onClick={() => setSource(source.name, "toggleHidden")} type="button">{state.hidden ? "Hidden" : "Revealed"}</button>
+                    <div className="source-mode-segment" aria-label={`${source.name} count mode`}>
+                      <button className={state.mode === "included" ? "active" : ""} data-source-action="include" data-source-id={source.name} onClick={() => setSource(source.name, "included")} type="button">Include</button>
+                      <button className={state.mode === "redacted" ? "active" : ""} data-source-action="redact" data-source-id={source.name} onClick={() => setSource(source.name, "redacted")} type="button">Redact</button>
+                      <button className={state.mode === "excluded" ? "active" : ""} data-source-action="exclude" data-source-id={source.name} onClick={() => setSource(source.name, "excluded")} type="button">Exclude</button>
+                    </div>
+                    <div className="source-secondary-actions">
+                      <button className={state.attached ? "active" : ""} data-source-action="attach" data-source-id={source.name} onClick={() => setSource(source.name, "attach")} type="button">{state.attached ? "Attached" : "Attach app"}</button>
+                      <button className={state.hidden ? "active" : ""} data-source-action="privacy" data-source-id={source.name} onClick={() => setSource(source.name, "toggleHidden")} type="button">{state.hidden ? "Hidden from public" : "Reveal publicly"}</button>
+                    </div>
                   </div>
-                  <p className="repo-impact">{state.mode === "excluded" ? "Excluded from public proof, receipts, cards, and source counts." : state.hidden || state.mode === "redacted" ? "Counts selected proof while hiding private names on the public Builder Proof." : source.publicImpact}</p>
+                  <p className="repo-impact">{state.mode === "excluded" ? "Excluded from public proof, receipts, cards, and source counts." : state.hidden || state.mode === "redacted" ? "Visible to you here. Hidden from public Builder Proof while still counting selected proof." : source.publicImpact}</p>
                 </article>
               );
             })}
@@ -1278,6 +1393,7 @@ function ProfilePage({
   productState,
   profile,
   publicPreview,
+  publishWorkflow,
   route,
   session,
   setPublicPreview,
@@ -1287,26 +1403,24 @@ function ProfilePage({
   productState: ProductState;
   profile: ProfileState;
   publicPreview: boolean;
+  publishWorkflow: () => void;
   route: ProofRoute;
   session: SessionState;
   setPublicPreview: (value: boolean) => void;
   updateWorkflow: (updater: (current: WorkflowState) => WorkflowState) => void;
   workflow: WorkflowState;
 }) {
-  const metrics = useMemo(() => sourceMetrics(workflow), [workflow]);
   const ownerView = session.isAuthenticated && !publicPreview;
-  const aliasRoute = route !== "/profile";
+  const draftMetrics = useMemo(() => sourceMetrics(workflow), [workflow]);
+  const publicMetrics = useMemo(() => sourceMetrics(workflow, "public"), [workflow]);
+  const metrics = ownerView ? draftMetrics : publicMetrics;
+  const proofMetrics = ownerView && !workflow.draftDirty ? draftMetrics : publicMetrics;
+  const aliasTarget = proofAliasTarget(route);
 
   useEffect(() => {
-    if (!aliasRoute) return;
-    const targets: Record<Exclude<ProofRoute, "/profile">, string> = {
-      "/card": "builder-card",
-      "/project": "app-proof",
-      "/receipt": "latest-receipt",
-    };
-    const targetId = targets[route as Exclude<ProofRoute, "/profile">];
+    if (!aliasTarget) return;
     const focusTarget = () => {
-      const target = document.getElementById(targetId);
+      const target = document.getElementById(aliasTarget);
       target?.scrollIntoView({ block: "start", behavior: "instant" });
       target?.focus({ preventScroll: true });
     };
@@ -1317,9 +1431,9 @@ function ProfilePage({
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timeout);
     };
-  }, [aliasRoute, route]);
+  }, [aliasTarget]);
 
-  if (!workflow.published && !aliasRoute) {
+  if (!workflow.published) {
     if (session.isAuthenticated) {
       return (
         <DraftOwnerProofPage
@@ -1327,8 +1441,8 @@ function ProfilePage({
           navigate={navigate}
           productState={productState}
           profile={profile}
+          publishWorkflow={publishWorkflow}
           session={session}
-          updateWorkflow={updateWorkflow}
           workflow={workflow}
         />
       );
@@ -1339,8 +1453,8 @@ function ProfilePage({
         <div>
           <p className="eyebrow">Public Builder Proof</p>
           <h1>Builder Proof is not published yet.</h1>
-          <p>{profile.name.split(/\s+/)[0]} has not made this proof resume public. The owner can connect GitHub, choose sources, publish Builder Proof, then share the public link anywhere.</p>
-          <StateStatusStrip productState={productState} />
+          <p>{profile.name.split(/\s+/)[0]} has not made this Builder Proof public. The owner can connect GitHub, review sources, publish Builder Proof, then share the public link anywhere.</p>
+          <StateStatusStrip productState={productState} publicArtifact />
           <SetupStepper active="/profile" />
           <div className="action-row">
             <button className="primary" onClick={() => navigate(session.isAuthenticated ? "/repos" : "/signup")} type="button">{session.isAuthenticated ? "Open owner tools" : "Claim your builder card"}</button>
@@ -1354,7 +1468,8 @@ function ProfilePage({
 
   const writeClipboard = async (value: string) => {
     try {
-      await window.navigator.clipboard?.writeText(value);
+      if (!window.navigator.clipboard?.writeText) return false;
+      await window.navigator.clipboard.writeText(value);
       return true;
     } catch {
       return false;
@@ -1364,7 +1479,7 @@ function ProfilePage({
   const share = async (action: ShareAction) => {
     const outputs = {
       card: {
-        feedback: `Copied builder card link: ${fullProfileLink(profile)}#builder-card`,
+        feedback: "Copied Builder Card link",
         value: `${fullProfileLink(profile)}#builder-card`,
       },
       embed: {
@@ -1373,7 +1488,7 @@ function ProfilePage({
       },
       image: {
         feedback: "Downloaded builder-card.svg",
-        value: builderCardSvg(profile, metrics),
+        value: builderCardSvg(profile, proofMetrics),
       },
       proof: {
         feedback: `Copied Builder Proof link: ${fullProfileLink(profile)}`,
@@ -1413,7 +1528,14 @@ function ProfilePage({
             <p className="profile-handle-line">{profile.handle} · {profile.link}</p>
             <p>{profile.title}. Shipped 42 merged PRs, 4 releases, and {metrics.attached} public apps from {metrics.counted} selected GitHub sources.</p>
             <p className="profile-builder-note">{profile.note}</p>
-            <StateStatusStrip productState={productState} session={session} workflow={workflow} />
+            <StateStatusStrip productState={productState} publicArtifact={!ownerView} session={session} workflow={workflow} />
+            {ownerView && (
+              <div className="owner-hero-actions">
+                <button className="secondary light" onClick={() => navigate("/repos")} type="button">Review sources</button>
+                <button className="secondary light" onClick={() => navigate("/edit-profile")} type="button">Edit profile</button>
+                <button className="secondary light" data-preview-action="enter" onClick={() => setPublicPreview(true)} type="button">View as public</button>
+              </div>
+            )}
             <div className="proof-chain"><span>Selected repos</span><span>Released apps</span><span>Merged PRs</span><span>Public receipts</span></div>
             <div className="action-row small">
               <button className="primary" onClick={() => navigate("/receipt")} type="button">Featured receipt</button>
@@ -1446,12 +1568,12 @@ function ProfilePage({
       ) : null}
       <section className="proof-resume-layout proof-artifact">
         <div className="proof-resume-main">
-          <ProofSummary metrics={metrics} />
+          <ProofSummary metrics={proofMetrics} />
           <FeaturedReceipt navigate={navigate} />
           <AppProof navigate={navigate} />
           <ProofTimeline />
         </div>
-        <ShareRail metrics={metrics} profile={profile} share={share} shareFeedback={workflow.shareFeedback} shareOutput={workflow.shareOutput} />
+        <ShareRail metrics={proofMetrics} profile={profile} share={share} shareFeedback={workflow.shareFeedback} shareOutput={workflow.shareOutput} />
       </section>
       {!session.isAuthenticated && (
         <section className="visitor-proof-cta">
@@ -1472,15 +1594,28 @@ function ProfilePage({
 }
 
 function StateStatusStrip({
+  publicArtifact = false,
   productState,
   session,
   workflow,
 }: {
+  publicArtifact?: boolean;
   productState: ProductState;
   session?: SessionState;
   workflow?: WorkflowState;
 }) {
-  const metrics = workflow ? sourceMetrics(workflow) : null;
+  if (publicArtifact) {
+    return (
+      <div className="state-strip" data-product-stage={productState.stage}>
+        <div>
+          <span>{productState.label}</span>
+        </div>
+        <p>Public preview. Owner controls and GitHub connection details are hidden from visitors.</p>
+      </div>
+    );
+  }
+
+  const metrics = workflow ? sourceMetrics(workflow, productState.stage === "public-prospect" ? "public" : "draft") : null;
   const details = [
     session ? (session.isAuthenticated ? "Signed in" : "Signed out") : null,
     session ? (session.githubConnected ? "GitHub connected" : "GitHub not connected") : null,
@@ -1504,15 +1639,15 @@ function DraftOwnerProofPage({
   navigate,
   productState,
   profile,
+  publishWorkflow,
   session,
-  updateWorkflow,
   workflow,
 }: NavigateProps & {
   metrics: ReturnType<typeof sourceMetrics>;
+  publishWorkflow: () => void;
   productState: ProductState;
   profile: ProfileState;
   session: SessionState;
-  updateWorkflow: (updater: (current: WorkflowState) => WorkflowState) => void;
   workflow: WorkflowState;
 }) {
   const connected = session.githubConnected;
@@ -1533,7 +1668,7 @@ function DraftOwnerProofPage({
             <StateStatusStrip productState={productState} session={session} workflow={workflow} />
             <div className="action-row small">
               <button className="primary" onClick={() => navigate(connected ? "/repos" : "/connect-github")} type="button">{connected ? "Review sources" : "Connect GitHub"}</button>
-              {connected && <button className="secondary light" onClick={() => updateWorkflow((current) => ({ ...current, published: true, shareFeedback: "", shareOutput: "" }))} type="button">Publish Builder Proof</button>}
+              {connected && <button className="secondary light" disabled={!workflow.sourcesReviewed} onClick={publishWorkflow} type="button">Publish Builder Proof</button>}
               <button className="secondary light" onClick={() => navigate("/edit-profile")} type="button">Edit profile</button>
             </div>
           </div>
@@ -1570,7 +1705,7 @@ function DraftOwnerProofPage({
           <h2>{connected ? "Publish next" : "Publish later"}</h2>
           <p>{connected ? "Publishing turns the draft into a signed-out prospect view with receipts, app proof, and share actions." : "Publishing unlocks after GitHub is connected and source choices have been reviewed."}</p>
           {connected ? (
-            <button className="primary wide" data-proof-action="publish-draft" onClick={() => updateWorkflow((current) => ({ ...current, published: true, shareFeedback: "", shareOutput: "" }))} type="button">Publish Builder Proof</button>
+            <button className="primary wide" data-proof-action="publish-draft" disabled={!workflow.sourcesReviewed} onClick={publishWorkflow} type="button">Publish Builder Proof</button>
           ) : (
             <button className="secondary light wide" onClick={() => navigate("/connect-github")} type="button">Connect GitHub first</button>
           )}
@@ -1639,7 +1774,7 @@ function FeaturedReceipt({ navigate }: NavigateProps) {
         <div className="receipt-proof-stack">
           <StatPills items={release.facts} />
           <ProofLinks />
-          <p className="trust-note">Facts are locked from GitHub. Builder annotations add context, but cannot rewrite PRs, tags, checks, or timestamps.</p>
+          <p className="trust-note">GitHub facts are imported from releases, PRs, tags, checks, and timestamps. Builder annotations add context, but cannot rewrite them.</p>
         </div>
         <div className="pr-list">
           {release.prList.map((pr, index) => <div key={pr}><b>{pr}</b><span>{prLabels[index]}</span><em>Merged · CI passed</em></div>)}
@@ -1647,8 +1782,8 @@ function FeaturedReceipt({ navigate }: NavigateProps) {
       </div>
       <blockquote>This release moved the project from useful prototype to something people can revisit weekly.</blockquote>
       <div className="action-row small">
-        <button className="secondary light" onClick={() => navigate("/receipt")} type="button">Copy receipt deep link</button>
-        <button className="secondary light" onClick={() => navigate("/project")} type="button">View app proof deep link</button>
+        <button className="secondary light" onClick={() => navigate("/receipt")} type="button">Open receipt section</button>
+        <button className="secondary light" onClick={() => navigate("/project")} type="button">Open app proof section</button>
       </div>
     </article>
   );
@@ -1687,8 +1822,8 @@ function AppProof({ navigate }: NavigateProps) {
         ))}
       </div>
       <div className="action-row small">
-        <button className="secondary light" onClick={() => navigate("/project")} type="button">Open app proof deep link</button>
-        <button className="secondary light" onClick={() => navigate("/receipt")} type="button">Open receipt deep link</button>
+        <button className="secondary light" onClick={() => navigate("/project")} type="button">Open app proof section</button>
+        <button className="secondary light" onClick={() => navigate("/receipt")} type="button">Open receipt section</button>
       </div>
     </article>
   );
@@ -1725,10 +1860,10 @@ function ShareRail({
         <p>The card is the portable version of this page. It previews the proof, then opens the full Builder Proof when someone wants receipts and source context.</p>
         <BuilderCard profile={profile} compact appsCount={metrics.attached} />
         <div className="share-output-grid">
-          <button data-share-action="card" onClick={() => share("card")} type="button"><span>Card link</span><b>Copy {shortProfilePath(profile)}</b></button>
-          <button data-share-action="proof" onClick={() => share("proof")} type="button"><span>Full proof</span><b>Copy Builder Proof</b></button>
-          <button data-share-action="image" onClick={() => share("image")} type="button"><span>Image</span><b>Download card</b></button>
-          <button data-share-action="embed" onClick={() => share("embed")} type="button"><span>Embed</span><b>Copy snippet</b></button>
+          <button data-share-action="card" onClick={() => share("card")} type="button"><span>Builder Card</span><b>Copy Builder Card link</b></button>
+          <button data-share-action="proof" onClick={() => share("proof")} type="button"><span>Builder Proof</span><b>Copy public Builder Proof link</b></button>
+          <button data-share-action="image" onClick={() => share("image")} type="button"><span>Card image</span><b>Download Builder Card image</b></button>
+          <button data-share-action="embed" onClick={() => share("embed")} type="button"><span>Embed</span><b>Copy Builder Proof embed</b></button>
         </div>
         <p className="share-feedback" data-share-feedback>{shareFeedback || "Share links are ready."}</p>
         <div className="share-output-preview" aria-label="Latest share output">
@@ -1821,7 +1956,7 @@ function SetupChecklist({ profile, session, workflow }: { profile: ProfileState;
   const items = [
     { done: session.isAuthenticated && Boolean(profile.name), label: "Profile claimed", note: `${profile.handle} is reserved and ready for Builder Proof.` },
     { done: session.githubConnected, label: "GitHub connected", note: session.githubConnected ? "Release tags, merged PRs, and checks are available." : "Connect selected repos before proof can be published." },
-    { done: session.githubConnected && metrics.counted > 0, label: "Sources chosen", note: `${metrics.counted} selected sources, ${metrics.attached} attached apps, ${metrics.excluded} excluded.` },
+    { done: session.githubConnected && workflow.sourcesReviewed, label: "Sources reviewed", note: workflow.sourcesReviewed ? `${metrics.counted} selected sources confirmed for Builder Proof.` : "Confirm which GitHub sources count before publishing." },
     { done: workflow.published, label: "Builder Proof published", note: workflow.published ? "The public proof page is live." : "Publish after sources and profile copy look right." },
     { done: workflow.shareFeedback.includes("Copied") || workflow.shareFeedback.includes("Downloaded"), label: "Share output created", note: workflow.shareFeedback || "Copy the card or full Builder Proof link when it is ready." },
   ];

@@ -49,7 +49,7 @@ const scenarios = [
     route: "/home",
     state: "visitor",
     storage: {},
-    expectedText: "PRBar is a proof resume",
+    expectedText: "BUILDER CARD -> BUILDER PROOF",
     mockupMapping: "mockups/web #/home: landing hero, proof resume positioning, and card doorway.",
   },
   {

@@ -266,6 +266,14 @@ main {
   box-shadow: var(--shadow);
 }
 
+.hero-secondary {
+  padding-top: 28px;
+}
+
+.hero-secondary h1 {
+  font-size: clamp(2.4rem, 5vw, 5rem);
+}
+
 .eyebrow,
 .control-section-heading span,
 .panel-heading span,
@@ -340,6 +348,13 @@ p {
 
 .secondary.light {
   border-color: var(--line);
+}
+
+.account-layout .control-section-heading h1,
+.control-room .control-section-heading h2,
+.profile-edit-form .control-section-heading h1 {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1.02;
 }
 
 .wide {
@@ -486,14 +501,20 @@ p {
   --glare-y: 30%;
   --glare-opacity: 0.14;
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 12px;
+  aspect-ratio: 4 / 3;
+  min-height: 0;
+  height: auto;
+  max-height: min(620px, calc(100vh - 190px));
   width: min(100%, 430px);
   justify-self: end;
+  scroll-margin-top: 150px;
 }
 
 .builder-link-stage {
   position: relative;
-  min-height: 530px;
+  min-height: 0;
   overflow: hidden;
   border-radius: 8px;
   perspective: 1200px;
@@ -502,7 +523,7 @@ p {
 .builder-link-ghost {
   position: absolute;
   inset: 22px 8px auto;
-  height: 492px;
+  height: calc(100% - 38px);
   border-radius: 8px;
   opacity: 0.4;
   transform: rotate(4deg) translate(14px, 10px);
@@ -518,7 +539,8 @@ p {
 .builder-link-flip {
   position: relative;
   z-index: 2;
-  min-height: 520px;
+  min-height: 0;
+  height: 100%;
   transform-style: preserve-3d;
   transition: transform 0.42s cubic-bezier(0.22, 0.9, 0.22, 1), filter 0.18s ease;
 }
@@ -538,7 +560,7 @@ p {
   display: grid;
   align-content: start;
   gap: 16px;
-  min-height: 520px;
+  min-height: 0;
   padding: 22px;
   overflow: hidden;
   color: #f8fafc;
@@ -720,6 +742,13 @@ p {
 .signed-in-home-panel {
   display: grid;
   gap: 18px;
+}
+
+.owner-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .signed-in-home-panel > div:first-child {
@@ -1027,7 +1056,21 @@ textarea {
 
 .repo-controls {
   grid-column: 1 / -1;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.source-mode-segment,
+.source-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.source-mode-segment {
+  padding: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.8);
 }
 
 .repo-controls button,
@@ -1515,6 +1558,80 @@ textarea {
   }
 }
 
+@media (max-width: 760px) {
+  .topbar {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .toc-toggle,
+  .brand,
+  .topbar-account {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .toc-toggle {
+    justify-self: start;
+  }
+
+  .brand {
+    justify-self: start;
+    min-height: 42px;
+    margin-left: 48px;
+  }
+
+  .brand strong {
+    display: none;
+  }
+
+  .nav {
+    grid-column: 1;
+    grid-row: 2;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav,
+  .topbar-account {
+    width: 100%;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .topbar-account {
+    justify-content: flex-end;
+    pointer-events: none;
+  }
+
+  .nav button,
+  .topbar-account button {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  .topbar-account button {
+    pointer-events: auto;
+  }
+
+  .topbar-profile span {
+    display: none;
+  }
+
+  .builder-link-card-wrap {
+    aspect-ratio: 3 / 4;
+    max-height: 520px;
+    scroll-margin-top: 150px;
+  }
+}
+
 @media (max-width: 520px) {
   main {
     padding: 18px 12px 36px;
@@ -1549,7 +1666,7 @@ textarea {
   .state-strip,
   .draft-proof-dashboard,
   .draft-proof-dashboard > article,
-  .builder-link-face {
+  .first-proof-preview {
     padding: 18px;
   }
 
@@ -1567,13 +1684,8 @@ textarea {
     justify-self: stretch;
   }
 
-  .builder-link-stage {
-    min-height: 492px;
-  }
-
-  .builder-link-flip,
   .builder-link-face {
-    min-height: 482px;
+    padding: 18px;
   }
 
   .builder-link-face h3 {
@@ -1598,4 +1710,16 @@ textarea {
   .builder-link-card-wrap:focus-within .builder-link-flip {
     filter: none;
   }
+}
+
+.draft-warning {
+  margin: 10px 0 0;
+  color: #7c2d12;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
