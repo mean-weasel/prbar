@@ -102,6 +102,10 @@ schemes:
       targets:
         PRBar: all
     test:
+      environmentVariables:
+        PRBAR_IOS_LIVE_GITHUB_TOKEN: $(PRBAR_IOS_LIVE_GITHUB_TOKEN)
+        PRBAR_IOS_LIVE_REPOSITORY: $(PRBAR_IOS_LIVE_REPOSITORY)
+        PRBAR_IOS_LIVE_GITHUB_LOGIN: $(PRBAR_IOS_LIVE_GITHUB_LOGIN)
       targets:
         - PRBarTests
         - PRBarUITests

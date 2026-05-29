@@ -321,6 +321,11 @@ private extension XCUIApplication {
   @MainActor
   func tapContinueWithGitHub(file: StaticString = #filePath, line: UInt = #line) {
     let button = buttons["Continue with GitHub"].firstMatch
+    if button.waitForExistence(timeout: 2) == false {
+      for _ in 0..<3 where button.exists == false {
+        swipeUp()
+      }
+    }
     XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing Continue with GitHub button", file: file, line: line)
     activate()
     button.tap()
