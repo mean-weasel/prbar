@@ -4,7 +4,9 @@ Use this when closing the live-data tranche. It verifies the production provider
 
 ## Prerequisites
 
-- A GitHub OAuth client ID that is allowed to use GitHub's device authorization flow.
+- A GitHub App client ID that is allowed to use GitHub's device authorization flow.
+- The GitHub App installed or allowed for any organization repositories you want to include.
+- An active SSO session before authorizing PRBar when testing SSO-protected organization repositories.
 - An unlocked simulator or physical preview device.
 - No client secret in the app, repo, logs, screenshots, or workflow output.
 - For repeatable physical-device live smoke, a repo secret named `PRBAR_IOS_LIVE_GITHUB_TOKEN` with the smallest practical GitHub read scope for the target repository.
@@ -42,6 +44,8 @@ In the app:
 7. Confirm repo setup shows fetched GitHub repositories.
 8. Keep public repos selected by default; opt into private repos only intentionally.
 9. Finish setup and confirm PRs, Releases, and Share render from the selected repos.
+
+For SSO-protected organization repositories, start an SSO session in GitHub before authorizing the app. If PRBar was already authorized without that SSO session, disconnect and authorize again after visiting the organization's SSO page, for example `https://github.com/orgs/ORG_NAME/sso`.
 
 For repeat checks after the first successful authorization, preserve the simulator app install and Keychain state:
 

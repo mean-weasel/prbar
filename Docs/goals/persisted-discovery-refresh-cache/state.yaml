@@ -1,0 +1,331 @@
+version: 2
+
+goal:
+  title: "Persisted Discovery Refresh Cache"
+  slug: "persisted-discovery-refresh-cache"
+  kind: specific
+  tranche: "Persist safe GitHub discovery state so restarted refresh can avoid foreground discovery requests and use the persisted incremental PR cache path."
+  status: done
+  oracle:
+    signal: "Fixture tests and benchmark evidence prove restarted refresh with compatible persisted discovery avoids foreground discovery requests while preserving safe fallback behavior."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Final Judge or PM audit cites passing tests, refreshed benchmark/report output with restarted persisted-discovery request count, correctness coverage for invalidation/fallback, and live timing smoke result or skip reason."
+  intake:
+    original_request: "Use GoalBuddy goal prep to create measurable acceptance criteria for another round of refresh optimization."
+    interpreted_outcome: "After app/provider restart, PR Menu Bar refresh should avoid foreground GitHub discovery when a compatible persisted discovery snapshot exists, ideally reducing the restarted refresh path from 4 foreground requests to 1."
+    input_shape: specific
+    audience: "PR Menu Bar maintainer and GitHub-backed app users"
+    authority: approved
+    proof_type: metric
+    completion_proof: "Deterministic benchmark and tests show compatible restarted refresh uses persisted discovery plus persisted PR cache safely, with foreground request count at the accepted target."
+    likely_misfire: "Persisting discovery data but still synchronously re-pulling /user/repos, /user, and /user/orgs on manual refresh, so the UI click remains slow after restart."
+    blind_spots_considered:
+      - "ETag and TTL behavior for discovery revalidation."
+      - "Repository permissions, org membership, and token/user changes."
+      - "Interaction between persisted discovery compatibility and persisted merged-PR cache compatibility."
+      - "Foreground versus background request accounting in the benchmark."
+      - "Live GitHub latency may differ from fixture request-count wins."
+    existing_plan_facts:
+      - "Previous tranche persisted the merged-PR incremental cache and proved restarted GraphQL search shrank from roughly 7 days to 35 minutes."
+      - "Current fixture benchmark still shows persisted PR-cache restart performing 4 foreground requests because discovery is repeated."
+      - "Desired next target is persisted discovery cache plus safe invalidation/revalidation."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/persisted-discovery-refresh-cache/"
+    command: "npx goalbuddy board /Users/neonwatty/Desktop/prbar/Docs/goals/persisted-discovery-refresh-cache"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: low
+    objective: "Map current GitHub discovery caching, persistence options, benchmark request accounting, and safety requirements for persisted discovery refresh."
+    inputs:
+      - "Sources/Models/GitHubPRActivityProvider*.swift"
+      - "Sources/Models/GitHubRepository.swift"
+      - "Sources/Models/GitHubAccount.swift"
+      - "Sources/Models/GitHubMergedPullRequestCacheStore.swift"
+      - "Sources/Models/PRActivityProviderFactory.swift"
+      - "Tests/PRMenuBarTests/GitHubPRActivityProvider*Tests.swift"
+      - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+      - "scripts/refresh-benchmark.sh"
+      - "Docs/goals/persisted-incremental-refresh-cache/state.yaml"
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation files."
+      - "Prefer concrete file-path evidence."
+      - "Distinguish foreground refresh requests from optional background revalidation."
+      - "Identify exact cache scope and invalidation/fallback triggers."
+    expected_output:
+      - "Current discovery call graph and in-memory cache shape."
+      - "Persistence design options and safest store scope."
+      - "Benchmark acceptance target, including whether 1 foreground request is feasible."
+      - "Correctness risks and fallback triggers."
+      - "Candidate Worker slice with likely allowed files and verification commands."
+    receipt:
+      result: done
+      note: "notes/T001-discovery-cache-scout.md"
+      summary: "Mapped the discovery call graph, in-memory discovery/ETag caches, persistence gap, feasible 1-request restarted path, fallback risks, and a largest safe Worker slice for persisted discovery refresh."
+      evidence:
+        - "Sources/Models/GitHubPRActivityProvider.swift"
+        - "Sources/Models/GitHubPRActivityProvider+Discovery.swift"
+        - "Sources/Models/GitHubPRActivityProvider+ConditionalRequests.swift"
+        - "Sources/Models/GitHubMergedPullRequestCacheStore.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderTests.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderIncrementalTests.swift"
+        - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+      spawned_tasks:
+        - T003
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the largest safe implementation slice for persisted discovery refresh based on Scout evidence."
+    inputs:
+      - "T001 receipt."
+      - "Goal oracle and measurable acceptance criteria."
+      - "Current dirty diff."
+    constraints:
+      - "Do not implement."
+      - "Reject a slice that cannot prove restarted foreground request-count behavior."
+      - "Reject a slice that reuses stale or incompatible discovery state unsafely."
+      - "Require allowed_files, verify commands, and stop conditions."
+    expected_output:
+      - "Decision."
+      - "Exact Worker objective."
+      - "allowed_files."
+      - "verify."
+      - "stop_if."
+      - "Deferred or blocked work."
+    receipt:
+      result: done
+      decision: "approved"
+      full_outcome_complete: false
+      rationale: "Scout showed a single vertical slice can safely persist discovery snapshots, restore them before foreground REST discovery, preserve stale conditional revalidation, and prove the restarted path by benchmark request count. The slice includes benchmark coverage so T004 should only run if benchmark work needs follow-up."
+      worker_task: T003
+      allowed_files:
+        - "Sources/Models/GitHubPRActivityProvider.swift"
+        - "Sources/Models/GitHubPRActivityProvider+ConditionalRequests.swift"
+        - "Sources/Models/GitHubDiscoveryCacheStore.swift"
+        - "Sources/Models/GitHubRepository.swift"
+        - "Sources/Models/GitHubAccount.swift"
+        - "Sources/Models/PRActivityProviderFactory.swift"
+        - "Tests/PRMenuBarTests/GitHubDiscoveryCacheStoreTests.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderDiscoveryCacheTests.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderIncrementalTests.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderTestSupport.swift"
+        - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+        - "Tests/PRMenuBarTests/RefreshBenchmarkSupport.swift"
+      verify:
+        - "./scripts/format-check.sh"
+        - "./scripts/file-size-check.sh"
+        - "xcodegen generate && xcodebuild test -project PRMenuBar.xcodeproj -scheme PRMenuBar -configuration Debug -destination 'platform=macOS' -derivedDataPath build -only-testing:PRMenuBarTests/GitHubDiscoveryCacheStoreTests -only-testing:PRMenuBarTests/GitHubPRActivityProviderDiscoveryCacheTests -only-testing:PRMenuBarTests/GitHubPRActivityProviderIncrementalTests -only-testing:PRMenuBarTests/RefreshBenchmarkTests CODE_SIGN_IDENTITY='-' CODE_SIGNING_REQUIRED=NO"
+        - "make refresh-benchmark"
+      stop_if:
+        - "Need files outside allowed_files."
+        - "Fresh persisted discovery cannot avoid foreground REST discovery."
+        - "Cache scoping would store or expose raw tokens."
+        - "Stale/corrupt/incompatible discovery fallback semantics are ambiguous."
+        - "Verification fails twice with the same failure."
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the persisted discovery refresh slice selected by Judge."
+    allowed_files:
+      - "Sources/Models/GitHubPRActivityProvider.swift"
+      - "Sources/Models/GitHubPRActivityProvider+Discovery.swift"
+      - "Sources/Models/GitHubPRActivityProvider+ConditionalRequests.swift"
+      - "Sources/Models/GitHubDiscoveryCacheStore.swift"
+      - "Sources/Models/GitHubRepository.swift"
+      - "Sources/Models/GitHubAccount.swift"
+      - "Sources/Models/PRActivityProviderFactory.swift"
+      - "Tests/PRMenuBarTests/GitHubDiscoveryCacheStoreTests.swift"
+      - "Tests/PRMenuBarTests/GitHubPRActivityProviderDiscoveryCacheTests.swift"
+      - "Tests/PRMenuBarTests/GitHubPRActivityProviderIncrementalTests.swift"
+      - "Tests/PRMenuBarTests/GitHubPRActivityProviderTestSupport.swift"
+      - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+      - "Tests/PRMenuBarTests/RefreshBenchmarkSupport.swift"
+    verify:
+      - "./scripts/format-check.sh"
+      - "./scripts/file-size-check.sh"
+      - "xcodegen generate && xcodebuild test -project PRMenuBar.xcodeproj -scheme PRMenuBar -configuration Debug -destination 'platform=macOS' -derivedDataPath build -only-testing:PRMenuBarTests/GitHubDiscoveryCacheStoreTests -only-testing:PRMenuBarTests/GitHubPRActivityProviderDiscoveryCacheTests -only-testing:PRMenuBarTests/GitHubPRActivityProviderIncrementalTests -only-testing:PRMenuBarTests/RefreshBenchmarkTests CODE_SIGN_IDENTITY='-' CODE_SIGNING_REQUIRED=NO"
+      - "make refresh-benchmark"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Foreground request-count acceptance target becomes ambiguous."
+      - "Cache scoping would store or expose secrets."
+      - "Discovery invalidation semantics are unsafe or unclear."
+      - "Verification fails twice with the same failure."
+      - "Unrelated dirty work blocks safe edits."
+    receipt:
+      result: done
+      changed_files:
+        - "Sources/Models/GitHubAccount.swift"
+        - "Sources/Models/GitHubDiscoveryCacheStore.swift"
+        - "Sources/Models/GitHubPRActivityProvider.swift"
+        - "Sources/Models/GitHubPRActivityProvider+Discovery.swift"
+        - "Sources/Models/GitHubPRActivityProvider+ConditionalRequests.swift"
+        - "Sources/Models/GitHubRepository.swift"
+        - "Sources/Models/PRActivityProviderFactory.swift"
+        - "Tests/PRMenuBarTests/GitHubDiscoveryCacheStoreTests.swift"
+        - "Tests/PRMenuBarTests/GitHubPRActivityProviderDiscoveryCacheTests.swift"
+        - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+        - "Tests/PRMenuBarTests/RefreshBenchmarkSupport.swift"
+      commands:
+        - cmd: "./scripts/format-check.sh"
+          status: pass
+        - cmd: "./scripts/file-size-check.sh"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "xcodegen generate && xcodebuild test -project PRMenuBar.xcodeproj -scheme PRMenuBar -configuration Debug -destination 'platform=macOS' -derivedDataPath build -only-testing:PRMenuBarTests/GitHubDiscoveryCacheStoreTests -only-testing:PRMenuBarTests/GitHubPRActivityProviderDiscoveryCacheTests -only-testing:PRMenuBarTests/GitHubPRActivityProviderIncrementalTests -only-testing:PRMenuBarTests/RefreshBenchmarkTests CODE_SIGN_IDENTITY='-' CODE_SIGNING_REQUIRED=NO"
+          status: pass
+        - cmd: "make refresh-benchmark"
+          status: pass
+      summary: "Added a token-fingerprinted persisted discovery cache store, made discovery models codable, restored fresh persisted discovery before foreground REST calls, restored stale persisted ETags for conditional live discovery, injected the store into live GitHub provider construction, and added benchmark/test coverage proving the compatible restarted path uses only one /graphql request."
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Update benchmark/report coverage for compatible persisted-discovery restarted refresh and fallback scenarios if not included in T003."
+    allowed_files:
+      - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+      - "Tests/PRMenuBarTests/RefreshBenchmarkSupport.swift"
+      - "Docs/goals/persisted-discovery-refresh-cache/notes/T004-refresh-benchmark.md"
+    verify:
+      - "make refresh-benchmark"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Benchmark cannot distinguish foreground discovery requests from background revalidation."
+      - "Benchmark acceptance target conflicts with implementation evidence."
+      - "Verification fails twice with the same failure."
+    receipt:
+      result: done
+      changed_files:
+        - "Tests/PRMenuBarTests/RefreshBenchmarkTests.swift"
+        - "Tests/PRMenuBarTests/RefreshBenchmarkSupport.swift"
+      commands:
+        - cmd: "make refresh-benchmark"
+          status: pass
+      summary: "Benchmark work was folded into T003. The report now includes persisted_discovery_cache_refresh with requestCount 1, requestsByPath { /graphql: 1 }, discovery.cache_hit cache=persisted, and graphql.total mode=incremental."
+  - id: T005
+    type: pm
+    assignee: PM
+    status: done
+    reasoning_hint: default
+    objective: "Attempt a best-effort live GitHub timing smoke or record why it was skipped."
+    inputs:
+      - "Current implementation receipts."
+      - "Available local credentials and network state."
+    constraints:
+      - "Do not require credentials for goal completion."
+      - "Do not print tokens or sensitive URLs."
+      - "Record timing/request-shape evidence only when it can be gathered safely."
+    expected_output:
+      - "Live smoke command/result or skip reason."
+      - "Observed timing/request-shape signal available without sensitive data."
+    receipt:
+      result: done
+      commands:
+        - cmd: "make build; launch PRMenuBar with PR_MENU_BAR_GITHUB_TOKEN from gh auth token and PR_MENU_BAR_INITIAL_STATE_DUMP_PATH=build/live-github-discovery-cache-smoke.json"
+          status: pass
+        - cmd: "launch PRMenuBar again with the same live GitHub token and PR_MENU_BAR_INITIAL_STATE_DUMP_PATH=build/live-github-discovery-cache-smoke-second.json"
+          status: pass
+      summary: "Best-effort live GitHub timing smoke passed. First launch produced GitHub data in 5.189s with 345 total PRs across 14 active repos and no refreshError. Immediate restarted launch produced the same GitHub totals in 4.637s with no refreshError. Tokens were not printed."
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether persisted discovery refresh satisfies the measurable acceptance criteria for this tranche."
+    inputs:
+      - "All done task receipts."
+      - "Last verification."
+      - "Current dirty diff."
+      - "Goal oracle."
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is queued or active."
+      - "Reject completion if restarted foreground request-count behavior is not proven."
+      - "Reject completion if invalidation/fallback correctness is unproven."
+    expected_output:
+      - "complete | not_complete."
+      - "full_outcome_complete: true | false."
+      - "Evidence mapped to oracle."
+      - "Missing evidence."
+      - "Next task if not complete."
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      commands:
+        - cmd: "./scripts/format-check.sh"
+          status: pass
+        - cmd: "./scripts/file-size-check.sh"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "xcodegen generate && xcodebuild test -project PRMenuBar.xcodeproj -scheme PRMenuBar -configuration Debug -destination 'platform=macOS' -derivedDataPath build -only-testing:PRMenuBarTests/GitHubDiscoveryCacheStoreTests -only-testing:PRMenuBarTests/GitHubPRActivityProviderDiscoveryCacheTests -only-testing:PRMenuBarTests/GitHubPRActivityProviderIncrementalTests -only-testing:PRMenuBarTests/RefreshBenchmarkTests CODE_SIGN_IDENTITY='-' CODE_SIGNING_REQUIRED=NO"
+          status: pass
+        - cmd: "make refresh-benchmark"
+          status: pass
+        - cmd: "make test"
+          status: pass
+        - cmd: "live GitHub two-launch timing smoke"
+          status: pass
+      evidence:
+        - "T003 added persisted discovery cache storage scoped by token fingerprint and injected it into the live GitHub provider."
+        - "T003 tests prove fresh persisted discovery plus persisted PR cache uses only /graphql after restart, token mismatch does not reuse discovery, corrupt persisted discovery falls back to live discovery, stale discovery revalidates with persisted ETags, and repository changes force full PR search."
+        - "T004 benchmark evidence proves persisted_discovery_cache_refresh has requestCount 1, requestsByPath { /graphql: 1 }, discovery.cache_hit cache=persisted, and graphql.total mode=incremental."
+        - "T005 live smoke passed twice with GitHub data, 14 active repos, 345 PRs, no refreshError, and second restarted launch completing in 4.637s."
+        - "Full make test passed 104 tests with 0 failures."
+      summary: "The tranche is complete: a compatible restarted refresh can now use persisted discovery and persisted PR caches to avoid foreground /user/repos, /user, and /user/orgs discovery, reaching the accepted one-request /graphql foreground path while preserving safety fallbacks."
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - "./scripts/format-check.sh"
+      - "./scripts/file-size-check.sh"
+      - "git diff --check"
+      - "xcodegen generate && xcodebuild test -project PRMenuBar.xcodeproj -scheme PRMenuBar -configuration Debug -destination 'platform=macOS' -derivedDataPath build -only-testing:PRMenuBarTests/GitHubDiscoveryCacheStoreTests -only-testing:PRMenuBarTests/GitHubPRActivityProviderDiscoveryCacheTests -only-testing:PRMenuBarTests/GitHubPRActivityProviderIncrementalTests -only-testing:PRMenuBarTests/RefreshBenchmarkTests CODE_SIGN_IDENTITY='-' CODE_SIGNING_REQUIRED=NO"
+      - "make refresh-benchmark"
+      - "live GitHub two-launch timing smoke"
+      - "make test"

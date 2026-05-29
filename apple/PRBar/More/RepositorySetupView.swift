@@ -72,12 +72,18 @@ struct RepositorySetupView: View {
           .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
           HStack {
-            Label("\(includedCount) selected", systemImage: "checkmark.circle")
+            Label(selectionSummaryText, systemImage: "checkmark.circle")
             Spacer()
-            Text("\(repositories.count) total")
+            Text("\(availableCount) available")
               .foregroundStyle(.secondary)
           }
           .font(.subheadline)
+
+          if showsFinishButton && includedCount == 0 {
+            Text("Select at least one repo to finish setup.")
+              .font(.caption)
+              .foregroundStyle(.secondary)
+          }
 
           Picker("Repo filter", selection: $filter) {
             ForEach(RepositoryFilter.allCases) { filter in
@@ -108,12 +114,16 @@ struct RepositorySetupView: View {
         }
       }
 
-      Section(filteredSectionTitle) {
-        if filteredRepositories.isEmpty {
+      if filteredRepositories.isEmpty {
+        Section(filteredSectionTitle) {
           emptyState
-        } else {
-          ForEach(filteredRepositories) { repository in
-            repositoryRow(repository)
+        }
+      } else {
+        ForEach(groupedFilteredRepositories, id: \.owner) { group in
+          Section("\(group.owner) repos") {
+            ForEach(group.repositories) { repository in
+              repositoryRow(repository)
+            }
           }
         }
       }
@@ -128,15 +138,31 @@ struct RepositorySetupView: View {
         .font(.subheadline)
       }
 
+      if let store, store.isRefreshingActivity || store.activityRefreshIssue != nil || store.lastActivityRefreshAt != nil {
+        Section("Sync") {
+          ActivitySyncStatusView(
+            isRefreshing: store.isRefreshingActivity,
+            progress: store.activityRefreshProgress,
+            lastRefreshedAt: store.lastActivityRefreshAt,
+            lastRefreshAttemptAt: store.lastActivityRefreshAttemptAt,
+            issue: store.activityRefreshIssue,
+            repositoryIssues: store.activityRepositoryIssues
+          )
+          .listRowInsets(EdgeInsets())
+          .listRowBackground(Color.clear)
+        }
+      }
+
     }
     .navigationTitle(title)
+    .safeAreaInset(edge: .bottom) {
+      selectionSummaryBar
+    }
     .toolbar {
       if showsFinishButton {
         ToolbarItem(placement: .topBarTrailing) {
           Button {
-            Task {
-              await store?.finishRepositorySetup()
-            }
+            store?.finishRepositorySetup()
           } label: {
             if store?.isRefreshingActivity == true {
               ProgressView()
@@ -173,6 +199,32 @@ struct RepositorySetupView: View {
     visibleReadyRepositories.filter(\.included)
   }
 
+  private var availableCount: Int {
+    repositories.filter { $0.access == .ready }.count
+  }
+
+  private var selectionSummaryText: String {
+    "\(includedCount) of \(repositories.count) selected"
+  }
+
+  private var groupedFilteredRepositories: [(owner: String, repositories: [Repository])] {
+    Dictionary(grouping: filteredRepositories, by: \.owner)
+      .map { owner, repositories in
+        (
+          owner: owner,
+          repositories: repositories.sorted {
+            if $0.recommended != $1.recommended {
+              return $0.recommended && !$1.recommended
+            }
+            return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+          }
+        )
+      }
+      .sorted { lhs, rhs in
+        lhs.owner.localizedCaseInsensitiveCompare(rhs.owner) == .orderedAscending
+      }
+  }
+
   private var filteredSectionTitle: String {
     if searchText.isEmpty {
       return filter.rawValue
@@ -181,12 +233,17 @@ struct RepositorySetupView: View {
   }
 
   private var emptyState: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      Text("No repos found")
+    VStack(alignment: .leading, spacing: 8) {
+      Text("Repo not showing up?")
         .font(.subheadline.weight(.semibold))
-      Text("Try another search or filter.")
-        .font(.caption)
-        .foregroundStyle(.secondary)
+
+      VStack(alignment: .leading, spacing: 4) {
+        Label("Install PRBar in the GitHub organization.", systemImage: "building.2")
+        Label("Authorize SSO for protected organizations.", systemImage: "lock.shield")
+        Label("Check your repository permissions.", systemImage: "person.badge.key")
+      }
+      .font(.caption)
+      .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(.vertical, 8)
@@ -201,6 +258,7 @@ struct RepositorySetupView: View {
 
     return repository.name.localizedCaseInsensitiveContains(query) ||
       repository.owner.localizedCaseInsensitiveContains(query) ||
+      repository.fullName.localizedCaseInsensitiveContains(query) ||
       repository.id.localizedCaseInsensitiveContains(query) ||
       repository.reason.localizedCaseInsensitiveContains(query)
   }
@@ -232,7 +290,7 @@ struct RepositorySetupView: View {
           }
         }
 
-        Text(repository.owner)
+        Text(repository.fullName)
           .font(.caption)
           .foregroundStyle(.secondary)
 
@@ -263,6 +321,20 @@ struct RepositorySetupView: View {
 
     let visibleIDs = Set(visibleReadyRepositories.map(\.id))
     store.setRepositoriesIncluded(visibleIDs, included: included)
+  }
+
+  private var selectionSummaryBar: some View {
+    HStack(spacing: 10) {
+      Label(selectionSummaryText, systemImage: "checkmark.circle")
+        .font(.subheadline.weight(.medium))
+      Spacer()
+      Text("\(availableCount) available")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+    .padding(.horizontal, 16)
+    .padding(.vertical, 10)
+    .background(.bar)
   }
 }
 

@@ -32,10 +32,13 @@ final class GitHubPRActivityProvider: PRActivityProviding {
   var defaultWindow: ActivityWindow = .oneWeek
   weak var metrics: RefreshMetricsRecording?
   private let dailyBucketCount = 30
-  private let repositoryPageSize = 100
+  let repositoryPageSize = 100
   private let graphQLPageSize = 100
-  private let discoveryCacheDuration: TimeInterval
-  private var discoveryCache: GitHubDiscoveryCache?
+  let discoveryCacheDuration: TimeInterval
+  let incrementalSearchOverlap: TimeInterval
+  let mergedPullRequestCacheStore: GitHubMergedPullRequestCacheStoring?
+  let discoveryCacheStore: GitHubDiscoveryCacheStoring?
+  var discoveryCache: GitHubDiscoveryCache?
   var discoveryResponseCache: [String: GitHubCachedAPIResponse] = [:]
   var mergedPullRequestCache: GitHubMergedPullRequestCache?
 
@@ -45,6 +48,9 @@ final class GitHubPRActivityProvider: PRActivityProviding {
     bucketLabels: [String],
     defaultWindow: ActivityWindow = .oneWeek,
     discoveryCacheDuration: TimeInterval = 15 * 60,
+    incrementalSearchOverlap: TimeInterval = 30 * 60,
+    mergedPullRequestCacheStore: GitHubMergedPullRequestCacheStoring? = nil,
+    discoveryCacheStore: GitHubDiscoveryCacheStoring? = nil,
     metrics: RefreshMetricsRecording? = nil
   ) {
     self.token = token
@@ -52,6 +58,9 @@ final class GitHubPRActivityProvider: PRActivityProviding {
     self.bucketLabels = bucketLabels
     self.defaultWindow = defaultWindow
     self.discoveryCacheDuration = discoveryCacheDuration
+    self.incrementalSearchOverlap = incrementalSearchOverlap
+    self.mergedPullRequestCacheStore = mergedPullRequestCacheStore
+    self.discoveryCacheStore = discoveryCacheStore
     self.metrics = metrics
   }
 
@@ -66,9 +75,10 @@ final class GitHubPRActivityProvider: PRActivityProviding {
       let mergedPullRequestsByRepository = try mergedPullRequestsByRepository(
         owners: discovery.cache.searchOwners,
         mergedBy: discovery.cache.authenticatedUser.login,
+        repositoryIDs: pullableRepositories.map(\.fullName).sorted(),
         since: since,
         until: now,
-        forceFullRefresh: discovery.cacheHit == false
+        forceFullRefresh: false
       )
       let activities = try measured("activity.bucket") {
         pullableRepositories.map { repository in
@@ -80,40 +90,6 @@ final class GitHubPRActivityProvider: PRActivityProviding {
         }
       }
       return store(activities: activities, now: now)
-    }
-  }
-
-  private func discovery(now: Date) throws -> GitHubDiscoveryResult {
-    if let discoveryCache,
-      now.timeIntervalSince(discoveryCache.createdAt) < discoveryCacheDuration
-    {
-      recordMetric("discovery.cache_hit", metadata: ["cache": "hit"])
-      return GitHubDiscoveryResult(cache: discoveryCache, cacheHit: true)
-    }
-
-    return try measured("discovery.total", metadata: ["cache": "miss"]) {
-      let repositories = try repositories()
-      let pullableRepositories = repositories.filter(\.canPull)
-      if pullableRepositories.isEmpty {
-        let discovery = GitHubDiscoveryCache(
-          createdAt: now,
-          authenticatedUser: GitHubAuthenticatedUser(login: ""),
-          searchOwners: [],
-          pullableRepositories: []
-        )
-        discoveryCache = discovery
-        return GitHubDiscoveryResult(cache: discovery, cacheHit: false)
-      }
-
-      let authenticatedUser = try authenticatedUser()
-      let discovery = GitHubDiscoveryCache(
-        createdAt: now,
-        authenticatedUser: authenticatedUser,
-        searchOwners: try searchOwners(authenticatedUser: authenticatedUser),
-        pullableRepositories: pullableRepositories
-      )
-      discoveryCache = discovery
-      return GitHubDiscoveryResult(cache: discovery, cacheHit: false)
     }
   }
 
@@ -140,59 +116,6 @@ final class GitHubPRActivityProvider: PRActivityProviding {
       repositories: activities,
       refreshedAt: now
     )
-  }
-
-  private func authenticatedUser() throws -> GitHubAuthenticatedUser {
-    try measured("discovery.authenticated_user") {
-      let data = try discoveryData(for: GitHubAPIRequest.authenticatedUser())
-      return try JSONDecoder().decode(GitHubAuthenticatedUser.self, from: data)
-    }
-  }
-
-  private func organizations() throws -> [GitHubOrganization] {
-    try measured("discovery.organizations") {
-      let data = try discoveryData(for: GitHubAPIRequest.userOrganizations())
-      return try JSONDecoder().decode([GitHubOrganization].self, from: data)
-    }
-  }
-
-  private func searchOwners(authenticatedUser: GitHubAuthenticatedUser) throws
-    -> [GitHubSearchOwner]
-  {
-    let userOwner = GitHubSearchOwner(kind: .user, login: authenticatedUser.login)
-    let organizationOwners = try organizations().map {
-      GitHubSearchOwner(kind: .org, login: $0.login)
-    }
-    return ([userOwner] + organizationOwners).sorted {
-      if $0.kind.rawValue == $1.kind.rawValue {
-        return $0.login < $1.login
-      }
-      return $0.kind.rawValue < $1.kind.rawValue
-    }
-  }
-
-  private func repositories() throws -> [GitHubRepository] {
-    var page = 1
-    var repositories: [GitHubRepository] = []
-    var pageRepositories: [GitHubRepository]
-
-    repeat {
-      pageRepositories = try measured(
-        "discovery.repositories.page",
-        metadata: ["page": "\(page)"]
-      ) {
-        let apiRequest = GitHubAPIRequest.userRepositories(
-          page: page,
-          perPage: repositoryPageSize
-        )
-        let data = try discoveryData(for: apiRequest)
-        return try JSONDecoder().decode([GitHubRepository].self, from: data)
-      }
-      repositories.append(contentsOf: pageRepositories)
-      page += 1
-    } while pageRepositories.count == repositoryPageSize
-
-    return repositories
   }
 
   private func activity(
@@ -276,12 +199,12 @@ final class GitHubPRActivityProvider: PRActivityProviding {
   }
 }
 
-private struct GitHubDiscoveryResult {
+struct GitHubDiscoveryResult {
   var cache: GitHubDiscoveryCache
   var cacheHit: Bool
 }
 
-private struct GitHubDiscoveryCache {
+struct GitHubDiscoveryCache: Codable, Equatable {
   var createdAt: Date
   var authenticatedUser: GitHubAuthenticatedUser
   var searchOwners: [GitHubSearchOwner]

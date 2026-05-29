@@ -9,7 +9,7 @@ enum ShareCardBuilder {
         ShareCardRepoRow(
           id: repository.id,
           displayName: repository.shareDisplayName(revealingPrivateNames: showPrivateNames),
-          count: repository.visibleTotal(for: store.window, bin: store.bin),
+          count: store.visibleTotal(for: repository),
           colorHex: repository.colorHex
         )
       }

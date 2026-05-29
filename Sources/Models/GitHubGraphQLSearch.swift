@@ -1,7 +1,7 @@
 import Foundation
 
-struct GitHubSearchOwner: Equatable {
-  enum Kind: String {
+struct GitHubSearchOwner: Codable, Equatable {
+  enum Kind: String, Codable {
     case user
     case org
   }

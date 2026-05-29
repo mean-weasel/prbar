@@ -4,6 +4,7 @@ extension GitHubPRActivityProvider {
   func mergedPullRequestsByRepository(
     owners: [GitHubSearchOwner],
     mergedBy: String,
+    repositoryIDs: [String],
     since: Date,
     until: Date,
     forceFullRefresh: Bool
@@ -11,6 +12,7 @@ extension GitHubPRActivityProvider {
     let search = mergedPullRequestSearch(
       owners: owners,
       mergedBy: mergedBy,
+      repositoryIDs: repositoryIDs,
       since: since,
       until: until,
       forceFullRefresh: forceFullRefresh
@@ -40,13 +42,16 @@ extension GitHubPRActivityProvider {
       let currentPullRequestsByID = pullRequestsByID.filter { _, pullRequest in
         pullRequest.mergedAt >= since && pullRequest.mergedAt <= until
       }
-      mergedPullRequestCache = GitHubMergedPullRequestCache(
+      let updatedCache = GitHubMergedPullRequestCache(
         owners: owners,
         mergedBy: mergedBy,
+        repositoryIDs: repositoryIDs,
         since: since,
         until: until,
         pullRequestsByID: currentPullRequestsByID
       )
+      mergedPullRequestCache = updatedCache
+      mergedPullRequestCacheStore?.save(updatedCache, token: token)
       return Self.groupByRepository(currentPullRequestsByID.values)
     }
   }
@@ -54,16 +59,20 @@ extension GitHubPRActivityProvider {
   private func mergedPullRequestSearch(
     owners: [GitHubSearchOwner],
     mergedBy: String,
+    repositoryIDs: [String],
     since: Date,
     until: Date,
     forceFullRefresh: Bool
   ) -> GitHubMergedPullRequestSearch {
+    let cache = mergedPullRequestCache ?? mergedPullRequestCacheStore?.load(token: token)
     guard
       forceFullRefresh == false,
-      let cache = mergedPullRequestCache,
+      let cache,
       cache.owners == owners,
       cache.mergedBy == mergedBy,
+      cache.repositoryIDs == repositoryIDs,
       since >= cache.since,
+      cache.until >= since,
       until >= cache.until
     else {
       return GitHubMergedPullRequestSearch(
@@ -74,6 +83,8 @@ extension GitHubPRActivityProvider {
       )
     }
 
+    mergedPullRequestCache = cache
+
     if until == cache.until {
       return GitHubMergedPullRequestSearch(
         mode: .cacheOnly,
@@ -83,9 +94,17 @@ extension GitHubPRActivityProvider {
       )
     }
 
+    let overlapSince =
+      Calendar.prActivity.date(
+        byAdding: .second,
+        value: -Int(incrementalSearchOverlap),
+        to: cache.until
+      ) ?? cache.until
+    let incrementalSince = max(cache.since, overlapSince)
+
     return GitHubMergedPullRequestSearch(
       mode: .incremental,
-      since: cache.until,
+      since: incrementalSince,
       until: until,
       cachedPullRequestsByID: cache.pullRequestsByID
     )
@@ -106,9 +125,10 @@ extension GitHubPRActivityProvider {
   }
 }
 
-struct GitHubMergedPullRequestCache {
+struct GitHubMergedPullRequestCache: Codable, Equatable {
   var owners: [GitHubSearchOwner]
   var mergedBy: String
+  var repositoryIDs: [String]
   var since: Date
   var until: Date
   var pullRequestsByID: [String: GitHubMergedPullRequest]

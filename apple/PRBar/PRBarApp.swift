@@ -14,35 +14,51 @@ struct PRBarApp: App {
     let arguments = ProcessInfo.processInfo.arguments
     let environment = ProcessInfo.processInfo.environment
     let isUITesting = arguments.contains("--ui-testing")
-    let isLiveGitHubSmoke = arguments.contains("--live-github-smoke") || arguments.contains("--live-github-smoke-headless")
     let isLiveGitHubSmokeHeadless = arguments.contains("--live-github-smoke-headless")
+    let liveGitHubSession = Self.uiTestingLiveGitHubSession(environment: environment)
     let usesPersistentUITestingState =
       arguments.contains("--ui-testing-seed-activity-cache") ||
       arguments.contains("--ui-testing-cached-activity")
     if ProcessInfo.processInfo.arguments.contains("--ui-testing") {
       let sessionStore = InMemoryGitHubSessionStore()
-      if usesPersistentUITestingState {
-        try? sessionStore.saveSession(.fixture)
-      }
-      if ProcessInfo.processInfo.arguments.contains("--ui-testing-device-auth") {
-        authService = StaticGitHubAuthService(
+      if let liveGitHubSession {
+        authService = StaticGitHubAuthService(sessionStore: sessionStore, session: liveGitHubSession)
+        repositoryProvider = GitHubRepositoryClient(
           sessionStore: sessionStore,
-          result: .failure(.authorizationPending(.fixture)),
-          continuationResult: .success(.fixture)
+          transport: URLSessionGitHubRepositoryTransport()
+        )
+        activityProvider = GitHubActivityClient(
+          sessionStore: sessionStore,
+          transport: URLSessionGitHubRepositoryTransport()
         )
       } else {
-        authService = StaticGitHubAuthService(sessionStore: sessionStore, session: .fixture)
-      }
-      repositoryProvider = StaticGitHubRepositoryProvider(repositories: SampleData.repositories)
-      if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-failure") ||
-        ProcessInfo.processInfo.arguments.contains("--ui-testing-cached-activity") {
-        activityProvider = UITestingFailingGitHubActivityProvider(error: GitHubAPIError.networkUnavailable)
-      } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-seed-activity-cache") {
-        activityProvider = StaticGitHubActivityProvider(snapshot: Self.uiTestingCachedSnapshot)
-      } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-data") {
-        activityProvider = SequencedGitHubActivityProvider(snapshots: [Self.uiTestingRefreshSnapshot, Self.uiTestingRefreshSnapshot])
-      } else {
-        activityProvider = StaticGitHubActivityProvider()
+        if usesPersistentUITestingState {
+          try? sessionStore.saveSession(.fixture)
+        }
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-device-auth") {
+          authService = StaticGitHubAuthService(
+            sessionStore: sessionStore,
+            result: .failure(.authorizationPending(.fixture)),
+            continuationResult: .success(.fixture)
+          )
+        } else {
+          authService = StaticGitHubAuthService(sessionStore: sessionStore, session: .fixture)
+        }
+        repositoryProvider = StaticGitHubRepositoryProvider(repositories: SampleData.repositories)
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-failure") ||
+          ProcessInfo.processInfo.arguments.contains("--ui-testing-cached-activity") {
+          activityProvider = UITestingFailingGitHubActivityProvider(error: GitHubAPIError.networkUnavailable)
+        } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-first-run-slow-sync") {
+          activityProvider = UITestingSlowGitHubActivityProvider(snapshot: Self.uiTestingRefreshSnapshot)
+        } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-seed-activity-cache") {
+          activityProvider = StaticGitHubActivityProvider(snapshot: Self.uiTestingCachedSnapshot)
+        } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-partial-sync") {
+          activityProvider = StaticGitHubActivityProvider(snapshot: Self.uiTestingPartialSnapshot)
+        } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-refresh-data") {
+          activityProvider = SequencedGitHubActivityProvider(snapshots: [Self.uiTestingRefreshSnapshot, Self.uiTestingRefreshSnapshot])
+        } else {
+          activityProvider = StaticGitHubActivityProvider()
+        }
       }
       repositorySelectionStore = usesPersistentUITestingState
         ? UserDefaultsRepositorySelectionStore(key: "ui-testing.github.includedRepositoryIDs")
@@ -52,17 +68,8 @@ struct PRBarApp: App {
         : InMemoryGitHubActivityCacheStore()
     } else {
       let sessionStore = KeychainGitHubSessionStore()
-      if isLiveGitHubSmokeHeadless,
-        let token = Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_GITHUB_TOKEN"]),
-        let login = Self.normalizedLiveSmokeValue(environment["PRBAR_LIVE_SMOKE_GITHUB_LOGIN"]) {
-        try? sessionStore.saveSession(
-          GitHubAuthSession(
-            accessToken: token,
-            tokenType: "bearer",
-            scopes: ["repo"],
-            user: GitHubUser(login: login, displayName: login)
-          )
-        )
+      if isLiveGitHubSmokeHeadless, let liveGitHubSession {
+        try? sessionStore.saveSession(liveGitHubSession)
       }
       authService = GitHubDeviceFlowAuthService(
         configuration: .appDefault(),
@@ -80,8 +87,8 @@ struct PRBarApp: App {
       activityCacheStore = FileGitHubActivityCacheStore()
     }
 
-    if isLiveGitHubSmoke,
-      let includedRepo = Self.normalizedLiveSmokeValue(environment["PRBAR_LIVE_SMOKE_INCLUDED_REPO"]) {
+    if isLiveGitHubSmokeHeadless,
+      let includedRepo = Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_REPOSITORY"]) {
       try? repositorySelectionStore.clearIncludedRepositoryIDs()
       try? activityCacheStore.clear()
       try? repositorySelectionStore.saveIncludedRepositoryIDs([includedRepo])
@@ -126,8 +133,8 @@ struct PRBarApp: App {
     if isLiveGitHubSmokeHeadless {
       Self.startHeadlessLiveGitHubSmoke(
         store: store,
-        expectedLogin: Self.normalizedLiveSmokeValue(environment["PRBAR_LIVE_SMOKE_GITHUB_LOGIN"]),
-        includedRepo: Self.normalizedLiveSmokeValue(environment["PRBAR_LIVE_SMOKE_INCLUDED_REPO"])
+        expectedLogin: Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_GITHUB_LOGIN"]),
+        includedRepo: Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_REPOSITORY"])
       )
     }
     _store = State(initialValue: store)
@@ -148,30 +155,84 @@ private struct UITestingFailingGitHubActivityProvider: GitHubActivityProviding {
   }
 }
 
-private extension PRBarApp {
-  static var uiTestingActivityCacheURL: URL {
-    FileManager.default.temporaryDirectory
-      .appendingPathComponent("PRBarUITesting", isDirectory: true)
-      .appendingPathComponent("GitHubActivityCache.json")
+private struct UITestingSlowGitHubActivityProvider: GitHubActivityProviding {
+  var snapshot: GitHubActivitySnapshot
+
+  func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
+    filteredSnapshot(for: repositories)
   }
 
-  static var uiTestingCachedSnapshot: GitHubActivitySnapshot {
-    GitHubActivitySnapshot(
-      pullRequests: [
-        PullRequest(id: "prbar#424", title: "Cached relaunch PR", repoID: "prbar", number: 424, mergedAt: SampleData.dateTime("2026-05-24T19:30:00Z"))
-      ],
-      releases: [
-        ReleaseMoment(id: "prbar@release:v4.2.4", repoID: "prbar", title: "Cached relaunch release", tag: "v4.2.4", date: SampleData.date("2026-05-24"), source: .release, notes: "Loaded from the persisted UI test activity cache.", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v4.2.4")!)
-      ],
-      anchorDate: SampleData.date("2026-05-24")
+  func activityAsync(
+    for repositories: [Repository],
+    endingAt endDate: Date,
+    lookbackDays: Int,
+    progress: (@MainActor (ActivityRefreshProgress) -> Void)?
+  ) async throws -> GitHubActivitySnapshot {
+    let includedIDs = Set(repositories.map(\.id))
+    let repoName = repositories.first?.name
+    await progress?(
+      ActivityRefreshProgress(
+        totalRepositories: repositories.count,
+        completedRepositories: 0,
+        currentRepositoryName: repoName,
+        pullRequestCount: 0,
+        releaseCount: 0
+      )
+    )
+    try await Task.sleep(nanoseconds: 4_000_000_000)
+
+    let filtered = GitHubActivitySnapshot(
+      pullRequests: snapshot.pullRequests.filter { includedIDs.contains($0.repoID) },
+      releases: snapshot.releases.filter { includedIDs.contains($0.repoID) },
+      anchorDate: snapshot.anchorDate
+    )
+    await progress?(
+      ActivityRefreshProgress(
+        totalRepositories: repositories.count,
+        completedRepositories: repositories.count,
+        currentRepositoryName: nil,
+        pullRequestCount: filtered.pullRequests.count,
+        releaseCount: filtered.releases.count
+      )
+    )
+    return filtered
+  }
+
+  private func filteredSnapshot(for repositories: [Repository]) -> GitHubActivitySnapshot {
+    let includedIDs = Set(repositories.map(\.id))
+    return GitHubActivitySnapshot(
+      pullRequests: snapshot.pullRequests.filter { includedIDs.contains($0.repoID) },
+      releases: snapshot.releases.filter { includedIDs.contains($0.repoID) },
+      anchorDate: snapshot.anchorDate
     )
   }
+}
 
+private extension PRBarApp {
   static func normalizedLiveSmokeValue(_ value: String?) -> String? {
     guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), value.isEmpty == false else {
       return nil
     }
     return value
+  }
+
+  static func uiTestingLiveGitHubSession(environment: [String: String]) -> GitHubAuthSession? {
+    guard let token = environment["PRBAR_IOS_LIVE_GITHUB_TOKEN"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+      token.isEmpty == false
+    else {
+      return nil
+    }
+
+    let login = environment["PRBAR_IOS_LIVE_GITHUB_LOGIN"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+    let displayName = environment["PRBAR_IOS_LIVE_GITHUB_DISPLAY_NAME"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+    let normalizedLogin = login.flatMap { $0.isEmpty ? nil : $0 } ?? "neonwatty"
+
+    return GitHubAuthSession(
+      accessToken: token,
+      tokenType: "bearer",
+      scopes: [],
+      user: GitHubUser(login: normalizedLogin, displayName: displayName.flatMap { $0.isEmpty ? nil : $0 } ?? normalizedLogin)
+    )
   }
 
   static func startHeadlessLiveGitHubSmoke(store: PRBarStore, expectedLogin: String?, includedRepo: String?) {
@@ -197,7 +258,7 @@ private extension PRBarApp {
     print("PRBAR_LIVE_SMOKE_START login=\(expectedLogin) repo=\(includedRepo) driver=headless")
 
     guard let user = store.githubConnection.user else {
-      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=missing-github-session login=\(expectedLogin) hint=sign-in-preview-device-or-set-PRBAR_IOS_LIVE_GITHUB_TOKEN\n", stderr)
+      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=missing-github-session login=\(expectedLogin) hint=set-PRBAR_IOS_LIVE_GITHUB_TOKEN\n", stderr)
       return 65
     }
 
@@ -231,6 +292,24 @@ private extension PRBarApp {
     return 0
   }
 
+  static var uiTestingActivityCacheURL: URL {
+    FileManager.default.temporaryDirectory
+      .appendingPathComponent("PRBarUITesting", isDirectory: true)
+      .appendingPathComponent("GitHubActivityCache.json")
+  }
+
+  static var uiTestingCachedSnapshot: GitHubActivitySnapshot {
+    GitHubActivitySnapshot(
+      pullRequests: [
+        PullRequest(id: "prbar#424", title: "Cached relaunch PR", repoID: "prbar", number: 424, mergedAt: SampleData.dateTime("2026-05-24T19:30:00Z"))
+      ],
+      releases: [
+        ReleaseMoment(id: "prbar@release:v4.2.4", repoID: "prbar", title: "Cached relaunch release", tag: "v4.2.4", date: SampleData.date("2026-05-24"), source: .release, notes: "Loaded from the persisted UI test activity cache.", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v4.2.4")!)
+      ],
+      anchorDate: SampleData.date("2026-05-24")
+    )
+  }
+
   static var uiTestingRefreshSnapshot: GitHubActivitySnapshot {
     GitHubActivitySnapshot(
       pullRequests: [
@@ -240,6 +319,26 @@ private extension PRBarApp {
         ReleaseMoment(id: "prbar@release:v9.9.9", repoID: "prbar", title: "UI refresh release", tag: "v9.9.9", date: SampleData.date("2026-05-24"), source: .release, notes: "Refresh data loaded from the deterministic UI test provider.", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v9.9.9")!)
       ],
       anchorDate: SampleData.date("2026-05-24")
+    )
+  }
+
+  static var uiTestingPartialSnapshot: GitHubActivitySnapshot {
+    GitHubActivitySnapshot(
+      pullRequests: [
+        PullRequest(id: "prbar#1001", title: "Partial sync visible PR", repoID: "prbar", number: 1001, mergedAt: SampleData.dateTime("2026-05-24T18:10:00Z"))
+      ],
+      releases: [
+        ReleaseMoment(id: "prbar@release:v10.0.1", repoID: "prbar", title: "Partial sync visible release", tag: "v10.0.1", date: SampleData.date("2026-05-24"), source: .release, notes: "Visible release from the accessible repo while another repo needs attention.", url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v10.0.1")!)
+      ],
+      anchorDate: SampleData.date("2026-05-24"),
+      repositoryIssues: [
+        ActivityRepositoryIssue(
+          repositoryID: "client-api",
+          repositoryFullName: "example/client-api",
+          title: "Repository needs attention",
+          message: "Authorize SSO for example/client-api, then refresh again."
+        )
+      ]
     )
   }
 }

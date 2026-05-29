@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+device_name="${IOS_DEVICE_NAME:-iPhone-preview}"
+device_role="${IOS_DEVICE_ROLE:-iOS device}"
+scheme="${IOS_SCHEME:-PRBarPreview}"
+project="${IOS_PROJECT:-apple/PRBar.xcodeproj}"
+keychain="${IOS_KEYCHAIN_PATH:-${IOS_PREVIEW_KEYCHAIN_PATH:-$HOME/Library/Keychains/login.keychain-db}}"
+identity_pattern="${IOS_SIGNING_IDENTITY_PATTERN:-${IOS_PREVIEW_SIGNING_IDENTITY_PATTERN:-Apple Development:}}"
+keychain_password="${IOS_KEYCHAIN_PASSWORD:-${IOS_PREVIEW_KEYCHAIN_PASSWORD:-}}"
+set_key_partition_list="${IOS_SET_KEY_PARTITION_LIST:-${IOS_PREVIEW_SET_KEY_PARTITION_LIST:-0}}"
+keychain_timeout="${IOS_KEYCHAIN_TIMEOUT:-${IOS_PREVIEW_KEYCHAIN_TIMEOUT:-21600}}"
+
+echo "iOS physical runner preflight"
+echo "User: $(id -un)"
+echo "Home: $HOME"
+echo "Runner service: ${ACTIONS_RUNNER_SVC:-0}"
+echo "Project: $project"
+echo "Scheme: $scheme"
+echo "Device role: $device_role"
+echo "Device name: $device_name"
+echo "Keychain: $keychain"
+
+for command_name in xcodebuild xcrun xcodegen jq security; do
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    echo "$command_name is required for iOS physical runner workflows." >&2
+    exit 69
+  fi
+done
+
+if [[ ! -d "$project" ]] && [[ -x scripts/ios-generate.sh ]]; then
+  ./scripts/ios-generate.sh
+fi
+
+if [[ ! -d "$project" ]]; then
+  echo "Expected Xcode project at '$project'. Run scripts/ios-generate.sh first." >&2
+  exit 66
+fi
+
+if [[ ! -f "$keychain" ]]; then
+  echo "Expected keychain does not exist: $keychain" >&2
+  exit 66
+fi
+
+if [[ -n "$keychain_password" ]]; then
+  echo "Unlocking signing keychain."
+  security unlock-keychain -p "$keychain_password" "$keychain"
+  security set-keychain-settings -lut "$keychain_timeout" "$keychain"
+
+  current_keychains="$(security list-keychains -d user | tr -d '"')"
+  if ! printf '%s\n' "$current_keychains" | grep -Fxq "$keychain"; then
+    # Keep existing user keychains while making the signing keychain visible to launchd jobs.
+    # shellcheck disable=SC2086
+    security list-keychains -d user -s "$keychain" $current_keychains
+  fi
+
+  security default-keychain -d user -s "$keychain"
+
+  if [[ "$set_key_partition_list" == "1" ]]; then
+    echo "Refreshing key partition list for non-interactive codesign access."
+    security set-key-partition-list \
+      -S apple-tool:,apple:,codesign: \
+      -s \
+      -k "$keychain_password" \
+      "$keychain" >/dev/null
+  fi
+else
+  if [[ "$set_key_partition_list" == "1" ]]; then
+    cat >&2 <<EOF
+IOS_KEYCHAIN_PASSWORD or IOS_PREVIEW_KEYCHAIN_PASSWORD is required when key partition refresh is enabled.
+
+Set the matching GitHub secret to the password for:
+  $keychain
+
+This lets the self-hosted runner refresh key partition access for non-interactive
+codesign. Without it, physical iOS builds can fail with errSecInternalComponent.
+EOF
+    exit 65
+  fi
+
+  echo "No keychain password env var is set; assuming the keychain is already unlocked."
+fi
+
+echo "Default keychain:"
+security default-keychain -d user
+
+echo "Visible signing identities:"
+identities="$(security find-identity -v -p codesigning "$keychain" || true)"
+printf '%s\n' "$identities"
+if ! printf '%s\n' "$identities" | grep -q "$identity_pattern"; then
+  cat >&2 <<EOF
+No codesigning identity matching '$identity_pattern' was visible in $keychain.
+
+For the self-hosted runner service, set the keychain password secret, then retry.
+EOF
+  exit 65
+fi
+
+if command -v automationmodetool >/dev/null 2>&1; then
+  automation_status="$(automationmodetool help 2>&1 || true)"
+  printf '%s\n' "$automation_status"
+  if ! printf '%s\n' "$automation_status" | grep -q 'DOES NOT REQUIRE user authentication'; then
+    cat >&2 <<EOF
+Automation Mode still requires local user authentication.
+
+Run this once from an interactive admin session on the runner Mac:
+  automationmodetool enable-automationmode-without-authentication
+EOF
+    exit 69
+  fi
+
+  if printf '%s\n' "$automation_status" | grep -q 'Automation Mode is disabled'; then
+    cat <<EOF
+Automation Mode is currently disabled, but this runner does not require local
+authentication to enable it. Continuing so Xcode can request Automation Mode
+for the physical-device UI test session.
+EOF
+  fi
+else
+  echo "automationmodetool is unavailable; continuing."
+fi
+
+echo "Resolving $device_role."
+resolver_output="$(IOS_DEVICE_NAME="$device_name" IOS_DEVICE_ROLE="$device_role" IOS_SCHEME="$scheme" IOS_PROJECT="$project" ./scripts/ios-resolve-device.sh shell)"
+eval "$resolver_output"
+export IOS_DEVICE_ID IOS_XCODE_DEVICE_ID IOS_DESTINATION
+
+echo "CoreDevice id: $IOS_DEVICE_ID"
+echo "Xcode destination id: $IOS_XCODE_DEVICE_ID"
+echo "Xcode destination: $IOS_DESTINATION"
+
+details_json="$(mktemp "${TMPDIR:-/tmp}/prbar-device-details.XXXXXX")"
+lock_json="$(mktemp "${TMPDIR:-/tmp}/prbar-device-lock.XXXXXX")"
+trap 'rm -f "$details_json" "$lock_json"' EXIT
+
+xcrun devicectl device info details \
+  --device "$IOS_DEVICE_ID" \
+  --json-output "$details_json" \
+  --quiet \
+  --timeout 10 >/dev/null
+
+xcrun devicectl device info lockState \
+  --device "$IOS_DEVICE_ID" \
+  --json-output "$lock_json" \
+  --quiet \
+  --timeout 10 >/dev/null
+
+echo "Device lock state:"
+jq -r '.result | "  passcodeRequired=\(.passcodeRequired) unlockedSinceBoot=\(.unlockedSinceBoot)"' "$lock_json"
+
+passcode_required="$(jq -r '.result.passcodeRequired' "$lock_json")"
+if [[ "$passcode_required" == "true" ]]; then
+  echo "The $device_role is locked. Unlock $device_name and retry." >&2
+  exit 69
+fi
+
+echo "Xcode version:"
+xcodebuild -version
+
+echo "Preflight passed."

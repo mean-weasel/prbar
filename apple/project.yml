@@ -20,6 +20,7 @@ targets:
       PRODUCT_NAME: PRBar
       GENERATE_INFOPLIST_FILE: NO
       INFOPLIST_FILE: PRBar/Info.plist
+      DEVELOPMENT_TEAM: B3A6AN2HA4
       CODE_SIGN_STYLE: Automatic
   PRBarPreview:
     type: application
@@ -61,6 +62,8 @@ targets:
       GENERATE_INFOPLIST_FILE: YES
       TEST_HOST: "$(BUILT_PRODUCTS_DIR)/PRBar.app/PRBar"
       BUNDLE_LOADER: "$(TEST_HOST)"
+      DEVELOPMENT_TEAM: B3A6AN2HA4
+      CODE_SIGN_STYLE: Automatic
   PRBarUITests:
     type: bundle.ui-testing
     supportedDestinations: [iOS]
@@ -74,6 +77,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.neonwatty.PRBar.ios.uitests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: PRBar
+        DEVELOPMENT_TEAM: B3A6AN2HA4
         CODE_SIGN_STYLE: Automatic
         BUNDLE_LOADER: ""
   PRBarPreviewUITests:
@@ -98,6 +102,10 @@ schemes:
       targets:
         PRBar: all
     test:
+      environmentVariables:
+        PRBAR_IOS_LIVE_GITHUB_TOKEN: $(PRBAR_IOS_LIVE_GITHUB_TOKEN)
+        PRBAR_IOS_LIVE_REPOSITORY: $(PRBAR_IOS_LIVE_REPOSITORY)
+        PRBAR_IOS_LIVE_GITHUB_LOGIN: $(PRBAR_IOS_LIVE_GITHUB_LOGIN)
       targets:
         - PRBarTests
         - PRBarUITests

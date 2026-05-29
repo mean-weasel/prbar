@@ -1,0 +1,467 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "iOS Production Device Install"
+  slug: "ios-production-device-install"
+  kind: specific
+  tranche: "Create and verify a repeatable production-iPhone install/smoke path for the non-preview PRBar iOS app."
+  status: done
+  oracle:
+    signal: "A repeatable install/smoke path installs the production PRBar iOS app, not PRBarPreview, on the production iPhone and reports clear success or precise blockers."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Workflow run URL or local device command receipt proving production device name, PRBar scheme, com.neonwatty.PRBar.ios bundle id, install result, and launch/smoke outcome."
+  intake:
+    original_request: "Plan out creating a different version for the production device using GoalBuddy Prep."
+    interpreted_outcome: "Prepare a GoalBuddy board for adding a separate production-iPhone install and smoke path for the real PRBar iOS app."
+    input_shape: specific
+    audience: "PRBar maintainer and production-device release/test operator"
+    authority: requested
+    proof_type: test
+    completion_proof: "The production iPhone receives and launches the non-preview PRBar app through a repeatable workflow or documented command."
+    likely_misfire: "Reusing the preview workflow while still installing PRBarPreview or only proving build success without production phone installation."
+    blind_spots_considered:
+      - "Production and preview apps need separate bundle identifiers and may exist side by side."
+      - "GitHub OAuth client configuration may differ between preview and production bundle/callback handling."
+      - "Automatic signing may need production bundle provisioning or registered device access."
+      - "The workflow must not accidentally target iPhone-preview."
+      - "Production app data should not be wiped unless the user approves."
+      - "Device lock, trust, and runner ownership need precise blocker messages."
+    existing_plan_facts:
+      - "Preview path already proved live smoke on iPhone-preview."
+      - "Preview workflow uses PRBarPreview and com.neonwatty.PRBar.ios.preview."
+      - "Production scheme is PRBar."
+      - "Production bundle id is com.neonwatty.PRBar.ios."
+      - "The production iPhone should be selected explicitly by device name or dedicated runner label."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: running
+    url: "http://goalbuddy.localhost:41737/ios-production-device-install/"
+    command: "npx goalbuddy board Docs/goals/ios-production-device-install"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Map the current preview install/smoke setup, production target settings, signing assumptions, and production iPhone selection options."
+    inputs:
+      - ".github/workflows/ios-preview-install.yml"
+      - ".github/workflows/ios-physical-preview.yml"
+      - "scripts/ios-preview-install.sh"
+      - "scripts/ios-preview-device-smoke.sh"
+      - "scripts/ios-resolve-preview-device.sh"
+      - "scripts/ios-list-devices.sh"
+      - "apple/PRBar.xcodeproj/project.pbxproj"
+      - "apple/project.yml"
+      - "apple/PRBar/Info.plist"
+      - "apple/PRBarPreview-Info.plist"
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation files."
+      - "Do not run a production install yet."
+      - "Identify exactly where scripts are preview-specific by name, app path, bundle id, or test target."
+      - "Identify whether production needs a new runner label, only a device_name input, or both."
+      - "Call out signing/OAuth/device-selection blockers separately."
+    expected_output:
+      - "Current surface map with file-path evidence."
+      - "Recommended production channel shape: workflow names, scheme, bundle id, device input, runner labels, and script parameterization."
+      - "Decision points the user must approve before installing on the production phone, if any."
+      - "Candidate Worker package with allowed files and verification commands."
+    receipt:
+      result: done
+      summary: "Mapped the production-device surface. The production app target already exists as PRBar/com.neonwatty.PRBar.ios and iPhone-prod is visible to CoreDevice/Xcode on this Mac. Current automation is still preview-shaped: workflows use PRBarPreview, preview bundle id, preview runner naming, and scripts default to preview names; ios-preview-install.sh also hardcodes PRBarPreview.app, so env overrides alone cannot safely install PRBar. GitHub Actions currently exposes one repo runner named prbar-iphone-preview with labels self-hosted/macOS/ARM64/prbar-ios/iphone-preview, so the first production workflow can likely reuse that Mac runner while explicitly selecting device_name=iPhone-prod, but a dedicated iphone-prod label/runner would be cleaner later."
+      evidence:
+        - ".github/workflows/ios-preview-install.yml:20-31 names Build and Install Preview App, uses runner label iphone-preview, sets IOS_SCHEME=PRBarPreview, and expects com.neonwatty.PRBar.ios.preview."
+        - ".github/workflows/ios-physical-preview.yml:24-40 uses runner label iphone-preview, PRBarPreview scheme/test target, preview bundle id, and preview concurrency group."
+        - "scripts/ios-preview-install.sh:7-12 defaults to PRBarPreview/iPhone-preview/com.neonwatty.PRBar.ios.preview."
+        - "scripts/ios-preview-install.sh:36 hardcodes app_path to PRBarPreview.app, which prevents safe production use through environment overrides alone."
+        - "scripts/ios-preview-device-smoke.sh:7-14 defaults to PRBarPreview, PRBarPreviewUITests, iPhone-preview, and PreviewDeviceSmokeResults.xcresult."
+        - "scripts/ios-resolve-preview-device.sh:7-10 defaults to PRBarPreview and iPhone-preview but can resolve any IOS_DEVICE_NAME/IOS_SCHEME override."
+        - "scripts/ios-list-devices.sh output shows iPhone-prod available via CoreDevice as D7045658-5C05-5166-B20F-1E01DEC05DB1, model iPhone 16e."
+        - "scripts/ios-list-devices.sh output shows Xcode destination for iPhone-prod as 00008140-001055D83E87001C."
+        - "gh api repos/mean-weasel/prbar/actions/runners reported only prbar-iphone-preview online, labels self-hosted/macOS/ARM64/prbar-ios/iphone-preview."
+        - "apple/project.yml:11-24 defines production target PRBar with PRODUCT_BUNDLE_IDENTIFIER=com.neonwatty.PRBar.ios and preview target PRBarPreview separately."
+        - "apple/project.yml:63-78 defines PRBarUITests against PRBar; apple/project.yml:78-94 defines PRBarPreviewUITests against PRBarPreview."
+        - "apple/PRBar/Info.plist:21-22 reads PRBarGitHubOAuthClientID from PRBAR_IOS_GITHUB_CLIENT_ID; apple/PRBarPreview-Info.plist does not include that key in the generated file shown."
+        - "apple/PRBar.xcodeproj/project.pbxproj:701-718 and 721-739 confirm PRBar app build settings use PRODUCT_BUNDLE_IDENTIFIER=com.neonwatty.PRBar.ios and PRODUCT_NAME=PRBar."
+      recommendation: "Implement an explicit production workflow/channel rather than mutating preview workflows in place. Prefer shared scripts with parameterized scheme, product name, bundle id, device role, result bundle, and resolver text; preserve preview wrappers for compatibility. First production run should default device_name=iPhone-prod, scheme PRBar, UI target PRBarUITests, bundle id com.neonwatty.PRBar.ios, and concurrency group ios-production-device. Reuse runs-on labels [self-hosted, macOS, prbar-ios, iphone-preview] initially because that is the only online repo runner, while making device selection explicit and documenting that a future dedicated iphone-prod label would reduce operator risk."
+      decision_points:
+        - "Before dispatching a production install/smoke, confirm iPhone-prod is unlocked and the user is comfortable installing/updating the production app without wiping app data."
+        - "If GitHub sign-in is exercised on production, PRBAR_IOS_GITHUB_CLIENT_ID must be supplied to the production build through build settings or environment; otherwise the app can still launch but live sign-in will report missing configuration."
+        - "If automatic signing fails for com.neonwatty.PRBar.ios on iPhone-prod, the next action is Apple Developer provisioning/device registration rather than script retries."
+      candidate_worker:
+        objective: "Create shared install/smoke scripts and production workflows that install PRBar/com.neonwatty.PRBar.ios on iPhone-prod and run a minimal PRBarUITests launch smoke, while preserving existing preview workflows as wrappers."
+        allowed_files:
+          - ".github/workflows/ios-production-install.yml"
+          - ".github/workflows/ios-physical-production.yml"
+          - ".github/workflows/ios-preview-install.yml"
+          - ".github/workflows/ios-physical-preview.yml"
+          - "scripts/ios-preview-install.sh"
+          - "scripts/ios-preview-device-smoke.sh"
+          - "scripts/ios-production-install.sh"
+          - "scripts/ios-production-device-smoke.sh"
+          - "scripts/ios-install-app.sh"
+          - "scripts/ios-device-smoke.sh"
+          - "scripts/ios-resolve-preview-device.sh"
+          - "scripts/ios-resolve-device.sh"
+          - "apple/PRBarUITests/**"
+          - "Docs/goals/ios-production-device-install/**"
+        verify:
+          - "git diff --check"
+          - "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs Docs/goals/ios-production-device-install/state.yaml"
+          - "bash -n scripts/ios-install-app.sh scripts/ios-device-smoke.sh scripts/ios-production-install.sh scripts/ios-production-device-smoke.sh scripts/ios-preview-install.sh scripts/ios-preview-device-smoke.sh"
+          - "xcodebuild build -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath apple/ProductionBuild CODE_SIGNING_ALLOWED=NO"
+          - "After branch push and user confirms iPhone-prod is unlocked: gh workflow run ios-physical-production.yml --ref <branch> -f smoke_profile=fast -f device_name=iPhone-prod"
+        stop_if:
+          - "Need to wipe or uninstall production app data."
+          - "Need Apple Developer portal/provisioning changes outside repository automation."
+          - "Verification would target iPhone-preview instead of iPhone-prod."
+          - "Need to expose GitHub OAuth secrets or access tokens."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the safest first implementation package for production-iPhone install/smoke support."
+    inputs:
+      - "T001 receipt"
+      - "Docs/goals/ios-production-device-install/goal.md"
+    constraints:
+      - "Do not implement."
+      - "Reject any package that can install PRBarPreview on the production phone by mistake."
+      - "Reject any package that wipes production app data without explicit user approval."
+      - "Prefer shared parameterization over duplicated preview-only scripts when safe."
+      - "Keep the first Worker package large enough to prove the channel end to end."
+    expected_output:
+      - "Decision: install-only first, install+launch smoke, or prerequisite signing/OAuth setup."
+      - "Exact Worker objective."
+      - "allowed_files."
+      - "verify commands and workflow dispatch command."
+      - "stop_if conditions."
+    receipt:
+      result: done
+      decision: "approved"
+      full_outcome_complete: false
+      rationale: "The largest safe first slice is install+launch smoke, not install-only. The repo already has production PRBar/PRBarUITests targets and the production phone is visible, so stopping at workflow scaffolding would leave the oracle unproved. The package must parameterize preview-specific scripts enough to avoid duplicating fragile logic and must prove bundle id/product name before installing."
+      worker_objective: "Create a clean implementation branch from origin/main, carry this GoalBuddy board into it, add shared parameterized iOS install/smoke scripts plus explicit production install and physical-production workflows, preserve preview behavior, and verify a generic PRBar device build plus shell/script validation."
+      allowed_files:
+        - ".github/workflows/ios-production-install.yml"
+        - ".github/workflows/ios-physical-production.yml"
+        - ".github/workflows/ios-preview-install.yml"
+        - ".github/workflows/ios-physical-preview.yml"
+        - "scripts/ios-preview-install.sh"
+        - "scripts/ios-preview-device-smoke.sh"
+        - "scripts/ios-production-install.sh"
+        - "scripts/ios-production-device-smoke.sh"
+        - "scripts/ios-install-app.sh"
+        - "scripts/ios-device-smoke.sh"
+        - "scripts/ios-resolve-preview-device.sh"
+        - "scripts/ios-resolve-device.sh"
+        - "apple/PRBarUITests/**"
+        - "Docs/goals/ios-production-device-install/**"
+      verify:
+        - "git diff --check"
+        - "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs Docs/goals/ios-production-device-install/state.yaml"
+        - "bash -n scripts/ios-install-app.sh scripts/ios-device-smoke.sh scripts/ios-production-install.sh scripts/ios-production-device-smoke.sh scripts/ios-preview-install.sh scripts/ios-preview-device-smoke.sh scripts/ios-resolve-device.sh"
+        - "xcodebuild build -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath apple/ProductionBuild CODE_SIGNING_ALLOWED=NO"
+        - "After branch push and user confirms iPhone-prod is unlocked: gh workflow run ios-physical-production.yml --ref <branch> -f smoke_profile=fast -f device_name=iPhone-prod"
+      stop_if:
+        - "Need to wipe/uninstall production app data."
+        - "Need Apple Developer portal/provisioning changes outside repository automation."
+        - "Need a new GitHub runner label before any repository-side progress is possible."
+        - "Need to expose GitHub OAuth secrets or access tokens."
+        - "Workflow/script changes cannot prevent accidental preview bundle installation on iPhone-prod."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the Judge-approved production-device install/smoke package."
+    allowed_files:
+      - ".github/workflows/ios-production-install.yml"
+      - ".github/workflows/ios-physical-production.yml"
+      - ".github/workflows/ios-preview-install.yml"
+      - ".github/workflows/ios-physical-preview.yml"
+      - "scripts/ios-preview-install.sh"
+      - "scripts/ios-preview-device-smoke.sh"
+      - "scripts/ios-production-install.sh"
+      - "scripts/ios-production-device-smoke.sh"
+      - "scripts/ios-install-app.sh"
+      - "scripts/ios-device-smoke.sh"
+      - "scripts/ios-resolve-preview-device.sh"
+      - "scripts/ios-resolve-device.sh"
+      - "apple/PRBarPreviewUITests/**"
+      - "apple/PRBarUITests/**"
+      - "Docs/goals/ios-production-device-install/**"
+    verify:
+      - "git diff --check"
+      - "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs Docs/goals/ios-production-device-install/state.yaml"
+      - "Script dry-run or shellcheck-equivalent validation for any changed install/smoke scripts."
+      - "xcodebuild build -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath apple/ProductionBuild CODE_SIGNING_ALLOWED=NO"
+      - "If branch is pushed and user confirms the production phone is unlocked: dispatch the production install/smoke workflow with the explicit production device name."
+    stop_if:
+      - "Need to wipe production app data."
+      - "Need a new Apple Developer portal action or provisioning change outside repository automation."
+      - "Need the exact production iPhone device name and it cannot be discovered safely."
+      - "Need to expose GitHub OAuth secrets or access tokens."
+      - "Verification would target iPhone-preview rather than the production iPhone."
+    receipt:
+      result: done
+      summary: "Implemented the production-device install/smoke package on a clean branch. Added shared parameterized scripts for device resolution, app install, and physical smoke; preserved preview entrypoints as wrappers; added explicit production install and physical-production workflows targeting PRBar/com.neonwatty.PRBar.ios on iPhone-prod. Local verification passed, including production and preview device resolution and a generic PRBar iOS build. A production install/smoke workflow has not been dispatched yet because that requires explicit operator approval with iPhone-prod unlocked."
+      changed_files:
+        - ".github/workflows/ios-production-install.yml"
+        - ".github/workflows/ios-physical-production.yml"
+        - "scripts/ios-resolve-device.sh"
+        - "scripts/ios-install-app.sh"
+        - "scripts/ios-device-smoke.sh"
+        - "scripts/ios-production-install.sh"
+        - "scripts/ios-production-device-smoke.sh"
+        - "scripts/ios-resolve-preview-device.sh"
+        - "scripts/ios-preview-install.sh"
+        - "scripts/ios-preview-device-smoke.sh"
+        - "Docs/goals/ios-production-device-install/goal.md"
+        - "Docs/goals/ios-production-device-install/state.yaml"
+      evidence:
+        - "bash -n passed for new and changed iOS device scripts."
+        - "shellcheck passed for new and changed iOS device scripts."
+        - "ruby YAML parsing passed for ios-production-install.yml, ios-physical-production.yml, ios-preview-install.yml, and ios-physical-preview.yml."
+        - "IOS_DEVICE_NAME=iPhone-prod IOS_DEVICE_ROLE='production device' IOS_SCHEME=PRBar ./scripts/ios-resolve-device.sh human resolved CoreDevice D7045658-5C05-5166-B20F-1E01DEC05DB1 and Xcode destination 00008140-001055D83E87001C."
+        - "./scripts/ios-resolve-preview-device.sh human still resolved iPhone-preview to CoreDevice 5320F5AD-2A71-50AC-94FE-207B544B6247 and Xcode destination 00008030-001A0C980A33C02E."
+        - "xcodebuild build -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath apple/ProductionBuild CODE_SIGNING_ALLOWED=NO ended with BUILD SUCCEEDED."
+        - "IOS_SKIP_INSTALL=1 IOS_XCODEBUILD_EXTRA_ARGS=CODE_SIGNING_ALLOWED=NO ./scripts/ios-production-install.sh built for iPhone-prod, verified PRBar.app bundle id com.neonwatty.PRBar.ios, and exited before install."
+        - "git diff --check passed."
+        - "GoalBuddy state checker passed with active_task T003 before receipt update."
+      commands:
+        - cmd: "bash -n scripts/ios-resolve-device.sh scripts/ios-install-app.sh scripts/ios-device-smoke.sh scripts/ios-production-install.sh scripts/ios-production-device-smoke.sh scripts/ios-resolve-preview-device.sh scripts/ios-preview-install.sh scripts/ios-preview-device-smoke.sh"
+          status: pass
+        - cmd: "shellcheck scripts/ios-resolve-device.sh scripts/ios-install-app.sh scripts/ios-device-smoke.sh scripts/ios-production-install.sh scripts/ios-production-device-smoke.sh scripts/ios-resolve-preview-device.sh scripts/ios-preview-install.sh scripts/ios-preview-device-smoke.sh"
+          status: pass
+        - cmd: "ruby -e 'require \"yaml\"; ARGV.each { |f| YAML.load_file(f); puts \"ok #{f}\" }' .github/workflows/ios-production-install.yml .github/workflows/ios-physical-production.yml .github/workflows/ios-preview-install.yml .github/workflows/ios-physical-preview.yml"
+          status: pass
+        - cmd: "IOS_DEVICE_NAME=iPhone-prod IOS_DEVICE_ROLE='production device' IOS_SCHEME=PRBar ./scripts/ios-resolve-device.sh human"
+          status: pass
+        - cmd: "./scripts/ios-resolve-preview-device.sh human"
+          status: pass
+        - cmd: "xcodebuild build -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath apple/ProductionBuild CODE_SIGNING_ALLOWED=NO"
+          status: pass
+        - cmd: "IOS_SKIP_INSTALL=1 IOS_XCODEBUILD_EXTRA_ARGS=CODE_SIGNING_ALLOWED=NO ./scripts/ios-production-install.sh"
+          status: pass
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs Docs/goals/ios-production-device-install/state.yaml"
+          status: pass
+      not_run:
+        - "No production install or physical smoke workflow was dispatched yet; this awaits explicit approval/unlocked iPhone-prod."
+      next:
+        - "Document operator commands and blockers, then push/open PR. After user confirms iPhone-prod is unlocked and approves install, dispatch ios-physical-production.yml with device_name=iPhone-prod."
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Document how to run production-device install/smoke workflows and interpret blockers."
+    allowed_files:
+      - "Docs/goals/ios-production-device-install/**"
+      - "apple/project.yml"
+      - "apple/README.md"
+      - "scripts/ios-install-app.sh"
+      - "scripts/ios-production-install.sh"
+      - "docs/**"
+      - "Docs/**"
+      - "apple/README.md"
+      - ".github/workflows/**"
+      - "scripts/**"
+    verify:
+      - "git diff --check"
+      - "Run any documentation or workflow validation chosen by the PM after T003."
+    stop_if:
+      - "Docs would include secrets, private token values, or misleading production-device instructions."
+      - "Implementation shape is still undecided."
+    receipt:
+      result: done
+      summary: "Added operator documentation for preview and production physical-device channels in apple/README.md, including workflow dispatch commands, explicit production device name, bundle-id guard expectations, and blocker guidance for signing and GitHub OAuth client configuration."
+      changed_files:
+        - "apple/README.md"
+        - "Docs/goals/ios-production-device-install/state.yaml"
+      commands:
+        - cmd: "git diff --check"
+          status: pass
+        - cmd: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs Docs/goals/ios-production-device-install/state.yaml"
+          status: pass
+      evidence:
+        - "apple/README.md documents ios-production-install.yml and ios-physical-production.yml dispatch commands with device_name=iPhone-prod."
+        - "apple/README.md states production scripts refuse non-com.neonwatty.PRBar.ios bundle ids and calls out provisioning and PRBAR_IOS_GITHUB_CLIENT_ID blockers."
+        - "apple/README.md documents the IOS_SKIP_INSTALL=1 local production dry run."
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Publish the production-device install/smoke branch for review and prepare the explicit production workflow dispatch."
+    allowed_files:
+      - "Docs/goals/ios-production-device-install/**"
+      - "apple/project.yml"
+      - "apple/README.md"
+      - "scripts/ios-install-app.sh"
+      - "scripts/ios-production-install.sh"
+    verify:
+      - "git diff --check"
+      - "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs Docs/goals/ios-production-device-install/state.yaml"
+      - "gh pr view or gh pr create for codex/ios-production-device-install"
+    stop_if:
+      - "User has not approved installing/updating the app on iPhone-prod."
+      - "iPhone-prod is locked, offline, or untrusted when physical workflow dispatch is requested."
+      - "PR checks fail in a way that affects production-device workflow safety."
+    receipt:
+      result: done
+      summary: "Published the implementation branch and opened draft PR #73 for review. The production-device workflow dispatch remains intentionally pending until iPhone-prod is unlocked and the user approves installing/updating the production app."
+      changed_files:
+        - "Docs/goals/ios-production-device-install/state.yaml"
+      commands:
+        - cmd: "git add .github/workflows/ios-production-install.yml .github/workflows/ios-physical-production.yml Docs/goals/ios-production-device-install apple/README.md scripts/ios-resolve-device.sh scripts/ios-install-app.sh scripts/ios-device-smoke.sh scripts/ios-production-install.sh scripts/ios-production-device-smoke.sh scripts/ios-resolve-preview-device.sh scripts/ios-preview-install.sh scripts/ios-preview-device-smoke.sh"
+          status: pass
+        - cmd: "git commit -m \"Add production iPhone install workflow\""
+          status: pass
+        - cmd: "git push -u origin codex/ios-production-device-install"
+          status: pass
+        - cmd: "gh pr create --repo mean-weasel/prbar --head codex/ios-production-device-install --base main --draft --title \"Add production iPhone install workflow\""
+          status: pass
+      evidence:
+        - "Commit e248c00 created on codex/ios-production-device-install."
+        - "Branch pushed to origin/codex/ios-production-device-install."
+        - "Draft PR opened: https://github.com/mean-weasel/prbar/pull/73."
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "After CI is green and the user approves with iPhone-prod unlocked, run the production physical smoke path and record the outcome."
+    allowed_files:
+      - "Docs/goals/ios-production-device-install/**"
+      - "apple/project.yml"
+      - "apple/README.md"
+      - "scripts/ios-install-app.sh"
+      - "scripts/ios-production-install.sh"
+    verify:
+      - "gh pr view 73 --repo mean-weasel/prbar --json statusCheckRollup,mergeable,isDraft,url"
+      - "Before merge: run ./scripts/ios-production-device-smoke.sh locally from the branch, because newly added workflow_dispatch files are not visible to GitHub Actions until present on the default branch."
+      - "After merge: gh workflow run ios-physical-production.yml --repo mean-weasel/prbar --ref main -f smoke_profile=fast -f device_name=iPhone-prod"
+      - "gh run watch <run-id> --repo mean-weasel/prbar --exit-status"
+    stop_if:
+      - "User has not explicitly approved production install/smoke dispatch."
+      - "iPhone-prod is locked, offline, or untrusted."
+      - "PR checks show a failure that affects workflow or script safety."
+      - "The local production smoke cannot be run and the production workflow has not landed on main yet."
+    receipt:
+      result: done
+      summary: "Ran the production-device proof on iPhone-prod. The first UI smoke attempt proved device discovery/readiness but failed because production targets had no development team. Added the same DEVELOPMENT_TEAM used by preview to PRBar, PRBarTests, and PRBarUITests. After that, the XCTest UI smoke built, signed, installed, and launched the UI test runner, but failed at Automation Mode initialization on the production iPhone. To keep the production channel repeatable without depending on XCTest Automation Mode, extended the production install path to launch the verified production bundle after install. The final production install path built PRBar, verified bundle id com.neonwatty.PRBar.ios, installed it on iPhone-prod, and launched it successfully by bundle id."
+      changed_files:
+        - "apple/project.yml"
+        - "apple/README.md"
+        - "scripts/ios-install-app.sh"
+        - "scripts/ios-production-install.sh"
+        - "Docs/goals/ios-production-device-install/state.yaml"
+      commands:
+        - cmd: "IOS_XCODEBUILD_EXTRA_ARGS='-allowProvisioningUpdates -allowProvisioningDeviceRegistration' ./scripts/ios-production-install.sh"
+          status: pass
+          summary: "Built PRBar, verified bundle id com.neonwatty.PRBar.ios, installed PRBar on iPhone-prod, and launched com.neonwatty.PRBar.ios successfully."
+        - cmd: "xcrun devicectl device info apps --device D7045658-5C05-5166-B20F-1E01DEC05DB1 --quiet --timeout 20 --json-output -"
+          status: pass
+          summary: "Confirmed installed app entry for name PRBar and bundleIdentifier com.neonwatty.PRBar.ios."
+      evidence:
+        - "iPhone-prod resolved to CoreDevice D7045658-5C05-5166-B20F-1E01DEC05DB1 and Xcode destination 00008140-001055D83E87001C."
+        - "Device lock state reported passcodeRequired=false and unlockedSinceBoot=true."
+        - "Initial ./scripts/ios-production-device-smoke.sh resolved iPhone-prod and verified unlocked device state, then failed signing because PRBar, PRBarTests, and PRBarUITests lacked DEVELOPMENT_TEAM."
+        - "After adding production DEVELOPMENT_TEAM settings, IOS_XCODEBUILD_EXTRA_ARGS='-allowProvisioningUpdates -allowProvisioningDeviceRegistration' ./scripts/ios-production-device-smoke.sh built, signed, installed, and launched PRBarUITests-Runner on iPhone-prod, then failed with 'Timed out while enabling automation mode.'"
+        - "xcodebuild signed with Apple Development: Jeremy Watt (3CDYUL285D) and provisioning team B3A6AN2HA4 after production targets gained DEVELOPMENT_TEAM."
+        - "Install output reported App installed with bundleID: com.neonwatty.PRBar.ios and PRBar.app installationURL."
+        - "Launch output reported: Launched application with com.neonwatty.PRBar.ios bundle identifier."
+        - "Installed-app query reported name PRBar and bundleIdentifier com.neonwatty.PRBar.ios."
+      residual:
+        - "The fuller XCTest UI smoke path still fails on iPhone-prod with 'Timed out while enabling automation mode.' The production install workflow now provides the repeatable non-XCTest install/launch smoke; the XCTest workflow remains useful once device Automation Mode initializes successfully."
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether the production iPhone install/smoke goal is complete."
+    inputs:
+      - "All done task receipts."
+      - "Last local verification."
+      - "Latest production-device workflow run URL or local device install receipt."
+      - "Current dirty diff."
+    constraints:
+      - "Do not implement."
+      - "Reject completion if only preview workflows passed."
+      - "Reject completion if bundle id proof is missing."
+      - "Reject completion if the production phone was not explicitly selected."
+      - "Reject completion if signing, OAuth, or device-lock blockers are collapsed into generic failure."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "mapped evidence against oracle"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "The goal oracle is satisfied by a repeatable production install/launch path. The production channel explicitly targets PRBar, product name PRBar, device name iPhone-prod, and bundle id com.neonwatty.PRBar.ios. The build refuses unexpected bundle ids before install, the production target and test bundles now carry the development team needed for device signing, and the production install script launches the installed bundle after installation. Current local proof shows iPhone-prod selected, production bundle installed, and com.neonwatty.PRBar.ios launched successfully."
+      mapped_evidence:
+        - "Production target: apple/project.yml defines PRBar with PRODUCT_BUNDLE_IDENTIFIER=com.neonwatty.PRBar.ios and DEVELOPMENT_TEAM=B3A6AN2HA4."
+        - "Production device: scripts resolved iPhone-prod to Xcode destination 00008140-001055D83E87001C."
+        - "Bundle guard: scripts/ios-install-app.sh reads CFBundleIdentifier from built PRBar.app and refuses non-matching bundle ids."
+        - "Install proof: IOS_XCODEBUILD_EXTRA_ARGS='-allowProvisioningUpdates -allowProvisioningDeviceRegistration' ./scripts/ios-production-install.sh installed bundleID com.neonwatty.PRBar.ios on iPhone-prod."
+        - "Launch proof: the same production install command launched com.neonwatty.PRBar.ios with devicectl after install."
+        - "Workflow repeatability: .github/workflows/ios-production-install.yml runs scripts/ios-production-install.sh with production scheme/product/bundle/device settings."
+      residual_risk:
+        - "The separate XCTest UI smoke workflow still depends on physical-device Automation Mode and currently times out enabling Automation Mode on iPhone-prod. This is recorded as a device automation follow-up, not a failure of the production install/launch path."
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - "IOS_XCODEBUILD_EXTRA_ARGS='-allowProvisioningUpdates -allowProvisioningDeviceRegistration' ./scripts/ios-production-install.sh"
+      - "xcrun devicectl device info apps --device D7045658-5C05-5166-B20F-1E01DEC05DB1 --quiet --timeout 20 --json-output -"
+    summary: "Production install/launch proof passed locally on iPhone-prod. The command built PRBar, verified bundle id com.neonwatty.PRBar.ios, installed it on iPhone-prod, and launched com.neonwatty.PRBar.ios successfully. Installed-app query confirmed PRBar/com.neonwatty.PRBar.ios on the device. Separate XCTest UI smoke remains blocked by device Automation Mode timeout."

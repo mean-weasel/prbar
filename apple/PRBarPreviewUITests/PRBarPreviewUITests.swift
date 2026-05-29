@@ -1,7 +1,6 @@
 import XCTest
 
 final class PRBarPreviewUITests: XCTestCase {
-  @MainActor
   func testPreviewDeviceCanLaunchCoreTabs() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]
@@ -17,68 +16,112 @@ final class PRBarPreviewUITests: XCTestCase {
   }
 
   @MainActor
-  func testLiveGitHubOneRepositoryRefresh() {
-    let login = requiredEnvironmentValue("IOS_LIVE_GITHUB_LOGIN")
-    let repoID = requiredEnvironmentValue("IOS_LIVE_INCLUDED_REPO")
-    let repoName = repoID.split(separator: "/").last.map(String.init) ?? repoID
+  func testLiveGitHubSelectsOneRepositoryAndSyncsActivity() throws {
+    try runLiveGitHubSetupSmoke()
+  }
+}
 
-    let app = XCUIApplication()
-    app.launchArguments = ["--live-github-smoke"]
-    app.launchEnvironment["PRBAR_LIVE_SMOKE_GITHUB_LOGIN"] = login
-    app.launchEnvironment["PRBAR_LIVE_SMOKE_INCLUDED_REPO"] = repoID
-    app.launch()
-
-    if app.staticTexts["Connect GitHub"].waitForExistence(timeout: 5) {
-      XCTFail("Live GitHub smoke requires an existing GitHub session on the preview device for @\(login). Sign in once on the device, then rerun.")
-      return
-    }
-
-    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 15))
-    XCTAssertTrue(app.buttons["1 repositories"].waitForExistence(timeout: 5), "Expected exactly one included repository: \(repoID)")
-
-    app.buttons["1 repositories"].tap()
-    XCTAssertTrue(app.staticTexts["@\(login)"].waitForExistence(timeout: 5), "Expected connected GitHub user @\(login)")
-    XCTAssertTrue(app.staticTexts["1 selected"].waitForExistence(timeout: 5), "Expected one selected repository")
-    let searchField = app.textFields["repo-search-field"]
-    XCTAssertTrue(searchField.waitForExistence(timeout: 5))
-    searchField.tap()
-    searchField.typeText(repoName)
-    XCTAssertTrue(app.switches["Include \(repoName)"].waitForExistence(timeout: 5), "Expected selected repository \(repoID) to be available")
-
-    let backButton = app.navigationBars.buttons["PRs"]
-    if backButton.waitForExistence(timeout: 2) {
-      backButton.tap()
-    } else {
-      app.navigationBars.buttons.element(boundBy: 0).tap()
-    }
-    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 5))
-
-    app.buttons["Refresh activity"].tap()
-    XCTAssertTrue(waitForRefreshCompletion(in: app, timeout: 90), "Expected live GitHub refresh to finish")
-    XCTAssertFalse(app.staticTexts["Last refresh failed"].exists, "Live GitHub refresh failed for \(repoID)")
-    XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 5), "Expected successful live refresh for \(repoID)")
-    XCTAssertFalse(app.staticTexts["No merged PRs"].exists && app.staticTexts["No release selected"].exists, "Expected live PR or release evidence for \(repoID)")
+@MainActor
+private func runLiveGitHubSetupSmoke(file: StaticString = #filePath, line: UInt = #line) throws {
+  let environment = ProcessInfo.processInfo.environment
+  guard let token = environment["PRBAR_IOS_LIVE_GITHUB_TOKEN"], token.isEmpty == false else {
+    throw XCTSkip("PRBAR_IOS_LIVE_GITHUB_TOKEN is required for live GitHub device smoke.")
   }
 
-  private func requiredEnvironmentValue(_ key: String) -> String {
-    guard let value = ProcessInfo.processInfo.environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines),
-      value.isEmpty == false
-    else {
-      XCTFail("Missing required environment value: \(key)")
-      return ""
-    }
-    return value
+  let repositoryFullName = environment["PRBAR_IOS_LIVE_REPOSITORY"] ?? "mean-weasel/prbar"
+  let repositoryName = repositoryFullName.split(separator: "/").last.map(String.init) ?? repositoryFullName
+  let app = XCUIApplication()
+  app.launchArguments = ["--ui-testing", "--ui-testing-live-github", "--signed-out"]
+  app.launchEnvironment["PRBAR_IOS_LIVE_GITHUB_TOKEN"] = token
+  app.launchEnvironment["PRBAR_IOS_LIVE_REPOSITORY"] = repositoryFullName
+  if let login = environment["PRBAR_IOS_LIVE_GITHUB_LOGIN"] {
+    app.launchEnvironment["PRBAR_IOS_LIVE_GITHUB_LOGIN"] = login
+  }
+  app.launch()
+
+  XCTAssertTrue(app.staticTexts["Connect GitHub"].waitForExistence(timeout: 8), file: file, line: line)
+  app.tapContinueWithGitHub(file: file, line: line)
+  XCTAssertTrue(app.staticTexts["Choose repos"].waitForExistence(timeout: 20), file: file, line: line)
+  XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "0 of ")).firstMatch.waitForExistence(timeout: 5), file: file, line: line)
+
+  let searchField = app.textFields["repo-search-field"]
+  XCTAssertTrue(searchField.waitForExistence(timeout: 5), file: file, line: line)
+  searchField.tap()
+  searchField.typeText(repositoryFullName)
+  if app.keyboards.buttons["Return"].exists {
+    app.keyboards.buttons["Return"].tap()
+  }
+
+  let repositorySwitch = app.switches["Include \(repositoryName)"].firstMatch
+  XCTAssertTrue(repositorySwitch.waitForExistence(timeout: 20), "Could not find \(repositoryFullName). Check GitHub App installation, SSO, and token access.", file: file, line: line)
+  repositorySwitch.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+  XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "1 of ")).firstMatch.waitForExistence(timeout: 5), file: file, line: line)
+
+  app.tapButton("Finish setup", untilStaticTextExists: "Shipping rhythm", file: file, line: line)
+  XCTAssertTrue(
+    app.staticTexts["Last refreshed"].waitForExistence(timeout: 60) ||
+      app.staticTexts["Partial GitHub sync"].waitForExistence(timeout: 2),
+    "Live GitHub sync did not finish or surface a partial-sync issue.",
+    file: file,
+    line: line
+  )
+
+  XCTAssertTrue(
+    app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "#")).firstMatch.waitForExistence(timeout: 10) ||
+      app.staticTexts["No merged PRs"].waitForExistence(timeout: 2),
+    "PRs tab did not render synced PR data or an intentional empty state.",
+    file: file,
+    line: line
+  )
+
+  app.tapTab("Releases", file: file, line: line)
+  XCTAssertTrue(
+    app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", repositoryName)).firstMatch.waitForExistence(timeout: 10) ||
+      app.staticTexts["No releases or tags"].waitForExistence(timeout: 2),
+    "Releases tab did not render synced release/tag data or an intentional empty state.",
+    file: file,
+    line: line
+  )
+}
+
+private extension XCUIApplication {
+  @MainActor
+  func tapContinueWithGitHub(file: StaticString = #filePath, line: UInt = #line) {
+    let button = buttons["Continue with GitHub"].firstMatch
+    XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing Continue with GitHub button", file: file, line: line)
+    activate()
+    button.tap()
   }
 
   @MainActor
-  private func waitForRefreshCompletion(in app: XCUIApplication, timeout: TimeInterval) -> Bool {
-    let deadline = Date().addingTimeInterval(timeout)
-    while Date() < deadline {
-      if app.staticTexts["Last refreshed"].exists || app.staticTexts["Last refresh failed"].exists {
-        return true
-      }
-      RunLoop.current.run(until: Date().addingTimeInterval(1))
+  func tapTab(_ name: String, file: StaticString = #filePath, line: UInt = #line) {
+    let button = tabBars.firstMatch.buttons[name].firstMatch
+    XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing \(name) tab", file: file, line: line)
+    activate()
+    button.tap()
+    if button.isSelected == false {
+      activate()
+      button.tap()
     }
-    return false
+  }
+
+  @MainActor
+  func tapButton(
+    _ name: String,
+    untilStaticTextExists expectedText: String,
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) {
+    let button = buttons[name].firstMatch
+    XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing \(name) button", file: file, line: line)
+    activate()
+    button.tap()
+    if staticTexts[expectedText].waitForExistence(timeout: 2) {
+      return
+    }
+
+    activate()
+    button.tap()
+    XCTAssertTrue(staticTexts[expectedText].waitForExistence(timeout: 3), "\(name) did not reach \(expectedText)", file: file, line: line)
   }
 }

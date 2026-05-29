@@ -17,7 +17,9 @@ final class PRBarStore {
   var routeState: AppRouteState
   var githubConnection: GitHubConnection
   var isRefreshingActivity = false
+  var activityRefreshProgress: ActivityRefreshProgress?
   var activityRefreshIssue: AuthIssue?
+  var activityRepositoryIssues: [ActivityRepositoryIssue] = []
   var lastActivityRefreshAt: Date?
   var lastActivityRefreshAttemptAt: Date?
   private let authService: GitHubAuthServicing
@@ -216,7 +218,8 @@ final class PRBarStore {
   }
 
   @MainActor
-  func finishRepositorySetup() async {
+  @discardableResult
+  func finishRepositorySetup() -> Task<Void, Never>? {
     persistIncludedRepositorySelection()
 
     routeState = .authenticated
@@ -225,10 +228,14 @@ final class PRBarStore {
       lastActivityRefreshAttemptAt = nil
       lastActivityRefreshAt = nil
       activityRefreshIssue = nil
-      return
+      activityRepositoryIssues = []
+      activityRefreshProgress = nil
+      return nil
     }
 
-    await refreshActivity()
+    return Task {
+      await refreshActivity()
+    }
   }
 
   @MainActor
@@ -239,6 +246,14 @@ final class PRBarStore {
 
     isRefreshingActivity = true
     activityRefreshIssue = nil
+    activityRepositoryIssues = []
+    activityRefreshProgress = ActivityRefreshProgress(
+      totalRepositories: includedRepositories.count,
+      completedRepositories: 0,
+      currentRepositoryName: includedRepositories.first?.name,
+      pullRequestCount: 0,
+      releaseCount: 0
+    )
     let attemptedAt = currentDate()
     lastActivityRefreshAttemptAt = attemptedAt
     let selectedPRDate = selectedPRDate
@@ -250,13 +265,17 @@ final class PRBarStore {
 
     defer {
       isRefreshingActivity = false
+      activityRefreshProgress = nil
     }
 
     do {
       let snapshot = try await activityProvider.activityAsync(
         for: repositories,
         endingAt: anchorDate,
-        lookbackDays: 30
+        lookbackDays: 30,
+        progress: { progress in
+          self.activityRefreshProgress = progress
+        }
       )
       applyActivitySnapshot(snapshot)
       lastActivityRefreshAt = attemptedAt
@@ -268,7 +287,10 @@ final class PRBarStore {
       } else {
         self.selectedReleaseID = releases.first { CalendarDay.isSameDay($0.date, selectedReleaseDate) }?.id ?? releases.first?.id
       }
+    } catch is CancellationError {
+      activityRepositoryIssues = []
     } catch {
+      activityRepositoryIssues = []
       activityRefreshIssue = authIssue(for: error).issue
     }
   }
@@ -388,6 +410,7 @@ final class PRBarStore {
     pullRequests = snapshot.pullRequests
     releases = snapshot.releases
     activityAnchorDate = snapshot.anchorDate
+    activityRepositoryIssues = snapshot.repositoryIssues
     selectedPRDate = snapshot.anchorDate
     selectedReleaseDate = snapshot.anchorDate
     selectedReleaseID = snapshot.releases.first?.id

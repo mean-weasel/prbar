@@ -1,9 +1,9 @@
 import Foundation
 
-struct GitHubAuthenticatedUser: Decodable, Equatable {
+struct GitHubAuthenticatedUser: Codable, Equatable {
   var login: String
 }
 
-struct GitHubOrganization: Decodable, Equatable {
+struct GitHubOrganization: Codable, Equatable {
   var login: String
 }
