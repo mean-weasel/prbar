@@ -66,6 +66,7 @@ struct ReleasesView: View {
   private var syncStatus: some View {
     ActivitySyncStatusView(
       isRefreshing: store.isRefreshingActivity,
+      progress: store.activityRefreshProgress,
       lastRefreshedAt: store.lastActivityRefreshAt,
       lastRefreshAttemptAt: store.lastActivityRefreshAttemptAt,
       issue: store.activityRefreshIssue

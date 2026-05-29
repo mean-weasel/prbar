@@ -2,9 +2,24 @@ import SwiftUI
 
 struct ActivitySyncStatusView: View {
   var isRefreshing: Bool
+  var progress: ActivityRefreshProgress?
   var lastRefreshedAt: Date?
   var lastRefreshAttemptAt: Date?
   var issue: AuthIssue?
+
+  init(
+    isRefreshing: Bool,
+    progress: ActivityRefreshProgress? = nil,
+    lastRefreshedAt: Date?,
+    lastRefreshAttemptAt: Date?,
+    issue: AuthIssue?
+  ) {
+    self.isRefreshing = isRefreshing
+    self.progress = progress
+    self.lastRefreshedAt = lastRefreshedAt
+    self.lastRefreshAttemptAt = lastRefreshAttemptAt
+    self.issue = issue
+  }
 
   var body: some View {
     HStack(alignment: .top, spacing: 10) {
@@ -63,7 +78,17 @@ struct ActivitySyncStatusView: View {
 
   private var detail: String {
     if isRefreshing {
-      return "Syncing included repositories from GitHub."
+      guard let progress else {
+        return "Syncing included repositories from GitHub."
+      }
+
+      let repoText: String
+      if let currentRepositoryName = progress.currentRepositoryName {
+        repoText = "Syncing \(progress.completedRepositories + 1) of \(progress.totalRepositories): \(currentRepositoryName)."
+      } else {
+        repoText = "Synced \(progress.completedRepositories) of \(progress.totalRepositories) repositories."
+      }
+      return "\(repoText) Found \(progress.pullRequestCount) PRs and \(progress.releaseCount) releases so far."
     }
     if let issue {
       if let lastRefreshedAt {
