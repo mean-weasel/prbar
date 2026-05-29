@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   issues: write
   pull-requests: write
@@ -38,3 +39,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run release
+
+      - name: Dispatch release artifact workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          latest_tag="$(gh release view --json tagName --jq .tagName 2>/dev/null || true)"
+          if [ -z "$latest_tag" ]; then
+            echo "No GitHub release found after semantic-release."
+            exit 0
+          fi
+
+          release_commit="$(git rev-list -n 1 "$latest_tag")"
+          if [ "$release_commit" != "$GITHUB_SHA" ]; then
+            echo "Latest release $latest_tag points at $release_commit, not this run's $GITHUB_SHA; skipping artifact dispatch."
+            exit 0
+          fi
+
+          echo "Dispatching release artifact workflow for $latest_tag."
+          gh workflow run release-artifact.yml -f tag="$latest_tag"
