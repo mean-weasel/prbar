@@ -878,9 +878,43 @@ final class PRBarModelTests: XCTestCase {
       Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub")
     ]
 
-    await store.finishRepositorySetup()
+    let refreshTask = store.finishRepositorySetup()
+    await refreshTask?.value
 
     XCTAssertEqual(try selectionStore.loadIncludedRepositoryIDs(), ["mean-weasel/prbar"])
+  }
+
+  @MainActor
+  func testFinishingRepositorySetupStartsRefreshWithoutBlockingSetup() async {
+    let provider = SuspendedGitHubActivityProvider()
+    let store = PRBarStore.sample(activityProvider: provider)
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+    store.routeState = .onboarding(.repositories)
+
+    let refreshTask = store.finishRepositorySetup()
+    await Task.yield()
+
+    XCTAssertEqual(store.routeState, .authenticated)
+    XCTAssertTrue(store.isRefreshingActivity)
+    XCTAssertEqual(store.activityRefreshProgress?.totalRepositories, 1)
+    XCTAssertEqual(store.activityRefreshProgress?.currentRepositoryName, "prbar")
+
+    provider.resume(
+      with: GitHubActivitySnapshot(
+        pullRequests: [
+          PullRequest(id: "mean-weasel/prbar#41", title: "Async setup sync", repoID: "mean-weasel/prbar", number: 41, mergedAt: SampleData.dateTime("2026-05-24T12:00:00Z"))
+        ],
+        releases: [],
+        anchorDate: SampleData.date("2026-05-24")
+      )
+    )
+    await refreshTask?.value
+
+    XCTAssertFalse(store.isRefreshingActivity)
+    XCTAssertNil(store.activityRefreshProgress)
+    XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#41"])
   }
 
   @MainActor
@@ -916,7 +950,8 @@ final class PRBarModelTests: XCTestCase {
       repository.included = repository.id == "mean-weasel/prbar"
       return repository
     }
-    await store.finishRepositorySetup()
+    let refreshTask = store.finishRepositorySetup()
+    await refreshTask?.value
 
     XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#39"])
     XCTAssertEqual(store.releases.map(\.id), ["mean-weasel/prbar@release:v1.4.0"])
@@ -971,7 +1006,8 @@ final class PRBarModelTests: XCTestCase {
       repository.included = true
       return repository
     }
-    await store.finishRepositorySetup()
+    let refreshTask = store.finishRepositorySetup()
+    await refreshTask?.value
 
     XCTAssertEqual(store.routeState, .authenticated)
     XCTAssertEqual(store.activityRefreshIssue?.id, "github-sync-failed")
@@ -1008,6 +1044,7 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.activityAnchorDate, SampleData.date("2026-05-24"))
     XCTAssertEqual(store.lastActivityRefreshAt, refreshDate)
     XCTAssertNil(store.activityRefreshIssue)
+    XCTAssertNil(store.activityRefreshProgress)
     XCTAssertFalse(store.isRefreshingActivity)
   }
 
@@ -1081,6 +1118,48 @@ private struct ThrowingGitHubActivityProvider: GitHubActivityProviding {
       throw apiError
     }
     throw GitHubActivityError.invalidResponse
+  }
+}
+
+private final class SuspendedGitHubActivityProvider: GitHubActivityProviding, @unchecked Sendable {
+  private var continuation: CheckedContinuation<GitHubActivitySnapshot, Error>?
+  private var pendingSnapshot: GitHubActivitySnapshot?
+
+  func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
+    GitHubActivitySnapshot(pullRequests: [], releases: [], anchorDate: endDate)
+  }
+
+  func activityAsync(
+    for repositories: [Repository],
+    endingAt endDate: Date,
+    lookbackDays: Int,
+    progress: (@MainActor (ActivityRefreshProgress) -> Void)?
+  ) async throws -> GitHubActivitySnapshot {
+    await progress?(
+      ActivityRefreshProgress(
+        totalRepositories: repositories.count,
+        completedRepositories: 0,
+        currentRepositoryName: repositories.first?.name,
+        pullRequestCount: 0,
+        releaseCount: 0
+      )
+    )
+    if let pendingSnapshot {
+      self.pendingSnapshot = nil
+      return pendingSnapshot
+    }
+    return try await withCheckedThrowingContinuation { continuation in
+      self.continuation = continuation
+    }
+  }
+
+  func resume(with snapshot: GitHubActivitySnapshot) {
+    if let continuation {
+      continuation.resume(returning: snapshot)
+      self.continuation = nil
+    } else {
+      pendingSnapshot = snapshot
+    }
   }
 }
 

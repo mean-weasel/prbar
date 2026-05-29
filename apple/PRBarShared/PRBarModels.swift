@@ -89,6 +89,14 @@ struct ReleaseMoment: Identifiable, Codable, Equatable, Sendable {
   var url: URL
 }
 
+struct ActivityRefreshProgress: Equatable, Sendable {
+  var totalRepositories: Int
+  var completedRepositories: Int
+  var currentRepositoryName: String?
+  var pullRequestCount: Int
+  var releaseCount: Int
+}
+
 enum ActivityRange: String, CaseIterable, Identifiable, Sendable {
   case day
   case week

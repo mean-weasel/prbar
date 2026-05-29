@@ -128,15 +128,27 @@ struct RepositorySetupView: View {
         .font(.subheadline)
       }
 
+      if let store, store.isRefreshingActivity || store.activityRefreshIssue != nil || store.lastActivityRefreshAt != nil {
+        Section("Sync") {
+          ActivitySyncStatusView(
+            isRefreshing: store.isRefreshingActivity,
+            progress: store.activityRefreshProgress,
+            lastRefreshedAt: store.lastActivityRefreshAt,
+            lastRefreshAttemptAt: store.lastActivityRefreshAttemptAt,
+            issue: store.activityRefreshIssue
+          )
+          .listRowInsets(EdgeInsets())
+          .listRowBackground(Color.clear)
+        }
+      }
+
     }
     .navigationTitle(title)
     .toolbar {
       if showsFinishButton {
         ToolbarItem(placement: .topBarTrailing) {
           Button {
-            Task {
-              await store?.finishRepositorySetup()
-            }
+            store?.finishRepositorySetup()
           } label: {
             if store?.isRefreshingActivity == true {
               ProgressView()
