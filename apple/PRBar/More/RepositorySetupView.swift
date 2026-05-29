@@ -145,7 +145,8 @@ struct RepositorySetupView: View {
             progress: store.activityRefreshProgress,
             lastRefreshedAt: store.lastActivityRefreshAt,
             lastRefreshAttemptAt: store.lastActivityRefreshAttemptAt,
-            issue: store.activityRefreshIssue
+            issue: store.activityRefreshIssue,
+            repositoryIssues: store.activityRepositoryIssues
           )
           .listRowInsets(EdgeInsets())
           .listRowBackground(Color.clear)
