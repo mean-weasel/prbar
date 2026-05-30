@@ -174,8 +174,8 @@ struct PRsView: View {
 
       if includedPullRequests.isEmpty {
         ActivityEmptyStateView(
-          title: "No merged PRs",
-          detail: "Refresh GitHub activity or include more repositories.",
+          title: prEmptyStateTitle,
+          detail: prEmptyStateDetail,
           systemImage: "arrow.triangle.pull",
           identifier: "prs-empty-state"
         )
@@ -202,6 +202,32 @@ struct PRsView: View {
     return store.pullRequests.filter {
       includedIDs.contains($0.repoID) && CalendarDay.isSameDay($0.mergedAt, date)
     }
+  }
+
+  private var prEmptyStateTitle: String {
+    if store.includedRepositories.isEmpty {
+      return "No repos selected"
+    }
+    return "No merged PRs"
+  }
+
+  private var prEmptyStateDetail: String {
+    if store.includedRepositories.isEmpty {
+      return "Choose repos to decide which GitHub activity PRBar should sync."
+    }
+    if store.isRefreshingActivity {
+      return "Syncing included repositories. Merged PRs will appear here when refresh finishes."
+    }
+    if store.activityRepositoryIssues.isEmpty == false {
+      return "Synced available repositories, but none have merged PRs yet. Review the partial sync note above."
+    }
+    if store.activityRefreshIssue != nil {
+      return "Refresh did not finish. Existing PR data stays visible when available."
+    }
+    if store.lastActivityRefreshAt != nil {
+      return "No merged PRs were found in selected repos for this window."
+    }
+    return "Refresh GitHub activity to load merged PRs for selected repos."
   }
 
   private func repository(for id: Repository.ID) -> Repository? {

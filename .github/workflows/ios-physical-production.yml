@@ -8,7 +8,7 @@ on:
         required: true
         default: fast
         type: choice
-        options: [fast, pr, setup, partial, full, live]
+        options: [fast, pr, version, setup, partial, full, live, production]
       device_name:
         description: Production iPhone name reported by Xcode
         required: true

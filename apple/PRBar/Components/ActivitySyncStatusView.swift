@@ -114,7 +114,7 @@ struct ActivitySyncStatusView: View {
       return issue.message
     }
     if let lastRefreshedAt {
-      return dateFormatter.string(from: lastRefreshedAt)
+      return "Synced selected repositories \(dateFormatter.string(from: lastRefreshedAt))."
     }
     return "Pull to refresh or use the refresh button to sync included repositories."
   }

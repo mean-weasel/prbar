@@ -82,6 +82,9 @@ case "$PROFILE" in
       "$UI_TEST_TARGET/$UI_TEST_TARGET/testFirstRunSelectsOneRepoFinishesSetupAndShowsSyncedActivity"
     )
     ;;
+  version)
+    TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testMoreSettingsAndAboutShowProductVersion")
+    ;;
   partial)
     TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testPartialRefreshShowsRepositoryIssueAndKeepsSyncedData")
     ;;
@@ -98,11 +101,25 @@ case "$PROFILE" in
       TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testLiveGitHubSelectsOneRepositoryAndSyncsActivity")
     fi
     ;;
+  production)
+    if [[ -z "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ]]; then
+      echo "PRBAR_IOS_LIVE_GITHUB_TOKEN is required for IOS_UI_SMOKE_PROFILE=$PROFILE." >&2
+      exit 64
+    fi
+    export PRBAR_IOS_LIVE_REPOSITORY="${PRBAR_IOS_LIVE_REPOSITORY:-mean-weasel/prbar}"
+    TESTS=(
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testMoreSettingsAndAboutShowProductVersion"
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testFirstRunSelectsOneRepoFinishesSetupAndShowsSyncedActivity"
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testPullToRefreshUpdatesPRsAndReleases"
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testPartialRefreshShowsRepositoryIssueAndKeepsSyncedData"
+      "$UI_TEST_TARGET/$UI_TEST_TARGET/testLiveGitHubSelectsOneRepositoryAndSyncsActivity"
+    )
+    ;;
   full)
     TESTS=()
     ;;
   *)
-    echo "Unknown IOS_UI_SMOKE_PROFILE '$PROFILE'. Expected fast, pr, setup, partial, full, live, or live-headless." >&2
+    echo "Unknown IOS_UI_SMOKE_PROFILE '$PROFILE'. Expected fast, pr, version, setup, partial, full, live, live-headless, or production." >&2
     exit 64
     ;;
 esac
@@ -117,7 +134,7 @@ echo "Device role: $DEVICE_ROLE"
 echo "Device name: $DEVICE_NAME"
 echo "Xcode destination: $IOS_DESTINATION"
 echo "Keep the iPhone unlocked and awake until the UI test starts."
-if [[ "$PROFILE" == live* ]]; then
+if [[ "$PROFILE" == live* || "$PROFILE" == "production" ]]; then
   echo "Live GitHub smoke profile:"
   echo "  GitHub login: ${PRBAR_IOS_LIVE_GITHUB_LOGIN:-neonwatty}"
   echo "  Included repo: $PRBAR_IOS_LIVE_REPOSITORY"
