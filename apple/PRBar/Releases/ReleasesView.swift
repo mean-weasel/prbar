@@ -139,7 +139,7 @@ struct ReleasesView: View {
     } else {
       ActivityEmptyStateView(
         title: "No release selected",
-        detail: "Choose a day with releases or refresh GitHub activity.",
+        detail: selectedReleaseEmptyDetail,
         systemImage: "tag",
         identifier: "selected-release-empty-state"
       )
@@ -151,8 +151,8 @@ struct ReleasesView: View {
     VStack(alignment: .leading, spacing: 16) {
       if groupedReleases.isEmpty {
         ActivityEmptyStateView(
-          title: "No releases or tags",
-          detail: "Refresh GitHub activity or include repos that publish releases.",
+          title: releaseRowsEmptyTitle,
+          detail: releaseRowsEmptyDetail,
           systemImage: "shippingbox",
           identifier: "releases-empty-state"
         )
@@ -176,6 +176,42 @@ struct ReleasesView: View {
     return store.releases.filter {
       includedIDs.contains($0.repoID) && CalendarDay.isSameDay($0.date, date)
     }
+  }
+
+  private var selectedReleaseEmptyDetail: String {
+    if store.includedRepositories.isEmpty {
+      return "Choose repos before looking for release details."
+    }
+    if store.isRefreshingActivity {
+      return "Syncing included repositories. Release details will appear when refresh finishes."
+    }
+    return "Choose a day with releases or refresh GitHub activity."
+  }
+
+  private var releaseRowsEmptyTitle: String {
+    if store.includedRepositories.isEmpty {
+      return "No repos selected"
+    }
+    return "No releases or tags"
+  }
+
+  private var releaseRowsEmptyDetail: String {
+    if store.includedRepositories.isEmpty {
+      return "Choose repos to decide which GitHub releases and tags PRBar should sync."
+    }
+    if store.isRefreshingActivity {
+      return "Syncing included repositories. Releases and tags will appear here when refresh finishes."
+    }
+    if store.activityRepositoryIssues.isEmpty == false {
+      return "Synced available repositories, but none published releases or tags yet. Review the partial sync note above."
+    }
+    if store.activityRefreshIssue != nil {
+      return "Refresh did not finish. Existing release data stays visible when available."
+    }
+    if store.lastActivityRefreshAt != nil {
+      return "Selected repos did not publish releases or tags in this window."
+    }
+    return "Refresh GitHub activity to load releases and tags for selected repos."
   }
 
   private func repository(for id: Repository.ID) -> Repository? {

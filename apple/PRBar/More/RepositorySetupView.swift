@@ -83,6 +83,10 @@ struct RepositorySetupView: View {
             Text("Select at least one repo to finish setup.")
               .font(.caption)
               .foregroundStyle(.secondary)
+          } else if showsFinishButton {
+            Text("Finish setup syncs PRs and releases only for repos you turn on.")
+              .font(.caption)
+              .foregroundStyle(.secondary)
           }
 
           Picker("Repo filter", selection: $filter) {
@@ -328,7 +332,7 @@ struct RepositorySetupView: View {
       Label(selectionSummaryText, systemImage: "checkmark.circle")
         .font(.subheadline.weight(.medium))
       Spacer()
-      Text("\(availableCount) available")
+      Text(showsFinishButton ? "Only selected repos sync" : "\(availableCount) available")
         .font(.caption)
         .foregroundStyle(.secondary)
     }

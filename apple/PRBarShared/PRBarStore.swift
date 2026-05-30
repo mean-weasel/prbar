@@ -244,23 +244,39 @@ final class PRBarStore {
       return
     }
 
+    let attemptedAt = currentDate()
+    lastActivityRefreshAttemptAt = attemptedAt
+    let repositories = includedRepositories
+
+    guard repositories.isEmpty == false else {
+      applyActivitySnapshot(
+        GitHubActivitySnapshot(
+          pullRequests: [],
+          releases: [],
+          anchorDate: Self.fixtureCalendar.startOfDay(for: attemptedAt)
+        )
+      )
+      lastActivityRefreshAt = nil
+      activityRefreshIssue = nil
+      activityRepositoryIssues = []
+      activityRefreshProgress = nil
+      return
+    }
+
     isRefreshingActivity = true
     activityRefreshIssue = nil
     activityRepositoryIssues = []
     activityRefreshProgress = ActivityRefreshProgress(
-      totalRepositories: includedRepositories.count,
+      totalRepositories: repositories.count,
       completedRepositories: 0,
-      currentRepositoryName: includedRepositories.first?.name,
+      currentRepositoryName: repositories.first?.name,
       pullRequestCount: 0,
       releaseCount: 0
     )
-    let attemptedAt = currentDate()
-    lastActivityRefreshAttemptAt = attemptedAt
     let selectedPRDate = selectedPRDate
     let selectedReleaseDate = selectedReleaseDate
     let selectedReleaseID = selectedReleaseID
-    let repositories = includedRepositories
-    let anchorDate = activityAnchorDate
+    let anchorDate = attemptedAt
     let activityProvider = activityProvider
 
     defer {

@@ -1091,6 +1091,51 @@ final class PRBarModelTests: XCTestCase {
   }
 
   @MainActor
+  func testRefreshingActivityUsesCurrentDateAsActivityEndDate() async {
+    let refreshDate = SampleData.dateTime("2026-05-30T10:00:00Z")
+    let provider = RecordingGitHubActivityProvider()
+    let store = PRBarStore.sample(
+      activityProvider: provider,
+      currentDate: { refreshDate }
+    )
+    store.activityAnchorDate = SampleData.date("2026-05-24")
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(provider.requestedEndDates, [refreshDate])
+    XCTAssertEqual(store.activityAnchorDate, SampleData.date("2026-05-30"))
+    XCTAssertEqual(store.lastActivityRefreshAt, refreshDate)
+  }
+
+  @MainActor
+  func testRefreshingActivityWithNoIncludedRepositoriesSkipsProviderAndClearsActivity() async {
+    let refreshDate = SampleData.dateTime("2026-05-30T10:15:00Z")
+    let provider = RecordingGitHubActivityProvider()
+    let store = PRBarStore.sample(
+      activityProvider: provider,
+      currentDate: { refreshDate }
+    )
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(provider.activityAsyncCallCount, 0)
+    XCTAssertTrue(store.pullRequests.isEmpty)
+    XCTAssertTrue(store.releases.isEmpty)
+    XCTAssertEqual(store.activityAnchorDate, SampleData.date("2026-05-30"))
+    XCTAssertEqual(store.lastActivityRefreshAttemptAt, refreshDate)
+    XCTAssertNil(store.lastActivityRefreshAt)
+    XCTAssertNil(store.activityRefreshIssue)
+    XCTAssertNil(store.activityRefreshProgress)
+    XCTAssertFalse(store.isRefreshingActivity)
+  }
+
+  @MainActor
   func testRefreshingActivityFailureStaysInPlaceAndRecordsRefreshIssue() async {
     let attemptDate = SampleData.dateTime("2026-05-24T22:30:00Z")
     let store = PRBarStore.sample(
@@ -1224,6 +1269,53 @@ private struct ThrowingGitHubActivityProvider: GitHubActivityProviding {
     }
     throw GitHubActivityError.invalidResponse
   }
+}
+
+private final class RecordingGitHubActivityProvider: GitHubActivityProviding, @unchecked Sendable {
+  private(set) var requestedEndDates: [Date] = []
+  private(set) var activityAsyncCallCount = 0
+
+  func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
+    requestedEndDates.append(endDate)
+    return snapshot(endingAt: endDate)
+  }
+
+  func activityAsync(
+    for repositories: [Repository],
+    endingAt endDate: Date,
+    lookbackDays: Int,
+    progress: (@MainActor (ActivityRefreshProgress) -> Void)?
+  ) async throws -> GitHubActivitySnapshot {
+    activityAsyncCallCount += 1
+    requestedEndDates.append(endDate)
+    let snapshot = snapshot(endingAt: endDate)
+    await progress?(
+      ActivityRefreshProgress(
+        totalRepositories: repositories.count,
+        completedRepositories: repositories.count,
+        currentRepositoryName: nil,
+        pullRequestCount: snapshot.pullRequests.count,
+        releaseCount: snapshot.releases.count
+      )
+    )
+    return snapshot
+  }
+
+  private func snapshot(endingAt endDate: Date) -> GitHubActivitySnapshot {
+    GitHubActivitySnapshot(
+      pullRequests: [
+        PullRequest(id: "mean-weasel/prbar#101", title: "Current date refresh", repoID: "mean-weasel/prbar", number: 101, mergedAt: endDate)
+      ],
+      releases: [],
+      anchorDate: Self.calendar.startOfDay(for: endDate)
+    )
+  }
+
+  private static let calendar: Calendar = {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+    return calendar
+  }()
 }
 
 private final class SuspendedGitHubActivityProvider: GitHubActivityProviding, @unchecked Sendable {

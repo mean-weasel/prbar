@@ -118,6 +118,27 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testMoreSettingsAndAboutShowProductVersion() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    app.tapTab("More")
+    XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 2))
+    app.buttons["Settings"].tap()
+    XCTAssertTrue(app.staticTexts["Version"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1.2.0")).firstMatch.exists)
+
+    XCTAssertTrue(app.navigationBars.buttons["More"].waitForExistence(timeout: 2))
+    app.navigationBars.buttons["More"].tap()
+    XCTAssertTrue(app.buttons["About"].waitForExistence(timeout: 2))
+    app.buttons["About"].tap()
+    XCTAssertTrue(app.staticTexts["Product version"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Build"].exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1.2.0")).firstMatch.exists)
+  }
+
+  @MainActor
   func testRepositorySetupSearchAndFiltersRepos() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]
@@ -180,6 +201,7 @@ final class PRBarUITests: XCTestCase {
     }
     prbarSwitch.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
     XCTAssertTrue(app.staticTexts["1 of 5 selected"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Finish setup syncs PRs and releases only for repos you turn on."].waitForExistence(timeout: 2))
     XCTAssertTrue(app.buttons["Finish setup"].isEnabled)
 
     app.tapButton("Finish setup", untilStaticTextExists: "Shipping rhythm")
@@ -213,6 +235,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Not refreshed yet"].waitForExistence(timeout: 2))
     app.buttons["Refresh activity"].tap()
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Synced selected repositories")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
 
     app.tapTab("Releases")
