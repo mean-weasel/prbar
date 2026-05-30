@@ -179,7 +179,7 @@ private struct UITestingSlowGitHubActivityProvider: GitHubActivityProviding {
         releaseCount: 0
       )
     )
-    try await Task.sleep(nanoseconds: 4_000_000_000)
+    try await Task.sleep(nanoseconds: 12_000_000_000)
 
     let filtered = GitHubActivitySnapshot(
       pullRequests: snapshot.pullRequests.filter { includedIDs.contains($0.repoID) },

@@ -58,9 +58,15 @@ struct PRsView: View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 24) {
+          if store.isRefreshingActivity {
+            syncStatus
+          }
+
           header
 
-          syncStatus
+          if store.isRefreshingActivity == false {
+            syncStatus
+          }
 
           RangePickerView(selection: $store.prRange)
 
@@ -104,6 +110,7 @@ struct PRsView: View {
   private var syncStatus: some View {
     ActivitySyncStatusView(
       isRefreshing: store.isRefreshingActivity,
+      context: store.activityRefreshContext,
       progress: store.activityRefreshProgress,
       lastRefreshedAt: store.lastActivityRefreshAt,
       lastRefreshAttemptAt: store.lastActivityRefreshAttemptAt,
@@ -113,7 +120,7 @@ struct PRsView: View {
   }
 
   private var header: some View {
-    HStack(alignment: .firstTextBaseline) {
+    VStack(alignment: .leading, spacing: 12) {
       VStack(alignment: .leading, spacing: 6) {
         Text("Shipping rhythm")
           .font(.largeTitle.weight(.bold))
@@ -122,19 +129,7 @@ struct PRsView: View {
           .foregroundStyle(.secondary)
       }
 
-      Spacer()
-
-      NavigationLink {
-        RepositorySetupView(store: store)
-      } label: {
-        Label("\(store.includedRepositories.count) repos", systemImage: "folder.badge.gearshape")
-          .labelStyle(.iconOnly)
-          .font(.title3)
-          .padding(10)
-          .background(Color(.secondarySystemBackground))
-          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-      }
-      .accessibilityLabel("\(store.includedRepositories.count) repositories")
+      RepositoryEditLink(store: store)
     }
   }
 

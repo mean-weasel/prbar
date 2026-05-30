@@ -9,6 +9,9 @@ struct SettingsView: View {
         LabeledContent("Account", value: "@neonwatty")
         LabeledContent("Data source", value: "Fixtures")
         LabeledContent("Included repos", value: "\(store.includedRepositories.count)")
+        NavigationLink("Manage included repos") {
+          RepositorySetupView(store: store)
+        }
       }
 
       Section("Status") {

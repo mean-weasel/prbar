@@ -29,9 +29,15 @@ struct ReleasesView: View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 24) {
+          if store.isRefreshingActivity {
+            syncStatus
+          }
+
           header
 
-          syncStatus
+          if store.isRefreshingActivity == false {
+            syncStatus
+          }
 
           RangePickerView(selection: $store.releaseRange)
 
@@ -66,6 +72,7 @@ struct ReleasesView: View {
   private var syncStatus: some View {
     ActivitySyncStatusView(
       isRefreshing: store.isRefreshingActivity,
+      context: store.activityRefreshContext,
       progress: store.activityRefreshProgress,
       lastRefreshedAt: store.lastActivityRefreshAt,
       lastRefreshAttemptAt: store.lastActivityRefreshAttemptAt,
@@ -75,7 +82,7 @@ struct ReleasesView: View {
   }
 
   private var header: some View {
-    HStack(alignment: .firstTextBaseline) {
+    VStack(alignment: .leading, spacing: 12) {
       VStack(alignment: .leading, spacing: 6) {
         Text("Shipping moments")
           .font(.largeTitle.weight(.bold))
@@ -84,19 +91,7 @@ struct ReleasesView: View {
           .foregroundStyle(.secondary)
       }
 
-      Spacer()
-
-      NavigationLink {
-        RepositorySetupView(store: store)
-      } label: {
-        Label("\(store.includedRepositories.count) repos", systemImage: "folder")
-          .labelStyle(.iconOnly)
-          .font(.title3)
-          .padding(10)
-          .background(Color(.secondarySystemBackground))
-          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-      }
-      .accessibilityLabel("\(store.includedRepositories.count) repositories")
+      RepositoryEditLink(store: store, systemImage: "folder")
     }
   }
 

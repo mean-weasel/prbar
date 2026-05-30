@@ -128,6 +128,11 @@ final class PRBarUITests: XCTestCase {
     app.buttons["Settings"].tap()
     XCTAssertTrue(app.staticTexts["Version"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1.2.0")).firstMatch.exists)
+    XCTAssertTrue(app.buttons["Manage included repos"].exists)
+    app.buttons["Manage included repos"].tap()
+    XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.navigationBars.buttons["Settings"].waitForExistence(timeout: 2))
+    app.navigationBars.buttons["Settings"].tap()
 
     XCTAssertTrue(app.navigationBars.buttons["More"].waitForExistence(timeout: 2))
     app.navigationBars.buttons["More"].tap()
@@ -179,6 +184,19 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testPRHeaderReposButtonOpensRepositorySetup() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.buttons["Edit repos"].waitForExistence(timeout: 2))
+    app.buttons["Edit repos"].tap()
+    XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.textFields["repo-search-field"].exists)
+  }
+
+  @MainActor
   func testFirstRunSelectsOneRepoFinishesSetupAndShowsSyncedActivity() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing", "--signed-out", "--ui-testing-first-run-slow-sync"]
@@ -207,7 +225,8 @@ final class PRBarUITests: XCTestCase {
     app.tapButton("Finish setup", untilStaticTextExists: "Shipping rhythm")
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 2))
-    if app.staticTexts["Refreshing GitHub activity"].waitForExistence(timeout: 2) {
+    if app.staticTexts["Setup complete. Syncing repos"].waitForExistence(timeout: 4) {
+      XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1 selected repo")).firstMatch.exists)
       XCTAssertTrue(
         app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Syncing 1 of 1: prbar")).firstMatch.waitForExistence(timeout: 2) ||
           app.staticTexts["Last refreshed"].waitForExistence(timeout: 8)
@@ -223,6 +242,37 @@ final class PRBarUITests: XCTestCase {
 
     app.tapTab("Releases")
     XCTAssertTrue(app.staticTexts["v9.9.9 UI refresh release"].waitForExistence(timeout: 4))
+  }
+
+  @MainActor
+  func testFirstRunCanNavigateWhileSetupSyncRuns() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--signed-out", "--ui-testing-first-run-slow-sync"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Connect GitHub"].waitForExistence(timeout: 4))
+    app.openRepositorySetupFromSignedOut()
+    XCTAssertTrue(app.staticTexts["Choose repos"].waitForExistence(timeout: 2))
+
+    app.textFields["repo-search-field"].tap()
+    app.textFields["repo-search-field"].typeText("prbar")
+    let prbarSwitch = app.switches["Include prbar"].firstMatch
+    XCTAssertTrue(prbarSwitch.waitForExistence(timeout: 2))
+    if app.keyboards.buttons["Return"].exists {
+      app.keyboards.buttons["Return"].tap()
+    }
+    prbarSwitch.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+
+    app.tapButton("Finish setup", untilStaticTextExists: "Shipping rhythm")
+    XCTAssertTrue(app.staticTexts["Setup complete. Syncing repos"].waitForExistence(timeout: 4))
+
+    app.tapTab("Releases")
+    XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Setup complete. Syncing repos"].waitForExistence(timeout: 2))
+
+    app.tapTab("PRs")
+    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 10))
   }
 
   @MainActor
