@@ -64,14 +64,15 @@ const workflowKey = "prbar-proof-workflow";
 
 const signedOutRoutes = [
   { label: "Home", path: "/home" },
-  { label: "Builder Proof", path: "/profile" },
-  { label: "Sources & Privacy", path: "/repos" },
+  { label: "Card", path: "/profile" },
+  { label: "Sources", path: "/repos" },
+  { label: "Account", path: "/account" },
 ];
 
 const signedInRoutes = [
-  { label: "Dashboard", path: "/user" },
-  { label: "Builder Proof", path: "/profile" },
-  { label: "Sources & Privacy", path: "/repos" },
+  { label: "Home", path: "/home" },
+  { label: "Card", path: "/profile" },
+  { label: "Sources", path: "/repos" },
   { label: "Account", path: "/account" },
 ];
 
@@ -100,6 +101,7 @@ const validRoutes = new Set([
   "/logout",
   "/onboarding",
   "/connect-github",
+  "/user",
   ...proofRoutes,
   "/edit-profile",
 ]);
@@ -174,7 +176,7 @@ const sources: Source[] = [
     app: "Prototype Lab",
     lastRelease: "none",
     name: "maya/experiments",
-    publicImpact: "Does not appear on Builder Proof.",
+    publicImpact: "Does not appear on the PRBar card.",
     status: "excluded",
     visibility: "public",
   },
@@ -205,7 +207,7 @@ function defaultProfile(): ProfileState {
     initials: builder.initials,
     link: linkFromHandle(builder.handle),
     name: builder.name,
-    note: "Builder Proof built from selected repos, releases, app updates, and public receipts.",
+    note: "PRBar card built from selected repos, releases, app updates, and public receipts.",
     title: builder.title,
   };
 }
@@ -312,7 +314,7 @@ function currentRoute() {
 }
 
 function sectionFor(path: string, session?: SessionState) {
-  if (path === "/user" || path === "/edit-profile") return session?.isAuthenticated ? "/user" : "/profile";
+  if (path === "/user" || path === "/edit-profile") return "/profile";
   if (["/card", "/receipt", "/project"].includes(path)) return "/profile";
   if (path === "/connect-github") return session?.isAuthenticated ? "/repos" : "/home";
   if (signedInRoutes.some((route) => route.path === path)) return path;
@@ -342,11 +344,9 @@ function sourceMetrics(workflow: WorkflowState, scope: "draft" | "public" = "dra
 
 function setupStepStates(session: SessionState, workflow: WorkflowState) {
   return [
-    { done: session.isAuthenticated, label: "Claim card", path: "/signup" },
     { done: session.githubConnected, label: "Connect GitHub", path: "/connect-github" },
-    { done: session.githubConnected && workflow.sourcesReviewed, label: "Review sources", path: "/repos" },
-    { done: workflow.published, label: "Publish Builder Proof", path: "/profile" },
-    { done: workflow.shareFeedback.includes("Copied") || workflow.shareFeedback.includes("Downloaded") || workflow.shareFeedback.includes("Prepared"), label: "Share anywhere", path: "/profile" },
+    { done: session.githubConnected && workflow.sourcesReviewed, label: "Customize", path: "/repos" },
+    { done: workflow.published, label: "Publish & share", path: "/profile" },
   ];
 }
 
@@ -354,17 +354,17 @@ function productStateFor(session: SessionState, workflow: WorkflowState, publicP
   if (!session.isAuthenticated) {
     return workflow.published
       ? {
-          description: "Signed-out prospect inspecting a live Builder Proof.",
+          description: "Signed-out prospect inspecting a live PRBar card.",
           label: "Public prospect view",
           nextPath: "/signup",
-          nextText: "Create your Builder Proof",
+          nextText: "Create your PRBar card",
           stage: "public-prospect",
         }
       : {
-          description: "Signed-out visitor can inspect the idea and claim a builder card.",
+          description: "Signed-out visitor can inspect the idea and claim a PRBar card.",
           label: "Signed-out visitor",
           nextPath: "/signup",
-          nextText: "Claim builder card",
+          nextText: "Claim your card",
           stage: "signed-out",
         };
   }
@@ -391,19 +391,19 @@ function productStateFor(session: SessionState, workflow: WorkflowState, publicP
 
   if (!workflow.published) {
     return {
-      description: "GitHub is connected; sources are selected in a private draft.",
+      description: "GitHub is connected; card sources are selected in a private draft.",
       label: "Connected draft",
       nextPath: "/repos",
-      nextText: "Choose and publish sources",
+      nextText: "Customize card",
       stage: "connected-draft",
     };
   }
 
   return {
-    description: "Builder owns a live, shareable Builder Proof.",
+    description: "Builder owns a live, shareable PRBar card.",
     label: "Published owner",
     nextPath: "/profile",
-    nextText: "Share Builder Proof",
+    nextText: "Share PRBar card",
     stage: "published-owner",
   };
 }
@@ -430,13 +430,13 @@ function escapeHtmlAttribute(value: string) {
 }
 
 function embedSnippet(profile: ProfileState) {
-  return `<a href="${escapeHtmlAttribute(fullProfileLink(profile))}" data-prbar-card="${escapeHtmlAttribute(profile.handle)}">${escapeHtml(profile.name)}'s Builder Proof</a>`;
+  return `<a href="${escapeHtmlAttribute(fullProfileLink(profile))}" data-prbar-card="${escapeHtmlAttribute(profile.handle)}">${escapeHtml(profile.name)}'s PRBar card</a>`;
 }
 
 function builderCardSvg(profile: ProfileState, metrics: ReturnType<typeof sourceMetrics>) {
   const escape = escapeHtmlAttribute;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="${escape(profile.name)} Builder Proof card">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="${escape(profile.name)} PRBar card">
   <rect width="960" height="540" rx="36" fill="#10141f"/>
   <rect x="56" y="56" width="104" height="104" rx="18" fill="#19b394"/>
   <text x="108" y="122" text-anchor="middle" fill="#061611" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="900">${escape(profile.initials)}</text>
@@ -496,6 +496,14 @@ export default function PrototypeApp() {
     window.scrollTo({ top: 0 });
   }, []);
 
+  const togglePublicPreview = useCallback((value: boolean) => {
+    if (value) {
+      window.scrollTo({ top: 0 });
+      window.requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+    }
+    setPublicPreview(value);
+  }, []);
+
   const updateSession = useCallback((next: Partial<SessionState>) => {
     setSession((current) => {
       const updated = { ...current, ...next };
@@ -525,7 +533,7 @@ export default function PrototypeApp() {
       sourcesReviewed: true,
       draftDirty: false,
       publicSources: structuredClone(current.sources),
-      shareFeedback: current.published ? "Published updates to the public Builder Proof." : "",
+      shareFeedback: current.published ? "Published updates to the public PRBar card." : "",
       shareOutput: current.shareOutput,
     }));
   }, [updateWorkflow]);
@@ -557,7 +565,7 @@ export default function PrototypeApp() {
       resetSession={resetSession}
       route={route}
       session={session}
-      setPublicPreview={setPublicPreview}
+      setPublicPreview={togglePublicPreview}
     >
       {route === "/home" && <HomePage navigate={navigate} productState={productState} profile={profile} session={session} workflow={workflow} />}
       {route === "/signup" && <AuthPage mode="signup" navigate={navigate} profile={profile} saveProfile={saveProfile} updateSession={updateSession} />}
@@ -574,7 +582,7 @@ export default function PrototypeApp() {
           publishWorkflow={publishWorkflow}
           route={route}
           session={session}
-          setPublicPreview={setPublicPreview}
+          setPublicPreview={togglePublicPreview}
           updateWorkflow={updateWorkflow}
           workflow={workflow}
         />
@@ -691,7 +699,7 @@ function Shell({
               <>
                 <button className="topbar-profile" onClick={() => navigate("/user")} type="button">
                   <span className="avatar mini">{profile.initials}</span>
-                  <b>Profile</b>
+                  <b>Setup</b>
                 </button>
                 <button className="topbar-link" onClick={() => navigate(session.githubConnected ? "/repos" : "/connect-github")} type="button">
                   {session.githubConnected ? "GitHub connected" : "Connect GitHub"}
@@ -706,7 +714,7 @@ function Shell({
                   Sign in
                 </button>
                 <button className="topbar-action" onClick={() => navigate("/signup")} type="button">
-                  Claim builder card
+                  Claim your card
                 </button>
               </>
             )}
@@ -716,12 +724,12 @@ function Shell({
           <section className="workflow-map-panel" id="workflow-map" aria-label="PRBar workflow map">
             <div>
               <span>Workflow map</span>
-              <b>Claim card -&gt; connect GitHub -&gt; choose what counts -&gt; publish Builder Proof -&gt; share anywhere.</b>
+              <b>Connect GitHub -&gt; customize what counts -&gt; publish and share your PRBar card.</b>
             </div>
             <div className="workflow-map-actions">
               <button onClick={() => navigate(session.isAuthenticated ? "/user" : "/signup")} type="button">Start setup</button>
-              <button onClick={() => navigate("/profile")} type="button">View Builder Proof</button>
-              <button onClick={() => navigate(session.githubConnected ? "/repos" : "/connect-github")} type="button">{session.githubConnected ? "Choose sources" : "Connect GitHub"}</button>
+              <button onClick={() => navigate("/profile")} type="button">View card</button>
+              <button onClick={() => navigate(session.githubConnected ? "/repos" : "/connect-github")} type="button">{session.githubConnected ? "Customize sources" : "Connect GitHub"}</button>
               <button onClick={() => setWorkflowMapOpen(false)} type="button">Close</button>
             </div>
           </section>
@@ -752,6 +760,33 @@ function HomePage({
 
   return (
     <>
+      <section className={`home-concept-hero${session.isAuthenticated ? " signed-in" : ""}`}>
+        <div className="home-concept-copy">
+          <p className="home-proof-pill">
+            <span aria-hidden="true">✣</span>
+            Your work. Proven.
+          </p>
+          <h1>PRBar is the new resume for AI-native <span className="headline-accent">builders.</span></h1>
+          <p className="lede">Connect GitHub and PRBar turns shipped work into a beautiful, proof-backed card that highlights what you ship.</p>
+          <p className="hero-proof-line">Great defaults. Fully customizable.</p>
+          <div className="home-cta-row">
+            <button className="primary github-cta" onClick={() => navigate(productState.nextPath)} type="button">
+              <GitHubMark />
+              {productState.stage === "signed-out" ? "Connect GitHub" : productState.nextText}
+            </button>
+            <button className="preview-link" onClick={() => navigate("/profile")} type="button">Preview card <span aria-hidden="true">→</span></button>
+          </div>
+          <p className="home-trust-note"><span aria-hidden="true">◆</span> Client-side only. Your code never leaves your device.</p>
+          <p className="home-permission-note">Public repos by default. Private repos only if you select them.</p>
+        </div>
+        <HomeFlipCard
+          flipped={flipped}
+          navigate={navigate}
+          profile={profile}
+          setCardSide={setCardSide}
+        />
+      </section>
+      <HomeProofPath navigate={navigate} productState={productState} />
       {session.isAuthenticated && (
         <SignedInHomePanel
           navigate={navigate}
@@ -761,50 +796,30 @@ function HomePage({
           workflow={workflow}
         />
       )}
-      <section className={`hero${session.isAuthenticated ? " hero-secondary" : ""}`}>
-        <div className="hero-copy">
-          <p className="eyebrow">Builder Card -&gt; Builder Proof</p>
-          <h1>PRBar is the new resume for AI-native builders.</h1>
-          <p className="lede">PRBar is a proof resume that turns shipped work into Builder Proof, built from PRs, releases, app updates, and shipped features.</p>
-          <p className="hero-proof-line">Claim a builder card, connect GitHub, choose what counts, publish Builder Proof, and share one inspectable link anywhere.</p>
-          <StateStatusStrip productState={productState} />
-          <HomeProofPath navigate={navigate} productState={productState} />
-          <div className="action-row">
-            <button className="primary" onClick={() => navigate(productState.nextPath)} type="button">{productState.nextText}</button>
-            <button className="secondary" onClick={() => navigate("/profile")} type="button">Open Builder Proof</button>
-          </div>
-        </div>
-        <HomeFlipCard
-          flipped={flipped}
-          navigate={navigate}
-          profile={profile}
-          setCardSide={setCardSide}
-        />
-      </section>
       <section className="home-doorway" aria-label="PRBar product preview">
         <div className="doorway-intro">
-          <h2>One link that opens into proof.</h2>
-          <p>PRBar stays useful before any network exists: claim the card, connect GitHub, choose the sources that count, and publish a proof surface people can inspect.</p>
+          <h2>One card with proof behind it.</h2>
+          <p>PRBar stays useful before any network exists: claim the card, connect GitHub, keep the defaults or tune the sources, and share a resume people can inspect.</p>
         </div>
         <div className="doorway-grid">
           <button className="doorway-panel" onClick={() => navigate("/profile")} type="button">
-            <span>01 / Builder card</span>
-            <strong>Short enough for a bio.</strong>
-            <p>A compact share card previews the current proof and points to the full Builder Proof page.</p>
-          </button>
-          <button className="doorway-panel" onClick={() => navigate("/profile")} type="button">
-            <span>02 / Builder Proof</span>
-            <strong>Deep enough to inspect.</strong>
-            <p>Receipts, app proof, releases, PRs, and timeline sit together as a new resume for shipped work.</p>
+            <span>01 / PRBar card</span>
+            <strong>Beautiful by default.</strong>
+            <p>A compact share card works in bios, resumes, launches, intros, and investor updates.</p>
           </button>
           <button className="doorway-panel" onClick={() => navigate("/repos")} type="button">
-            <span>03 / Sources</span>
-            <strong>Controlled by the builder.</strong>
-            <p>Private source selection and redaction keep proof useful without exposing work that should stay private.</p>
+            <span>02 / GitHub proof</span>
+            <strong>Credible without extra work.</strong>
+            <p>PR velocity, releases, checks, app updates, and receipts come from selected GitHub sources.</p>
+          </button>
+          <button className="doorway-panel" onClick={() => navigate("/repos")} type="button">
+            <span>03 / Customization</span>
+            <strong>Simple controls when needed.</strong>
+            <p>Defaults get the card live quickly; source selection and redaction keep private work private.</p>
           </button>
         </div>
       </section>
-      <section className="proof-manifesto">No feed. No threads. No productivity theater. Just proof.</section>
+      <section className="proof-manifesto">No feed. No threads. No productivity theater. Just your card and the proof behind it.</section>
     </>
   );
 }
@@ -825,15 +840,15 @@ function SignedInHomePanel({
   const nextAction = !session.githubConnected
     ? ["Connect GitHub", "/connect-github"]
     : workflow.published
-      ? ["Share Builder Proof", "/profile"]
+      ? ["Share PRBar card", "/profile"]
       : ["Review sources", "/repos"];
 
   return (
     <section className="signed-in-home-panel owner-home-panel" aria-label="Signed-in owner view">
       <div>
         <span>Signed-in owner view</span>
-        <h2>Owner workspace for {profile.name}.</h2>
-        <p>{productState.description} Keep moving from this private workspace into sources, profile edits, publishing, and public preview.</p>
+        <h2>Card workspace for {profile.name}.</h2>
+        <p>{productState.description} Keep moving from this private setup view into source controls, profile edits, publishing, and public preview.</p>
       </div>
       <div className="signed-in-home-grid">
         <article>
@@ -842,9 +857,9 @@ function SignedInHomePanel({
           <p>{session.githubConnected ? `${metrics.counted} selected sources, ${metrics.attached} attached apps, ${metrics.hidden} private names hidden.` : "Card claimed. GitHub proof is not connected yet."}</p>
         </article>
         <article>
-          <span>Builder card</span>
+          <span>PRBar card</span>
           <b>{shortProfilePath(profile)}</b>
-          <p>The short card remains the portable entry point into full Builder Proof.</p>
+          <p>The card is the portable resume link; proof details open behind it when someone wants context.</p>
         </article>
         <article>
           <span>Public status</span>
@@ -854,8 +869,8 @@ function SignedInHomePanel({
       </div>
       <div className="action-row small">
         <button className="primary" onClick={() => navigate(nextAction[1])} type="button">{nextAction[0]}</button>
-        <button className="secondary light" onClick={() => navigate("/user")} type="button">Open Dashboard</button>
-        <button className="secondary light" onClick={() => navigate("/profile")} type="button">Preview Builder Proof</button>
+        <button className="secondary light" onClick={() => navigate("/user")} type="button">Setup checklist</button>
+        <button className="secondary light" onClick={() => navigate("/profile")} type="button">Preview card</button>
         <button className="secondary light" onClick={() => navigate("/account")} type="button">Account controls</button>
       </div>
     </section>
@@ -864,22 +879,20 @@ function SignedInHomePanel({
 
 function HomeProofPath({ navigate, productState }: NavigateProps & { productState: ProductState }) {
   const activeStep = (() => {
-    if (productState.stage === "new-user") return "connect";
+    if (productState.stage === "signed-out" || productState.stage === "new-user") return "connect";
     if (productState.stage === "connected-draft") return "choose";
-    if (productState.stage === "published-owner") return "share";
-    if (productState.stage === "public-prospect" && productState.nextPath === "/profile") return "share";
-    return "claim";
+    if (productState.stage === "published-owner") return "publish";
+    if (productState.stage === "public-prospect" && productState.nextPath === "/profile") return "publish";
+    return "connect";
   })();
   const steps = [
-    ["claim", "01", "Claim card", "/signup"],
-    ["connect", "02", "Connect GitHub", "/connect-github"],
-    ["choose", "03", "Review sources", "/repos"],
-    ["publish", "04", "Publish Builder Proof", "/profile"],
-    ["share", "05", "Share anywhere", "/profile"],
+    ["connect", "01", "Connect GitHub", "/connect-github"],
+    ["choose", "02", "Customize", "/repos"],
+    ["publish", "03", "Publish & share", "/profile"],
   ] as const;
 
   return (
-    <div className="home-proof-path" aria-label="Path to Builder Proof">
+    <section className="home-proof-path" aria-label="Path to PRBar card">
       {steps.map(([key, number, label, path]) => (
         <button
           className={key === activeStep ? "active" : ""}
@@ -887,10 +900,50 @@ function HomeProofPath({ navigate, productState }: NavigateProps & { productStat
           onClick={() => navigate(path)}
           type="button"
         >
-          <span>{number}</span>
+          <span className="home-step-icon"><StepIcon step={key} /></span>
+          <small>{number}</small>
           <b>{label}</b>
+          <em>{key === "connect" ? "Analyze selected GitHub work locally." : key === "choose" ? "Fine-tune layout, metrics, and style." : "One link. Always up to date."}</em>
         </button>
       ))}
+    </section>
+  );
+}
+
+function GitHubMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M12 2.3A9.7 9.7 0 0 0 8.9 21c.48.09.66-.2.66-.46v-1.7c-2.68.58-3.24-1.15-3.24-1.15-.44-1.12-1.08-1.42-1.08-1.42-.88-.6.07-.59.07-.59.98.07 1.5 1 1.5 1 .86 1.48 2.27 1.05 2.82.8.09-.63.34-1.05.61-1.29-2.14-.24-4.4-1.07-4.4-4.77 0-1.05.38-1.91 1-2.59-.1-.24-.43-1.22.1-2.55 0 0 .82-.26 2.67.99A9.25 9.25 0 0 1 12 6.94c.82 0 1.64.11 2.41.33 1.85-1.25 2.66-.99 2.66-.99.54 1.33.2 2.31.1 2.55.63.68 1 1.54 1 2.59 0 3.71-2.26 4.53-4.41 4.77.35.3.66.89.66 1.8v2.66c0 .26.18.56.67.46A9.7 9.7 0 0 0 12 2.3Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function StepIcon({ step }: { step: "connect" | "choose" | "publish" }) {
+  if (step === "connect") {
+    return <GitHubMark />;
+  }
+
+  if (step === "choose") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M4 7h8M16 7h4M10 17h10M4 17h2" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+        <circle cx="14" cy="7" r="2" fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle cx="8" cy="17" r="2" fill="none" stroke="currentColor" strokeWidth="2" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M12 16V4m0 0 4.5 4.5M12 4 7.5 8.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function MiniProofBars({ tone, values }: { tone: "blue" | "gold" | "green"; values: number[] }) {
+  return (
+    <div className={`mini-proof-bars ${tone}`} aria-hidden="true">
+      {values.map((value, index) => <i key={`${tone}-${index}`} style={{ height: `${value}%` }} />)}
     </div>
   );
 }
@@ -906,28 +959,66 @@ function HomeFlipCard({
   setCardSide: (side: "front" | "back") => void;
 }) {
   return (
-    <aside className={`builder-link-card-wrap ${flipped ? "flipped" : ""}`} data-builder-link-card aria-label="Interactive Builder Card">
+    <aside className={`builder-link-card-wrap ${flipped ? "flipped" : ""}`} data-builder-link-card aria-label="Interactive PRBar Card">
       <div className="builder-link-stage">
-        <div className="builder-link-ghost" aria-hidden="true" />
+        <div className="builder-link-ghost hero-card-backdrop" aria-hidden="true">
+          <div className="backdrop-section">
+            <span>Top languages</span>
+            {[
+              ["TypeScript", "45%"],
+              ["Python", "20%"],
+              ["Go", "15%"],
+              ["Swift", "10%"],
+            ].map(([label, value]) => (
+              <p key={label}><b>{label}</b><i style={{ width: value }} /><em>{value}</em></p>
+            ))}
+          </div>
+          <div className="backdrop-section">
+            <span>Top repos</span>
+            {["sideproject-radar", "radar-ios", "launch-notes"].map((repo, index) => (
+              <p key={repo}><b>{repo}</b><em>{["42 PRs", "9 PRs", "4 releases"][index]}</em></p>
+            ))}
+          </div>
+          <strong>Built with proof by builders</strong>
+        </div>
         <div className="builder-link-ghost second" aria-hidden="true" />
         <div className="builder-link-flip">
           <section className="builder-link-face builder-link-front" aria-hidden={flipped}>
             <span className="builder-link-glare" aria-hidden="true" />
             <div className="builder-link-identity">
-              <div>
-                <span>Front: portable card</span>
-                <h3>{profile.name}</h3>
+              <div className="builder-profile-lockup">
+                <div className="builder-avatar-orb"><span>{profile.initials}</span><i /></div>
+                <div>
+                  <span>Front: portable card</span>
+                  <h3>{profile.name}</h3>
+                  <em>{shortProfilePath(profile)}</em>
+                </div>
               </div>
-              <div className="avatar">{profile.initials}</div>
+              <div className="builder-live-pill"><i />Live</div>
             </div>
             <p>{profile.title}. A compact proof link for bios, resumes, intros, and launch notes.</p>
             <div className="builder-link-chart" aria-label="Selected GitHub proof summary">
               {[34, 58, 42, 76, 64, 100, 82].map((value) => <i key={value} style={{ height: `${value}%` }} />)}
             </div>
             <div className="builder-link-stats">
-              <div><b>42</b><span>merged PRs</span></div>
-              <div><b>4</b><span>releases</span></div>
-              <div><b>{builder.stats.apps}</b><span>shipped apps</span></div>
+              <div>
+                <span>PR velocity</span>
+                <b>8.6/day</b>
+                <MiniProofBars tone="green" values={[38, 48, 55, 42, 68, 52, 82]} />
+                <em>+24% vs 30 days</em>
+              </div>
+              <div>
+                <span>Releases</span>
+                <b>4</b>
+                <MiniProofBars tone="blue" values={[28, 20, 36, 31, 58, 46, 72]} />
+                <em>4 tagged ships</em>
+              </div>
+              <div>
+                <span>Shipped apps</span>
+                <b>{builder.stats.apps}</b>
+                <MiniProofBars tone="gold" values={[35, 44, 30, 54, 72, 48, 66]} />
+                <em>public proof</em>
+              </div>
             </div>
             <button className="builder-link-card-cta" onClick={() => setCardSide("back")} tabIndex={flipped ? -1 : 0} type="button">Flip to proof snapshot</button>
           </section>
@@ -936,11 +1027,11 @@ function HomeFlipCard({
             <div className="builder-link-identity">
               <div>
                 <span>Back: GitHub-backed proof</span>
-                <h3>Open Builder Proof</h3>
+                <h3>Open proof details</h3>
               </div>
               <div className="avatar">{profile.initials}</div>
             </div>
-            <p>One current receipt, one shipped app, and one path into the full proof resume.</p>
+            <p>One current receipt, one shipped app, and one path into the proof behind the card.</p>
             <div className="builder-link-list">
               <button onClick={() => navigate("/receipt")} tabIndex={flipped ? 0 : -1} type="button">
                 <span><strong>{release.title}</strong><em>{release.facts.slice(0, 2).join(" · ")}</em></span>
@@ -951,15 +1042,27 @@ function HomeFlipCard({
                 <b>App</b>
               </button>
               <button onClick={() => navigate("/profile")} tabIndex={flipped ? 0 : -1} type="button">
-                <span><strong>{profile.name}&apos;s Builder Proof</strong><em>Receipts, apps, timeline</em></span>
+                <span><strong>{profile.name}&apos;s PRBar card</strong><em>Receipts, apps, timeline</em></span>
                 <b>Full</b>
               </button>
             </div>
-            <button className="builder-link-card-cta light" onClick={() => navigate("/profile")} tabIndex={flipped ? 0 : -1} type="button">Open full Builder Proof</button>
+            <button className="builder-link-card-cta light" onClick={() => navigate("/profile")} tabIndex={flipped ? 0 : -1} type="button">Open full card</button>
           </section>
         </div>
+        <div className="hero-card-arrows" aria-label="Card preview controls">
+          <button aria-label="Show card front" onClick={() => setCardSide("front")} type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="m14.5 6-6 6 6 6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" />
+            </svg>
+          </button>
+          <button aria-label="Show proof back" onClick={() => setCardSide("back")} type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="m9.5 6 6 6-6 6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <div className="builder-link-controls" aria-label="Builder Card side controls">
+      <div className="builder-link-controls" aria-label="PRBar card side controls">
         <button aria-pressed={!flipped} className={!flipped ? "active" : ""} data-card-side="front" onClick={() => setCardSide("front")} type="button">Front: Card</button>
         <button aria-pressed={flipped} className={flipped ? "active" : ""} data-card-side="back" onClick={() => setCardSide("back")} type="button">Back: Proof</button>
       </div>
@@ -1000,9 +1103,9 @@ function AuthPage({
   return (
     <section className="auth-layout">
       <div className="auth-copy">
-        <p className="eyebrow">{signup ? "Claim builder card" : "Welcome back"}</p>
-        <h1>{signup ? "Start with the short proof link." : "Sign in to manage Builder Proof."}</h1>
-        <p>{signup ? "Reserve your builder card, then connect GitHub and choose the sources that power Builder Proof." : "Log in to reach your profile, GitHub connection, account controls, and logout state."}</p>
+        <p className="eyebrow">{signup ? "Claim your card" : "Welcome back"}</p>
+        <h1>{signup ? "Start with your resume card." : "Sign in to manage your PRBar card."}</h1>
+        <p>{signup ? "Reserve your card, connect GitHub, and keep the defaults or customize which proof appears." : "Log in to reach your card, GitHub connection, account controls, and logout state."}</p>
         <SetupStepper active={signup ? "/signup" : "/profile"} />
       </div>
       <form className="auth-panel">
@@ -1018,7 +1121,7 @@ function AuthPage({
         <button className="primary wide" data-auth-action={signup ? "signup" : "login"} onClick={submit} type="button">
           {signup ? "Continue to GitHub" : "Sign in"}
         </button>
-        <p>{signup ? "Already claimed a card?" : "Need a builder card?"} <button type="button" onClick={() => navigate(signup ? "/signin" : "/signup")}>{signup ? "Sign in" : "Create account"}</button></p>
+        <p>{signup ? "Already claimed a card?" : "Need a PRBar card?"} <button type="button" onClick={() => navigate(signup ? "/signin" : "/signup")}>{signup ? "Sign in" : "Create account"}</button></p>
       </form>
     </section>
   );
@@ -1029,17 +1132,17 @@ function OnboardingPage({ navigate }: NavigateProps) {
     <>
       <section className="page-hero">
         <p className="eyebrow">Onboarding</p>
-        <h1>Publish Builder Proof in four moves.</h1>
-        <p>PRBar keeps setup narrow: claim the card, connect GitHub, choose sources, then publish the proof resume.</p>
-        <SetupStepper active="/signup" />
+        <h1>Publish your PRBar card in three moves.</h1>
+        <p>PRBar keeps setup narrow: connect GitHub, customize what counts, then publish and share a proof-backed resume card.</p>
+        <SetupStepper active="/connect-github" />
         <div className="action-row">
-          <button className="primary" onClick={() => navigate("/signup")} type="button">Claim card</button>
-          <button className="secondary light" onClick={() => navigate("/connect-github")} type="button">Connect GitHub</button>
+          <button className="primary" onClick={() => navigate("/connect-github")} type="button">Connect GitHub</button>
+          <button className="secondary light" onClick={() => navigate("/profile")} type="button">Preview card</button>
         </div>
       </section>
-      <section className="workflow-path-panel" aria-label="Solo Builder Proof workflow">
+      <section className="workflow-path-panel" aria-label="Solo PRBar card workflow">
         <span>Solo-user path</span>
-        <h2>Claim card -&gt; connect GitHub -&gt; choose what counts -&gt; publish Builder Proof -&gt; share anywhere.</h2>
+        <h2>Connect GitHub -&gt; customize what counts -&gt; publish and share your PRBar card.</h2>
         <p>Every step stays local in this prototype: mock auth, mock GitHub connection, persisted source choices, and share feedback are stored in this browser.</p>
       </section>
     </>
@@ -1058,7 +1161,7 @@ function ConnectGithubPage({ navigate, session, updateSession }: NavigateProps &
       <div className="connect-copy">
         <p className="eyebrow">{connected ? "GitHub connected" : "Connect GitHub"}</p>
         <h1>{connected ? "GitHub proof is ready to review." : "Bring in the facts, then choose what counts."}</h1>
-        <p>{connected ? "Selected repo access is active. The next step is choosing what powers the public Builder Proof." : "PRBar reads release tags, merged PR metadata, checks, and selected repo names. You decide which sources appear publicly."}</p>
+        <p>{connected ? "Selected repo access is active. The next step is choosing what powers the public PRBar card." : "PRBar reads release tags, merged PR metadata, checks, and selected repo names. You decide which sources appear publicly."}</p>
         <SetupStepper active={connected ? "/repos" : "/connect-github"} />
       </div>
       <aside className="connect-panel">
@@ -1074,7 +1177,7 @@ function ConnectGithubPage({ navigate, session, updateSession }: NavigateProps &
         <div className="github-source-preview" aria-label="GitHub source preview">
           <span>{connected ? "Ready for source review" : "Review after authorize"}</span>
           <b>4 candidate sources found</b>
-          <p>PRBar will start in draft. You decide which repos count, which names stay hidden, and which apps attach to Builder Proof.</p>
+          <p>PRBar will start in draft. You decide which repos count, which names stay hidden, and which apps attach to the card.</p>
           <div>
             {sources.slice(0, 3).map((source) => (
               <article key={source.name}>
@@ -1103,7 +1206,7 @@ function LogoutPage({ navigate }: NavigateProps) {
       <div className="auth-copy">
         <p className="eyebrow">Signed out</p>
         <h1>You&apos;re signed out.</h1>
-        <p>The local mock session has been cleared. The public Builder Proof remains shareable, and account controls are one sign-in away.</p>
+        <p>The local mock session has been cleared. The public PRBar card remains shareable, and account controls are one sign-in away.</p>
       </div>
       <aside className="auth-panel">
         <h2>Return to PRBar</h2>
@@ -1117,8 +1220,8 @@ function LogoutPage({ navigate }: NavigateProps) {
 function OwnerGatePage({ kind, navigate, profile }: NavigateProps & { kind: "account" | "edit" | "profile"; profile: ProfileState }) {
   const gates = {
     account: ["Account locked", "Sign in to manage account permissions.", "Account permissions, exports, private source defaults, and deletion controls stay behind the owner session."],
-    edit: ["Owner tools locked", "Sign in to edit this profile.", "The public Builder Proof can stay visible while profile copy, handle, availability, and source-backed settings stay owner-only."],
-    profile: ["Owner profile locked", "Sign in to manage Builder Proof.", "Visitors can inspect the public proof. Owners sign in to edit profile copy, connect GitHub, choose sources, and publish updates."],
+    edit: ["Owner tools locked", "Sign in to edit this card.", "The public PRBar card can stay visible while profile copy, handle, availability, and source-backed settings stay owner-only."],
+    profile: ["Owner profile locked", "Sign in to manage this PRBar card.", "Visitors can inspect the public card. Owners sign in to edit profile copy, connect GitHub, choose sources, and publish updates."],
   } as const;
   const gate = gates[kind];
 
@@ -1130,14 +1233,14 @@ function OwnerGatePage({ kind, navigate, profile }: NavigateProps & { kind: "acc
         <p>{gate[2]}</p>
         <div className="action-row">
           <button className="primary" onClick={() => navigate("/signin")} type="button">Sign in</button>
-          <button className="secondary light" onClick={() => navigate("/profile")} type="button">View public Builder Proof</button>
+          <button className="secondary light" onClick={() => navigate("/profile")} type="button">View public card</button>
         </div>
       </div>
       <aside className="owner-gate-card">
         <span className="avatar xl">{profile.initials}</span>
         <h2>{profile.name}</h2>
         <p>{profile.handle} · {profile.link}</p>
-        <button className="primary wide" onClick={() => navigate("/signup")} type="button">Claim your builder card</button>
+        <button className="primary wide" onClick={() => navigate("/signup")} type="button">Claim your card</button>
       </aside>
     </section>
   );
@@ -1154,12 +1257,12 @@ function UserProfilePage({ navigate, productState, profile, resetSession, sessio
     resetSession();
     navigate("/home");
   };
-  const proofButtonLabel = workflow.published ? "View public Builder Proof" : "Open Builder Proof draft";
+  const proofButtonLabel = workflow.published ? "View public card" : "Open card draft";
   const sessionMessage = !session.githubConnected
     ? "Connect GitHub to import release tags, merged PRs, and source proof."
     : workflow.published
-      ? "Published Builder Proof is live and ready to share."
-      : "Draft Builder Proof is ready to publish.";
+      ? "Published PRBar card is live and ready to share."
+      : "Draft PRBar card is ready to publish.";
   const gitHubActionLabel = session.githubConnected ? "Review GitHub sources" : "Connect GitHub";
 
   return (
@@ -1172,8 +1275,8 @@ function UserProfilePage({ navigate, productState, profile, resetSession, sessio
       </aside>
       <div className="account-main">
         <div className="control-section-heading">
-          <span>Dashboard</span>
-          <h1>Manage your Builder Proof workspace.</h1>
+          <span>Card setup</span>
+          <h1>Manage your PRBar card.</h1>
         </div>
         <div className="session-strip">
           <b>Signed in</b>
@@ -1181,12 +1284,12 @@ function UserProfilePage({ navigate, productState, profile, resetSession, sessio
         </div>
         <StateStatusStrip productState={productState} session={session} workflow={workflow} />
         <WorkflowPath session={session} workflow={workflow} navigate={navigate} />
-        <SetupChecklist profile={profile} session={session} workflow={workflow} />
+        <SetupChecklist session={session} workflow={workflow} />
         <div className="account-grid">
           <button onClick={() => navigate("/edit-profile")} type="button"><b>Edit profile</b><span>Name, handle, title, availability, and links.</span></button>
           <button onClick={() => navigate(session.githubConnected ? "/repos" : "/connect-github")} type="button"><b>{gitHubActionLabel}</b><span>{session.githubConnected ? "Tune selected sources, redaction, and app attachments." : "Import PRs, releases, checks, and selected repo names."}</span></button>
           <button onClick={() => navigate("/account")} type="button"><b>Account permissions</b><span>GitHub access, private source controls, and export settings.</span></button>
-          <button onClick={() => navigate("/repos")} type="button"><b>Sources & Privacy</b><span>Choose what powers public proof.</span></button>
+          <button onClick={() => navigate("/repos")} type="button"><b>Sources & Privacy</b><span>Choose what powers the public card.</span></button>
           <button data-auth-action="logout" onClick={logout} type="button"><b>Log out</b><span>Clear the local mock session and return home.</span></button>
         </div>
       </div>
@@ -1207,12 +1310,12 @@ function EditProfilePage({ navigate, profile, saveProfile }: NavigateProps & { p
       <aside className="account-rail">
         <span className="avatar xl">{profile.initials}</span>
         <h2>Public identity</h2>
-        <p>This copy appears on the builder card and Builder Proof.</p>
+        <p>This copy appears on the PRBar card and proof details.</p>
       </aside>
       <form className="account-main profile-edit-form" data-profile-form>
         <div className="control-section-heading">
           <span>Edit profile</span>
-          <h1>Tune the public resume layer.</h1>
+          <h1>Tune the public card.</h1>
         </div>
         <div className="profile-form-grid">
           <div className="profile-field-stack">
@@ -1233,7 +1336,7 @@ function EditProfilePage({ navigate, profile, saveProfile }: NavigateProps & { p
         </div>
         <div className="action-row">
           <button className="primary" data-profile-action="save" onClick={save} type="button">Save profile</button>
-          <button className="secondary light" onClick={() => navigate("/profile")} type="button">Preview Builder Proof</button>
+          <button className="secondary light" onClick={() => navigate("/profile")} type="button">Preview card</button>
         </div>
       </form>
     </section>
@@ -1291,7 +1394,7 @@ function ReposPage({ navigate, productState, publishWorkflow, session, updateWor
       current.sourcesReviewed = false;
       current.draftDirty = current.published;
       current.shareFeedback = current.published
-        ? "Source changes saved to draft. Publish updates to refresh the public Builder Proof."
+        ? "Source changes saved to draft. Publish updates to refresh the public PRBar card."
         : "Source choices saved to draft. Review and publish when ready.";
       current.shareOutput = "";
       return current;
@@ -1303,11 +1406,11 @@ function ReposPage({ navigate, productState, publishWorkflow, session, updateWor
       <section className="page-hero control-hero">
         <div>
           <p className="eyebrow">Sources & Privacy</p>
-          <h1>Choose what powers Builder Proof.</h1>
-          <p>Only selected GitHub sources become public proof. Everything else stays private, redacted, or excluded.</p>
+          <h1>Customize what powers the card.</h1>
+          <p>Only selected GitHub sources become public proof behind the PRBar card. Everything else stays private, redacted, or excluded.</p>
           <StateStatusStrip productState={productState} session={session} workflow={workflow} />
         </div>
-        <div className="control-hero-stats" aria-label="Current Builder Proof source summary">
+        <div className="control-hero-stats" aria-label="Current PRBar card source summary">
           <div><span>Selected</span><b>{metrics.counted}</b><em>sources count</em></div>
           <div><span>Attached</span><b>{metrics.attached}</b><em>apps shown</em></div>
           <div><span>Private</span><b>{metrics.hidden}</b><em>names hidden</em></div>
@@ -1323,23 +1426,23 @@ function ReposPage({ navigate, productState, publishWorkflow, session, updateWor
           </div>
           <div className="control-status-card publish-status-card">
             <span>Publish status</span>
-            <b>{workflow.published ? "Builder Proof is live" : "Draft Builder Proof"}</b>
-            <p>{metrics.counted} sources power Builder Proof. {metrics.attached} attached apps. {metrics.excluded} excluded. {workflow.published ? "Share link ready." : "Publish when the public proof resume should go live."}</p>
+            <b>{workflow.published ? "PRBar card is live" : "Draft PRBar card"}</b>
+            <p>{metrics.counted} sources power the card. {metrics.attached} attached apps. {metrics.excluded} excluded. {workflow.published ? "Share link ready." : "Publish when the public resume card should go live."}</p>
             {workflow.shareFeedback && <p className="share-feedback" data-share-feedback>{workflow.shareFeedback}</p>}
             {!workflow.sourcesReviewed && <p className="draft-warning">Review and confirm source choices before publishing.</p>}
-            {workflow.draftDirty && <p className="draft-warning">Your live Builder Proof is still public. These source changes are private until you publish updates.</p>}
-            <button className="secondary light wide" data-source-action="confirm-review" onClick={() => updateWorkflow((current) => ({ ...current, sourcesReviewed: true, shareFeedback: "Source choices reviewed. Builder Proof is ready to publish." }))} type="button">Confirm source choices</button>
-            <button className="primary wide" data-proof-action={workflow.published ? "publish-updates" : "publish"} disabled={!workflow.sourcesReviewed} onClick={publishWorkflow} type="button">{workflow.published && workflow.draftDirty ? "Publish updates" : "Publish Builder Proof"}</button>
+            {workflow.draftDirty && <p className="draft-warning">Your live PRBar card is still public. These source changes are private until you publish updates.</p>}
+            <button className="secondary light wide" data-source-action="confirm-review" onClick={() => updateWorkflow((current) => ({ ...current, sourcesReviewed: true, shareFeedback: "Source choices reviewed. PRBar card is ready to publish." }))} type="button">Confirm source choices</button>
+            <button className="primary wide" data-proof-action={workflow.published ? "publish-updates" : "publish"} disabled={!workflow.sourcesReviewed} onClick={publishWorkflow} type="button">{workflow.published && workflow.draftDirty ? "Publish updates" : "Publish PRBar card"}</button>
             {workflow.published && (
               <>
-                <button className="primary wide" data-proof-action="open-public" onClick={() => navigate("/profile")} type="button">Open public Builder Proof</button>
+                <button className="primary wide" data-proof-action="open-public" onClick={() => navigate("/profile")} type="button">Open public card</button>
                 <button className="secondary light wide" data-proof-action="unpublish" onClick={() => updateWorkflow((current) => ({ ...current, published: false, publicSources: null, draftDirty: false, shareFeedback: "", shareOutput: "" }))} type="button">Return to draft</button>
               </>
             )}
           </div>
           <div className="control-status-card">
             <span>Public preview impact</span>
-            <b>{metrics.counted} sources power Builder Proof</b>
+            <b>{metrics.counted} sources power the card</b>
             <p>{metrics.attached} attached apps, {metrics.hidden} private hidden, {metrics.excluded} excluded.</p>
           </div>
         </aside>
@@ -1372,7 +1475,7 @@ function ReposPage({ navigate, productState, publishWorkflow, session, updateWor
                       <button className={state.hidden ? "active" : ""} data-source-action="privacy" data-source-id={source.name} onClick={() => setSource(source.name, "toggleHidden")} type="button">{state.hidden ? "Hidden from public" : "Reveal publicly"}</button>
                     </div>
                   </div>
-                  <p className="repo-impact">{state.mode === "excluded" ? "Excluded from public proof, receipts, cards, and source counts." : state.hidden || state.mode === "redacted" ? "Visible to you here. Hidden from public Builder Proof while still counting selected proof." : source.publicImpact}</p>
+                  <p className="repo-impact">{state.mode === "excluded" ? "Excluded from public proof, receipts, cards, and source counts." : state.hidden || state.mode === "redacted" ? "Visible to you here. Hidden from the public PRBar card while still counting selected proof." : source.publicImpact}</p>
                 </article>
               );
             })}
@@ -1455,13 +1558,13 @@ function ProfilePage({
     return (
       <section className="public-empty-state">
         <div>
-          <p className="eyebrow">Public Builder Proof</p>
-          <h1>Builder Proof is not published yet.</h1>
-          <p>{profile.name.split(/\s+/)[0]} has not made this Builder Proof public. The owner can connect GitHub, review sources, publish Builder Proof, then share the public link anywhere.</p>
+          <p className="eyebrow">Public PRBar card</p>
+          <h1>PRBar card is not published yet.</h1>
+          <p>{profile.name.split(/\s+/)[0]} has not made this PRBar card public. The owner can connect GitHub, customize sources, publish the card, then share the public link anywhere.</p>
           <StateStatusStrip productState={productState} publicArtifact />
           <SetupStepper active="/profile" />
           <div className="action-row">
-            <button className="primary" onClick={() => navigate(session.isAuthenticated ? "/repos" : "/signup")} type="button">{session.isAuthenticated ? "Open owner tools" : "Claim your builder card"}</button>
+            <button className="primary" onClick={() => navigate(session.isAuthenticated ? "/repos" : "/signup")} type="button">{session.isAuthenticated ? "Open card controls" : "Claim your card"}</button>
             <button className="secondary light" onClick={() => navigate(session.isAuthenticated ? "/user" : "/signin")} type="button">{session.isAuthenticated ? "Setup checklist" : "Sign in to publish"}</button>
           </div>
         </div>
@@ -1483,7 +1586,7 @@ function ProfilePage({
   const share = async (action: ShareAction) => {
     const outputs = {
       card: {
-        feedback: "Copied Builder Card link",
+        feedback: "Copied card link",
         value: `${fullProfileLink(profile)}#builder-card`,
       },
       embed: {
@@ -1495,7 +1598,7 @@ function ProfilePage({
         value: builderCardSvg(profile, proofMetrics),
       },
       proof: {
-        feedback: `Copied Builder Proof link: ${fullProfileLink(profile)}`,
+        feedback: `Copied full card link: ${fullProfileLink(profile)}`,
         value: fullProfileLink(profile),
       },
     } satisfies Record<ShareAction, { feedback: string; value: string }>;
@@ -1527,7 +1630,7 @@ function ProfilePage({
         <div className="profile-main">
           <span className="avatar xl">{profile.initials}</span>
           <div>
-            <p className="eyebrow">{workflow.published ? "Published Builder Proof" : "Builder Proof"}</p>
+            <p className="eyebrow">{workflow.published ? "Published PRBar card" : "PRBar card"}</p>
             <h1>{profile.name}</h1>
             <p className="profile-handle-line">{profile.handle} · {profile.link}</p>
             <p>{profile.title}. Shipped 42 merged PRs, 4 releases, and {metrics.attached} public apps from {metrics.counted} selected GitHub sources.</p>
@@ -1543,9 +1646,9 @@ function ProfilePage({
             <div className="proof-chain"><span>Selected repos</span><span>Released apps</span><span>Merged PRs</span><span>Public receipts</span></div>
             <div className="action-row small">
               <button className="primary" onClick={() => navigate("/receipt")} type="button">Featured receipt</button>
-              <button className="secondary light" data-share-action="proof" onClick={() => void share("proof")} type="button">Copy Builder Proof link</button>
+              <button className="secondary light" data-share-action="proof" onClick={() => void share("proof")} type="button">Copy card link</button>
               {ownerView && <button className="secondary light" onClick={() => navigate("/edit-profile")} type="button">Edit profile</button>}
-              {!session.isAuthenticated && <button className="secondary light" onClick={() => navigate("/signup")} type="button">Create your Builder Proof</button>}
+              {!session.isAuthenticated && <button className="secondary light" onClick={() => navigate("/signup")} type="button">Create your PRBar card</button>}
             </div>
           </div>
         </div>
@@ -1558,7 +1661,7 @@ function ProfilePage({
         <section className="owner-proof-bar">
           <div>
             <span>Owner view</span>
-            <h2>Owner controls</h2>
+            <h2>Card controls</h2>
             <p>You are signed in as the builder. Edit the identity, adjust selected sources, or preview what signed-out visitors see.</p>
           </div>
           <div className="owner-proof-actions">
@@ -1568,7 +1671,7 @@ function ProfilePage({
           </div>
         </section>
       ) : session.isAuthenticated ? (
-        <section className="owner-proof-bar public-preview-bar"><h2>This is how signed-out visitors see Builder Proof.</h2><button className="primary" onClick={() => setPublicPreview(false)} type="button">Exit public preview</button></section>
+        <section className="owner-proof-bar public-preview-bar"><h2>This is how signed-out visitors see the PRBar card.</h2><button className="primary" onClick={() => setPublicPreview(false)} type="button">Exit public preview</button></section>
       ) : null}
       <section className="proof-resume-layout proof-artifact">
         <div className="proof-resume-main">
@@ -1584,10 +1687,10 @@ function ProfilePage({
           <div>
             <span>Potential user view</span>
             <h2>Want proof like this?</h2>
-            <p>PRBar turns PRs, releases, app updates, and shipped features into a Builder Proof page you can share anywhere.</p>
+            <p>PRBar turns PRs, releases, app updates, and shipped features into a beautiful resume card you can share anywhere.</p>
           </div>
           <div className="action-row small">
-            <button className="primary" onClick={() => navigate("/signup")} type="button">Create your Builder Proof</button>
+            <button className="primary" onClick={() => navigate("/signup")} type="button">Create your PRBar card</button>
             <button className="secondary light" onClick={() => navigate("/signin")} type="button">Sign in</button>
             <button className="secondary light" type="button">Inspect {shortProfilePath(profile)}</button>
           </div>
@@ -1623,7 +1726,7 @@ function StateStatusStrip({
   const details = [
     session ? (session.isAuthenticated ? "Signed in" : "Signed out") : null,
     session ? (session.githubConnected ? "GitHub connected" : "GitHub not connected") : null,
-    workflow ? (workflow.published ? "Live Builder Proof" : "Draft Builder Proof") : null,
+    workflow ? (workflow.published ? "Live PRBar card" : "Draft PRBar card") : null,
     metrics ? `${metrics.counted} sources selected` : null,
   ].filter(Boolean);
 
@@ -1662,17 +1765,17 @@ function DraftOwnerProofPage({
         <div className="profile-main">
           <span className="avatar xl">{profile.initials}</span>
           <div>
-            <p className="eyebrow">Owner draft</p>
-            <h1>{connected ? "Your Builder Proof is almost shareable." : "Connect GitHub to build Builder Proof."}</h1>
+            <p className="eyebrow">Card draft</p>
+            <h1>{connected ? "Your PRBar card is almost shareable." : "Connect GitHub to build your card."}</h1>
             <p>
               {connected
-                ? `${profile.name}'s card is claimed and GitHub proof is connected. Review the selected sources, publish the proof page, then copy the link anywhere.`
+                ? `${profile.name}'s card is claimed and GitHub proof is connected. Review the selected sources, publish the card, then copy the link anywhere.`
                 : `${profile.name}'s card is claimed. Connect GitHub next so PRBar can import release tags, merged PRs, checks, and selected repo proof.`}
             </p>
             <StateStatusStrip productState={productState} session={session} workflow={workflow} />
             <div className="action-row small">
               <button className="primary" onClick={() => navigate(connected ? "/repos" : "/connect-github")} type="button">{connected ? "Review sources" : "Connect GitHub"}</button>
-              {connected && <button className="secondary light" disabled={!workflow.sourcesReviewed} onClick={publishWorkflow} type="button">Publish Builder Proof</button>}
+              {connected && <button className="secondary light" disabled={!workflow.sourcesReviewed} onClick={publishWorkflow} type="button">Publish PRBar card</button>}
               <button className="secondary light" onClick={() => navigate("/edit-profile")} type="button">Edit profile</button>
             </div>
           </div>
@@ -1691,7 +1794,7 @@ function DraftOwnerProofPage({
         <article>
           <span>1</span>
           <h2>{connected ? "Builder card" : "First preview"}</h2>
-          <p>{connected ? "The short card is ready. It will link into the full Builder Proof after publish." : "Connect GitHub and PRBar will generate the first Builder Proof preview from selected repos, releases, checks, and app updates."}</p>
+          <p>{connected ? "The card is ready. It will open proof details after publish." : "Connect GitHub and PRBar will generate the first card preview from selected repos, releases, checks, and app updates."}</p>
           {connected ? <BuilderCard profile={profile} compact appsCount={metrics.attached} /> : <FirstProofPreview profile={profile} />}
         </article>
         <article>
@@ -1707,9 +1810,9 @@ function DraftOwnerProofPage({
         <article>
           <span>3</span>
           <h2>{connected ? "Publish next" : "Publish later"}</h2>
-          <p>{connected ? "Publishing turns the draft into a signed-out prospect view with receipts, app proof, and share actions." : "Publishing unlocks after GitHub is connected and source choices have been reviewed."}</p>
+          <p>{connected ? "Publishing turns the draft into a signed-out card view with receipts, app proof, and share actions." : "Publishing unlocks after GitHub is connected and source choices have been reviewed."}</p>
           {connected ? (
-            <button className="primary wide" data-proof-action="publish-draft" disabled={!workflow.sourcesReviewed} onClick={publishWorkflow} type="button">Publish Builder Proof</button>
+            <button className="primary wide" data-proof-action="publish-draft" disabled={!workflow.sourcesReviewed} onClick={publishWorkflow} type="button">Publish PRBar card</button>
           ) : (
             <button className="secondary light wide" onClick={() => navigate("/connect-github")} type="button">Connect GitHub first</button>
           )}
@@ -1721,7 +1824,7 @@ function DraftOwnerProofPage({
 
 function FirstProofPreview({ profile }: { profile: ProfileState }) {
   return (
-    <div className="first-proof-preview" aria-label="First Builder Proof preview">
+    <div className="first-proof-preview" aria-label="First PRBar card preview">
       <div className="first-proof-preview-header">
         <span>{profile.handle}</span>
         <b>{profile.name}</b>
@@ -1861,13 +1964,13 @@ function ShareRail({
     <aside className="proof-share-rail" id="builder-card" tabIndex={-1}>
       <div className="rail-sticky">
         <div className="panel-heading"><span>Short version</span><h2>Builder card</h2></div>
-        <p>The card is the portable version of this page. It previews the proof, then opens the full Builder Proof when someone wants receipts and source context.</p>
+        <p>The card is the portable version of this page. It previews the proof, then opens the deeper receipt and source context when someone wants to inspect it.</p>
         <BuilderCard profile={profile} compact appsCount={metrics.attached} />
         <div className="share-output-grid">
-          <button data-share-action="card" onClick={() => share("card")} type="button"><span>Builder Card</span><b>Copy Builder Card link</b></button>
-          <button data-share-action="proof" onClick={() => share("proof")} type="button"><span>Builder Proof</span><b>Copy public Builder Proof link</b></button>
-          <button data-share-action="image" onClick={() => share("image")} type="button"><span>Card image</span><b>Download Builder Card image</b></button>
-          <button data-share-action="embed" onClick={() => share("embed")} type="button"><span>Embed</span><b>Copy Builder Proof embed</b></button>
+          <button data-share-action="card" onClick={() => share("card")} type="button"><span>PRBar card</span><b>Copy card link</b></button>
+          <button data-share-action="proof" onClick={() => share("proof")} type="button"><span>Proof details</span><b>Copy full card link</b></button>
+          <button data-share-action="image" onClick={() => share("image")} type="button"><span>Card image</span><b>Download card image</b></button>
+          <button data-share-action="embed" onClick={() => share("embed")} type="button"><span>Embed</span><b>Copy card embed</b></button>
         </div>
         <p className="share-feedback" data-share-feedback>{shareFeedback || "Share links are ready."}</p>
         <div className="share-output-preview" aria-label="Latest share output">
@@ -1912,7 +2015,7 @@ function AccountPage({ navigate, profile, resetSession, session }: NavigateProps
           <article><b>Session</b><span>{session.isAuthenticated ? "Signed in as maya@example.com" : "Signed out preview"}</span><em>Active</em></article>
           <article><b>GitHub</b><span>{session.githubConnected ? "Connected with selected repo access" : "Not connected yet"}</span><em>Manage</em></article>
           <article><b>Private sources</b><span>Names hidden by default</span><em>Protected</em></article>
-          <article><b>Exports</b><span>Card image, embed, and proof link enabled</span><em>Active</em></article>
+          <article><b>Exports</b><span>Card image, embed, and full card link enabled</span><em>Active</em></article>
           <article><b>Local storage</b><span>Session, profile, selected sources, publish state, and share state persist in this browser</span><em>Client-only</em></article>
           <article><b>Version</b><span>PRBar v{appVersionDisplayValue()}</span><em>Release</em></article>
         </div>
@@ -1927,14 +2030,13 @@ function AccountPage({ navigate, profile, resetSession, session }: NavigateProps
 
 function SetupStepper({ active }: { active: string }) {
   const steps = [
-    ["/signup", "Claim card"],
     ["/connect-github", "Connect GitHub"],
-    ["/repos", "Choose sources"],
-    ["/profile", "Publish Builder Proof"],
+    ["/repos", "Customize"],
+    ["/profile", "Publish & share"],
   ];
 
   return (
-    <ol className="setup-stepper" aria-label="Builder Proof setup steps">
+    <ol className="setup-stepper" aria-label="PRBar card setup steps">
       {steps.map(([path, label], index) => <li className={path === active ? "active" : ""} key={path}><span>{String(index + 1).padStart(2, "0")}</span><b>{label}</b></li>)}
     </ol>
   );
@@ -1942,8 +2044,8 @@ function SetupStepper({ active }: { active: string }) {
 
 function WorkflowPath({ navigate, session, workflow }: NavigateProps & { session: SessionState; workflow: WorkflowState }) {
   return (
-    <section className="workflow-path-panel compact" aria-label="Current Builder Proof path">
-      <span>Path to shareable proof</span>
+    <section className="workflow-path-panel compact" aria-label="Current PRBar card path">
+      <span>Path to shareable card</span>
       <div className="workflow-path-grid">
         {setupStepStates(session, workflow).map((step, index) => (
           <button className={step.done ? "done" : "pending"} key={step.label} onClick={() => navigate(step.path)} type="button">
@@ -1956,19 +2058,17 @@ function WorkflowPath({ navigate, session, workflow }: NavigateProps & { session
   );
 }
 
-function SetupChecklist({ profile, session, workflow }: { profile: ProfileState; session: SessionState; workflow: WorkflowState }) {
+function SetupChecklist({ session, workflow }: { session: SessionState; workflow: WorkflowState }) {
   const metrics = sourceMetrics(workflow);
   const items = [
-    { done: session.isAuthenticated && Boolean(profile.name), label: "Profile claimed", note: `${profile.handle} is reserved and ready for Builder Proof.` },
     { done: session.githubConnected, label: "GitHub connected", note: session.githubConnected ? "Release tags, merged PRs, and checks are available." : "Connect selected repos before proof can be published." },
-    { done: session.githubConnected && workflow.sourcesReviewed, label: "Sources reviewed", note: workflow.sourcesReviewed ? `${metrics.counted} selected sources confirmed for Builder Proof.` : "Confirm which GitHub sources count before publishing." },
-    { done: workflow.published, label: "Builder Proof published", note: workflow.published ? "The public proof page is live." : "Publish after sources and profile copy look right." },
-    { done: workflow.shareFeedback.includes("Copied") || workflow.shareFeedback.includes("Downloaded"), label: "Share output created", note: workflow.shareFeedback || "Copy the card or full Builder Proof link when it is ready." },
+    { done: session.githubConnected && workflow.sourcesReviewed, label: "Sources customized", note: workflow.sourcesReviewed ? `${metrics.counted} selected sources confirmed for the card.` : "Confirm which GitHub sources count before publishing." },
+    { done: workflow.published, label: "PRBar card published", note: workflow.published ? "The public card is live and ready to share." : "Publish after sources and profile copy look right." },
   ];
   const complete = items.filter((item) => item.done).length === items.length;
 
   return (
-    <section className="setup-checklist-panel" aria-label="Builder Proof setup checklist">
+    <section className="setup-checklist-panel" aria-label="PRBar card setup checklist">
       <div className="setup-checklist-heading">
         <span>{complete ? "SETUP COMPLETE" : "FINISH SETUP"}</span>
         <b>{items.filter((item) => item.done).length}/{items.length} complete</b>
