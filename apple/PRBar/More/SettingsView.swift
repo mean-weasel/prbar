@@ -16,6 +16,10 @@ struct SettingsView: View {
         LabeledContent("Auth", value: "Demo")
         LabeledContent("Last update", value: "Sample data")
       }
+
+      Section("About") {
+        LabeledContent("Version", value: AppVersion.current.displayValue)
+      }
     }
     .navigationTitle("Settings")
   }

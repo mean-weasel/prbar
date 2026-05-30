@@ -70,6 +70,10 @@ need ditto
 
 cd "$ROOT_DIR"
 
+if command -v node >/dev/null 2>&1 && [ -f "$ROOT_DIR/scripts/sync-product-version.mjs" ]; then
+  node "$ROOT_DIR/scripts/sync-product-version.mjs"
+fi
+
 if command -v xcodegen >/dev/null 2>&1; then
   xcodegen generate
 else

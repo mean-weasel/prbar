@@ -9,6 +9,8 @@ on:
     paths:
       - apple/**
       - scripts/ios-*.sh
+      - scripts/sync-product-version.mjs
+      - VERSION
       - .github/workflows/ios.yml
   workflow_dispatch:
     inputs:
@@ -48,7 +50,7 @@ jobs:
           fi
 
           changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
-          if printf '%s\n' "$changed_files" | grep -Eq '^(apple/|scripts/ios-|\.github/workflows/ios\.yml$|package\.json$|package-lock\.json$)'; then
+          if printf '%s\n' "$changed_files" | grep -Eq '^(apple/|scripts/ios-|scripts/sync-product-version\.mjs$|VERSION$|\.github/workflows/ios\.yml$|package\.json$|package-lock\.json$)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"

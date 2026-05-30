@@ -223,6 +223,13 @@ main {
   padding: 32px max(18px, calc((100% - 1180px) / 2)) 56px;
 }
 
+.app-version-footer {
+  padding: 0 max(18px, calc((100% - 1180px) / 2)) 28px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .hero,
 .profile-hero,
 .auth-layout,
@@ -355,6 +362,13 @@ p {
 .profile-edit-form .control-section-heading h1 {
   font-size: clamp(2rem, 4vw, 3.4rem);
   line-height: 1.02;
+}
+
+.account-version {
+  margin: 14px 0 18px;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .wide {

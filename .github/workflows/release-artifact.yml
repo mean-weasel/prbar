@@ -26,6 +26,8 @@ jobs:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
       ARTIFACT_NAME: PRMenuBar-macOS.zip
+      PRBAR_VERSION: ${{ github.event.release.tag_name || inputs.tag }}
+      PRBAR_BUILD_NUMBER: ${{ github.run_number }}
       APPLE_ID: ${{ secrets.APPLE_ID }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}

@@ -9,6 +9,7 @@ struct PRSettingsView: View {
       connectionStatus
       controls
       repositoryList
+      appMetadata
     }
   }
 
@@ -83,6 +84,17 @@ struct PRSettingsView: View {
         }
       }
       .frame(maxHeight: 330)
+    }
+  }
+
+  private var appMetadata: some View {
+    HStack {
+      Text("PRBar")
+        .font(.caption.weight(.semibold))
+      Spacer()
+      Text("Version \(AppVersion.current.displayValue)")
+        .font(.caption.monospacedDigit())
+        .foregroundStyle(.secondary)
     }
   }
 }
