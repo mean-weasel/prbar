@@ -46,12 +46,16 @@ jobs:
           set -euo pipefail
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
+            if [ "${{ github.event_name }}" = "merge_group" ]; then
+              echo "smoke_profile=fast" >> "$GITHUB_OUTPUT"
+            fi
             exit 0
           fi
 
           changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
-          if printf '%s\n' "$changed_files" | grep -Eq '^(apple/|scripts/ios-|scripts/sync-product-version\.mjs$|VERSION$|\.github/workflows/ios\.yml$|package\.json$|package-lock\.json$)'; then
+          if printf '%s\n' "$changed_files" | grep -Eq '^(apple/|scripts/ios-|scripts/sync-product-version\.mjs$|VERSION$|package\.json$|package-lock\.json$)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "smoke_profile=pr" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
@@ -78,7 +82,7 @@ jobs:
       - name: UI smoke
         if: github.event_name != 'pull_request' || steps.ios_changes.outputs.run == 'true'
         env:
-          IOS_UI_SMOKE_PROFILE: ${{ inputs.smoke_profile || 'pr' }}
+          IOS_UI_SMOKE_PROFILE: ${{ steps.ios_changes.outputs.smoke_profile || inputs.smoke_profile || 'pr' }}
         run: ./scripts/ios-ui-smoke.sh
       - name: Skip iOS checks
         if: github.event_name == 'pull_request' && steps.ios_changes.outputs.run != 'true'

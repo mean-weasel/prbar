@@ -135,7 +135,8 @@ final class GitHubPRActivityProvider: PRActivityProviding {
     )
     var activity = repository.activity(
       bucketCount: bucketLabels.count,
-      dailyBucketCount: dailyBucketCount
+      dailyBucketCount: dailyBucketCount,
+      isIncluded: false
     )
     activity.weeklyCounts = series.counts
     activity.dailyCounts = dailySeries.counts
