@@ -1,4 +1,4 @@
-import { chromium } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
 import { spawn } from "node:child_process";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +12,31 @@ const mobileViewport = { width: 390, height: 844 };
 const desktopViewport = { width: 1280, height: 900 };
 const shortDesktopViewport = { width: 1280, height: 720 };
 
+const defaultSourceState = {
+  "maya/sideproject-radar": { attached: true, hidden: false, mode: "included" },
+  "maya/radar-ios": { attached: true, hidden: true, mode: "included" },
+  "client/stealth-onboarding": { attached: false, hidden: true, mode: "redacted" },
+  "maya/experiments": { attached: false, hidden: false, mode: "excluded" },
+};
+
+const expandedSourceState = {
+  ...defaultSourceState,
+  "maya/experiments": { attached: true, hidden: false, mode: "included" },
+};
+
+function mockWorkflow(overrides = {}) {
+  return {
+    draftDirty: false,
+    published: false,
+    publicSources: null,
+    shareFeedback: "",
+    shareOutput: "",
+    sources: defaultSourceState,
+    sourcesReviewed: false,
+    ...overrides,
+  };
+}
+
 const routeExpectations = [
   ["#/home", "PRBar is the new resume for AI-native builders."],
   ["#/signup", "Start with your resume card."],
@@ -21,7 +46,7 @@ const routeExpectations = [
   ["#/onboarding", "Publish your PRBar card in three moves."],
   ["#/connect-github", "Bring in the facts, then choose what counts."],
   ["#/profile", "PRBar card is not published yet."],
-  ["#/card", "PRBar card is not published yet."],
+  ["#/card", "This PRBar card is not public yet."],
   ["#/receipt", "PRBar card is not published yet."],
   ["#/project", "PRBar card is not published yet."],
   ["#/user", "Sign in to manage this PRBar card."],
@@ -190,6 +215,113 @@ async function assertBuilderCardFaceContentFits(page, route) {
   }
 }
 
+async function loadCardState(page, route, sessionState, workflowState) {
+  await page.goto(`${baseUrl}/home`, { waitUntil: "networkidle" });
+  await page.evaluate(({ sessionState, workflowState }) => {
+    window.localStorage.removeItem("prbar-profile");
+    window.localStorage.setItem("prbar-session", JSON.stringify(sessionState));
+    window.localStorage.setItem("prbar-proof-workflow", JSON.stringify(workflowState));
+    window.sessionStorage.clear();
+  }, { sessionState, workflowState });
+  await page.goto(`${baseUrl}/#/card`, { waitUntil: "networkidle" });
+  await assertBodyIncludes(page, route, "PRBar card");
+  await assertSectionNearTop(page, route, "#builder-card");
+  await assertNoHorizontalOverflow(page, route);
+}
+
+async function assertCardPrimary(page, route, expectedText) {
+  await assertLocatorIncludes(page, ".card-primary-row .primary", route, expectedText);
+}
+
+async function assertCardStateMatrix(page) {
+  const states = [
+    {
+      name: "signed_out_unpublished",
+      sessionState: { isAuthenticated: false, githubConnected: false },
+      workflowState: mockWorkflow(),
+      primary: "Claim your card",
+      include: ["This PRBar card is not public yet.", "Draft controlled"],
+      exclude: ["Owner workspace", "Publish card"],
+    },
+    {
+      name: "owner_claimed_no_github",
+      sessionState: { isAuthenticated: true, githubConnected: false },
+      workflowState: mockWorkflow(),
+      primary: "Connect GitHub",
+      include: ["Draft card controls.", "Draft controlled"],
+      exclude: ["This PRBar card is not public yet."],
+    },
+    {
+      name: "owner_connected_unreviewed",
+      sessionState: { isAuthenticated: true, githubConnected: true },
+      workflowState: mockWorkflow(),
+      primary: "Choose what counts",
+      include: ["Source controlled", "CONNECTED DRAFT"],
+      exclude: ["PRBar card is not published yet."],
+    },
+    {
+      name: "owner_reviewed_draft",
+      sessionState: { isAuthenticated: true, githubConnected: true },
+      workflowState: mockWorkflow({ sourcesReviewed: true }),
+      primary: "Publish card",
+      include: ["Draft card controls.", "PROOF BEHIND THE CARD"],
+      exclude: ["This PRBar card is not public yet."],
+    },
+    {
+      name: "owner_published_clean",
+      sessionState: { isAuthenticated: true, githubConnected: true },
+      workflowState: mockWorkflow({ published: true, publicSources: defaultSourceState, sourcesReviewed: true }),
+      primary: "Copy card link",
+      include: ["Your PRBar card is live.", "Live card controls.", "https://prbar.dev/maya.codes", "One card link, inspectable proof."],
+      exclude: ["private draft changes"],
+    },
+    {
+      name: "owner_published_dirty",
+      sessionState: { isAuthenticated: true, githubConnected: true },
+      workflowState: mockWorkflow({ draftDirty: true, published: true, publicSources: defaultSourceState, sources: expandedSourceState, sourcesReviewed: false }),
+      primary: "Review updates",
+      include: ["Live card with private draft changes.", "3 selected sources"],
+      exclude: ["4 selected sources power the public artifact"],
+    },
+    {
+      name: "signed_out_published",
+      sessionState: { isAuthenticated: false, githubConnected: false },
+      workflowState: mockWorkflow({ published: true, publicSources: defaultSourceState, sourcesReviewed: true }),
+      primary: "Create your PRBar card",
+      include: ["A portable card backed by shipped work.", "https://prbar.dev/maya.codes", "View proof details"],
+      exclude: ["Owner workspace", "Publish updates", "GitHub connected"],
+    },
+  ];
+
+  for (const viewport of [desktopViewport, mobileViewport]) {
+    await page.setViewportSize(viewport);
+    for (const state of states) {
+      const route = `/card ${state.name} ${viewport.width}`;
+      await loadCardState(page, route, state.sessionState, state.workflowState);
+      await assertCardPrimary(page, route, state.primary);
+      for (const expected of state.include) await assertBodyIncludes(page, route, expected);
+      for (const forbidden of state.exclude) await assertBodyExcludes(page, route, forbidden);
+    }
+
+    const previewRoute = `/card owner_public_preview ${viewport.width}`;
+    await loadCardState(
+      page,
+      previewRoute,
+      { isAuthenticated: true, githubConnected: true },
+      mockWorkflow({ published: true, publicSources: defaultSourceState, sourcesReviewed: true }),
+    );
+    await page.locator('.card-primary-row [data-preview-action="enter"]').click();
+    await page.waitForFunction(() => document.body.innerText.includes("PUBLIC PROSPECT VIEW") && window.scrollY <= 8);
+    await assertBodyIncludes(page, previewRoute, "This is how signed-out visitors see the PRBar card.");
+    await assertBodyExcludes(page, previewRoute, "Owner workspace");
+    await assertLocatorCount(page, ".owner-proof-actions", previewRoute, 0);
+    await assertSectionNearTop(page, previewRoute, "#builder-card");
+    await assertNoHorizontalOverflow(page, previewRoute);
+  }
+
+  await page.setViewportSize(desktopViewport);
+}
+
 async function runChecks(page) {
   await page.goto(`${baseUrl}/home`, { waitUntil: "networkidle" });
   await page.evaluate(() => {
@@ -202,7 +334,7 @@ async function runChecks(page) {
 
   for (const route of ["#/card", "#/receipt", "#/project"]) {
     await page.goto(`${baseUrl}/${route}`, { waitUntil: "networkidle" });
-    await assertBodyIncludes(page, route, "PRBar card is not published yet.");
+    await assertBodyIncludes(page, route, route === "#/card" ? "This PRBar card is not public yet." : "PRBar card is not published yet.");
     await assertBodyExcludes(page, route, "SideProject Radar v2.1");
     await assertBodyExcludes(page, route, "Share links are ready.");
     await assertNoHorizontalOverflow(page, route);
@@ -213,6 +345,15 @@ async function runChecks(page) {
     await assertBodyIncludes(page, route, expectedText);
     await assertNoHorizontalOverflow(page, route);
   }
+
+  await assertCardStateMatrix(page);
+  await page.goto(`${baseUrl}/home`, { waitUntil: "networkidle" });
+  await page.evaluate(() => {
+    window.localStorage.removeItem("prbar-profile");
+    window.localStorage.removeItem("prbar-session");
+    window.localStorage.removeItem("prbar-proof-workflow");
+    window.sessionStorage.clear();
+  });
 
   await page.goto(`${baseUrl}/#/onboarding`, { waitUntil: "networkidle" });
   await assertBodyIncludes(page, "#/onboarding solo path", "Connect GitHub -> customize what counts -> publish and share your PRBar card.");
@@ -253,9 +394,9 @@ async function runChecks(page) {
   await page.locator(".workflow-map-actions button", { hasText: "Close" }).click();
   await assertBodyExcludes(page, "#/home workflow map closed", "Workflow map");
 
-  await page.locator('.topbar .nav button[data-section="/profile"]').click();
-  await page.waitForURL(`${baseUrl}/profile`);
-  await assertLocatorIncludes(page, ".topbar .nav", "/profile signed-in nav after click", "Sources");
+  await page.locator('.topbar .nav button[data-section="/card"]').click();
+  await page.waitForURL(`${baseUrl}/card`);
+  await assertLocatorIncludes(page, ".topbar .nav", "/card signed-in nav after click", "Sources");
 
   await page.goto(`${baseUrl}/#/signin`, { waitUntil: "networkidle" });
   await page.locator('.auth-panel [data-auth-action="login"]').click();
@@ -337,10 +478,11 @@ async function runChecks(page) {
   await assertLocatorDisabled(page, '[data-proof-action="publish-updates"]', "/repos publish updates before review");
   await assertBodyIncludes(page, "/repos live remains public", "Your live PRBar card is still public. These source changes are private until you publish updates.");
   await page.locator('[data-proof-action="open-public"]').click();
-  await page.waitForURL(`${baseUrl}/profile`);
-  await page.locator('.owner-hero-actions [data-preview-action="enter"]').click();
-  await assertBodyIncludes(page, "/profile dirty draft public snapshot", "3 selected sources power the card, receipt, app proof, and timeline.");
-  await assertBodyExcludes(page, "/profile dirty draft excludes draft snapshot", "4 selected sources power the card, receipt, app proof, and timeline.");
+  await page.waitForURL(`${baseUrl}/card`);
+  await assertBodyIncludes(page, "/card dirty draft owner workspace", "Live card with private draft changes.");
+  await page.locator('.card-primary-row [data-preview-action="enter"]').click();
+  await assertBodyIncludes(page, "/card dirty draft public snapshot", "3 selected sources");
+  await assertBodyExcludes(page, "/card dirty draft excludes draft snapshot", "4 selected sources");
   await page.goto(`${baseUrl}/#/repos`, { waitUntil: "networkidle" });
   await page.locator('[data-source-action="confirm-review"]').click();
   await page.locator('[data-proof-action="publish-updates"]').click();
@@ -348,7 +490,19 @@ async function runChecks(page) {
   await assertBodyIncludes(page, "/repos published updates state", "PRBar card is live");
 
   await page.locator('[data-proof-action="open-public"]').click();
-  await page.waitForURL(`${baseUrl}/profile`);
+  await page.waitForURL(`${baseUrl}/card`);
+  await assertBodyIncludes(page, "/card updated public snapshot", "4 selected sources");
+  await assertBodyIncludes(page, "/card owner workspace", "Your PRBar card is live.");
+  await assertLocatorIncludes(page, ".card-primary-row", "/card owner primary action", "Copy card link");
+  await assertLocatorIncludes(page, ".quick-owner-card", "/card owner controls card", "Share card");
+  await assertLocatorIncludes(page, ".card-ledger-panel", "/card proof ledger", "Proof ledger");
+  await page.locator('.card-side-toggle button', { hasText: "Back" }).click();
+  await expect(page.locator(".card-vision-stage")).toHaveAttribute("data-card-face", "back");
+  await assertLocatorIncludes(page, ".proof-back-card.active", "/card active backside", "Selected sources");
+  await page.locator('.card-orientation-toggle button', { hasText: "Portrait" }).click();
+  await expect(page.locator(".card-vision-stage")).toHaveAttribute("data-card-orientation", "portrait");
+
+  await page.goto(`${baseUrl}/#/profile`, { waitUntil: "networkidle" });
   await assertBodyIncludes(page, "/profile updated public snapshot", "4 selected sources power the card, receipt, app proof, and timeline.");
   await assertBodyIncludes(page, "/profile published badge", "PUBLISHED PRBAR CARD");
   await assertBodyIncludes(page, "/profile owner mode", "OWNER VIEW");
@@ -431,13 +585,24 @@ async function runChecks(page) {
   await page.locator(".brand").click();
   await page.waitForURL(`${baseUrl}/home`);
   await assertActiveProofStep(page, "/home public preview proof path", "Publish & share");
-  await page.locator('.topbar .nav button[data-section="/profile"]').click();
-  await page.waitForURL(`${baseUrl}/profile`);
-  await assertBodyExcludes(page, "/profile public preview cleared", "This is how signed-out visitors see the PRBar card.");
-  await assertBodyIncludes(page, "/profile owner controls restored", "Card controls");
+  await page.locator('.topbar .nav button[data-section="/card"]').click();
+  await page.waitForURL(`${baseUrl}/card`);
+  await assertBodyExcludes(page, "/card public preview cleared", "This is how signed-out visitors see the PRBar card.");
+  await assertBodyIncludes(page, "/card owner controls restored", "Live card controls.");
+
+  await page.goto(`${baseUrl}/#/card`, { waitUntil: "networkidle" });
+  await assertBodyIncludes(page, "#/card", "Your PRBar card is live.");
+  await assertBodyIncludes(page, "#/card", "PROOF BEHIND THE CARD");
+  await assertBodyIncludes(page, "#/card", "Imported GitHub fact");
+  await assertBodyIncludes(page, "#/card", "Builder annotation");
+  await assertBodyIncludes(page, "#/card", "Release-backed");
+  await assertBodyIncludes(page, "#/card", "SOURCES & PRIVACY");
+  await assertBodyIncludes(page, "#/card", "One card link, inspectable proof.");
+  await assertBodyExcludes(page, "#/card", "PRBar card is not published yet.");
+  await assertSectionNearTop(page, "#/card", "#builder-card");
+  await assertNoHorizontalOverflow(page, "#/card");
 
   for (const [route, expectedText, selector] of [
-    ["#/card", "SHORT VERSION", "#builder-card"],
     ["#/receipt", "SideProject Radar v2.1", "#latest-receipt"],
     ["#/project", "Proof attaches to the things Maya shipped.", "#app-proof"],
   ]) {
