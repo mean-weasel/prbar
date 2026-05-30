@@ -28,7 +28,9 @@ struct MoreView: View {
 
         Section {
           Button("Sample Data") {}
-          Button("About") {}
+          NavigationLink("About") {
+            AboutView()
+          }
         }
       }
       .navigationTitle("More")
@@ -46,4 +48,19 @@ struct MoreView: View {
 
 #Preview {
   MoreView(store: .sample())
+}
+
+private struct AboutView: View {
+  var version = AppVersion.current
+
+  var body: some View {
+    Form {
+      Section("PRBar") {
+        LabeledContent("Version", value: version.displayValue)
+        LabeledContent("Product version", value: version.marketingVersion)
+        LabeledContent("Build", value: version.buildNumber)
+      }
+    }
+    .navigationTitle("About")
+  }
 }

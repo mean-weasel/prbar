@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "release": "semantic-release",
+    "version:sync": "node scripts/sync-product-version.mjs",
+    "version:check": "node scripts/sync-product-version.mjs --check",
     "verify:ios-mockups": "node scripts/verify-ios-mockups.mjs"
   },
   "devDependencies": {

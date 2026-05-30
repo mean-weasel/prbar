@@ -8,6 +8,7 @@ APP_BINARY := $(DERIVED_DATA)/Build/Products/Debug/PRMenuBar.app/Contents/MacOS/
 .PHONY: ios-generate ios-build ios-test ios-ui-smoke ios-ci-local
 
 generate:
+	node scripts/sync-product-version.mjs
 	xcodegen generate
 
 format-check:

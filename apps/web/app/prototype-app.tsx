@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { appVersionDisplayValue } from "./version";
 
 type SessionState = {
   isAuthenticated: boolean;
@@ -726,6 +727,9 @@ function Shell({
           </section>
         )}
         <main>{children}</main>
+        <footer className="app-version-footer" aria-label="PRBar app version">
+          PRBar v{appVersionDisplayValue()}
+        </footer>
       </div>
     </div>
   );
@@ -1896,6 +1900,7 @@ function AccountPage({ navigate, profile, resetSession, session }: NavigateProps
       <aside className="account-rail">
         <h2>Account</h2>
         <p>Permissions and data controls for {profile.name}.</p>
+        <p className="account-version">PRBar v{appVersionDisplayValue()}</p>
         <button className="primary wide" onClick={() => navigate(gitHubActionPath)} type="button">{gitHubActionLabel}</button>
       </aside>
       <div className="account-main">
@@ -1909,7 +1914,7 @@ function AccountPage({ navigate, profile, resetSession, session }: NavigateProps
           <article><b>Private sources</b><span>Names hidden by default</span><em>Protected</em></article>
           <article><b>Exports</b><span>Card image, embed, and proof link enabled</span><em>Active</em></article>
           <article><b>Local storage</b><span>Session, profile, selected sources, publish state, and share state persist in this browser</span><em>Client-only</em></article>
-          <article><b>Public preview</b><span>Owners can hide controls before sharing the link</span><em>Available</em></article>
+          <article><b>Version</b><span>PRBar v{appVersionDisplayValue()}</span><em>Release</em></article>
         </div>
         <div className="action-row small">
           <button className="primary" onClick={() => navigate(gitHubActionPath)} type="button">{gitHubActionLabel}</button>
