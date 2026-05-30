@@ -10,22 +10,23 @@ const port = 4181;
 const baseUrl = `http://127.0.0.1:${port}`;
 const mobileViewport = { width: 390, height: 844 };
 const desktopViewport = { width: 1280, height: 900 };
+const shortDesktopViewport = { width: 1280, height: 720 };
 
 const routeExpectations = [
   ["#/home", "PRBar is the new resume for AI-native builders."],
-  ["#/signup", "Start with the short proof link."],
-  ["#/signin", "Sign in to manage Builder Proof."],
-  ["#/login", "Sign in to manage Builder Proof."],
+  ["#/signup", "Start with your resume card."],
+  ["#/signin", "Sign in to manage your PRBar card."],
+  ["#/login", "Sign in to manage your PRBar card."],
   ["#/logout", "You're signed out."],
-  ["#/onboarding", "Publish Builder Proof in four moves."],
+  ["#/onboarding", "Publish your PRBar card in three moves."],
   ["#/connect-github", "Bring in the facts, then choose what counts."],
-  ["#/profile", "Builder Proof is not published yet."],
-  ["#/card", "Builder Proof is not published yet."],
-  ["#/receipt", "Builder Proof is not published yet."],
-  ["#/project", "Builder Proof is not published yet."],
-  ["#/user", "Sign in to manage Builder Proof."],
-  ["#/edit-profile", "Sign in to edit this profile."],
-  ["#/repos", "Sources & Privacy"],
+  ["#/profile", "PRBar card is not published yet."],
+  ["#/card", "PRBar card is not published yet."],
+  ["#/receipt", "PRBar card is not published yet."],
+  ["#/project", "PRBar card is not published yet."],
+  ["#/user", "Sign in to manage this PRBar card."],
+  ["#/edit-profile", "Sign in to edit this card."],
+  ["#/repos", "Connect GitHub to choose sources."],
   ["#/account", "Sign in to manage account permissions."],
 ];
 
@@ -122,6 +123,14 @@ async function assertSectionNearTop(page, route, selector) {
   }
 }
 
+async function assertViewportAtTop(page, route) {
+  await page.waitForFunction(() => window.scrollY <= 8);
+  const scrollY = await page.evaluate(() => window.scrollY);
+  if (scrollY > 8) {
+    throw new Error(`${route} expected viewport to start at top, got scrollY ${scrollY}px`);
+  }
+}
+
 async function assertNoHorizontalOverflow(page, route) {
   const overflow = await page.evaluate(() => {
     const viewportWidth = document.documentElement.clientWidth;
@@ -150,7 +159,34 @@ async function assertMobileBuilderCardHeight(page, route) {
   }
 
   if (box.height < 360 || box.height > 620) {
-    throw new Error(`${route} mobile builder card expected height between 360px and 620px, got ${box.height}px`);
+    throw new Error(`${route} mobile PRBar card expected height between 360px and 620px, got ${box.height}px`);
+  }
+}
+
+async function assertLocatorFitsViewport(page, selector, route) {
+  const box = await page.locator(selector).boundingBox();
+  if (!box) {
+    throw new Error(`${route} ${selector} is not visible`);
+  }
+
+  const viewport = page.viewportSize();
+  if (!viewport) {
+    throw new Error(`${route} missing viewport size`);
+  }
+
+  if (box.y < 0 || box.y + box.height > viewport.height) {
+    throw new Error(`${route} ${selector} expected to fit initial viewport, got top ${box.y}px, bottom ${box.y + box.height}px, viewport ${viewport.height}px`);
+  }
+}
+
+async function assertBuilderCardFaceContentFits(page, route) {
+  const measurements = await page.locator(".builder-link-front").evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+
+  if (measurements.scrollHeight - measurements.clientHeight > 1) {
+    throw new Error(`${route} PRBar card front content is clipped: clientHeight ${measurements.clientHeight}px, scrollHeight ${measurements.scrollHeight}px`);
   }
 }
 
@@ -166,7 +202,7 @@ async function runChecks(page) {
 
   for (const route of ["#/card", "#/receipt", "#/project"]) {
     await page.goto(`${baseUrl}/${route}`, { waitUntil: "networkidle" });
-    await assertBodyIncludes(page, route, "Builder Proof is not published yet.");
+    await assertBodyIncludes(page, route, "PRBar card is not published yet.");
     await assertBodyExcludes(page, route, "SideProject Radar v2.1");
     await assertBodyExcludes(page, route, "Share links are ready.");
     await assertNoHorizontalOverflow(page, route);
@@ -179,7 +215,7 @@ async function runChecks(page) {
   }
 
   await page.goto(`${baseUrl}/#/onboarding`, { waitUntil: "networkidle" });
-  await assertBodyIncludes(page, "#/onboarding solo path", "Claim card -> connect GitHub -> choose what counts -> publish Builder Proof -> share anywhere.");
+  await assertBodyIncludes(page, "#/onboarding solo path", "Connect GitHub -> customize what counts -> publish and share your PRBar card.");
 
   await page.goto(`${baseUrl}/#/signup`, { waitUntil: "networkidle" });
   await page.locator('.auth-panel [data-auth-action="signup"]').click();
@@ -187,10 +223,10 @@ async function runChecks(page) {
   await assertBodyIncludes(page, "/connect-github after signup", "Authorize and choose sources");
 
   await page.goto(`${baseUrl}/#/home`, { waitUntil: "networkidle" });
-  await assertBodyIncludes(page, "#/home nav", "Builder Proof");
-  await assertBodyIncludes(page, "#/home value", "PRBar is a proof resume");
-  await assertBodyIncludes(page, "#/home builder model", "BUILDER CARD -> BUILDER PROOF");
-  await assertBodyIncludes(page, "#/home path", "Claim a builder card, connect GitHub, choose what counts, publish Builder Proof, and share one inspectable link anywhere.");
+  await assertBodyIncludes(page, "#/home nav", "Card");
+  await assertBodyIncludes(page, "#/home value", "Connect GitHub and PRBar turns shipped work into a beautiful, proof-backed card that highlights what you ship.");
+  await assertBodyIncludes(page, "#/home card model", "Your work. Proven.");
+  await assertBodyIncludes(page, "#/home path", "Great defaults. Fully customizable.");
   await assertBodyExcludes(page, "#/home retired IA", "Proof Index");
   await assertBodyExcludes(page, "#/home retired IA", "Builder Search");
   await assertLocatorCount(page, '[data-builder-link-card]', "#/home flipping card", 1);
@@ -213,39 +249,37 @@ async function runChecks(page) {
   if (!reviewMapHidden) throw new Error("#/home should hide review map by default");
 
   await page.locator(".toc-toggle").click();
-  await assertBodyIncludes(page, "#/home workflow map", "Claim card -> connect GitHub -> choose what counts -> publish Builder Proof -> share anywhere.");
+  await assertBodyIncludes(page, "#/home workflow map", "Connect GitHub -> customize what counts -> publish and share your PRBar card.");
   await page.locator(".workflow-map-actions button", { hasText: "Close" }).click();
   await assertBodyExcludes(page, "#/home workflow map closed", "Workflow map");
 
   await page.locator('.topbar .nav button[data-section="/profile"]').click();
   await page.waitForURL(`${baseUrl}/profile`);
-  await assertLocatorIncludes(page, ".topbar .nav", "/profile signed-out nav after click", "Sources & Privacy");
+  await assertLocatorIncludes(page, ".topbar .nav", "/profile signed-in nav after click", "Sources");
 
   await page.goto(`${baseUrl}/#/signin`, { waitUntil: "networkidle" });
   await page.locator('.auth-panel [data-auth-action="login"]').click();
   await page.waitForURL(`${baseUrl}/user`);
   await assertBodyIncludes(page, "/user after login", "Log out");
   await assertTopbarCompact(page, "/user signed-in mobile");
-  await assertLocatorIncludes(page, ".topbar .nav", "/user signed-in nav", "Dashboard");
+  await assertLocatorIncludes(page, ".topbar .nav", "/user signed-in nav", "Card");
   await assertLocatorIncludes(page, ".topbar .nav", "/user signed-in nav", "Account");
-  await assertBodyIncludes(page, "/user workspace heading", "Manage your Builder Proof workspace.");
+  await assertBodyIncludes(page, "/user workspace heading", "Manage your PRBar card.");
   await assertBodyIncludes(page, "/user new signed-in state", "NEW SIGNED-IN USER");
   await assertBodyIncludes(page, "/user setup checklist", "FINISH SETUP");
-  await assertBodyIncludes(page, "/user checklist profile", "Profile claimed");
   await assertBodyIncludes(page, "/user checklist github", "GitHub connected");
-  await assertBodyIncludes(page, "/user checklist publish", "Builder Proof published");
+  await assertBodyIncludes(page, "/user checklist publish", "PRBar card published");
   await page.goto(`${baseUrl}/#/home`, { waitUntil: "networkidle" });
   await assertTopbarCompact(page, "/home signed-in mobile");
   await assertBodyIncludes(page, "/home signed-in owner panel", "SIGNED-IN OWNER VIEW");
-  await assertBodyIncludes(page, "/home signed-in owner workspace", "Owner workspace for Maya Chen.");
-  await assertSectionNearTop(page, "/home signed-in owner panel", ".signed-in-home-panel");
-  await assertBodyIncludes(page, "/home signed-in dashboard action", "Open Dashboard");
+  await assertBodyIncludes(page, "/home signed-in owner workspace", "Card workspace for Maya Chen.");
+  await assertBodyIncludes(page, "/home signed-in setup action", "Setup checklist");
   await assertBodyIncludes(page, "/home signed-in next action", "Connect GitHub");
   await assertActiveProofStep(page, "/home signed-in proof path", "Connect GitHub");
 
   await page.goto(`${baseUrl}/#/profile`, { waitUntil: "networkidle" });
   await assertTopbarCompact(page, "/profile signed-in mobile");
-  await assertBodyIncludes(page, "/profile pre-github owner", "Connect GitHub to build Builder Proof.");
+  await assertBodyIncludes(page, "/profile pre-github owner", "Connect GitHub to build your card.");
   await assertBodyIncludes(page, "/profile pre-github next", "Connect GitHub next");
   await assertBodyExcludes(page, "/profile pre-github misleading copy", "GitHub proof is connected");
   await assertLocatorCount(page, '[data-proof-action="publish-draft"]', "/profile pre-github publish action", 0);
@@ -260,16 +294,16 @@ async function runChecks(page) {
   await assertTopbarCompact(page, "/repos signed-in mobile");
   await assertBodyIncludes(page, "/repos after connect", "GitHub connected");
   await assertBodyIncludes(page, "/repos connected draft state", "CONNECTED DRAFT");
-  await assertBodyIncludes(page, "/repos draft state", "Draft Builder Proof");
+  await assertBodyIncludes(page, "/repos draft state", "Draft PRBar card");
   await assertBodyIncludes(page, "/repos review warning", "Review and confirm source choices before publishing.");
   await assertLocatorDisabled(page, '[data-proof-action="publish"]', "/repos publish before review");
   await page.locator('[data-source-action="confirm-review"]').click();
-  await assertBodyIncludes(page, "/repos review confirmed", "Source choices reviewed. Builder Proof is ready to publish.");
+  await assertBodyIncludes(page, "/repos review confirmed", "Source choices reviewed. PRBar card is ready to publish.");
 
   await page.goto(`${baseUrl}/#/profile`, { waitUntil: "networkidle" });
-  await assertBodyIncludes(page, "/profile owner draft", "Your Builder Proof is almost shareable.");
+  await assertBodyIncludes(page, "/profile owner draft", "Your PRBar card is almost shareable.");
   await assertBodyIncludes(page, "/profile owner draft state", "CONNECTED DRAFT");
-  await assertBodyExcludes(page, "/profile owner draft should not show public empty", "Builder Proof is not published yet.");
+  await assertBodyExcludes(page, "/profile owner draft should not show public empty", "PRBar card is not published yet.");
 
   await page.goto(`${baseUrl}/#/edit-profile`, { waitUntil: "networkidle" });
   await page.locator('[name="profile-name"]').fill("Maya R. Chen");
@@ -283,12 +317,12 @@ async function runChecks(page) {
 
   await page.goto(`${baseUrl}/#/repos`, { waitUntil: "networkidle" });
   await page.locator('[data-source-id="maya/experiments"][data-source-action="include"]').click();
-  await assertBodyIncludes(page, "/repos live source count", "4 sources power Builder Proof");
+  await assertBodyIncludes(page, "/repos live source count", "4 sources power the card");
   await assertBodyIncludes(page, "/repos public status", "Public name visible");
   await assertBodyIncludes(page, "/repos reveal privacy label", "Reveal publicly");
   await page.locator('[data-source-id="maya/experiments"][data-source-action="privacy"]').click();
   await assertBodyIncludes(page, "/repos hidden status", "Hidden from public");
-  await assertBodyIncludes(page, "/repos hidden impact", "Visible to you here. Hidden from public Builder Proof while still counting selected proof.");
+  await assertBodyIncludes(page, "/repos hidden impact", "Visible to you here. Hidden from the public PRBar card while still counting selected proof.");
   await page.locator('[data-source-id="maya/experiments"][data-source-action="attach"]').click();
   await assertBodyIncludes(page, "/repos live attachment count", "3 attached apps");
   await page.locator('[data-source-id="client/stealth-onboarding"][data-source-action="exclude"]').click();
@@ -296,12 +330,12 @@ async function runChecks(page) {
   await assertLocatorDisabled(page, '[data-proof-action="publish"]', "/repos publish after source edit");
   await page.locator('[data-source-action="confirm-review"]').click();
   await page.locator('[data-proof-action="publish"]').click();
-  await assertBodyIncludes(page, "/repos published state", "Builder Proof is live");
+  await assertBodyIncludes(page, "/repos published state", "PRBar card is live");
   await page.locator('[data-source-id="client/stealth-onboarding"][data-source-action="include"]').click();
   await assertBodyIncludes(page, "/repos post-publish draft feedback", "Source changes saved to draft.");
   await assertBodyIncludes(page, "/repos publish updates", "Publish updates");
   await assertLocatorDisabled(page, '[data-proof-action="publish-updates"]', "/repos publish updates before review");
-  await assertBodyIncludes(page, "/repos live remains public", "Your live Builder Proof is still public. These source changes are private until you publish updates.");
+  await assertBodyIncludes(page, "/repos live remains public", "Your live PRBar card is still public. These source changes are private until you publish updates.");
   await page.locator('[data-proof-action="open-public"]').click();
   await page.waitForURL(`${baseUrl}/profile`);
   await page.locator('.owner-hero-actions [data-preview-action="enter"]').click();
@@ -310,38 +344,38 @@ async function runChecks(page) {
   await page.goto(`${baseUrl}/#/repos`, { waitUntil: "networkidle" });
   await page.locator('[data-source-action="confirm-review"]').click();
   await page.locator('[data-proof-action="publish-updates"]').click();
-  await assertBodyIncludes(page, "/repos published updates feedback", "Published updates to the public Builder Proof.");
-  await assertBodyIncludes(page, "/repos published updates state", "Builder Proof is live");
+  await assertBodyIncludes(page, "/repos published updates feedback", "Published updates to the public PRBar card.");
+  await assertBodyIncludes(page, "/repos published updates state", "PRBar card is live");
 
   await page.locator('[data-proof-action="open-public"]').click();
   await page.waitForURL(`${baseUrl}/profile`);
   await assertBodyIncludes(page, "/profile updated public snapshot", "4 selected sources power the card, receipt, app proof, and timeline.");
-  await assertBodyIncludes(page, "/profile published badge", "PUBLISHED BUILDER PROOF");
+  await assertBodyIncludes(page, "/profile published badge", "PUBLISHED PRBAR CARD");
   await assertBodyIncludes(page, "/profile owner mode", "OWNER VIEW");
   await assertLocatorIncludes(page, ".owner-hero-actions", "/profile owner hero actions", "Review sources");
   await assertLocatorIncludes(page, ".owner-hero-actions", "/profile owner hero actions", "Edit profile");
   await assertLocatorIncludes(page, ".owner-hero-actions", "/profile owner hero actions", "View as public");
-  await assertBodyIncludes(page, "/profile owner controls", "Owner controls");
+  await assertBodyIncludes(page, "/profile owner controls", "Card controls");
   await assertBodyIncludes(page, "/profile saved note", "Builds shipped products with selected GitHub proof.");
   await assertBodyIncludes(page, "/profile featured receipt", "GitHub facts are imported from releases, PRs, tags, checks, and timestamps.");
   await assertBodyIncludes(page, "/profile app proof", "Proof attaches to the things Maya shipped.");
   await assertBodyIncludes(page, "/profile proof timeline", "Recent shipped work, in order.");
   await assertBodyIncludes(page, "/profile share rail", "selected sources power the card, receipt, app proof, and timeline.");
-  await assertBodyIncludes(page, "/profile share card label", "Builder Card");
-  await assertBodyIncludes(page, "/profile share proof label title", "Builder Proof");
-  await assertBodyIncludes(page, "/profile share card copy label", "Copy Builder Card link");
-  await assertBodyIncludes(page, "/profile share proof label", "Copy public Builder Proof link");
+  await assertBodyIncludes(page, "/profile share card label", "PRBar card");
+  await assertBodyIncludes(page, "/profile share proof label title", "Proof details");
+  await assertBodyIncludes(page, "/profile share card copy label", "Copy card link");
+  await assertBodyIncludes(page, "/profile share proof label", "Copy full card link");
   await page.locator('.proof-share-rail [data-share-action="card"]').click();
-  await page.waitForFunction(() => document.body.innerText.includes("Copied Builder Card link"));
-  await assertBodyIncludes(page, "/profile card share feedback", "Copied Builder Card link");
+  await page.waitForFunction(() => document.body.innerText.includes("Copied card link"));
+  await assertBodyIncludes(page, "/profile card share feedback", "Copied card link");
   await assertBodyIncludes(page, "/profile card share output", "#builder-card");
   await page.locator('.proof-share-rail [data-share-action="proof"]').click();
-  await page.waitForFunction(() => document.body.innerText.includes("Copied Builder Proof link"));
-  await assertBodyIncludes(page, "/profile share feedback", "Copied Builder Proof link");
+  await page.waitForFunction(() => document.body.innerText.includes("Copied full card link"));
+  await assertBodyIncludes(page, "/profile share feedback", "Copied full card link");
   await assertBodyIncludes(page, "/profile share output", "https://prbar.dev/");
   await page.goto(`${baseUrl}/maya.codes`, { waitUntil: "networkidle" });
   await assertBodyIncludes(page, "/maya.codes public link", "Maya R. Chen");
-  await assertBodyIncludes(page, "/maya.codes public link", "PUBLISHED BUILDER PROOF");
+  await assertBodyIncludes(page, "/maya.codes public link", "PUBLISHED PRBAR CARD");
   await page.goto(`${baseUrl}/maya.codes#builder-card`, { waitUntil: "networkidle" });
   await assertBodyIncludes(page, "/maya.codes#builder-card public link", "SHORT VERSION");
   await assertSectionNearTop(page, "/maya.codes#builder-card public link", "#builder-card");
@@ -363,11 +397,18 @@ async function runChecks(page) {
   await assertBodyIncludes(page, "/profile persisted source count", "4 selected sources power the card, receipt, app proof, and timeline.");
 
   await page.goto(`${baseUrl}/#/home`, { waitUntil: "networkidle" });
-  await assertActiveProofStep(page, "/home published owner proof path", "Share anywhere");
+  await assertActiveProofStep(page, "/home published owner proof path", "Publish & share");
+  await page.setViewportSize(shortDesktopViewport);
+  await page.goto(`${baseUrl}/#/home`, { waitUntil: "networkidle" });
+  await assertLocatorFitsViewport(page, "[data-builder-link-card]", "/home published owner short desktop PRBar card");
+  await assertBuilderCardFaceContentFits(page, "/home published owner short desktop PRBar card");
+  await page.setViewportSize(mobileViewport);
 
   await page.goto(`${baseUrl}/#/profile`, { waitUntil: "networkidle" });
-  await page.locator('.owner-hero-actions [data-preview-action="enter"]').click();
-  await assertBodyIncludes(page, "/profile public preview state", "This is how signed-out visitors see Builder Proof.");
+  await page.locator(".owner-proof-bar").scrollIntoViewIfNeeded();
+  await page.locator('.owner-proof-actions [data-preview-action="enter"]').click();
+  await assertBodyIncludes(page, "/profile public preview state", "This is how signed-out visitors see the PRBar card.");
+  await assertViewportAtTop(page, "/profile public preview scroll reset");
   await assertBodyIncludes(page, "/profile public preview product state", "PUBLIC PROSPECT VIEW");
   await assertBodyIncludes(page, "/profile public preview strip", "Public preview. Owner controls and GitHub connection details are hidden from visitors.");
   await assertLocatorCount(page, ".owner-proof-actions", "/profile public preview owner controls", 0);
@@ -376,7 +417,7 @@ async function runChecks(page) {
   await page.goto(`${baseUrl}/#/receipt`, { waitUntil: "networkidle" });
   await assertLocatorIncludes(page, ".topbar-account", "/receipt public preview topbar", "Public preview");
   await assertLocatorIncludes(page, ".topbar-account", "/receipt public preview topbar exit", "Exit preview");
-  await assertLocatorExcludes(page, ".topbar-account", "/receipt public preview topbar profile", "Profile");
+  await assertLocatorExcludes(page, ".topbar-account", "/receipt public preview topbar profile", "Setup");
   await assertLocatorExcludes(page, ".topbar-account", "/receipt public preview topbar github", "GitHub connected");
   await assertLocatorExcludes(page, ".topbar-account", "/receipt public preview topbar logout", "Log out");
   await assertLocatorCount(page, ".owner-proof-actions", "/receipt public preview owner controls", 0);
@@ -389,11 +430,11 @@ async function runChecks(page) {
   await page.locator('.owner-hero-actions [data-preview-action="enter"]').click();
   await page.locator(".brand").click();
   await page.waitForURL(`${baseUrl}/home`);
-  await assertActiveProofStep(page, "/home public preview proof path", "Share anywhere");
+  await assertActiveProofStep(page, "/home public preview proof path", "Publish & share");
   await page.locator('.topbar .nav button[data-section="/profile"]').click();
   await page.waitForURL(`${baseUrl}/profile`);
-  await assertBodyExcludes(page, "/profile public preview cleared", "This is how signed-out visitors see Builder Proof.");
-  await assertBodyIncludes(page, "/profile owner controls restored", "Owner controls");
+  await assertBodyExcludes(page, "/profile public preview cleared", "This is how signed-out visitors see the PRBar card.");
+  await assertBodyIncludes(page, "/profile owner controls restored", "Card controls");
 
   for (const [route, expectedText, selector] of [
     ["#/card", "SHORT VERSION", "#builder-card"],
@@ -403,7 +444,7 @@ async function runChecks(page) {
     await page.goto(`${baseUrl}/${route}`, { waitUntil: "networkidle" });
     await assertBodyIncludes(page, route, expectedText);
     await assertBodyIncludes(page, route, "Open receipt section");
-    await assertBodyExcludes(page, route, "Builder Proof is not published yet.");
+    await assertBodyExcludes(page, route, "PRBar card is not published yet.");
     await assertSectionNearTop(page, route, selector);
     await assertNoHorizontalOverflow(page, route);
   }
@@ -415,8 +456,8 @@ async function runChecks(page) {
 
   await page.goto(`${baseUrl}/#/user`, { waitUntil: "networkidle" });
   await assertBodyIncludes(page, "/user setup complete", "SETUP COMPLETE");
-  await assertBodyIncludes(page, "/user setup source review", "4 selected sources confirmed for Builder Proof.");
-  await assertBodyIncludes(page, "/user share output", "Share output created");
+  await assertBodyIncludes(page, "/user setup source review", "4 selected sources confirmed for the card.");
+  await assertBodyIncludes(page, "/user publish output", "PRBar card published");
 
   await page.locator('.topbar-account [data-auth-action="logout"]').click();
   await page.waitForURL(`${baseUrl}/home`);
@@ -425,11 +466,11 @@ async function runChecks(page) {
   await assertBodyIncludes(page, "/profile signed-out product state", "PUBLIC PROSPECT VIEW");
   await assertBodyIncludes(page, "/profile signed-out public strip", "Public preview. Owner controls and GitHub connection details are hidden from visitors.");
   await assertBodyIncludes(page, "/profile prospect CTA", "Want proof like this?");
-  await assertBodyIncludes(page, "/profile create proof CTA", "Create your Builder Proof");
+  await assertBodyIncludes(page, "/profile create proof CTA", "Create your PRBar card");
   await assertLocatorCount(page, ".owner-proof-actions", "/profile signed-out owner controls", 0);
   await assertLocatorIncludes(page, ".topbar-account", "/profile signed-out topbar", "Sign in");
-  await assertLocatorIncludes(page, ".topbar-account", "/profile signed-out topbar", "Claim builder card");
-  await assertLocatorIncludes(page, ".topbar .nav", "/profile signed-out nav", "Sources & Privacy");
+  await assertLocatorIncludes(page, ".topbar-account", "/profile signed-out topbar", "Claim your card");
+  await assertLocatorIncludes(page, ".topbar .nav", "/profile signed-out nav", "Sources");
 
   await page.setViewportSize(desktopViewport);
   await page.goto(`${baseUrl}/profile`, { waitUntil: "networkidle" });
