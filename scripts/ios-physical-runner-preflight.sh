@@ -152,8 +152,17 @@ echo "Device lock state:"
 jq -r '.result | "  passcodeRequired=\(.passcodeRequired) unlockedSinceBoot=\(.unlockedSinceBoot)"' "$lock_json"
 
 passcode_required="$(jq -r '.result.passcodeRequired' "$lock_json")"
+unlocked_since_boot="$(jq -r '.result.unlockedSinceBoot' "$lock_json")"
 if [[ "$passcode_required" == "true" ]]; then
-  echo "The $device_role is locked. Unlock $device_name and retry." >&2
+  cat <<EOF
+The $device_role reports passcodeRequired=true. Continuing because this can
+mean the iPhone has a passcode configured, not that it is currently locked.
+Keep $device_name unlocked and awake while xcodebuild starts the UI test.
+EOF
+fi
+
+if [[ "$unlocked_since_boot" != "true" ]]; then
+  echo "The $device_role has not been unlocked since boot. Unlock $device_name and retry." >&2
   exit 69
 fi
 
