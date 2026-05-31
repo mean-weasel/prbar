@@ -43,7 +43,7 @@ const routeExpectations = [
   ["#/signin", "Sign in to manage your PRBar card."],
   ["#/login", "Sign in to manage your PRBar card."],
   ["#/logout", "You're signed out."],
-  ["#/onboarding", "Publish your PRBar card in three moves."],
+  ["#/onboarding", "Publish your PRBar card in four simple moves."],
   ["#/connect-github", "Bring in the facts, then choose what counts."],
   ["#/profile", "PRBar card is not published yet."],
   ["#/card", "This PRBar card is not public yet."],
@@ -356,7 +356,7 @@ async function runChecks(page) {
   });
 
   await page.goto(`${baseUrl}/#/onboarding`, { waitUntil: "networkidle" });
-  await assertBodyIncludes(page, "#/onboarding solo path", "Connect GitHub -> customize what counts -> publish and share your PRBar card.");
+  await assertBodyIncludes(page, "#/onboarding solo path", "Claim card -> connect GitHub -> customize what counts -> publish and share your PRBar card.");
 
   await page.goto(`${baseUrl}/#/signup`, { waitUntil: "networkidle" });
   await page.locator('.auth-panel [data-auth-action="signup"]').click();
@@ -365,7 +365,7 @@ async function runChecks(page) {
 
   await page.goto(`${baseUrl}/#/home`, { waitUntil: "networkidle" });
   await assertBodyIncludes(page, "#/home nav", "Card");
-  await assertBodyIncludes(page, "#/home value", "Connect GitHub and PRBar turns shipped work into a beautiful, proof-backed card that highlights what you ship.");
+  await assertBodyIncludes(page, "#/home value", "Claim your PRBar card, connect GitHub, and turn shipped work into a beautiful proof-backed resume that highlights what you ship.");
   await assertBodyIncludes(page, "#/home card model", "Your work. Proven.");
   await assertBodyIncludes(page, "#/home path", "Great defaults. Fully customizable.");
   await assertBodyExcludes(page, "#/home retired IA", "Proof Index");
@@ -390,7 +390,7 @@ async function runChecks(page) {
   if (!reviewMapHidden) throw new Error("#/home should hide review map by default");
 
   await page.locator(".toc-toggle").click();
-  await assertBodyIncludes(page, "#/home workflow map", "Connect GitHub -> customize what counts -> publish and share your PRBar card.");
+  await assertBodyIncludes(page, "#/home workflow map", "Claim card -> connect GitHub -> customize what counts -> publish and share your PRBar card.");
   await page.locator(".workflow-map-actions button", { hasText: "Close" }).click();
   await assertBodyExcludes(page, "#/home workflow map closed", "Workflow map");
 

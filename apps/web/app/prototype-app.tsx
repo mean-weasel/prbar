@@ -345,6 +345,7 @@ function sourceMetrics(workflow: WorkflowState, scope: "draft" | "public" = "dra
 
 function setupStepStates(session: SessionState, workflow: WorkflowState) {
   return [
+    { done: session.isAuthenticated, label: "Claim card", path: "/signup" },
     { done: session.githubConnected, label: "Connect GitHub", path: "/connect-github" },
     { done: session.githubConnected && workflow.sourcesReviewed, label: "Customize", path: "/repos" },
     { done: workflow.published, label: "Publish & share", path: "/card" },
@@ -663,6 +664,7 @@ function Shell({
   const activeSection = sectionFor(route, session);
   const [workflowMapOpen, setWorkflowMapOpen] = useState(false);
   const navRoutes = session.isAuthenticated ? signedInRoutes : signedOutRoutes;
+  const showPublishedHeader = session.isAuthenticated && !publicPreview && productState.stage === "published-owner" && isProofRoute(route);
 
   const logout = () => {
     resetSession();
@@ -711,7 +713,19 @@ function Shell({
               </>
             ) : session.isAuthenticated ? (
               <>
-                <button className="topbar-profile" onClick={() => navigate("/user")} type="button">
+                {showPublishedHeader && (
+                  <>
+                    <span className="topbar-publish-pill"><i />Published</span>
+                    <button className="topbar-url" onClick={() => navigator.clipboard?.writeText(fullProfileLink(profile)).catch(() => undefined)} type="button">
+                      <span>{shortProfilePath(profile)}</span>
+                      <IconGlyph name="copy" />
+                    </button>
+                    <button className="topbar-action topbar-share" onClick={() => navigator.clipboard?.writeText(fullProfileLink(profile)).catch(() => undefined)} type="button">
+                      Share card
+                    </button>
+                  </>
+                )}
+                <button className={`topbar-profile${showPublishedHeader ? " secondary-profile" : ""}`} onClick={() => navigate("/user")} type="button">
                   <span className="avatar mini">{profile.initials}</span>
                   <b>Setup</b>
                 </button>
@@ -738,7 +752,7 @@ function Shell({
           <section className="workflow-map-panel" id="workflow-map" aria-label="PRBar workflow map">
             <div>
               <span>Workflow map</span>
-              <b>Connect GitHub -&gt; customize what counts -&gt; publish and share your PRBar card.</b>
+              <b>Claim card -&gt; connect GitHub -&gt; customize what counts -&gt; publish and share your PRBar card.</b>
             </div>
             <div className="workflow-map-actions">
               <button onClick={() => navigate(session.isAuthenticated ? "/user" : "/signup")} type="button">Start setup</button>
@@ -781,12 +795,12 @@ function HomePage({
             Your work. Proven.
           </p>
           <h1>PRBar is the new resume for AI-native <span className="headline-accent">builders.</span></h1>
-          <p className="lede">Connect GitHub and PRBar turns shipped work into a beautiful, proof-backed card that highlights what you ship.</p>
+          <p className="lede">Claim your PRBar card, connect GitHub, and turn shipped work into a beautiful proof-backed resume that highlights what you ship.</p>
           <p className="hero-proof-line">Great defaults. Fully customizable.</p>
           <div className="home-cta-row">
             <button className="primary github-cta" onClick={() => navigate(productState.nextPath)} type="button">
-              <GitHubMark />
-              {productState.stage === "signed-out" ? "Connect GitHub" : productState.nextText}
+              {productState.stage === "signed-out" ? <StepIcon step="claim" /> : <GitHubMark />}
+              {productState.nextText}
             </button>
             <button className="preview-link" onClick={() => navigate("/card")} type="button">Preview card <span aria-hidden="true">→</span></button>
           </div>
@@ -893,16 +907,18 @@ function SignedInHomePanel({
 
 function HomeProofPath({ navigate, productState }: NavigateProps & { productState: ProductState }) {
   const activeStep = (() => {
-    if (productState.stage === "signed-out" || productState.stage === "new-user") return "connect";
+    if (productState.stage === "signed-out") return "claim";
+    if (productState.stage === "new-user") return "connect";
     if (productState.stage === "connected-draft") return "choose";
     if (productState.stage === "published-owner") return "publish";
     if (productState.stage === "public-prospect" && productState.nextPath === "/card") return "publish";
     return "connect";
   })();
   const steps = [
-    ["connect", "01", "Connect GitHub", "/connect-github"],
-    ["choose", "02", "Customize", "/repos"],
-    ["publish", "03", "Publish & share", "/card"],
+    ["claim", "01", "Claim card", "/signup"],
+    ["connect", "02", "Connect GitHub", "/connect-github"],
+    ["choose", "03", "Customize", "/repos"],
+    ["publish", "04", "Publish & share", "/card"],
   ] as const;
 
   return (
@@ -917,7 +933,7 @@ function HomeProofPath({ navigate, productState }: NavigateProps & { productStat
           <span className="home-step-icon"><StepIcon step={key} /></span>
           <small>{number}</small>
           <b>{label}</b>
-          <em>{key === "connect" ? "Analyze selected GitHub work locally." : key === "choose" ? "Fine-tune layout, metrics, and style." : "One link. Always up to date."}</em>
+          <em>{key === "claim" ? "Secure your unique PRBar link." : key === "connect" ? "Analyze selected GitHub work locally." : key === "choose" ? "Fine-tune layout, metrics, and style." : "One link. Always up to date."}</em>
         </button>
       ))}
     </section>
@@ -932,7 +948,17 @@ function GitHubMark() {
   );
 }
 
-function StepIcon({ step }: { step: "connect" | "choose" | "publish" }) {
+function StepIcon({ step }: { step: "claim" | "connect" | "choose" | "publish" }) {
+  if (step === "claim") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <rect x="4" y="6" width="16" height="12" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+        <path d="M8 10h3M8 14h8" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+        <circle cx="16.5" cy="10.5" r="1.5" fill="currentColor" />
+      </svg>
+    );
+  }
+
   if (step === "connect") {
     return <GitHubMark />;
   }
@@ -1146,8 +1172,8 @@ function OnboardingPage({ navigate }: NavigateProps) {
     <>
       <section className="page-hero">
         <p className="eyebrow">Onboarding</p>
-        <h1>Publish your PRBar card in three moves.</h1>
-        <p>PRBar keeps setup narrow: connect GitHub, customize what counts, then publish and share a proof-backed resume card.</p>
+        <h1>Publish your PRBar card in four simple moves.</h1>
+        <p>PRBar keeps setup narrow: claim your card, connect GitHub, customize what counts, then publish and share a proof-backed resume card.</p>
         <SetupStepper active="/connect-github" />
         <div className="action-row">
           <button className="primary" onClick={() => navigate("/connect-github")} type="button">Connect GitHub</button>
@@ -1156,7 +1182,7 @@ function OnboardingPage({ navigate }: NavigateProps) {
       </section>
       <section className="workflow-path-panel" aria-label="Solo PRBar card workflow">
         <span>Solo-user path</span>
-        <h2>Connect GitHub -&gt; customize what counts -&gt; publish and share your PRBar card.</h2>
+        <h2>Claim card -&gt; connect GitHub -&gt; customize what counts -&gt; publish and share your PRBar card.</h2>
         <p>Every step stays local in this prototype: mock auth, mock GitHub connection, persisted source choices, and share feedback are stored in this browser.</p>
       </section>
     </>
@@ -1659,11 +1685,13 @@ function CardWorkspacePage({
               <button aria-pressed={cardFace === "front"} className={cardFace === "front" ? "active" : ""} onClick={() => setCardFace("front")} type="button"><IconGlyph name="front" />Front</button>
               <button aria-pressed={cardFace === "back"} className={cardFace === "back" ? "active" : ""} onClick={() => setCardFace("back")} type="button"><IconGlyph name="sync" />Back</button>
             </div>
-            <div className="card-orientation-toggle" aria-label="Card orientation controls">
-              <span>Layout</span>
-              <button aria-pressed={cardOrientation === "landscape"} className={cardOrientation === "landscape" ? "active" : ""} onClick={() => setCardOrientation("landscape")} type="button">Landscape</button>
-              <button aria-pressed={cardOrientation === "portrait"} className={cardOrientation === "portrait" ? "active" : ""} onClick={() => setCardOrientation("portrait")} type="button">Portrait</button>
-            </div>
+            {ownerView && (
+              <div className="card-orientation-toggle" aria-label="Card orientation controls">
+                <span>Layout</span>
+                <button aria-pressed={cardOrientation === "landscape"} className={cardOrientation === "landscape" ? "active" : ""} onClick={() => setCardOrientation("landscape")} type="button">Landscape</button>
+                <button aria-pressed={cardOrientation === "portrait"} className={cardOrientation === "portrait" ? "active" : ""} onClick={() => setCardOrientation("portrait")} type="button">Portrait</button>
+              </div>
+            )}
           </div>
         </div>
         <aside className="card-ledger-panel" aria-label="Proof ledger">
@@ -1711,8 +1739,8 @@ function CardWorkspacePage({
         </article>
         <article className="quick-owner-card">
           <h2>{ownerView ? "Owner controls" : workflow.published ? "Create yours" : "Get started"}</h2>
-          <button onClick={() => navigate(ownerView ? "/edit-profile" : "/signup")} type="button"><IconGlyph name="edit" /><b>{ownerView ? "Edit card" : "Claim card"}</b><span>{ownerView ? "Customize your PRBar card" : "Create a PRBar card"}</span></button>
           <button onClick={() => ownerView ? void share("card") : navigate("/signin")} type="button"><IconGlyph name="copy" /><b>{ownerView ? "Share card" : "Owner sign in"}</b><span>{ownerView ? "Copy link or export" : "Publish controls"}</span></button>
+          <button onClick={() => navigate(ownerView ? "/edit-profile" : "/signup")} type="button"><IconGlyph name="edit" /><b>{ownerView ? "Edit card" : "Claim card"}</b><span>{ownerView ? "Customize your PRBar card" : "Create a PRBar card"}</span></button>
           <button onClick={() => navigate(ownerView ? "/repos" : "/home")} type="button"><IconGlyph name="source" /><b>{ownerView ? "Update sources" : "How it works"}</b><span>{ownerView ? "Add or remove repositories" : "Simple setup"}</span></button>
         </article>
       </section>
@@ -1869,31 +1897,36 @@ function ProofLedgerRail({ metrics, ownerView, publicProofReady, session, workfl
   session: SessionState;
   workflow: WorkflowState;
 }) {
+  const statusText = ownerView ? workflow.published ? "Owner controls active" : "Private draft" : workflow.published ? "Public artifact" : "Waiting for publish";
   const rows = publicProofReady
     ? [
-        ["PR velocity", "42 merged PRs", "Imported from selected repos"],
-        ["Release velocity", `${builder.stats.releases} releases`, release.tag],
-        ["Apps", `${metrics.attached} attached`, "Shown on the card"],
-        ["Privacy", `${metrics.hidden} hidden`, "Names redacted when needed"],
+        { icon: "release", label: "Latest release", meta: "sideproject-radar", tone: "gold", value: release.tag, when: "2d ago" },
+        { icon: "pull", label: "Merged PRs", meta: "All selected repos", tone: "blue", value: "42", when: "Last 90d" },
+        { icon: "phone", label: "App update", meta: "Radar iOS", tone: "green", value: release.tag.replace("v", ""), when: "1d ago" },
+        { icon: "source", label: "Selected sources", meta: `${metrics.counted} included`, tone: "purple", value: String(metrics.counted), when: statusText },
+        { icon: "shield", label: "Privacy & redaction", meta: "Hidden private repos", tone: "ink", value: metrics.hidden ? "On" : "Off", when: `${metrics.hidden} hidden` },
       ]
     : [
-        ["PR velocity", "Locked", "Visible after publish"],
-        ["Release velocity", "Locked", "Visible after publish"],
-        ["Apps", "Locked", "Visible after publish"],
-        ["Privacy", "Owner controlled", "No setup details exposed"],
+        { icon: "release", label: "Latest release", meta: "Visible after publish", tone: "gold", value: "Locked", when: "Draft" },
+        { icon: "pull", label: "Merged PRs", meta: "Visible after publish", tone: "blue", value: "Locked", when: "Draft" },
+        { icon: "phone", label: "App update", meta: "Visible after publish", tone: "green", value: "Locked", when: "Draft" },
+        { icon: "source", label: "Selected sources", meta: "Owner controlled", tone: "purple", value: "Private", when: "Setup" },
+        { icon: "shield", label: "Privacy & redaction", meta: "No setup details exposed", tone: "ink", value: "On", when: "Safe" },
       ];
 
   return (
     <div className="card-proof-ledger" aria-label="Card proof ledger">
       <div className="card-proof-ledger-head">
         <span>{session.githubConnected || workflow.published ? "Proof ledger" : "Proof ledger preview"}</span>
-        <b>{ownerView ? workflow.published ? "Owner controls active" : "Private draft" : workflow.published ? "Public artifact" : "Waiting for publish"}</b>
+        <b>{statusText}</b>
       </div>
-      {rows.map(([label, value, note]) => (
-        <div className="card-proof-ledger-row" key={label}>
-          <span>{label}</span>
-          <b>{value}</b>
-          <em>{note}</em>
+      {rows.map((row) => (
+        <div className="card-proof-ledger-row" data-ledger-tone={row.tone} key={row.label}>
+          <i><IconGlyph name={row.icon as "check" | "copy" | "edit" | "front" | "phone" | "pull" | "release" | "shield" | "source" | "sync"} /></i>
+          <span>{row.label}</span>
+          <b>{row.value}</b>
+          <em>{row.meta}</em>
+          <small>{row.when}</small>
         </div>
       ))}
     </div>
