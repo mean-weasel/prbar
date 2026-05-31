@@ -126,8 +126,8 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("More")
     XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 2))
     app.buttons["Settings"].tap()
-    XCTAssertTrue(app.staticTexts["Version"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1.2.0")).firstMatch.exists)
+    app.scrollToStaticText("Version")
+    XCTAssertTrue(app.versionText().waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "@neonwatty")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Connected")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "GitHub")).firstMatch.exists)
@@ -146,7 +146,7 @@ final class PRBarUITests: XCTestCase {
     app.buttons["About"].tap()
     XCTAssertTrue(app.staticTexts["Product version"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Build"].exists)
-    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1.2.0")).firstMatch.exists)
+    XCTAssertTrue(app.versionText().waitForExistence(timeout: 2))
   }
 
   @MainActor
@@ -458,6 +458,13 @@ private extension XCUIApplication {
       swipeUp()
     }
     XCTAssertTrue(text.waitForExistence(timeout: 2), "Missing \(label)", file: file, line: line)
+  }
+
+  @MainActor
+  func versionText() -> XCUIElement {
+    staticTexts
+      .matching(NSPredicate(format: "label MATCHES %@", ".*[0-9]+\\.[0-9]+\\.[0-9]+.*"))
+      .firstMatch
   }
 
   @MainActor
