@@ -128,6 +128,12 @@ final class PRBarUITests: XCTestCase {
     app.buttons["Settings"].tap()
     XCTAssertTrue(app.staticTexts["Version"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1.2.0")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "@neonwatty")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Connected")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "GitHub")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "3 included")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "4 available")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Not refreshed")).firstMatch.exists)
     XCTAssertTrue(app.buttons["Manage included repos"].exists)
     app.buttons["Manage included repos"].tap()
     XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
@@ -141,6 +147,25 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Product version"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Build"].exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1.2.0")).firstMatch.exists)
+  }
+
+  @MainActor
+  func testSettingsShowsRefreshFailureDiagnostics() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-refresh-failure"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    app.buttons["Refresh activity"].tap()
+    XCTAssertTrue(app.staticTexts["Showing cached GitHub data"].waitForExistence(timeout: 4))
+
+    app.tapTab("More")
+    app.buttons["Settings"].tap()
+
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Showing cached data")).firstMatch.waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["GitHub is unreachable"].exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Existing data stays available")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "May 24, 2026")).firstMatch.exists)
   }
 
   @MainActor

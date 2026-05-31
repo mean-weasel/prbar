@@ -125,6 +125,21 @@ final class PRBarStore {
     includedRepositories.contains { $0.visibility == .private }
   }
 
+  var settingsDiagnostics: SettingsDiagnostics {
+    SettingsDiagnostics(
+      account: settingsAccountLabel,
+      auth: settingsAuthLabel,
+      dataSource: settingsDataSourceLabel,
+      includedRepositories: "\(includedRepositories.count) included",
+      availableRepositories: "\(repositories.filter { $0.access == .ready }.count) available",
+      sync: settingsSyncLabel,
+      lastRefresh: settingsDateLabel(lastActivityRefreshAt, fallback: "Not refreshed"),
+      lastAttempt: settingsDateLabel(lastActivityRefreshAttemptAt, fallback: "No refresh attempted"),
+      issueTitle: settingsIssueTitle,
+      issueDetail: settingsIssueDetail
+    )
+  }
+
   func restoreGitHubSession() {
     do {
       if let connection = try authService.restoreConnection() {
@@ -536,6 +551,95 @@ final class PRBarStore {
 
     githubConnection = .signedOut
     routeState = authIssue(for: error)
+  }
+}
+
+private extension PRBarStore {
+  var settingsAccountLabel: String {
+    if let login = githubConnection.user?.login {
+      return "@\(login)"
+    }
+    return "Not signed in"
+  }
+
+  var settingsAuthLabel: String {
+    switch githubConnection.status {
+    case .signedOut:
+      return "Signed out"
+    case .signingIn:
+      return "Signing in"
+    case .connected:
+      return "Connected"
+    case .issue:
+      return "Needs attention"
+    }
+  }
+
+  var settingsDataSourceLabel: String {
+    switch githubConnection.status {
+    case .signedOut:
+      return "Not connected"
+    case .signingIn:
+      return "GitHub authorization"
+    case .connected:
+      return "GitHub"
+    case .issue:
+      return "GitHub needs attention"
+    }
+  }
+
+  var settingsSyncLabel: String {
+    if isRefreshingActivity {
+      if case .setup = activityRefreshContext {
+        return "Setup sync in progress"
+      }
+      return "Refresh in progress"
+    }
+    if activityRepositoryIssues.isEmpty == false {
+      return "Partial sync"
+    }
+    if activityRefreshIssue != nil && lastActivityRefreshAt != nil {
+      return "Showing cached data"
+    }
+    if activityRefreshIssue != nil {
+      return "Refresh failed"
+    }
+    if lastActivityRefreshAt != nil {
+      return "Refreshed"
+    }
+    return "Not refreshed"
+  }
+
+  var settingsIssueTitle: String? {
+    if activityRepositoryIssues.isEmpty == false {
+      let issueCount = activityRepositoryIssues.count
+      return issueCount == 1 ? "1 repository needs attention" : "\(issueCount) repositories need attention"
+    }
+    return activityRefreshIssue?.title
+  }
+
+  var settingsIssueDetail: String? {
+    if let firstIssue = activityRepositoryIssues.first {
+      return firstIssue.message
+    }
+    return activityRefreshIssue?.message
+  }
+
+  func settingsDateLabel(_ date: Date?, fallback: String) -> String {
+    guard let date else {
+      return fallback
+    }
+    return settingsDateFormatter.string(from: date)
+  }
+
+  var settingsDateFormatter: DateFormatter {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = .current
+    formatter.dateStyle = .medium
+    formatter.timeStyle = .short
+    return formatter
   }
 }
 
