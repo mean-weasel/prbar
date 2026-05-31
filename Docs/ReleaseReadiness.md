@@ -2,21 +2,25 @@
 
 ## Current Release Candidate
 
-PRBar is ready to cut a GitHub release and notarized macOS artifact for `v1.2.0`.
+PRBar is ready to cut a GitHub release and notarized macOS artifact for `v1.2.1`.
 
-This release includes the production app updates that landed after `v1.1.0`:
+This patch release includes the production app updates that landed after `v1.2.0`:
 
+- Faster manual refresh completion from PR activity refresh no longer waiting on
+  release/tag scans.
+- File-backed GitHub discovery and merged-PR caches instead of large
+  UserDefaults blobs.
+- Bounded release/tag scanning with privacy-safe refresh metrics.
+- Repository-selection settings improvements that avoid selecting every
+  discovered repository by default.
 - Persisted GitHub discovery and merged-PR caches for faster refreshes.
 - A one-request warm refresh path when cached repository and PR data is still current.
-- iOS setup, sync, install, and share-proof follow-up work.
-- Web proof mockup and navigation follow-up work.
-- Mac share-card and release-card work from `v1.1.0`.
 
 ## Versioning
 
 - GitHub releases are produced by `semantic-release`.
-- The latest existing tag is `v1.1.0`.
-- The Mac bundle version is `MARKETING_VERSION=1.2.0` and `CURRENT_PROJECT_VERSION=3`.
+- The latest existing tag is `v1.2.0`.
+- The Mac bundle version is `MARKETING_VERSION=1.2.1` and `CURRENT_PROJECT_VERSION=3`.
 - PRs that should create a release must use a conventional squash title, such as `feat: ...` or `fix: ...`.
 
 ## Distribution Status
@@ -117,7 +121,7 @@ Or Apple ID credentials:
 Manual artifact rebuild for an existing release:
 
 ```bash
-gh workflow run release-artifact.yml --repo mean-weasel/prbar -f tag=v1.2.0
+gh workflow run release-artifact.yml --repo mean-weasel/prbar -f tag=v1.2.1
 ```
 
 Release operator checklist:
