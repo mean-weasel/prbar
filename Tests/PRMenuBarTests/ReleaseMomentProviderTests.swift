@@ -35,7 +35,11 @@ final class ReleaseMomentProviderTests: XCTestCase {
         """.utf8
       )
     )
-    let provider = GitHubReleaseMomentProvider(token: "token", transport: transport)
+    let provider = GitHubReleaseMomentProvider(
+      token: "token",
+      transport: transport,
+      maxConcurrentRequests: 1
+    )
 
     let releases = try provider.fetchReleaseMoments(
       repositories: [repository(id: "owner/project")],
@@ -69,7 +73,11 @@ final class ReleaseMomentProviderTests: XCTestCase {
         ),
       ]
     )
-    let provider = GitHubReleaseMomentProvider(token: "token", transport: transport)
+    let provider = GitHubReleaseMomentProvider(
+      token: "token",
+      transport: transport,
+      maxConcurrentRequests: 1
+    )
 
     let releases = try provider.fetchReleaseMoments(
       repositories: [repository(id: "owner/project")],
@@ -116,7 +124,8 @@ final class ReleaseMomentProviderTests: XCTestCase {
     let provider = GitHubReleaseMomentProvider(
       token: "token",
       transport: transport,
-      cacheDuration: 60
+      cacheDuration: 60,
+      maxConcurrentRequests: 1
     )
     let repositories = [repository(id: "owner/project")]
 
@@ -128,6 +137,78 @@ final class ReleaseMomentProviderTests: XCTestCase {
 
     XCTAssertEqual(first, second)
     XCTAssertEqual(transport.capturedRequests.count, 1)
+  }
+
+  func testGitHubProviderRecordsReleaseFetchMetrics() throws {
+    let now = Date(timeIntervalSince1970: 1_800_000_000)
+    let collector = RefreshMetricsCollector()
+    let transport = FixtureGitHubAPITransport(
+      responses: [
+        Data("[]".utf8),
+        Data(#"[{ "name": "v1.0.0" }]"#.utf8),
+      ]
+    )
+    let provider = GitHubReleaseMomentProvider(
+      token: "token",
+      transport: transport,
+      maxConcurrentRequests: 1,
+      metrics: collector
+    )
+
+    _ = try provider.fetchReleaseMoments(
+      repositories: [repository(id: "owner/project")],
+      now: now
+    )
+
+    let metric = try XCTUnwrap(collector.events.first { $0.name == "release.fetch.total" })
+    XCTAssertEqual(metric.metadata["repository_count"], "1")
+    XCTAssertEqual(metric.metadata["release_requests"], "1")
+    XCTAssertEqual(metric.metadata["tag_requests"], "1")
+    XCTAssertEqual(metric.metadata["moment_count"], "1")
+    XCTAssertEqual(metric.metadata["max_concurrent_requests"], "1")
+    XCTAssertEqual(metric.metadata["result"], "fetched")
+  }
+
+  func testGitHubProviderRecordsCacheHitMetrics() throws {
+    let now = Date(timeIntervalSince1970: 1_800_000_000)
+    let collector = RefreshMetricsCollector()
+    let transport = FixtureGitHubAPITransport(
+      data: Data(
+        """
+        [
+          {
+            "id": 42,
+            "tag_name": "v2.1.0",
+            "name": "Webhook hardening",
+            "body": "Fixes retry handling and clarifies release diagnostics.",
+            "published_at": "2026-05-20T12:00:00Z",
+            "html_url": "https://github.com/owner/project/releases/tag/v2.1.0"
+          }
+        ]
+        """.utf8
+      )
+    )
+    let provider = GitHubReleaseMomentProvider(
+      token: "token",
+      transport: transport,
+      cacheDuration: 60,
+      maxConcurrentRequests: 1,
+      metrics: collector
+    )
+    let repositories = [repository(id: "owner/project")]
+
+    _ = try provider.fetchReleaseMoments(repositories: repositories, now: now)
+    _ = try provider.fetchReleaseMoments(
+      repositories: repositories,
+      now: now.addingTimeInterval(30)
+    )
+
+    let metric = try XCTUnwrap(collector.events.last { $0.name == "release.fetch.total" })
+    XCTAssertEqual(metric.metadata["repository_count"], "1")
+    XCTAssertEqual(metric.metadata["release_requests"], "0")
+    XCTAssertEqual(metric.metadata["tag_requests"], "0")
+    XCTAssertEqual(metric.metadata["moment_count"], "1")
+    XCTAssertEqual(metric.metadata["result"], "cache_hit")
   }
 
   func testRepositoryPrivateFlagMapsToActivityPrivacy() throws {

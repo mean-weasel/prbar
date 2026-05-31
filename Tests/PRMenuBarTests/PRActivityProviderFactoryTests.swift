@@ -19,6 +19,9 @@ final class PRActivityProviderFactoryTests: XCTestCase {
     )
 
     XCTAssertTrue(selection.provider is GitHubPRActivityProvider)
+    let provider = selection.provider as? GitHubPRActivityProvider
+    XCTAssertTrue(provider?.mergedPullRequestCacheStore is FileGitHubMergedPullRequestCacheStore)
+    XCTAssertTrue(provider?.discoveryCacheStore is FileGitHubDiscoveryCacheStore)
     XCTAssertEqual(selection.dataSource, .github)
   }
 
