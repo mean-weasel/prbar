@@ -29,6 +29,79 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertTrue(store.cardHasPrivateEvidence)
   }
 
+  func testSettingsDiagnosticsReflectConnectedGitHubAndRefreshState() {
+    let store = PRBarStore.sample()
+    store.githubConnection = GitHubConnection(status: .connected, user: GitHubUser(login: "octocat", displayName: "Octo Cat"))
+    store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T18:30:00Z")
+    store.lastActivityRefreshAttemptAt = SampleData.dateTime("2026-05-24T18:30:00Z")
+
+    let diagnostics = store.settingsDiagnostics
+
+    XCTAssertEqual(diagnostics.account, "@octocat")
+    XCTAssertEqual(diagnostics.auth, "Connected")
+    XCTAssertEqual(diagnostics.dataSource, "GitHub")
+    XCTAssertEqual(diagnostics.includedRepositories, "3 included")
+    XCTAssertEqual(diagnostics.availableRepositories, "4 available")
+    XCTAssertEqual(diagnostics.sync, "Refreshed")
+    XCTAssertNotEqual(diagnostics.lastRefresh, "Sample data")
+    XCTAssertNotNil(diagnostics.lastRefresh.range(of: "May 24, 2026"))
+    XCTAssertNil(diagnostics.issueTitle)
+    XCTAssertNil(diagnostics.issueDetail)
+  }
+
+  func testSettingsDiagnosticsReflectSignedOutState() {
+    let store = PRBarStore.sample()
+    store.githubConnection = .signedOut
+    store.routeState = .signedOut
+    store.lastActivityRefreshAt = nil
+    store.lastActivityRefreshAttemptAt = nil
+
+    let diagnostics = store.settingsDiagnostics
+
+    XCTAssertEqual(diagnostics.account, "Not signed in")
+    XCTAssertEqual(diagnostics.auth, "Signed out")
+    XCTAssertEqual(diagnostics.dataSource, "Not connected")
+    XCTAssertEqual(diagnostics.sync, "Not refreshed")
+    XCTAssertEqual(diagnostics.lastRefresh, "Not refreshed")
+    XCTAssertEqual(diagnostics.lastAttempt, "No refresh attempted")
+  }
+
+  func testSettingsDiagnosticsReflectPartialRepositoryIssues() {
+    let store = PRBarStore.sample()
+    store.activityRepositoryIssues = [
+      ActivityRepositoryIssue(
+        repositoryID: "client-api",
+        repositoryFullName: "example/client-api",
+        title: "Repository needs attention",
+        message: "Authorize SSO for example/client-api, then refresh again."
+      )
+    ]
+    store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T18:30:00Z")
+    store.lastActivityRefreshAttemptAt = SampleData.dateTime("2026-05-24T18:31:00Z")
+
+    let diagnostics = store.settingsDiagnostics
+
+    XCTAssertEqual(diagnostics.sync, "Partial sync")
+    XCTAssertEqual(diagnostics.issueTitle, "1 repository needs attention")
+    XCTAssertEqual(diagnostics.issueDetail, "Authorize SSO for example/client-api, then refresh again.")
+    XCTAssertNotNil(diagnostics.lastAttempt.range(of: "May 24, 2026"))
+  }
+
+  func testSettingsDiagnosticsReflectCachedGlobalFailure() {
+    let store = PRBarStore.sample()
+    store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T08:00:00Z")
+    store.lastActivityRefreshAttemptAt = SampleData.dateTime("2026-05-24T09:00:00Z")
+    store.activityRefreshIssue = AuthIssue(id: "github-network-unavailable", title: "GitHub is unreachable", message: "Check your connection and refresh again. Existing data stays available.")
+
+    let diagnostics = store.settingsDiagnostics
+
+    XCTAssertEqual(diagnostics.sync, "Showing cached data")
+    XCTAssertEqual(diagnostics.issueTitle, "GitHub is unreachable")
+    XCTAssertEqual(diagnostics.issueDetail, "Check your connection and refresh again. Existing data stays available.")
+    XCTAssertNotNil(diagnostics.lastRefresh.range(of: "May 24, 2026"))
+    XCTAssertNotNil(diagnostics.lastAttempt.range(of: "May 24, 2026"))
+  }
+
   func testWorkCardExportUsesCurrentStoreActivityAndGitHubHandle() {
     let store = PRBarStore.sample()
     store.githubConnection = GitHubConnection(status: .connected, user: GitHubUser(login: "octocat", displayName: "Octo Cat"))
@@ -1111,6 +1184,22 @@ final class PRBarModelTests: XCTestCase {
   }
 
   @MainActor
+  func testRefreshingActivityRequestsOnlyIncludedRepositories() async {
+    let provider = RecordingGitHubActivityProvider()
+    let store = PRBarStore.sample(activityProvider: provider)
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "neonwatty/docs-site", owner: "neonwatty", name: "docs-site", visibility: .public, colorHex: "#7c3aed", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(provider.requestedRepositoryIDs, [["mean-weasel/prbar", "neonwatty/docs-site"]])
+    XCTAssertEqual(provider.activityAsyncCallCount, 1)
+  }
+
+  @MainActor
   func testRefreshingActivityWithNoIncludedRepositoriesSkipsProviderAndClearsActivity() async {
     let refreshDate = SampleData.dateTime("2026-05-30T10:15:00Z")
     let provider = RecordingGitHubActivityProvider()
@@ -1133,6 +1222,60 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertNil(store.activityRefreshIssue)
     XCTAssertNil(store.activityRefreshProgress)
     XCTAssertFalse(store.isRefreshingActivity)
+  }
+
+  @MainActor
+  func testRefreshingActivityKeepsCachedDataVisibleWhileRefreshIsInFlight() async {
+    let provider = SuspendedGitHubActivityProvider()
+    let cachedPullRequest = PullRequest(
+      id: "mean-weasel/prbar#88",
+      title: "Cached activity stays visible",
+      repoID: "mean-weasel/prbar",
+      number: 88,
+      mergedAt: SampleData.dateTime("2026-05-24T09:00:00Z")
+    )
+    let cachedRelease = ReleaseMoment(
+      id: "mean-weasel/prbar@release:v8.8.8",
+      repoID: "mean-weasel/prbar",
+      title: "Cached release",
+      tag: "v8.8.8",
+      date: SampleData.date("2026-05-24"),
+      source: .release,
+      notes: "Cached release notes.",
+      url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v8.8.8")!
+    )
+    let store = PRBarStore.sample(activityProvider: provider)
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+    store.pullRequests = [cachedPullRequest]
+    store.releases = [cachedRelease]
+    store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T08:00:00Z")
+
+    let refresh = Task {
+      await store.refreshActivity()
+    }
+    for _ in 0..<1_000 where provider.activityAsyncCallCount == 0 {
+      try? await Task.sleep(nanoseconds: 1_000_000)
+    }
+
+    XCTAssertTrue(store.isRefreshingActivity)
+    XCTAssertEqual(store.pullRequests, [cachedPullRequest])
+    XCTAssertEqual(store.releases, [cachedRelease])
+
+    provider.resume(
+      with: GitHubActivitySnapshot(
+        pullRequests: [
+          PullRequest(id: "mean-weasel/prbar#89", title: "Fresh activity", repoID: "mean-weasel/prbar", number: 89, mergedAt: SampleData.dateTime("2026-05-24T10:00:00Z"))
+        ],
+        releases: [],
+        anchorDate: SampleData.date("2026-05-24")
+      )
+    )
+    await refresh.value
+
+    XCTAssertFalse(store.isRefreshingActivity)
+    XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#89"])
   }
 
   @MainActor
@@ -1273,10 +1416,12 @@ private struct ThrowingGitHubActivityProvider: GitHubActivityProviding {
 
 private final class RecordingGitHubActivityProvider: GitHubActivityProviding, @unchecked Sendable {
   private(set) var requestedEndDates: [Date] = []
+  private(set) var requestedRepositoryIDs: [[Repository.ID]] = []
   private(set) var activityAsyncCallCount = 0
 
   func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
     requestedEndDates.append(endDate)
+    requestedRepositoryIDs.append(repositories.map(\.id))
     return snapshot(endingAt: endDate)
   }
 
@@ -1288,6 +1433,7 @@ private final class RecordingGitHubActivityProvider: GitHubActivityProviding, @u
   ) async throws -> GitHubActivitySnapshot {
     activityAsyncCallCount += 1
     requestedEndDates.append(endDate)
+    requestedRepositoryIDs.append(repositories.map(\.id))
     let snapshot = snapshot(endingAt: endDate)
     await progress?(
       ActivityRefreshProgress(

@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 struct RefreshMetricEvent: Codable, Equatable {
   var name: String
@@ -32,5 +33,26 @@ final class RefreshMetricsCollector: RefreshMetricsRecording {
     lock.lock()
     storedEvents.removeAll()
     lock.unlock()
+  }
+}
+
+final class OSLogRefreshMetricsRecorder: RefreshMetricsRecording {
+  private let logger: Logger
+
+  init(
+    subsystem: String = "com.neonwatty.PRMenuBar",
+    category: String = "refresh"
+  ) {
+    logger = Logger(subsystem: subsystem, category: category)
+  }
+
+  func record(_ event: RefreshMetricEvent) {
+    let metadata = event.metadata
+      .sorted { $0.key < $1.key }
+      .map { "\($0.key)=\($0.value)" }
+      .joined(separator: " ")
+    logger.info(
+      "refresh_metric name=\(event.name, privacy: .public) duration_ms=\(event.durationMilliseconds, privacy: .public) metadata=\(metadata, privacy: .public)"
+    )
   }
 }

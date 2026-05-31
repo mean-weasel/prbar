@@ -3,6 +3,7 @@ import SwiftUI
 struct PRSettingsView: View {
   @Binding var store: PRActivityStore
   var dataSource: PRActivityDataSource
+  @State private var repositorySearchText = ""
 
   var body: some View {
     VStack(alignment: .leading, spacing: 26) {
@@ -73,18 +74,72 @@ struct PRSettingsView: View {
 
   private var repositoryList: some View {
     VStack(alignment: .leading, spacing: 16) {
-      Text("Included Repositories")
-        .font(.caption)
-        .foregroundStyle(.secondary)
+      HStack(alignment: .firstTextBaseline) {
+        VStack(alignment: .leading, spacing: 3) {
+          Text("Repositories")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+          Text("\(includedRepositoryCount) selected of \(store.repositories.count)")
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(.secondary)
+        }
+        Spacer()
+        Button("Clear") {
+          setFilteredRepositoriesIncluded(false)
+        }
+        .disabled(filteredRepositoryIndices.isEmpty)
+        Button("Select") {
+          setFilteredRepositoriesIncluded(true)
+        }
+        .disabled(filteredRepositoryIndices.isEmpty)
+      }
+      repositorySearchField
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 14) {
-          ForEach($store.repositories) { $repository in
-            RepositoryActivityRow(repository: $repository, window: store.window, bin: store.bin)
+          ForEach(filteredRepositoryIndices, id: \.self) { index in
+            RepositoryActivityRow(
+              repository: $store.repositories[index],
+              window: store.window,
+              bin: store.bin
+            )
           }
         }
       }
       .frame(maxHeight: 330)
     }
+  }
+
+  private var repositorySearchField: some View {
+    HStack(spacing: 8) {
+      Image(systemName: "magnifyingglass")
+        .foregroundStyle(.secondary)
+      TextField("Search repositories", text: $repositorySearchText)
+        .textFieldStyle(.plain)
+      if repositorySearchText.isEmpty == false {
+        Button {
+          repositorySearchText = ""
+        } label: {
+          Image(systemName: "xmark.circle.fill")
+            .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+      }
+    }
+    .padding(.horizontal, 10)
+    .padding(.vertical, 7)
+    .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+  }
+
+  private var includedRepositoryCount: Int {
+    store.repositories.filter(\.isIncluded).count
+  }
+
+  private var filteredRepositoryIndices: [Int] {
+    store.repositoryIndices(matching: repositorySearchText)
+  }
+
+  private func setFilteredRepositoriesIncluded(_ isIncluded: Bool) {
+    store.setRepositoriesIncluded(isIncluded, matching: repositorySearchText)
   }
 
   private var appMetadata: some View {

@@ -53,6 +53,16 @@ struct RepositoryActivity: Codable, Identifiable, Equatable {
     "\(owner)/\(name)"
   }
 
+  func matchesSearch(_ query: String) -> Bool {
+    let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard normalizedQuery.isEmpty == false else {
+      return true
+    }
+    return name.localizedCaseInsensitiveContains(normalizedQuery)
+      || owner.localizedCaseInsensitiveContains(normalizedQuery)
+      || id.localizedCaseInsensitiveContains(normalizedQuery)
+  }
+
   func visibleCounts(for window: ActivityWindow, bin: ActivityBin = .week) -> [Int] {
     switch bin {
     case .day:

@@ -4,7 +4,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "1.2.0"
+    MARKETING_VERSION: "1.2.1"
     CURRENT_PROJECT_VERSION: "1"
     PRBAR_IOS_GITHUB_CLIENT_ID: ""
 targets:

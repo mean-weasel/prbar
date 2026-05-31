@@ -15,6 +15,7 @@ RESULT_BUNDLE="${IOS_DEVICE_SMOKE_RESULT_BUNDLE:-apple/DeviceSmokeResults.xcresu
 PRODUCT_BUNDLE_IDENTIFIER="${PRODUCT_BUNDLE_IDENTIFIER:-com.neonwatty.PRBar.ios.preview}"
 PROFILE="${IOS_UI_SMOKE_PROFILE:-pr}"
 DEVICE_READY_TIMEOUT="${IOS_DEVICE_READY_TIMEOUT:-45}"
+AUTOMATION_MODE_RETRY_DELAY="${IOS_AUTOMATION_MODE_RETRY_DELAY:-20}"
 XCODEBUILD_EXTRA_ARGS=()
 TEMP_FILES=()
 HEADLESS_LIVE_SMOKE=0
@@ -25,6 +26,47 @@ cleanup() {
   done
 }
 trap cleanup EXIT
+
+run_xcodebuild_test_with_automation_retry() {
+  local -a command=("$@")
+  local attempt=1
+  local max_attempts=2
+  local log_file
+
+  log_file="$(mktemp "${TMPDIR:-/tmp}/prbar-device-smoke-xcodebuild.XXXXXX.log")"
+  TEMP_FILES+=("$log_file")
+
+  while true; do
+    : >"$log_file"
+    rm -rf "$RESULT_BUNDLE"
+
+    set +e
+    "${command[@]}" 2>&1 | tee "$log_file"
+    local status=${PIPESTATUS[0]}
+    set -e
+
+    if [[ "$status" -eq 0 ]]; then
+      return 0
+    fi
+
+    if [[ "$attempt" -lt "$max_attempts" ]] && grep -Fq "Timed out while enabling automation mode" "$log_file"; then
+      cat >&2 <<EOF
+Xcode timed out while enabling Automation Mode on $DEVICE_NAME.
+
+Keep the iPhone unlocked and awake, then accept the Automation Mode prompt if it appears.
+If no prompt appears, run this once in an interactive terminal on the runner Mac:
+  automationmodetool enable-automationmode-without-authentication
+
+Retrying the physical UI smoke in ${AUTOMATION_MODE_RETRY_DELAY}s...
+EOF
+      sleep "$AUTOMATION_MODE_RETRY_DELAY"
+      attempt=$((attempt + 1))
+      continue
+    fi
+
+    return "$status"
+  done
+}
 
 if [[ -z "${IOS_DESTINATION:-}" ]]; then
   echo "Resolving physical $DEVICE_ROLE by name: $DEVICE_NAME"
@@ -263,4 +305,4 @@ for extra_arg in "${XCODEBUILD_EXTRA_ARGS[@]+"${XCODEBUILD_EXTRA_ARGS[@]}"}"; do
   args+=("$extra_arg")
 done
 
-xcodebuild "${args[@]}"
+run_xcodebuild_test_with_automation_retry xcodebuild "${args[@]}"

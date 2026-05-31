@@ -256,6 +256,55 @@ final class GitHubActivityTests: XCTestCase {
     )
   }
 
+  func testGitHubActivityClientCapsTagCommitLookupsForTagHeavyRepositories() throws {
+    let sessionStore = InMemoryGitHubSessionStore(session: .fixture)
+    let repository = Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched")
+    let tags = (1...10)
+      .map { index in
+        #"{"name":"v0.\#(index).0","commit":{"sha":"abc\#(index)","url":"https://api.github.com/repos/mean-weasel/prbar/commits/abc\#(index)"}}"#
+      }
+      .joined(separator: ",")
+    let commitResponses = (1...3).map { index in
+      Data(
+        """
+        {"commit":{"committer":{"date":"2026-05-2\(index)T09:00:00Z"}},"html_url":"https://github.com/mean-weasel/prbar/commit/abc\(index)"}
+        """.utf8
+      )
+    }
+    let transport = RecordingActivityTransport(
+      responses: [
+        Data("[]".utf8),
+        Data("[]".utf8),
+        Data("[\(tags)]".utf8)
+      ] + commitResponses
+    )
+    let client = GitHubActivityClient(
+      sessionStore: sessionStore,
+      transport: transport,
+      maximumTagCommitLookups: 3
+    )
+
+    let snapshot = try client.activity(for: [repository], endingAt: SampleData.date("2026-05-24"), lookbackDays: 30)
+
+    XCTAssertEqual(snapshot.releases.map(\.id), [
+      "mean-weasel/prbar@tag:v0.3.0",
+      "mean-weasel/prbar@tag:v0.2.0",
+      "mean-weasel/prbar@tag:v0.1.0"
+    ])
+    XCTAssertEqual(transport.requests.count, 6)
+    XCTAssertEqual(
+      transport.requests.compactMap(\.url?.path),
+      [
+        "/repos/mean-weasel/prbar/pulls",
+        "/repos/mean-weasel/prbar/releases",
+        "/repos/mean-weasel/prbar/tags",
+        "/repos/mean-weasel/prbar/commits/abc1",
+        "/repos/mean-weasel/prbar/commits/abc2",
+        "/repos/mean-weasel/prbar/commits/abc3"
+      ]
+    )
+  }
+
   func testGitHubActivityClientRequiresStoredSession() {
     let client = GitHubActivityClient(
       sessionStore: InMemoryGitHubSessionStore(),

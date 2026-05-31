@@ -110,6 +110,23 @@ struct ActivityRefreshProgress: Equatable, Sendable {
   var releaseCount: Int
 }
 
+enum ActivityRefreshContext: Equatable, Sendable {
+  case setup(repositoryCount: Int)
+}
+
+struct SettingsDiagnostics: Equatable, Sendable {
+  var account: String
+  var auth: String
+  var dataSource: String
+  var includedRepositories: String
+  var availableRepositories: String
+  var sync: String
+  var lastRefresh: String
+  var lastAttempt: String
+  var issueTitle: String?
+  var issueDetail: String?
+}
+
 enum ActivityRange: String, CaseIterable, Identifiable, Sendable {
   case day
   case week
