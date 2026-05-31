@@ -126,8 +126,6 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("More")
     XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 2))
     app.buttons["Settings"].tap()
-    app.scrollToStaticText("Version")
-    XCTAssertTrue(app.versionText().waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "@neonwatty")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Connected")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "GitHub")).firstMatch.exists)
@@ -139,6 +137,9 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
     XCTAssertTrue(app.navigationBars.buttons["Settings"].waitForExistence(timeout: 2))
     app.navigationBars.buttons["Settings"].tap()
+
+    app.scrollToStaticText("Version")
+    XCTAssertTrue(app.versionText().waitForExistence(timeout: 2))
 
     XCTAssertTrue(app.navigationBars.buttons["More"].waitForExistence(timeout: 2))
     app.navigationBars.buttons["More"].tap()
