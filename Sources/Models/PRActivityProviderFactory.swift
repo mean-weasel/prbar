@@ -41,17 +41,20 @@ enum PRActivityProviderFactory {
       )
     }
 
+    let metrics = OSLogRefreshMetricsRecorder()
     return PRActivityProviderSelection(
       provider: GitHubPRActivityProvider(
         token: token,
         transport: URLSessionGitHubAPITransport(),
         bucketLabels: PRActivityStore.sample().bucketLabels,
-        mergedPullRequestCacheStore: UserDefaultsGitHubMergedPullRequestCacheStore(),
-        discoveryCacheStore: UserDefaultsGitHubDiscoveryCacheStore()
+        mergedPullRequestCacheStore: FileGitHubMergedPullRequestCacheStore(),
+        discoveryCacheStore: FileGitHubDiscoveryCacheStore(),
+        metrics: metrics
       ),
       releaseProvider: GitHubReleaseMomentProvider(
         token: token,
-        transport: URLSessionGitHubAPITransport()
+        transport: URLSessionGitHubAPITransport(),
+        metrics: metrics
       ),
       dataSource: .github
     )

@@ -4,6 +4,7 @@ import SwiftUI
 struct PRMenuBarApp: App {
   private let settingsStore: PRSettingsStore
   private let providerSelection: PRActivityProviderSelection
+  private let refreshMetrics: RefreshMetricsRecording
   private let refreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
   @State private var store: PRActivityStore
   @State private var releaseStore: ReleaseMomentStore
@@ -11,6 +12,7 @@ struct PRMenuBarApp: App {
   @State private var refreshError: String?
   @State private var isRefreshing = false
   @State private var refreshGeneration = 0
+  @State private var releaseRefreshGeneration = 0
 
   init() {
     let now = Date()
@@ -18,6 +20,7 @@ struct PRMenuBarApp: App {
     let providerSelection = PRActivityProviderFactory.makeSelection()
     self.settingsStore = settingsStore
     self.providerSelection = providerSelection
+    self.refreshMetrics = OSLogRefreshMetricsRecorder()
     let initialState = PRInitialActivityState.load(providerSelection: providerSelection, now: now)
     PRInitialActivityStateDump.writeIfRequested(
       state: initialState,
@@ -80,17 +83,11 @@ struct PRMenuBarApp: App {
     let currentStore = store
     refreshGeneration += 1
     let generation = refreshGeneration
+    let startedAt = Date()
 
     DispatchQueue.global(qos: .userInitiated).async {
       let result = Result { try refresher.refresh(current: currentStore, now: now) }
-      let releaseResult = result.flatMap { refreshedStore in
-        Result {
-          try providerSelection.releaseProvider.fetchReleaseMoments(
-            repositories: refreshedStore.repositories,
-            now: now
-          )
-        }
-      }
+      let activityDuration = Date().timeIntervalSince(startedAt) * 1_000
 
       DispatchQueue.main.async {
         guard generation == refreshGeneration else {
@@ -100,16 +97,35 @@ struct PRMenuBarApp: App {
         switch result {
         case .success(let refreshedStore):
           store = refreshedStore
-          switch releaseResult {
-          case .success(let releases):
-            releaseStore = ReleaseMomentStore(releases: releases)
-            releaseRefreshState = .idle
-          case .failure(let error):
-            releaseRefreshState = .failed(Self.releaseRefreshMessage(for: error))
-          }
           refreshError = nil
+          recordRefreshMetric(
+            "manual_refresh.activity",
+            durationMilliseconds: activityDuration,
+            metadata: [
+              "repository_count": "\(refreshedStore.repositories.count)",
+              "included_repository_count":
+                "\(refreshedStore.repositories.filter(\.isIncluded).count)",
+              "result": "success",
+            ]
+          )
+          recordRefreshMetric(
+            "manual_refresh.total",
+            startedAt: startedAt,
+            metadata: ["result": "activity_ready"]
+          )
+          refreshReleases(repositories: refreshedStore.repositories, now: now)
         case .failure(let error):
           refreshError = failureMessage(error)
+          recordRefreshMetric(
+            "manual_refresh.activity",
+            durationMilliseconds: activityDuration,
+            metadata: ["result": "error"]
+          )
+          recordRefreshMetric(
+            "manual_refresh.total",
+            startedAt: startedAt,
+            metadata: ["result": "error"]
+          )
         }
       }
     }
@@ -124,8 +140,14 @@ struct PRMenuBarApp: App {
   }
 
   private func refreshReleases(now: Date) {
-    let repositories = store.repositories
+    refreshReleases(repositories: store.repositories, now: now)
+  }
+
+  private func refreshReleases(repositories: [RepositoryActivity], now: Date) {
+    releaseRefreshGeneration += 1
+    let generation = releaseRefreshGeneration
     releaseRefreshState = .loading
+    let startedAt = Date()
     DispatchQueue.global(qos: .utility).async {
       let result = Result {
         try providerSelection.releaseProvider.fetchReleaseMoments(
@@ -135,15 +157,63 @@ struct PRMenuBarApp: App {
       }
 
       DispatchQueue.main.async {
+        guard generation == releaseRefreshGeneration else {
+          return
+        }
         switch result {
         case .success(let releases):
           releaseStore = ReleaseMomentStore(releases: releases)
           releaseRefreshState = .idle
+          recordRefreshMetric(
+            "release_refresh.total",
+            startedAt: startedAt,
+            metadata: [
+              "repository_count": "\(repositories.count)",
+              "included_repository_count": "\(repositories.filter(\.isIncluded).count)",
+              "moment_count": "\(releases.count)",
+              "result": "success",
+            ]
+          )
         case .failure(let error):
           releaseRefreshState = .failed(Self.releaseRefreshMessage(for: error))
+          recordRefreshMetric(
+            "release_refresh.total",
+            startedAt: startedAt,
+            metadata: [
+              "repository_count": "\(repositories.count)",
+              "included_repository_count": "\(repositories.filter(\.isIncluded).count)",
+              "result": "error",
+            ]
+          )
         }
       }
     }
+  }
+
+  private func recordRefreshMetric(
+    _ name: String,
+    startedAt: Date,
+    metadata: [String: String]
+  ) {
+    recordRefreshMetric(
+      name,
+      durationMilliseconds: Date().timeIntervalSince(startedAt) * 1_000,
+      metadata: metadata
+    )
+  }
+
+  private func recordRefreshMetric(
+    _ name: String,
+    durationMilliseconds: Double,
+    metadata: [String: String]
+  ) {
+    refreshMetrics.record(
+      RefreshMetricEvent(
+        name: name,
+        durationMilliseconds: durationMilliseconds,
+        metadata: metadata
+      )
+    )
   }
 
   private static func initialReleaseStore(
