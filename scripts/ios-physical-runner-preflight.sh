@@ -13,6 +13,8 @@ identity_pattern="${IOS_SIGNING_IDENTITY_PATTERN:-${IOS_PREVIEW_SIGNING_IDENTITY
 keychain_password="${IOS_KEYCHAIN_PASSWORD:-${IOS_PREVIEW_KEYCHAIN_PASSWORD:-}}"
 set_key_partition_list="${IOS_SET_KEY_PARTITION_LIST:-${IOS_PREVIEW_SET_KEY_PARTITION_LIST:-0}}"
 keychain_timeout="${IOS_KEYCHAIN_TIMEOUT:-${IOS_PREVIEW_KEYCHAIN_TIMEOUT:-21600}}"
+device_ready_timeout="${IOS_DEVICE_READY_TIMEOUT:-60}"
+device_probe_timeout="${IOS_DEVICE_PROBE_TIMEOUT:-10}"
 
 echo "iOS physical runner preflight"
 echo "User: $(id -un)"
@@ -136,17 +138,39 @@ details_json="$(mktemp "${TMPDIR:-/tmp}/prbar-device-details.XXXXXX")"
 lock_json="$(mktemp "${TMPDIR:-/tmp}/prbar-device-lock.XXXXXX")"
 trap 'rm -f "$details_json" "$lock_json"' EXIT
 
-xcrun devicectl device info details \
-  --device "$IOS_DEVICE_ID" \
-  --json-output "$details_json" \
-  --quiet \
-  --timeout 10 >/dev/null
+ready_deadline=$((SECONDS + device_ready_timeout))
+while true; do
+  if xcrun devicectl device info details \
+    --device "$IOS_DEVICE_ID" \
+    --json-output "$details_json" \
+    --quiet \
+    --timeout "$device_probe_timeout" >/dev/null 2>&1; then
+    break
+  fi
+
+  if [[ "$SECONDS" -ge "$ready_deadline" ]]; then
+    cat >&2 <<EOF
+The $device_role '$device_name' was visible to CoreDevice and Xcode, but did
+not answer the devicectl readiness probe within ${device_ready_timeout}s.
+
+Make sure $device_name is:
+- connected to this Mac
+- trusted by this Mac
+- unlocked and awake
+
+Then rerun the workflow.
+EOF
+    exit 69
+  fi
+
+  sleep 3
+done
 
 xcrun devicectl device info lockState \
   --device "$IOS_DEVICE_ID" \
   --json-output "$lock_json" \
   --quiet \
-  --timeout 10 >/dev/null
+  --timeout "$device_probe_timeout" >/dev/null
 
 echo "Device lock state:"
 jq -r '.result | "  passcodeRequired=\(.passcodeRequired) unlockedSinceBoot=\(.unlockedSinceBoot)"' "$lock_json"
