@@ -192,7 +192,7 @@ final class PRActivityStoreTests: XCTestCase {
     XCTAssertEqual(updated.settingsSnapshot, settings)
   }
 
-  func testApplyingSettingsKeepsNewlyDiscoveredRepositoriesIncluded() {
+  func testApplyingSettingsExcludesNewlyDiscoveredRepositoriesByDefault() {
     let repositories = [
       RepositoryActivity(
         id: "owner/known",
@@ -228,7 +228,7 @@ final class PRActivityStoreTests: XCTestCase {
     let updated = store.applying(settings)
 
     XCTAssertFalse(updated.repositories[0].isIncluded)
-    XCTAssertTrue(updated.repositories[1].isIncluded)
+    XCTAssertFalse(updated.repositories[1].isIncluded)
   }
 
   func testSettingsSnapshotPrunesStaleKnownRepositoriesAfterRefresh() {
@@ -296,4 +296,5 @@ final class PRActivityStoreTests: XCTestCase {
   private func date(_ text: String) throws -> Date {
     try XCTUnwrap(ISO8601DateFormatter().date(from: text))
   }
+
 }

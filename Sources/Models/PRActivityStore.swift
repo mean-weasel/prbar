@@ -102,6 +102,18 @@ struct PRActivityStore: Codable {
     }
   }
 
+  func repositoryIndices(matching query: String) -> [Int] {
+    repositories.indices.filter { index in
+      repositories[index].matchesSearch(query)
+    }
+  }
+
+  mutating func setRepositoriesIncluded(_ isIncluded: Bool, matching query: String) {
+    for index in repositoryIndices(matching: query) {
+      repositories[index].isIncluded = isIncluded
+    }
+  }
+
   func bucketBreakdown(at index: Int) -> [RepositoryBucketValue] {
     guard visibleBucketLabels.indices.contains(index) else {
       return []
@@ -163,9 +175,7 @@ struct PRActivityStore: Codable {
     copy.showPrivateRepositoryNamesInShare = settings.showPrivateRepositoryNamesInShare
     copy.repositories = repositories.map { repository in
       var updated = repository
-      if known.contains(repository.id) {
-        updated.isIncluded = included.contains(repository.id)
-      }
+      updated.isIncluded = known.contains(repository.id) && included.contains(repository.id)
       return updated
     }
     return copy

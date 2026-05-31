@@ -21,6 +21,7 @@ final class GitHubPRActivityProviderTests: XCTestCase, GitHubPRActivityProviderT
     let store = try provider.load(now: try date("2026-05-02T18:00:00Z"))
 
     XCTAssertEqual(store.repositories.map(\.id), ["owner/visible"])
+    XCTAssertFalse(try XCTUnwrap(store.repositories.first).isIncluded)
     XCTAssertEqual(store.repositories.first?.weeklyCounts, [0, 0, 1])
     XCTAssertEqual(store.repositories.first?.dailyCounts.suffix(7).reduce(0, +), 1)
     XCTAssertEqual(store.bucketLabels, ["04/12", "04/19", "04/26"])
