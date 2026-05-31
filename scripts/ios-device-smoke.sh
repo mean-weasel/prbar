@@ -38,6 +38,7 @@ run_xcodebuild_test_with_automation_retry() {
 
   while true; do
     : >"$log_file"
+    rm -rf "$RESULT_BUNDLE"
 
     set +e
     "${command[@]}" 2>&1 | tee "$log_file"
