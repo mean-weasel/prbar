@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ActivitySyncStatusView: View {
   var isRefreshing: Bool
+  var context: ActivityRefreshContext?
   var progress: ActivityRefreshProgress?
   var lastRefreshedAt: Date?
   var lastRefreshAttemptAt: Date?
@@ -10,6 +11,7 @@ struct ActivitySyncStatusView: View {
 
   init(
     isRefreshing: Bool,
+    context: ActivityRefreshContext? = nil,
     progress: ActivityRefreshProgress? = nil,
     lastRefreshedAt: Date?,
     lastRefreshAttemptAt: Date?,
@@ -17,6 +19,7 @@ struct ActivitySyncStatusView: View {
     repositoryIssues: [ActivityRepositoryIssue] = []
   ) {
     self.isRefreshing = isRefreshing
+    self.context = context
     self.progress = progress
     self.lastRefreshedAt = lastRefreshedAt
     self.lastRefreshAttemptAt = lastRefreshAttemptAt
@@ -60,6 +63,9 @@ struct ActivitySyncStatusView: View {
     } else if issue != nil {
       Image(systemName: "exclamationmark.triangle.fill")
         .foregroundStyle(.orange)
+    } else if lastRefreshedAt == nil {
+      Image(systemName: "arrow.triangle.2.circlepath")
+        .foregroundStyle(PRBarTheme.accent)
     } else {
       Image(systemName: "checkmark.circle.fill")
         .foregroundStyle(.green)
@@ -68,6 +74,9 @@ struct ActivitySyncStatusView: View {
 
   private var title: String {
     if isRefreshing {
+      if case .setup = context {
+        return "Setup complete. Syncing repos"
+      }
       return "Refreshing GitHub activity"
     }
     if repositoryIssues.isEmpty == false {
@@ -87,8 +96,15 @@ struct ActivitySyncStatusView: View {
 
   private var detail: String {
     if isRefreshing {
+      let setupPrefix: String
+      if case let .setup(repositoryCount) = context {
+        setupPrefix = "Fetching PRs and releases from \(repositoryLabel(repositoryCount)) in the background. "
+      } else {
+        setupPrefix = ""
+      }
+
       guard let progress else {
-        return "Syncing included repositories from GitHub."
+        return "\(setupPrefix)Syncing included repositories from GitHub."
       }
 
       let repoText: String
@@ -97,7 +113,7 @@ struct ActivitySyncStatusView: View {
       } else {
         repoText = "Synced \(progress.completedRepositories) of \(progress.totalRepositories) repositories."
       }
-      return "\(repoText) Found \(progress.pullRequestCount) PRs and \(progress.releaseCount) releases so far."
+      return "\(setupPrefix)\(repoText) Found \(progress.pullRequestCount) PRs and \(progress.releaseCount) releases so far."
     }
     if repositoryIssues.isEmpty == false {
       let issueCount = repositoryIssues.count
@@ -134,6 +150,10 @@ struct ActivitySyncStatusView: View {
     formatter.dateStyle = .medium
     formatter.timeStyle = .short
     return formatter
+  }
+
+  private func repositoryLabel(_ count: Int) -> String {
+    count == 1 ? "1 selected repo" : "\(count) selected repos"
   }
 }
 

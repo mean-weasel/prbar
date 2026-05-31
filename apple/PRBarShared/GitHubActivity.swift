@@ -172,6 +172,7 @@ struct GitHubActivityClient: GitHubActivityProviding, @unchecked Sendable {
   var sessionStore: GitHubSessionStoring
   var transport: GitHubRepositoryTransport
   var maximumTagPages = 1
+  var maximumTagCommitLookups = 30
   var maximumConcurrentRepositories = 4
   var calendar: Calendar = {
     var calendar = Calendar(identifier: .gregorian)
@@ -396,7 +397,13 @@ struct GitHubActivityClient: GitHubActivityProviding, @unchecked Sendable {
     let releaseTags = Set(releaseMoments.map(\.tag))
 
     let tagPayloads = try pagedTags(repository, token: token)
+    var tagCommitLookups = 0
+    let tagCommitLookupLimit = max(0, maximumTagCommitLookups)
     for tagPayload in tagPayloads where releaseTags.contains(tagPayload.name) == false {
+      guard tagCommitLookups < tagCommitLookupLimit else {
+        break
+      }
+      tagCommitLookups += 1
       guard let tagMoment = try tagPayload.release(repository: repository, token: token, transport: transport, startDate: startDate) else {
         continue
       }

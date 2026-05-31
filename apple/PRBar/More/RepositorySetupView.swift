@@ -146,6 +146,7 @@ struct RepositorySetupView: View {
         Section("Sync") {
           ActivitySyncStatusView(
             isRefreshing: store.isRefreshingActivity,
+            context: store.activityRefreshContext,
             progress: store.activityRefreshProgress,
             lastRefreshedAt: store.lastActivityRefreshAt,
             lastRefreshAttemptAt: store.lastActivityRefreshAttemptAt,

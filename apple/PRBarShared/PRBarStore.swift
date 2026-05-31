@@ -17,6 +17,7 @@ final class PRBarStore {
   var routeState: AppRouteState
   var githubConnection: GitHubConnection
   var isRefreshingActivity = false
+  var activityRefreshContext: ActivityRefreshContext?
   var activityRefreshProgress: ActivityRefreshProgress?
   var activityRefreshIssue: AuthIssue?
   var activityRepositoryIssues: [ActivityRepositoryIssue] = []
@@ -230,9 +231,11 @@ final class PRBarStore {
       activityRefreshIssue = nil
       activityRepositoryIssues = []
       activityRefreshProgress = nil
+      activityRefreshContext = nil
       return nil
     }
 
+    activityRefreshContext = .setup(repositoryCount: includedRepositories.count)
     return Task {
       await refreshActivity()
     }
@@ -260,6 +263,7 @@ final class PRBarStore {
       activityRefreshIssue = nil
       activityRepositoryIssues = []
       activityRefreshProgress = nil
+      activityRefreshContext = nil
       return
     }
 
@@ -282,6 +286,7 @@ final class PRBarStore {
     defer {
       isRefreshingActivity = false
       activityRefreshProgress = nil
+      activityRefreshContext = nil
     }
 
     do {
