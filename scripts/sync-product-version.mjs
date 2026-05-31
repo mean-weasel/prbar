@@ -21,7 +21,6 @@ const iOSBuildNumber = normalizeOptional(
 const updates = [
   updateProjectVersion("project.yml", productVersion, macOSBuildNumber),
   updateProjectVersion("apple/project.yml", productVersion, iOSBuildNumber),
-  updateWebVersion("apps/web/app/version.ts", productVersion),
 ];
 
 const changed = updates.filter(Boolean);
@@ -74,21 +73,6 @@ function updateProjectVersion(relativePath, version, build) {
       `CURRENT_PROJECT_VERSION: "${build}"`
     );
   }
-
-  if (next === original) {
-    return null;
-  }
-
-  writeText(relativePath, `${next}\n`);
-  return relativePath;
-}
-
-function updateWebVersion(relativePath, version) {
-  const original = readText(relativePath);
-  const next = original.replace(
-    /const fallbackMarketingVersion = "[^"]+";/,
-    `const fallbackMarketingVersion = "${version}";`
-  );
 
   if (next === original) {
     return null;
