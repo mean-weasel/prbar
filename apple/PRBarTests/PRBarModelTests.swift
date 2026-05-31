@@ -29,6 +29,79 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertTrue(store.cardHasPrivateEvidence)
   }
 
+  func testSettingsDiagnosticsReflectConnectedGitHubAndRefreshState() {
+    let store = PRBarStore.sample()
+    store.githubConnection = GitHubConnection(status: .connected, user: GitHubUser(login: "octocat", displayName: "Octo Cat"))
+    store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T18:30:00Z")
+    store.lastActivityRefreshAttemptAt = SampleData.dateTime("2026-05-24T18:30:00Z")
+
+    let diagnostics = store.settingsDiagnostics
+
+    XCTAssertEqual(diagnostics.account, "@octocat")
+    XCTAssertEqual(diagnostics.auth, "Connected")
+    XCTAssertEqual(diagnostics.dataSource, "GitHub")
+    XCTAssertEqual(diagnostics.includedRepositories, "3 included")
+    XCTAssertEqual(diagnostics.availableRepositories, "4 available")
+    XCTAssertEqual(diagnostics.sync, "Refreshed")
+    XCTAssertNotEqual(diagnostics.lastRefresh, "Sample data")
+    XCTAssertNotNil(diagnostics.lastRefresh.range(of: "May 24, 2026"))
+    XCTAssertNil(diagnostics.issueTitle)
+    XCTAssertNil(diagnostics.issueDetail)
+  }
+
+  func testSettingsDiagnosticsReflectSignedOutState() {
+    let store = PRBarStore.sample()
+    store.githubConnection = .signedOut
+    store.routeState = .signedOut
+    store.lastActivityRefreshAt = nil
+    store.lastActivityRefreshAttemptAt = nil
+
+    let diagnostics = store.settingsDiagnostics
+
+    XCTAssertEqual(diagnostics.account, "Not signed in")
+    XCTAssertEqual(diagnostics.auth, "Signed out")
+    XCTAssertEqual(diagnostics.dataSource, "Not connected")
+    XCTAssertEqual(diagnostics.sync, "Not refreshed")
+    XCTAssertEqual(diagnostics.lastRefresh, "Not refreshed")
+    XCTAssertEqual(diagnostics.lastAttempt, "No refresh attempted")
+  }
+
+  func testSettingsDiagnosticsReflectPartialRepositoryIssues() {
+    let store = PRBarStore.sample()
+    store.activityRepositoryIssues = [
+      ActivityRepositoryIssue(
+        repositoryID: "client-api",
+        repositoryFullName: "example/client-api",
+        title: "Repository needs attention",
+        message: "Authorize SSO for example/client-api, then refresh again."
+      )
+    ]
+    store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T18:30:00Z")
+    store.lastActivityRefreshAttemptAt = SampleData.dateTime("2026-05-24T18:31:00Z")
+
+    let diagnostics = store.settingsDiagnostics
+
+    XCTAssertEqual(diagnostics.sync, "Partial sync")
+    XCTAssertEqual(diagnostics.issueTitle, "1 repository needs attention")
+    XCTAssertEqual(diagnostics.issueDetail, "Authorize SSO for example/client-api, then refresh again.")
+    XCTAssertNotNil(diagnostics.lastAttempt.range(of: "May 24, 2026"))
+  }
+
+  func testSettingsDiagnosticsReflectCachedGlobalFailure() {
+    let store = PRBarStore.sample()
+    store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T08:00:00Z")
+    store.lastActivityRefreshAttemptAt = SampleData.dateTime("2026-05-24T09:00:00Z")
+    store.activityRefreshIssue = AuthIssue(id: "github-network-unavailable", title: "GitHub is unreachable", message: "Check your connection and refresh again. Existing data stays available.")
+
+    let diagnostics = store.settingsDiagnostics
+
+    XCTAssertEqual(diagnostics.sync, "Showing cached data")
+    XCTAssertEqual(diagnostics.issueTitle, "GitHub is unreachable")
+    XCTAssertEqual(diagnostics.issueDetail, "Check your connection and refresh again. Existing data stays available.")
+    XCTAssertNotNil(diagnostics.lastRefresh.range(of: "May 24, 2026"))
+    XCTAssertNotNil(diagnostics.lastAttempt.range(of: "May 24, 2026"))
+  }
+
   func testWorkCardExportUsesCurrentStoreActivityAndGitHubHandle() {
     let store = PRBarStore.sample()
     store.githubConnection = GitHubConnection(status: .connected, user: GitHubUser(login: "octocat", displayName: "Octo Cat"))
