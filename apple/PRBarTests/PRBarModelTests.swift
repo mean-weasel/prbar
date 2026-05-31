@@ -1111,6 +1111,22 @@ final class PRBarModelTests: XCTestCase {
   }
 
   @MainActor
+  func testRefreshingActivityRequestsOnlyIncludedRepositories() async {
+    let provider = RecordingGitHubActivityProvider()
+    let store = PRBarStore.sample(activityProvider: provider)
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "neonwatty/docs-site", owner: "neonwatty", name: "docs-site", visibility: .public, colorHex: "#7c3aed", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+
+    await store.refreshActivity()
+
+    XCTAssertEqual(provider.requestedRepositoryIDs, [["mean-weasel/prbar", "neonwatty/docs-site"]])
+    XCTAssertEqual(provider.activityAsyncCallCount, 1)
+  }
+
+  @MainActor
   func testRefreshingActivityWithNoIncludedRepositoriesSkipsProviderAndClearsActivity() async {
     let refreshDate = SampleData.dateTime("2026-05-30T10:15:00Z")
     let provider = RecordingGitHubActivityProvider()
@@ -1133,6 +1149,60 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertNil(store.activityRefreshIssue)
     XCTAssertNil(store.activityRefreshProgress)
     XCTAssertFalse(store.isRefreshingActivity)
+  }
+
+  @MainActor
+  func testRefreshingActivityKeepsCachedDataVisibleWhileRefreshIsInFlight() async {
+    let provider = SuspendedGitHubActivityProvider()
+    let cachedPullRequest = PullRequest(
+      id: "mean-weasel/prbar#88",
+      title: "Cached activity stays visible",
+      repoID: "mean-weasel/prbar",
+      number: 88,
+      mergedAt: SampleData.dateTime("2026-05-24T09:00:00Z")
+    )
+    let cachedRelease = ReleaseMoment(
+      id: "mean-weasel/prbar@release:v8.8.8",
+      repoID: "mean-weasel/prbar",
+      title: "Cached release",
+      tag: "v8.8.8",
+      date: SampleData.date("2026-05-24"),
+      source: .release,
+      notes: "Cached release notes.",
+      url: URL(string: "https://github.com/mean-weasel/prbar/releases/tag/v8.8.8")!
+    )
+    let store = PRBarStore.sample(activityProvider: provider)
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+    store.pullRequests = [cachedPullRequest]
+    store.releases = [cachedRelease]
+    store.lastActivityRefreshAt = SampleData.dateTime("2026-05-24T08:00:00Z")
+
+    let refresh = Task {
+      await store.refreshActivity()
+    }
+    for _ in 0..<1_000 where provider.activityAsyncCallCount == 0 {
+      try? await Task.sleep(nanoseconds: 1_000_000)
+    }
+
+    XCTAssertTrue(store.isRefreshingActivity)
+    XCTAssertEqual(store.pullRequests, [cachedPullRequest])
+    XCTAssertEqual(store.releases, [cachedRelease])
+
+    provider.resume(
+      with: GitHubActivitySnapshot(
+        pullRequests: [
+          PullRequest(id: "mean-weasel/prbar#89", title: "Fresh activity", repoID: "mean-weasel/prbar", number: 89, mergedAt: SampleData.dateTime("2026-05-24T10:00:00Z"))
+        ],
+        releases: [],
+        anchorDate: SampleData.date("2026-05-24")
+      )
+    )
+    await refresh.value
+
+    XCTAssertFalse(store.isRefreshingActivity)
+    XCTAssertEqual(store.pullRequests.map(\.id), ["mean-weasel/prbar#89"])
   }
 
   @MainActor
@@ -1273,10 +1343,12 @@ private struct ThrowingGitHubActivityProvider: GitHubActivityProviding {
 
 private final class RecordingGitHubActivityProvider: GitHubActivityProviding, @unchecked Sendable {
   private(set) var requestedEndDates: [Date] = []
+  private(set) var requestedRepositoryIDs: [[Repository.ID]] = []
   private(set) var activityAsyncCallCount = 0
 
   func activity(for repositories: [Repository], endingAt endDate: Date, lookbackDays: Int) throws -> GitHubActivitySnapshot {
     requestedEndDates.append(endDate)
+    requestedRepositoryIDs.append(repositories.map(\.id))
     return snapshot(endingAt: endDate)
   }
 
@@ -1288,6 +1360,7 @@ private final class RecordingGitHubActivityProvider: GitHubActivityProviding, @u
   ) async throws -> GitHubActivitySnapshot {
     activityAsyncCallCount += 1
     requestedEndDates.append(endDate)
+    requestedRepositoryIDs.append(repositories.map(\.id))
     let snapshot = snapshot(endingAt: endDate)
     await progress?(
       ActivityRefreshProgress(
