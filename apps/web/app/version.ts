@@ -1,4 +1,4 @@
-const fallbackMarketingVersion = "1.2.0";
+const fallbackMarketingVersion = "1.2.1";
 const fallbackBuildNumber = "";
 
 export const appVersion = {
