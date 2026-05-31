@@ -30,7 +30,7 @@ final class GitHubPRActivityProvider: PRActivityProviding {
   var transport: GitHubAPITransport
   var bucketLabels: [String]
   var defaultWindow: ActivityWindow = .oneWeek
-  weak var metrics: RefreshMetricsRecording?
+  var metrics: RefreshMetricsRecording?
   private let dailyBucketCount = 30
   let repositoryPageSize = 100
   private let graphQLPageSize = 100
