@@ -69,6 +69,8 @@ struct PRBarApp: App {
         : InMemoryGitHubActivityCacheStore()
       if arguments.contains("--growth-posthog-needs-attention") {
         growthProvider = StaticGrowthDashboardProvider(snapshot: Self.uiTestingPostHogNeedsAttentionGrowthSnapshot)
+      } else if let postHogConfiguration = PostHogConfiguration.live(environment: environment) {
+        growthProvider = PostHogGrowthProvider(configuration: postHogConfiguration)
       } else {
         growthProvider = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard)
       }
@@ -91,7 +93,11 @@ struct PRBarApp: App {
       )
       repositorySelectionStore = UserDefaultsRepositorySelectionStore()
       activityCacheStore = FileGitHubActivityCacheStore()
-      growthProvider = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard)
+      if let postHogConfiguration = PostHogConfiguration.live(environment: environment) {
+        growthProvider = PostHogGrowthProvider(configuration: postHogConfiguration)
+      } else {
+        growthProvider = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard)
+      }
     }
 
     if isLiveGitHubSmokeHeadless,
