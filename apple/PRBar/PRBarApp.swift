@@ -11,6 +11,7 @@ struct PRBarApp: App {
     let activityProvider: GitHubActivityProviding
     let repositorySelectionStore: RepositorySelectionStoring
     let activityCacheStore: GitHubActivityCacheStoring
+    let growthProvider: GrowthDashboardProviding
     let arguments = ProcessInfo.processInfo.arguments
     let environment = ProcessInfo.processInfo.environment
     let isUITesting = arguments.contains("--ui-testing")
@@ -66,6 +67,11 @@ struct PRBarApp: App {
       activityCacheStore = usesPersistentUITestingState
         ? FileGitHubActivityCacheStore(fileURL: Self.uiTestingActivityCacheURL)
         : InMemoryGitHubActivityCacheStore()
+      if arguments.contains("--growth-posthog-needs-attention") {
+        growthProvider = StaticGrowthDashboardProvider(snapshot: Self.uiTestingPostHogNeedsAttentionGrowthSnapshot)
+      } else {
+        growthProvider = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard)
+      }
     } else {
       let sessionStore = KeychainGitHubSessionStore()
       if isLiveGitHubSmokeHeadless, let liveGitHubSession {
@@ -85,6 +91,7 @@ struct PRBarApp: App {
       )
       repositorySelectionStore = UserDefaultsRepositorySelectionStore()
       activityCacheStore = FileGitHubActivityCacheStore()
+      growthProvider = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard)
     }
 
     if isLiveGitHubSmokeHeadless,
@@ -113,8 +120,12 @@ struct PRBarApp: App {
       repositoryProvider: repositoryProvider,
       activityProvider: activityProvider,
       repositorySelectionStore: repositorySelectionStore,
-      activityCacheStore: activityCacheStore
+      activityCacheStore: activityCacheStore,
+      growthProvider: growthProvider
     )
+    if isUITesting, arguments.contains("--growth-posthog-needs-attention") {
+      store.growthSnapshot = Self.uiTestingPostHogNeedsAttentionGrowthSnapshot
+    }
     if ProcessInfo.processInfo.arguments.contains("--signed-out") {
       store.routeState = .signedOut
       store.githubConnection = .signedOut
@@ -340,5 +351,38 @@ private extension PRBarApp {
         )
       ]
     )
+  }
+
+  static var uiTestingPostHogNeedsAttentionGrowthSnapshot: GrowthDashboardSnapshot {
+    var snapshot = GrowthDashboardSnapshot.fixture(
+      range: .week,
+      connections: [
+        GrowthConnection(
+          id: "posthog-main",
+          provider: .postHog,
+          displayName: "PostHog",
+          status: .needsAttention,
+          lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"),
+          issue: "PostHog API key needs attention"
+        ),
+        GrowthConnection(
+          id: "gsc-main",
+          provider: .searchConsole,
+          displayName: "Search Console",
+          status: .connected,
+          lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"),
+          issue: nil
+        ),
+      ]
+    )
+    snapshot.issues = [
+      GrowthDashboardIssue(
+        id: "posthog-needs-attention",
+        provider: .postHog,
+        title: "PostHog needs attention",
+        detail: "PostHog API key needs attention"
+      )
+    ]
+    return snapshot
   }
 }

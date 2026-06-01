@@ -20,6 +20,48 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testGrowthTabRendersFixtureMetrics() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    app.tapTab("Growth")
+
+    XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Active users"].exists)
+    XCTAssertTrue(app.staticTexts["Search clicks"].exists)
+    XCTAssertTrue(app.staticTexts["4 releases and 5 PRs landed during this window."].exists)
+  }
+
+  @MainActor
+  func testGrowthRangePickerChangesVisibleChartWindow() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    app.tapTab("Growth")
+
+    XCTAssertTrue(app.segmentedControls.buttons["Week"].waitForExistence(timeout: 2))
+    XCTAssertEqual(app.otherElements["growth-trend-chart"].value as? String, "7 points")
+    app.segmentedControls.buttons["Month"].tap()
+
+    XCTAssertEqual(app.otherElements["growth-trend-chart"].value as? String, "31 points")
+    XCTAssertTrue(app.staticTexts["Search Console data can lag by a few days."].exists)
+  }
+
+  @MainActor
+  func testGrowthShowsProviderSetupCardWhenConnectionNeedsAttention() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--growth-posthog-needs-attention"]
+    app.launch()
+
+    app.tapTab("Growth")
+
+    XCTAssertTrue(app.staticTexts["Connect PostHog"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Search clicks"].exists)
+  }
+
+  @MainActor
   func testPRCalendarAndRepoDistributionAreReachable() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]

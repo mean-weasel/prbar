@@ -2,6 +2,142 @@ import XCTest
 @testable import PRBar
 
 final class PRBarModelTests: XCTestCase {
+  func testGrowthSnapshotOrdersVisibleMetricsByConnectedProviderPriority() {
+    let snapshot = GrowthDashboardSnapshot.fixture(range: .week)
+
+    XCTAssertEqual(
+      snapshot.visibleMetrics.map(\.kind),
+      [.activeUsers, .keyEventCount, .searchClicks, .searchImpressions]
+    )
+    XCTAssertEqual(snapshot.defaultMetric?.kind, .activeUsers)
+  }
+
+  func testGrowthSnapshotKeepsPartialProviderDataVisible() {
+    let snapshot = GrowthDashboardSnapshot.fixture(
+      range: .week,
+      connections: [
+        GrowthConnection(
+          id: "posthog-main",
+          provider: .postHog,
+          displayName: "PostHog",
+          status: .needsAttention,
+          lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"),
+          issue: "API key needs attention"
+        ),
+        GrowthConnection(
+          id: "gsc-main",
+          provider: .searchConsole,
+          displayName: "Search Console",
+          status: .connected,
+          lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"),
+          issue: nil
+        ),
+      ]
+    )
+
+    XCTAssertTrue(snapshot.visibleMetrics.contains { $0.provider == .searchConsole })
+    XCTAssertFalse(snapshot.visibleMetrics.contains { $0.provider == .postHog })
+    XCTAssertEqual(snapshot.connection(for: .postHog)?.status, .needsAttention)
+  }
+
+  func testGrowthSnapshotShippingContextMatchesProjectFixtureActivity() {
+    let snapshot = GrowthDashboardSnapshot.fixture(range: .week)
+
+    XCTAssertEqual(snapshot.shippingContext.pullRequestCount, 5)
+    XCTAssertEqual(snapshot.shippingContext.releaseCount, 4)
+    XCTAssertEqual(snapshot.shippingContext.summary, "4 releases and 5 PRs landed during this window.")
+  }
+
+  func testGrowthMetricNormalizesMissingDaysForSelectedRange() {
+    let metric = GrowthMetric(
+      id: "search-clicks",
+      provider: .searchConsole,
+      kind: .searchClicks,
+      title: "Search clicks",
+      value: 42,
+      formattedValue: "42",
+      unit: .count,
+      delta: GrowthDelta(value: 0.12, formattedValue: "+12%", direction: .positive),
+      series: [
+        GrowthMetricPoint(date: SampleData.date("2026-05-20"), value: 10),
+        GrowthMetricPoint(date: SampleData.date("2026-05-22"), value: 32),
+      ]
+    )
+
+    let normalized = metric.normalizedSeries(endingAt: SampleData.date("2026-05-24"), range: .week)
+
+    XCTAssertEqual(normalized.count, 7)
+    XCTAssertEqual(normalized.first?.date, SampleData.date("2026-05-18"))
+    XCTAssertEqual(normalized.last?.date, SampleData.date("2026-05-24"))
+    XCTAssertEqual(normalized.first { CalendarDay.isSameDay($0.date, SampleData.date("2026-05-20")) }?.value, 10)
+    XCTAssertEqual(normalized.first { CalendarDay.isSameDay($0.date, SampleData.date("2026-05-21")) }?.value, 0)
+    XCTAssertEqual(normalized.first { CalendarDay.isSameDay($0.date, SampleData.date("2026-05-22")) }?.value, 32)
+  }
+
+  @MainActor
+  func testGrowthRangeRefreshesSnapshotWithoutRefreshingGitHubActivity() async {
+    let provider = StaticGrowthDashboardProvider(snapshot: .fixture(range: .week))
+    let store = PRBarStore.sample(growthProvider: provider)
+
+    store.activityAnchorDate = SampleData.date("2026-06-01")
+    store.setGrowthRange(.month)
+    await store.refreshGrowth()
+
+    XCTAssertEqual(store.growthRange, .month)
+    XCTAssertEqual(store.growthSnapshot.range, .month)
+    XCTAssertEqual(store.growthSnapshot.anchorDate, SampleData.date("2026-05-24"))
+    XCTAssertEqual(store.growthSnapshot.shippingContext.releaseCount, 5)
+    XCTAssertEqual(store.growthSnapshot.shippingContext.summary, "5 releases and 5 PRs landed during this window.")
+    XCTAssertFalse(store.isRefreshingActivity)
+    XCTAssertFalse(store.isRefreshingGrowth)
+  }
+
+  @MainActor
+  func testGrowthRefreshPreservesLastSnapshotOnFailure() async {
+    let original = GrowthDashboardSnapshot.fixture(range: .week)
+    let store = PRBarStore.sample(
+      growthProvider: FailingGrowthDashboardProvider(error: GrowthProviderError.providerUnavailable("PostHog is unavailable"))
+    )
+    store.growthSnapshot = original
+
+    await store.refreshGrowth()
+
+    XCTAssertEqual(store.growthSnapshot, original)
+    XCTAssertEqual(store.growthRefreshIssue?.title, "Growth refresh failed")
+  }
+
+  @MainActor
+  func testSelectingGrowthProjectRefreshesFixtureProject() async {
+    let store = PRBarStore.sample(
+      growthProvider: StaticGrowthDashboardProvider(snapshot: .fixture(range: .week))
+    )
+
+    store.selectGrowthProject("prbar-product")
+    await store.refreshGrowth()
+
+    XCTAssertEqual(store.selectedGrowthProjectID, "prbar-product")
+    XCTAssertEqual(store.growthSnapshot.project.id, "prbar-product")
+  }
+
+  func testGrowthMetricsDoNotAppearInWorkCardExport() {
+    let export = WorkCardExportBuilder.export(for: PRBarStore.sample(), side: .publicSide)
+
+    XCTAssertFalse(export.caption.localizedCaseInsensitiveContains("active users"))
+    XCTAssertFalse(export.caption.localizedCaseInsensitiveContains("search clicks"))
+  }
+
+  func testGrowthDashboardWithoutPostHogShowsSearchConsoleOnly() {
+    let snapshot = GrowthDashboardSnapshot.fixture(
+      range: .week,
+      connections: [
+        GrowthConnection(id: "posthog-main", provider: .postHog, displayName: "PostHog", status: .notConnected, lastRefreshedAt: nil, issue: nil),
+        GrowthConnection(id: "gsc-main", provider: .searchConsole, displayName: "Search Console", status: .connected, lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"), issue: nil),
+      ]
+    )
+
+    XCTAssertEqual(Set(snapshot.visibleMetrics.map(\.provider)), [.searchConsole])
+  }
+
   func testIncludedRepositoriesFilterPrivateAndPublicRepos() {
     let store = PRBarStore.sample()
 

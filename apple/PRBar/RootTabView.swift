@@ -23,6 +23,9 @@ struct RootTabView: View {
       ReleasesView(store: store)
         .tabItem { Label("Releases", systemImage: "tag") }
 
+      GrowthView(store: store)
+        .tabItem { Label("Growth", systemImage: "chart.line.uptrend.xyaxis") }
+
       ShareView(store: store)
         .tabItem { Label("Share", systemImage: "square.and.arrow.up") }
 
