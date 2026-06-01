@@ -37,6 +37,44 @@ struct PostHogConfiguration: Equatable, Sendable {
   }
 }
 
+struct PostHogConnectionDiagnostics: Equatable, Sendable {
+  var status: String
+  var configuration: String
+  var host: String
+  var projectID: String
+  var personalAPIKey: String
+  var issue: String?
+
+  static func current(environment: [String: String], snapshot: GrowthDashboardSnapshot) -> PostHogConnectionDiagnostics {
+    let configuration = PostHogConfiguration.live(environment: environment)
+    let connection = snapshot.connection(for: .postHog)
+
+    return PostHogConnectionDiagnostics(
+      status: statusText(for: connection?.status),
+      configuration: configuration == nil ? "Missing" : "Configured",
+      host: configuration?.host.absoluteString ?? "Default",
+      projectID: configuration?.projectID ?? "Missing",
+      personalAPIKey: configuration == nil ? "Missing" : "Configured",
+      issue: connection?.issue
+    )
+  }
+
+  private static func statusText(for status: GrowthConnectionStatus?) -> String {
+    switch status {
+    case .connected:
+      "Connected"
+    case .refreshing:
+      "Refreshing"
+    case .needsAttention:
+      "Needs attention"
+    case .notConnected:
+      "Not connected"
+    case nil:
+      "Not connected"
+    }
+  }
+}
+
 enum PostHogAPIError: Error, Equatable, Sendable {
   case invalidURL
   case invalidResponse

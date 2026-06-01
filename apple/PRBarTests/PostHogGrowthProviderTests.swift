@@ -48,6 +48,42 @@ final class PostHogGrowthProviderTests: XCTestCase {
     )
   }
 
+  func testPostHogDiagnosticsSummarizeConfiguredLiveConnection() {
+    let snapshot = GrowthDashboardSnapshot.fixture(range: .week)
+    let diagnostics = PostHogConnectionDiagnostics.current(
+      environment: [
+        "PRBAR_IOS_POSTHOG_HOST": "https://eu.posthog.com",
+        "PRBAR_IOS_POSTHOG_PROJECT_ID": "12345",
+        "PRBAR_IOS_POSTHOG_PERSONAL_API_KEY": "phx_live",
+      ],
+      snapshot: snapshot
+    )
+
+    XCTAssertEqual(diagnostics.status, "Connected")
+    XCTAssertEqual(diagnostics.configuration, "Configured")
+    XCTAssertEqual(diagnostics.host, "https://eu.posthog.com")
+    XCTAssertEqual(diagnostics.projectID, "12345")
+    XCTAssertEqual(diagnostics.personalAPIKey, "Configured")
+    XCTAssertNil(diagnostics.issue)
+  }
+
+  func testPostHogDiagnosticsSummarizeMissingLiveConfiguration() {
+    let snapshot = GrowthDashboardSnapshot.fixture(
+      range: .week,
+      connections: [
+        GrowthConnection(id: "posthog-main", provider: .postHog, displayName: "PostHog", status: .notConnected, lastRefreshedAt: nil, issue: nil),
+        GrowthConnection(id: "gsc-main", provider: .searchConsole, displayName: "Search Console", status: .connected, lastRefreshedAt: nil, issue: nil),
+      ]
+    )
+    let diagnostics = PostHogConnectionDiagnostics.current(environment: [:], snapshot: snapshot)
+
+    XCTAssertEqual(diagnostics.status, "Not connected")
+    XCTAssertEqual(diagnostics.configuration, "Missing")
+    XCTAssertEqual(diagnostics.host, "Default")
+    XCTAssertEqual(diagnostics.projectID, "Missing")
+    XCTAssertEqual(diagnostics.personalAPIKey, "Missing")
+  }
+
   func testPostHogQueryRequestUsesProjectQueryEndpointAndBearerToken() throws {
     let configuration = PostHogConfiguration(
       host: URL(string: "https://us.posthog.com")!,
