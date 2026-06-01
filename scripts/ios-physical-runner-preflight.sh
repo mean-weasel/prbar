@@ -115,20 +115,15 @@ EOF
   fi
 
   if printf '%s\n' "$automation_status" | grep -q 'Automation Mode is disabled'; then
-    echo "Automation Mode is disabled; enabling it without local authentication."
-    automationmodetool enable-automationmode-without-authentication
-    automation_status="$(automationmodetool help 2>&1 || true)"
-    printf '%s\n' "$automation_status"
-    if printf '%s\n' "$automation_status" | grep -q 'Automation Mode is disabled'; then
-      cat >&2 <<EOF
-Automation Mode is still disabled after the non-interactive enable attempt.
+    cat <<EOF
+Automation Mode is currently disabled, but this runner does not require local
+user authentication for Xcode to enable it. Keep $device_name unlocked and
+awake so Xcode can enable Automation Mode for the physical-device UI test.
 
-Keep $device_name unlocked and awake, then rerun the workflow. If this repeats,
-run this once from an interactive admin session on the runner Mac:
+Do not run automationmodetool from the GitHub service job; configuring this
+machine still requires an administrator to authenticate in an interactive shell:
   automationmodetool enable-automationmode-without-authentication
 EOF
-      exit 69
-    fi
   fi
 else
   echo "automationmodetool is unavailable; continuing."
