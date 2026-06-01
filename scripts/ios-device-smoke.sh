@@ -103,6 +103,8 @@ log_shows_locked_device() {
   local log_file="$1"
   grep -Fq "Unlock $DEVICE_NAME to Continue" "$log_file" ||
     grep -Fq "device is locked" "$log_file" ||
+    grep -Fq "device is passcode protected" "$log_file" ||
+    grep -Fq "The device is passcode protected" "$log_file" ||
     grep -Fq "destination is not ready" "$log_file"
 }
 
@@ -137,7 +139,12 @@ if [[ -n "${PRBAR_IOS_GITHUB_CLIENT_ID:-}" ]]; then
   XCODEBUILD_EXTRA_ARGS+=("PRBAR_IOS_GITHUB_CLIENT_ID=$PRBAR_IOS_GITHUB_CLIENT_ID")
 fi
 
-if [[ -n "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" || -n "${PRBAR_IOS_LIVE_REPOSITORY:-}" || -n "${PRBAR_IOS_LIVE_GITHUB_LOGIN:-}" ]]; then
+if [[ -n "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ||
+  -n "${PRBAR_IOS_LIVE_REPOSITORY:-}" ||
+  -n "${PRBAR_IOS_LIVE_GITHUB_LOGIN:-}" ||
+  -n "${PRBAR_IOS_POSTHOG_HOST:-}" ||
+  -n "${PRBAR_IOS_POSTHOG_PROJECT_ID:-}" ||
+  -n "${PRBAR_IOS_POSTHOG_PERSONAL_API_KEY:-}" ]]; then
   live_xcconfig="$(mktemp "${TMPDIR:-/tmp}/prbar-live-smoke.XXXXXX.xcconfig")"
   TEMP_FILES+=("$live_xcconfig")
   {
@@ -149,6 +156,15 @@ if [[ -n "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" || -n "${PRBAR_IOS_LIVE_REPOSITORY:-
     fi
     if [[ -n "${PRBAR_IOS_LIVE_GITHUB_LOGIN:-}" ]]; then
       printf 'PRBAR_IOS_LIVE_GITHUB_LOGIN = %s\n' "$PRBAR_IOS_LIVE_GITHUB_LOGIN"
+    fi
+    if [[ -n "${PRBAR_IOS_POSTHOG_HOST:-}" ]]; then
+      printf 'PRBAR_IOS_POSTHOG_HOST = %s\n' "$PRBAR_IOS_POSTHOG_HOST"
+    fi
+    if [[ -n "${PRBAR_IOS_POSTHOG_PROJECT_ID:-}" ]]; then
+      printf 'PRBAR_IOS_POSTHOG_PROJECT_ID = %s\n' "$PRBAR_IOS_POSTHOG_PROJECT_ID"
+    fi
+    if [[ -n "${PRBAR_IOS_POSTHOG_PERSONAL_API_KEY:-}" ]]; then
+      printf 'PRBAR_IOS_POSTHOG_PERSONAL_API_KEY = %s\n' "$PRBAR_IOS_POSTHOG_PERSONAL_API_KEY"
     fi
   } >"$live_xcconfig"
   XCODEBUILD_EXTRA_ARGS+=("-xcconfig" "$live_xcconfig")
