@@ -118,10 +118,13 @@ private func runLivePostHogGrowthSmoke(file: StaticString = #filePath, line: UIn
   app.tapTab("More", file: file, line: line)
   XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 4), file: file, line: line)
   app.buttons["Settings"].tap()
-  XCTAssertTrue(app.buttons["PostHog"].waitForExistence(timeout: 4), file: file, line: line)
+  app.scrollToButton("PostHog", file: file, line: line)
   app.buttons["PostHog"].tap()
-  XCTAssertTrue(app.staticTexts["Configured"].waitForExistence(timeout: 4), file: file, line: line)
-  XCTAssertTrue(app.staticTexts[projectID].exists, file: file, line: line)
+  XCTAssertTrue(app.staticTexts["Connection"].waitForExistence(timeout: 4), file: file, line: line)
+  XCTAssertTrue(app.staticTexts["Configuration"].exists, file: file, line: line)
+  XCTAssertTrue(app.staticTexts["Live config"].exists, file: file, line: line)
+  XCTAssertTrue(app.staticTexts["Host"].exists, file: file, line: line)
+  XCTAssertTrue(app.staticTexts["Project ID"].exists, file: file, line: line)
   XCTAssertTrue(app.staticTexts["Personal API key"].exists, file: file, line: line)
 }
 
@@ -164,5 +167,14 @@ private extension XCUIApplication {
     activate()
     button.tap()
     XCTAssertTrue(staticTexts[expectedText].waitForExistence(timeout: 3), "\(name) did not reach \(expectedText)", file: file, line: line)
+  }
+
+  @MainActor
+  func scrollToButton(_ label: String, maxSwipes: Int = 4, file: StaticString = #filePath, line: UInt = #line) {
+    let button = buttons[label].firstMatch
+    for _ in 0..<maxSwipes where button.exists == false {
+      swipeUp()
+    }
+    XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing \(label) button", file: file, line: line)
   }
 }
