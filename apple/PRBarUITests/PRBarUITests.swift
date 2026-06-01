@@ -20,6 +20,20 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testGrowthTabRendersFixtureMetrics() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    app.tapTab("Growth")
+
+    XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Active users"].exists)
+    XCTAssertTrue(app.staticTexts["Search clicks"].exists)
+    XCTAssertTrue(app.staticTexts["2 releases and 18 PRs landed during this window."].exists)
+  }
+
+  @MainActor
   func testPRCalendarAndRepoDistributionAreReachable() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]
