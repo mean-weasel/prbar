@@ -79,6 +79,8 @@ struct RepositorySetupView: View {
           }
           .font(.subheadline)
 
+          accessSummary
+
           if showsFinishButton && includedCount == 0 {
             Text("Select at least one repo to finish setup.")
               .font(.caption)
@@ -130,16 +132,6 @@ struct RepositorySetupView: View {
             }
           }
         }
-      }
-
-      Section("Access") {
-        HStack {
-          Label("SSO protected repos", systemImage: "lock")
-          Spacer()
-          Text("Disabled")
-            .foregroundStyle(.secondary)
-        }
-        .font(.subheadline)
       }
 
       if let store, store.isRefreshingActivity || store.activityRefreshIssue != nil || store.lastActivityRefreshAt != nil {
@@ -208,8 +200,26 @@ struct RepositorySetupView: View {
     repositories.filter { $0.access == .ready }.count
   }
 
+  private var blockedCount: Int {
+    repositories.filter { $0.access != .ready }.count
+  }
+
   private var selectionSummaryText: String {
     "\(includedCount) of \(repositories.count) selected"
+  }
+
+  private var accessSummaryTitle: String {
+    guard blockedCount > 0 else {
+      return "All repos ready"
+    }
+    return blockedCount == 1 ? "1 repo needs access" : "\(blockedCount) repos need access"
+  }
+
+  private var accessSummaryDetail: String {
+    guard blockedCount > 0 else {
+      return "\(availableCount) repos are ready to include in PR and release sync."
+    }
+    return "\(availableCount) repos are selectable. Blocked repos stay off until GitHub App, SSO, or permission access is granted."
   }
 
   private var groupedFilteredRepositories: [(owner: String, repositories: [Repository])] {
@@ -253,6 +263,18 @@ struct RepositorySetupView: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(.vertical, 8)
     .accessibilityIdentifier("repo-empty-state")
+  }
+
+  private var accessSummary: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Label(accessSummaryTitle, systemImage: blockedCount == 0 ? "checkmark.shield" : "lock.shield")
+        .font(.subheadline.weight(.medium))
+
+      Text(accessSummaryDetail)
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+    .padding(.vertical, 2)
   }
 
   private func matchesSearch(_ repository: Repository) -> Bool {

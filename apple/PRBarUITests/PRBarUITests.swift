@@ -181,6 +181,7 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["3 of 5 selected"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["1 repo needs access"].waitForExistence(timeout: 2))
 
     app.textFields["repo-search-field"].tap()
     app.textFields["repo-search-field"].typeText("neonwatty/docs-site")
