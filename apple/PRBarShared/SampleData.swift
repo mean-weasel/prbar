@@ -49,4 +49,6 @@ enum SampleData {
     releases: releases,
     anchorDate: today
   )
+
+  static let growthDashboard = GrowthDashboardSnapshot.fixture(range: .week)
 }

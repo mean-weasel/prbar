@@ -66,6 +66,49 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(normalized.first { CalendarDay.isSameDay($0.date, SampleData.date("2026-05-22")) }?.value, 32)
   }
 
+  @MainActor
+  func testGrowthRangeRefreshesSnapshotWithoutRefreshingGitHubActivity() async {
+    let provider = StaticGrowthDashboardProvider(snapshot: .fixture(range: .week))
+    let store = PRBarStore.sample(growthProvider: provider)
+
+    store.activityAnchorDate = SampleData.date("2026-06-01")
+    store.setGrowthRange(.month)
+    await store.refreshGrowth()
+
+    XCTAssertEqual(store.growthRange, .month)
+    XCTAssertEqual(store.growthSnapshot.range, .month)
+    XCTAssertEqual(store.growthSnapshot.anchorDate, SampleData.date("2026-05-24"))
+    XCTAssertFalse(store.isRefreshingActivity)
+    XCTAssertFalse(store.isRefreshingGrowth)
+  }
+
+  @MainActor
+  func testGrowthRefreshPreservesLastSnapshotOnFailure() async {
+    let original = GrowthDashboardSnapshot.fixture(range: .week)
+    let store = PRBarStore.sample(
+      growthProvider: FailingGrowthDashboardProvider(error: GrowthProviderError.providerUnavailable("PostHog is unavailable"))
+    )
+    store.growthSnapshot = original
+
+    await store.refreshGrowth()
+
+    XCTAssertEqual(store.growthSnapshot, original)
+    XCTAssertEqual(store.growthRefreshIssue?.title, "Growth refresh failed")
+  }
+
+  @MainActor
+  func testSelectingGrowthProjectRefreshesFixtureProject() async {
+    let store = PRBarStore.sample(
+      growthProvider: StaticGrowthDashboardProvider(snapshot: .fixture(range: .week))
+    )
+
+    store.selectGrowthProject("prbar-product")
+    await store.refreshGrowth()
+
+    XCTAssertEqual(store.selectedGrowthProjectID, "prbar-product")
+    XCTAssertEqual(store.growthSnapshot.project.id, "prbar-product")
+  }
+
   func testIncludedRepositoriesFilterPrivateAndPublicRepos() {
     let store = PRBarStore.sample()
 
