@@ -104,9 +104,18 @@ fi
 if command -v automationmodetool >/dev/null 2>&1; then
   automation_status="$(automationmodetool help 2>&1 || true)"
   printf '%s\n' "$automation_status"
-  if ! printf '%s\n' "$automation_status" | grep -q 'DOES NOT REQUIRE user authentication'; then
+  automation_auth_ready=0
+  automation_enabled=0
+  if printf '%s\n' "$automation_status" | grep -q 'DOES NOT REQUIRE user authentication'; then
+    automation_auth_ready=1
+  fi
+  if printf '%s\n' "$automation_status" | grep -q 'Automation Mode is enabled'; then
+    automation_enabled=1
+  fi
+
+  if [[ "$automation_auth_ready" != "1" ]]; then
     cat >&2 <<EOF
-Automation Mode still requires local user authentication.
+Automation Mode still requires local user authentication on this runner Mac.
 
 Run this once from an interactive admin session on the runner Mac:
   automationmodetool enable-automationmode-without-authentication
@@ -114,16 +123,20 @@ EOF
     exit 69
   fi
 
-  if printf '%s\n' "$automation_status" | grep -q 'Automation Mode is disabled'; then
+  if [[ "$automation_enabled" == "1" ]]; then
+    echo "Automation Mode is enabled and this runner does not require local user authentication."
+  elif printf '%s\n' "$automation_status" | grep -q 'Automation Mode is disabled'; then
     cat <<EOF
-Automation Mode is currently disabled, but this runner does not require local
-user authentication for Xcode to enable it. Keep $device_name unlocked and
-awake so Xcode can enable Automation Mode for the physical-device UI test.
+Automation Mode is currently disabled. This runner is configured so Xcode can
+enable Automation Mode without local user authentication, but the physical
+device must stay unlocked and awake while the UI test session starts.
 
 Do not run automationmodetool from the GitHub service job; configuring this
 machine still requires an administrator to authenticate in an interactive shell:
   automationmodetool enable-automationmode-without-authentication
 EOF
+  else
+    echo "Automation Mode status was not recognized; continuing with Xcode device readiness checks."
   fi
 else
   echo "automationmodetool is unavailable; continuing."

@@ -120,6 +120,17 @@ To bypass this guard temporarily, set IOS_LOCKED_DEVICE_FAIL_FAST=0.
 EOF
 }
 
+xcconfig_escape_value() {
+  local value="$1"
+  printf '%s' "$value" | sed 's://:/$()/:g'
+}
+
+write_xcconfig_setting() {
+  local key="$1"
+  local value="$2"
+  printf '%s = %s\n' "$key" "$(xcconfig_escape_value "$value")"
+}
+
 if [[ -z "${IOS_DESTINATION:-}" ]]; then
   echo "Resolving physical $DEVICE_ROLE by name: $DEVICE_NAME"
   resolver_output="$(IOS_DEVICE_NAME="$DEVICE_NAME" IOS_DEVICE_ROLE="$DEVICE_ROLE" IOS_SCHEME="$SCHEME" IOS_PROJECT="$PROJECT" ./scripts/ios-resolve-device.sh shell)"
@@ -149,22 +160,22 @@ if [[ -n "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ||
   TEMP_FILES+=("$live_xcconfig")
   {
     if [[ -n "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ]]; then
-      printf 'PRBAR_IOS_LIVE_GITHUB_TOKEN = %s\n' "$PRBAR_IOS_LIVE_GITHUB_TOKEN"
+      write_xcconfig_setting PRBAR_IOS_LIVE_GITHUB_TOKEN "$PRBAR_IOS_LIVE_GITHUB_TOKEN"
     fi
     if [[ -n "${PRBAR_IOS_LIVE_REPOSITORY:-}" ]]; then
-      printf 'PRBAR_IOS_LIVE_REPOSITORY = %s\n' "$PRBAR_IOS_LIVE_REPOSITORY"
+      write_xcconfig_setting PRBAR_IOS_LIVE_REPOSITORY "$PRBAR_IOS_LIVE_REPOSITORY"
     fi
     if [[ -n "${PRBAR_IOS_LIVE_GITHUB_LOGIN:-}" ]]; then
-      printf 'PRBAR_IOS_LIVE_GITHUB_LOGIN = %s\n' "$PRBAR_IOS_LIVE_GITHUB_LOGIN"
+      write_xcconfig_setting PRBAR_IOS_LIVE_GITHUB_LOGIN "$PRBAR_IOS_LIVE_GITHUB_LOGIN"
     fi
     if [[ -n "${PRBAR_IOS_POSTHOG_HOST:-}" ]]; then
-      printf 'PRBAR_IOS_POSTHOG_HOST = %s\n' "$PRBAR_IOS_POSTHOG_HOST"
+      write_xcconfig_setting PRBAR_IOS_POSTHOG_HOST "$PRBAR_IOS_POSTHOG_HOST"
     fi
     if [[ -n "${PRBAR_IOS_POSTHOG_PROJECT_ID:-}" ]]; then
-      printf 'PRBAR_IOS_POSTHOG_PROJECT_ID = %s\n' "$PRBAR_IOS_POSTHOG_PROJECT_ID"
+      write_xcconfig_setting PRBAR_IOS_POSTHOG_PROJECT_ID "$PRBAR_IOS_POSTHOG_PROJECT_ID"
     fi
     if [[ -n "${PRBAR_IOS_POSTHOG_PERSONAL_API_KEY:-}" ]]; then
-      printf 'PRBAR_IOS_POSTHOG_PERSONAL_API_KEY = %s\n' "$PRBAR_IOS_POSTHOG_PERSONAL_API_KEY"
+      write_xcconfig_setting PRBAR_IOS_POSTHOG_PERSONAL_API_KEY "$PRBAR_IOS_POSTHOG_PERSONAL_API_KEY"
     fi
   } >"$live_xcconfig"
   XCODEBUILD_EXTRA_ARGS+=("-xcconfig" "$live_xcconfig")
