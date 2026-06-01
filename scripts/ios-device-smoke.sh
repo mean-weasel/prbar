@@ -16,6 +16,7 @@ PRODUCT_BUNDLE_IDENTIFIER="${PRODUCT_BUNDLE_IDENTIFIER:-com.neonwatty.PRBar.ios.
 PROFILE="${IOS_UI_SMOKE_PROFILE:-pr}"
 DEVICE_READY_TIMEOUT="${IOS_DEVICE_READY_TIMEOUT:-45}"
 AUTOMATION_MODE_RETRY_DELAY="${IOS_AUTOMATION_MODE_RETRY_DELAY:-20}"
+LOCKED_DEVICE_FAIL_FAST="${IOS_LOCKED_DEVICE_FAIL_FAST:-1}"
 XCODEBUILD_EXTRA_ARGS=()
 TEMP_FILES=()
 HEADLESS_LIVE_SMOKE=0
@@ -32,6 +33,7 @@ run_xcodebuild_test_with_automation_retry() {
   local attempt=1
   local max_attempts=2
   local log_file
+  local status
 
   log_file="$(mktemp "${TMPDIR:-/tmp}/prbar-device-smoke-xcodebuild.XXXXXX.log")"
   TEMP_FILES+=("$log_file")
@@ -41,8 +43,8 @@ run_xcodebuild_test_with_automation_retry() {
     rm -rf "$RESULT_BUNDLE"
 
     set +e
-    "${command[@]}" 2>&1 | tee "$log_file"
-    local status=${PIPESTATUS[0]}
+    run_xcodebuild_with_live_fail_fast "$log_file" "${command[@]}"
+    status=$?
     set -e
 
     if [[ "$status" -eq 0 ]]; then
@@ -66,6 +68,54 @@ EOF
 
     return "$status"
   done
+}
+
+run_xcodebuild_with_live_fail_fast() {
+  local log_file="$1"
+  shift
+  local command_pid
+  local status
+
+  set +e
+  "$@" > >(tee -a "$log_file") 2>&1 &
+  command_pid=$!
+
+  while kill -0 "$command_pid" >/dev/null 2>&1; do
+    if [[ "$LOCKED_DEVICE_FAIL_FAST" == "1" ]] && log_shows_locked_device "$log_file"; then
+      print_locked_device_message >&2
+      kill "$command_pid" >/dev/null 2>&1 || true
+      sleep 2
+      kill -9 "$command_pid" >/dev/null 2>&1 || true
+      wait "$command_pid" >/dev/null 2>&1 || true
+      set -e
+      return 69
+    fi
+    sleep 2
+  done
+
+  wait "$command_pid"
+  status=$?
+  set -e
+  return "$status"
+}
+
+log_shows_locked_device() {
+  local log_file="$1"
+  grep -Fq "Unlock $DEVICE_NAME to Continue" "$log_file" ||
+    grep -Fq "device is locked" "$log_file" ||
+    grep -Fq "destination is not ready" "$log_file"
+}
+
+print_locked_device_message() {
+  cat <<EOF
+Xcode reports that $DEVICE_NAME is locked or not launch-ready.
+
+Failing fast before the physical UI smoke waits for Xcode's long device
+preflight timeout. Unlock $DEVICE_NAME to the Home Screen, keep it awake, and
+rerun the workflow once Xcode lists it as an available iOS destination.
+
+To bypass this guard temporarily, set IOS_LOCKED_DEVICE_FAIL_FAST=0.
+EOF
 }
 
 if [[ -z "${IOS_DESTINATION:-}" ]]; then
