@@ -36,6 +36,12 @@ struct SettingsView: View {
         }
       }
 
+      Section("Growth") {
+        NavigationLink("PostHog") {
+          PostHogSettingsView(snapshot: store.growthSnapshot)
+        }
+      }
+
       Section("About") {
         LabeledContent("Version", value: AppVersion.current.displayValue)
       }

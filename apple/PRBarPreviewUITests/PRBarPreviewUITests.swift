@@ -1,6 +1,7 @@
 import XCTest
 
 final class PRBarPreviewUITests: XCTestCase {
+  @MainActor
   func testPreviewDeviceCanLaunchCoreTabs() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]
@@ -18,6 +19,11 @@ final class PRBarPreviewUITests: XCTestCase {
   @MainActor
   func testLiveGitHubSelectsOneRepositoryAndSyncsActivity() throws {
     try runLiveGitHubSetupSmoke()
+  }
+
+  @MainActor
+  func testLivePostHogGrowthMetricsRender() throws {
+    try runLivePostHogGrowthSmoke()
   }
 }
 
@@ -82,6 +88,41 @@ private func runLiveGitHubSetupSmoke(file: StaticString = #filePath, line: UInt 
     file: file,
     line: line
   )
+}
+
+@MainActor
+private func runLivePostHogGrowthSmoke(file: StaticString = #filePath, line: UInt = #line) throws {
+  let environment = ProcessInfo.processInfo.environment
+  guard let projectID = environment["PRBAR_IOS_POSTHOG_PROJECT_ID"], projectID.isEmpty == false,
+    let personalAPIKey = environment["PRBAR_IOS_POSTHOG_PERSONAL_API_KEY"], personalAPIKey.isEmpty == false
+  else {
+    throw XCTSkip("PRBAR_IOS_POSTHOG_PROJECT_ID and PRBAR_IOS_POSTHOG_PERSONAL_API_KEY are required for live PostHog device smoke.")
+  }
+
+  let app = XCUIApplication()
+  app.launchArguments = ["--ui-testing"]
+  app.launchEnvironment["PRBAR_IOS_POSTHOG_PROJECT_ID"] = projectID
+  app.launchEnvironment["PRBAR_IOS_POSTHOG_PERSONAL_API_KEY"] = personalAPIKey
+  if let host = environment["PRBAR_IOS_POSTHOG_HOST"], host.isEmpty == false {
+    app.launchEnvironment["PRBAR_IOS_POSTHOG_HOST"] = host
+  }
+  app.launch()
+
+  app.tapTab("Growth", file: file, line: line)
+  XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 8), file: file, line: line)
+  XCTAssertTrue(app.buttons["Refresh growth"].waitForExistence(timeout: 4), file: file, line: line)
+  app.buttons["Refresh growth"].tap()
+  XCTAssertTrue(app.staticTexts["Active users"].waitForExistence(timeout: 30), file: file, line: line)
+  XCTAssertTrue(app.staticTexts["Events"].waitForExistence(timeout: 30), file: file, line: line)
+
+  app.tapTab("More", file: file, line: line)
+  XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 4), file: file, line: line)
+  app.buttons["Settings"].tap()
+  XCTAssertTrue(app.buttons["PostHog"].waitForExistence(timeout: 4), file: file, line: line)
+  app.buttons["PostHog"].tap()
+  XCTAssertTrue(app.staticTexts["Configured"].waitForExistence(timeout: 4), file: file, line: line)
+  XCTAssertTrue(app.staticTexts[projectID].exists, file: file, line: line)
+  XCTAssertTrue(app.staticTexts["Personal API key"].exists, file: file, line: line)
 }
 
 private extension XCUIApplication {

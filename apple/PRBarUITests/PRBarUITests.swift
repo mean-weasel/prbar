@@ -180,6 +180,14 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.navigationBars.buttons["Settings"].waitForExistence(timeout: 2))
     app.navigationBars.buttons["Settings"].tap()
 
+    XCTAssertTrue(app.buttons["PostHog"].exists)
+    app.buttons["PostHog"].tap()
+    XCTAssertTrue(app.staticTexts["Connection"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Configuration"].exists)
+    XCTAssertTrue(app.staticTexts["Personal API key"].exists)
+    XCTAssertTrue(app.navigationBars.buttons["Settings"].waitForExistence(timeout: 2))
+    app.navigationBars.buttons["Settings"].tap()
+
     app.scrollToStaticText("Version")
     XCTAssertTrue(app.versionText().waitForExistence(timeout: 2))
 

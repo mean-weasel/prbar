@@ -193,6 +193,13 @@ case "$PROFILE" in
       TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testLiveGitHubSelectsOneRepositoryAndSyncsActivity")
     fi
     ;;
+  growth)
+    if [[ -z "${PRBAR_IOS_POSTHOG_PROJECT_ID:-}" || -z "${PRBAR_IOS_POSTHOG_PERSONAL_API_KEY:-}" ]]; then
+      echo "PRBAR_IOS_POSTHOG_PROJECT_ID and PRBAR_IOS_POSTHOG_PERSONAL_API_KEY are required for IOS_UI_SMOKE_PROFILE=$PROFILE." >&2
+      exit 64
+    fi
+    TESTS=("$UI_TEST_TARGET/$UI_TEST_TARGET/testLivePostHogGrowthMetricsRender")
+    ;;
   production)
     if [[ -z "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ]]; then
       echo "PRBAR_IOS_LIVE_GITHUB_TOKEN is required for IOS_UI_SMOKE_PROFILE=$PROFILE." >&2
@@ -211,7 +218,7 @@ case "$PROFILE" in
     TESTS=()
     ;;
   *)
-    echo "Unknown IOS_UI_SMOKE_PROFILE '$PROFILE'. Expected fast, pr, version, setup, partial, full, live, live-headless, or production." >&2
+    echo "Unknown IOS_UI_SMOKE_PROFILE '$PROFILE'. Expected fast, pr, version, setup, partial, full, live, live-headless, growth, or production." >&2
     exit 64
     ;;
 esac
