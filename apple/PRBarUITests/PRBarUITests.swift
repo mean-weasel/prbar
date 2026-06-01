@@ -50,6 +50,18 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testGrowthShowsProviderSetupCardWhenConnectionNeedsAttention() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--growth-posthog-needs-attention"]
+    app.launch()
+
+    app.tapTab("Growth")
+
+    XCTAssertTrue(app.staticTexts["Connect PostHog"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Search clicks"].exists)
+  }
+
+  @MainActor
   func testPRCalendarAndRepoDistributionAreReachable() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]

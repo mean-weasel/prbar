@@ -109,6 +109,25 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.growthSnapshot.project.id, "prbar-product")
   }
 
+  func testGrowthMetricsDoNotAppearInWorkCardExport() {
+    let export = WorkCardExportBuilder.export(for: PRBarStore.sample(), side: .publicSide)
+
+    XCTAssertFalse(export.caption.localizedCaseInsensitiveContains("active users"))
+    XCTAssertFalse(export.caption.localizedCaseInsensitiveContains("search clicks"))
+  }
+
+  func testGrowthDashboardWithoutPostHogShowsSearchConsoleOnly() {
+    let snapshot = GrowthDashboardSnapshot.fixture(
+      range: .week,
+      connections: [
+        GrowthConnection(id: "posthog-main", provider: .postHog, displayName: "PostHog", status: .notConnected, lastRefreshedAt: nil, issue: nil),
+        GrowthConnection(id: "gsc-main", provider: .searchConsole, displayName: "Search Console", status: .connected, lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"), issue: nil),
+      ]
+    )
+
+    XCTAssertEqual(Set(snapshot.visibleMetrics.map(\.provider)), [.searchConsole])
+  }
+
   func testIncludedRepositoriesFilterPrivateAndPublicRepos() {
     let store = PRBarStore.sample()
 
