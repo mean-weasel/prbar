@@ -22,6 +22,11 @@ struct StaticGrowthDashboardProvider: GrowthDashboardProviding {
     updated.project.id = projectID
     updated.range = range
     updated.anchorDate = anchorDate
+    updated.shippingContext = GrowthDashboardSnapshot.fixtureShippingContext(
+      project: updated.project,
+      range: range,
+      anchorDate: anchorDate
+    )
     return updated
   }
 }

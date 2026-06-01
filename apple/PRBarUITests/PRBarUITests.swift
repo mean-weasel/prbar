@@ -30,7 +30,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Active users"].exists)
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
-    XCTAssertTrue(app.staticTexts["2 releases and 18 PRs landed during this window."].exists)
+    XCTAssertTrue(app.staticTexts["4 releases and 5 PRs landed during this window."].exists)
   }
 
   @MainActor

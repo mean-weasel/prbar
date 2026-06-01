@@ -356,7 +356,7 @@ extension GrowthDashboardSnapshot {
         GrowthListRow(id: "home", title: "/product", detail: "top page", value: "43 clicks"),
         GrowthListRow(id: "docs", title: "/docs/share-proof", detail: "top page", value: "22 clicks"),
       ],
-      shippingContext: GrowthShippingContext(pullRequestCount: 18, releaseCount: 2, topRepositoryName: "prbar"),
+      shippingContext: GrowthShippingContext(pullRequestCount: 5, releaseCount: 4, topRepositoryName: "prbar"),
       issues: []
     )
   }
@@ -613,7 +613,7 @@ func testGrowthTabRendersFixtureMetrics() {
   XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 2))
   XCTAssertTrue(app.staticTexts["Active users"].exists)
   XCTAssertTrue(app.staticTexts["Search clicks"].exists)
-  XCTAssertTrue(app.staticTexts["2 releases and 18 PRs landed during this window."].exists)
+  XCTAssertTrue(app.staticTexts["4 releases and 5 PRs landed during this window."].exists)
 }
 ```
 

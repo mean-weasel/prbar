@@ -40,6 +40,14 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(snapshot.connection(for: .postHog)?.status, .needsAttention)
   }
 
+  func testGrowthSnapshotShippingContextMatchesProjectFixtureActivity() {
+    let snapshot = GrowthDashboardSnapshot.fixture(range: .week)
+
+    XCTAssertEqual(snapshot.shippingContext.pullRequestCount, 5)
+    XCTAssertEqual(snapshot.shippingContext.releaseCount, 4)
+    XCTAssertEqual(snapshot.shippingContext.summary, "4 releases and 5 PRs landed during this window.")
+  }
+
   func testGrowthMetricNormalizesMissingDaysForSelectedRange() {
     let metric = GrowthMetric(
       id: "search-clicks",
@@ -78,6 +86,8 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.growthRange, .month)
     XCTAssertEqual(store.growthSnapshot.range, .month)
     XCTAssertEqual(store.growthSnapshot.anchorDate, SampleData.date("2026-05-24"))
+    XCTAssertEqual(store.growthSnapshot.shippingContext.releaseCount, 5)
+    XCTAssertEqual(store.growthSnapshot.shippingContext.summary, "5 releases and 5 PRs landed during this window.")
     XCTAssertFalse(store.isRefreshingActivity)
     XCTAssertFalse(store.isRefreshingGrowth)
   }

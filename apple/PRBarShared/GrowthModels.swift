@@ -207,7 +207,7 @@ extension GrowthDashboardSnapshot {
         GrowthListRow(id: "home", title: "/product", detail: "top page", value: "43 clicks"),
         GrowthListRow(id: "docs", title: "/docs/share-proof", detail: "top page", value: "22 clicks"),
       ],
-      shippingContext: GrowthShippingContext(pullRequestCount: 18, releaseCount: 2, topRepositoryName: "prbar"),
+      shippingContext: Self.fixtureShippingContext(project: project, range: range, anchorDate: anchorDate),
       issues: []
     )
   }
@@ -215,5 +215,26 @@ extension GrowthDashboardSnapshot {
   private static func fixtureSeries(_ values: [Double]) -> [GrowthMetricPoint] {
     let dates = CalendarDay.days(endingAt: SampleData.date("2026-05-24"), range: .week).map(\.date)
     return zip(dates, values).map { GrowthMetricPoint(date: $0.0, value: $0.1) }
+  }
+
+  static func fixtureShippingContext(
+    project: GrowthProject,
+    range: ActivityRange,
+    anchorDate: Date
+  ) -> GrowthShippingContext {
+    let repositoryIDs = Set(project.repositoryIDs)
+    let days = CalendarDay.days(endingAt: anchorDate, range: range).map(\.date)
+    let pullRequestCount = SampleData.pullRequests.filter { pullRequest in
+      repositoryIDs.contains(pullRequest.repoID) && days.contains { CalendarDay.isSameDay($0, pullRequest.mergedAt) }
+    }.count
+    let releaseCount = SampleData.releases.filter { release in
+      repositoryIDs.contains(release.repoID) && days.contains { CalendarDay.isSameDay($0, release.date) }
+    }.count
+
+    return GrowthShippingContext(
+      pullRequestCount: pullRequestCount,
+      releaseCount: releaseCount,
+      topRepositoryName: "prbar"
+    )
   }
 }
