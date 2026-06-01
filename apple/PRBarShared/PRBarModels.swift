@@ -127,7 +127,7 @@ struct SettingsDiagnostics: Equatable, Sendable {
   var issueDetail: String?
 }
 
-enum ActivityRange: String, CaseIterable, Identifiable, Sendable {
+enum ActivityRange: String, CaseIterable, Identifiable, Codable, Sendable {
   case day
   case week
   case month

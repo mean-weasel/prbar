@@ -2,6 +2,70 @@ import XCTest
 @testable import PRBar
 
 final class PRBarModelTests: XCTestCase {
+  func testGrowthSnapshotOrdersVisibleMetricsByConnectedProviderPriority() {
+    let snapshot = GrowthDashboardSnapshot.fixture(range: .week)
+
+    XCTAssertEqual(
+      snapshot.visibleMetrics.map(\.kind),
+      [.activeUsers, .keyEventCount, .searchClicks, .searchImpressions]
+    )
+    XCTAssertEqual(snapshot.defaultMetric?.kind, .activeUsers)
+  }
+
+  func testGrowthSnapshotKeepsPartialProviderDataVisible() {
+    let snapshot = GrowthDashboardSnapshot.fixture(
+      range: .week,
+      connections: [
+        GrowthConnection(
+          id: "posthog-main",
+          provider: .postHog,
+          displayName: "PostHog",
+          status: .needsAttention,
+          lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"),
+          issue: "API key needs attention"
+        ),
+        GrowthConnection(
+          id: "gsc-main",
+          provider: .searchConsole,
+          displayName: "Search Console",
+          status: .connected,
+          lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"),
+          issue: nil
+        ),
+      ]
+    )
+
+    XCTAssertTrue(snapshot.visibleMetrics.contains { $0.provider == .searchConsole })
+    XCTAssertFalse(snapshot.visibleMetrics.contains { $0.provider == .postHog })
+    XCTAssertEqual(snapshot.connection(for: .postHog)?.status, .needsAttention)
+  }
+
+  func testGrowthMetricNormalizesMissingDaysForSelectedRange() {
+    let metric = GrowthMetric(
+      id: "search-clicks",
+      provider: .searchConsole,
+      kind: .searchClicks,
+      title: "Search clicks",
+      value: 42,
+      formattedValue: "42",
+      unit: .count,
+      delta: GrowthDelta(value: 0.12, formattedValue: "+12%", direction: .positive),
+      series: [
+        GrowthMetricPoint(date: SampleData.date("2026-05-20"), value: 10),
+        GrowthMetricPoint(date: SampleData.date("2026-05-22"), value: 32),
+      ]
+    )
+
+    let normalized = metric.normalizedSeries(endingAt: SampleData.date("2026-05-24"), range: .week)
+
+    XCTAssertEqual(normalized.count, 7)
+    XCTAssertEqual(normalized.first?.date, SampleData.date("2026-05-18"))
+    XCTAssertEqual(normalized.last?.date, SampleData.date("2026-05-24"))
+    XCTAssertEqual(normalized.first { CalendarDay.isSameDay($0.date, SampleData.date("2026-05-20")) }?.value, 10)
+    XCTAssertEqual(normalized.first { CalendarDay.isSameDay($0.date, SampleData.date("2026-05-21")) }?.value, 0)
+    XCTAssertEqual(normalized.first { CalendarDay.isSameDay($0.date, SampleData.date("2026-05-22")) }?.value, 32)
+  }
+
   func testIncludedRepositoriesFilterPrivateAndPublicRepos() {
     let store = PRBarStore.sample()
 
