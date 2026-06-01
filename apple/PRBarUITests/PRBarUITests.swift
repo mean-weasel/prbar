@@ -34,6 +34,22 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testGrowthRangePickerChangesVisibleChartWindow() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    app.tapTab("Growth")
+
+    XCTAssertTrue(app.segmentedControls.buttons["Week"].waitForExistence(timeout: 2))
+    XCTAssertEqual(app.otherElements["growth-trend-chart"].value as? String, "7 points")
+    app.segmentedControls.buttons["Month"].tap()
+
+    XCTAssertEqual(app.otherElements["growth-trend-chart"].value as? String, "31 points")
+    XCTAssertTrue(app.staticTexts["Search Console data can lag by a few days."].exists)
+  }
+
+  @MainActor
   func testPRCalendarAndRepoDistributionAreReachable() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]

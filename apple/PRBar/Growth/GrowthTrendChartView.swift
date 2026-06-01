@@ -51,6 +51,10 @@ struct GrowthTrendChartView: View {
     .padding(14)
     .background(Color(.secondarySystemBackground))
     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("\(metric.title) trend")
+    .accessibilityIdentifier("growth-trend-chart")
+    .accessibilityValue("\(points.count) points")
   }
 
   private func formatted(_ value: Double) -> String {
