@@ -62,6 +62,22 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testGrowthTabRendersBleepPostHogDashboardExperiment() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-bleep-posthog-dashboard"]
+    app.launch()
+
+    app.tapTab("Growth")
+
+    XCTAssertTrue(app.staticTexts["Growth"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
+    XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
+    XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
+    app.scrollToStaticText("/studio")
+  }
+
+  @MainActor
   func testPRCalendarAndRepoDistributionAreReachable() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]
