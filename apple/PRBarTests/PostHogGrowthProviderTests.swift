@@ -16,6 +16,31 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertEqual(configuration?.personalAPIKey, "phx_live")
   }
 
+  func testPostHogConfigurationReadsDashboardIDFromEnvironment() {
+    let configuration = PostHogConfiguration.live(
+      environment: [
+        "PRBAR_IOS_POSTHOG_PROJECT_ID": "12345",
+        "PRBAR_IOS_POSTHOG_PERSONAL_API_KEY": "phx_live",
+        "PRBAR_IOS_POSTHOG_DASHBOARD_ID": " 1362888 ",
+      ]
+    )
+
+    XCTAssertEqual(configuration?.dashboardID, 1_362_888)
+  }
+
+  func testPostHogConfigurationIgnoresInvalidDashboardID() {
+    let configuration = PostHogConfiguration.live(
+      environment: [
+        "PRBAR_IOS_POSTHOG_PROJECT_ID": "12345",
+        "PRBAR_IOS_POSTHOG_PERSONAL_API_KEY": "phx_live",
+        "PRBAR_IOS_POSTHOG_DASHBOARD_ID": "not-a-dashboard",
+      ]
+    )
+
+    XCTAssertNotNil(configuration)
+    XCTAssertNil(configuration?.dashboardID)
+  }
+
   func testPostHogConfigurationDefaultsToUSHost() {
     let configuration = PostHogConfiguration.live(
       environment: [
@@ -105,6 +130,31 @@ final class PostHogGrowthProviderTests: XCTestCase {
     let query = try XCTUnwrap(json?["query"] as? [String: Any])
     XCTAssertEqual(query["kind"] as? String, "HogQLQuery")
     XCTAssertEqual(query["query"] as? String, "SELECT count() FROM events")
+  }
+
+  func testPostHogDashboardRequestsUseEnvironmentDashboardEndpoints() throws {
+    let configuration = PostHogConfiguration(
+      host: URL(string: "https://us.posthog.com")!,
+      projectID: "324426",
+      personalAPIKey: "phx_test",
+      dashboardID: 1_362_888
+    )
+
+    let dashboardRequest = try PostHogDashboardRequest.dashboard(configuration: configuration)
+    let runInsightsRequest = try PostHogDashboardRequest.runInsights(
+      configuration: configuration,
+      refresh: "blocking"
+    )
+
+    XCTAssertEqual(dashboardRequest.url?.absoluteString, "https://us.posthog.com/api/environments/324426/dashboards/1362888/")
+    XCTAssertEqual(dashboardRequest.httpMethod, "GET")
+    XCTAssertEqual(dashboardRequest.value(forHTTPHeaderField: "Authorization"), "Bearer phx_test")
+    XCTAssertEqual(dashboardRequest.value(forHTTPHeaderField: "Accept"), "application/json")
+
+    XCTAssertEqual(runInsightsRequest.url?.absoluteString, "https://us.posthog.com/api/environments/324426/dashboards/1362888/run_insights/?output_format=json&refresh=blocking")
+    XCTAssertEqual(runInsightsRequest.httpMethod, "GET")
+    XCTAssertEqual(runInsightsRequest.value(forHTTPHeaderField: "Authorization"), "Bearer phx_test")
+    XCTAssertEqual(runInsightsRequest.value(forHTTPHeaderField: "Accept"), "application/json")
   }
 
   func testPostHogGrowthProviderMapsDailyMetricsAndTopEvents() async throws {
