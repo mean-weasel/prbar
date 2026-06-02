@@ -2,7 +2,7 @@ name: Auto-merge
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["CI", "iOS"]
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -70,7 +70,7 @@ jobs:
 
           echo "pr=$pr" >> "$GITHUB_OUTPUT"
 
-      - name: Check eligibility and enable auto-merge
+      - name: Check eligibility and merge
         if: steps.resolve.outputs.pr != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -122,7 +122,13 @@ jobs:
             exit 0
           fi
 
-          gh pr merge "$PR_TARGET" \
-            --repo "$REPOSITORY" \
-            --squash \
-            --auto
+          if [ "$merge_status" = "CLEAN" ]; then
+            echo "Adding PR $PR_TARGET to the merge queue."
+            gh pr merge "$PR_TARGET" \
+              --repo "$REPOSITORY"
+          else
+            echo "Required checks are not complete yet; enabling auto-merge for PR $PR_TARGET."
+            gh pr merge "$PR_TARGET" \
+              --repo "$REPOSITORY" \
+              --auto
+          fi
