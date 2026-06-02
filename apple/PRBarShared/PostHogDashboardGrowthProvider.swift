@@ -22,6 +22,19 @@ struct PostHogDashboardTileResult: Decodable, Equatable {
   var id: Int
   var order: Int?
   var insight: PostHogDashboardInsight
+
+  private enum CodingKeys: String, CodingKey {
+    case id
+    case order
+    case insight
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = (try? container.decode(Int.self, forKey: .id)) ?? 0
+    order = try? container.decode(Int.self, forKey: .order)
+    insight = (try? container.decodeIfPresent(PostHogDashboardInsight.self, forKey: .insight)) ?? .empty
+  }
 }
 
 struct PostHogDashboardInsight: Decodable, Equatable {
@@ -37,6 +50,37 @@ struct PostHogDashboardInsight: Decodable, Equatable {
     case name
     case derivedName = "derived_name"
     case result
+  }
+
+  static let empty = PostHogDashboardInsight(
+    id: 0,
+    shortID: nil,
+    name: nil,
+    derivedName: nil,
+    result: []
+  )
+
+  init(
+    id: Int,
+    shortID: String?,
+    name: String?,
+    derivedName: String?,
+    result: [PostHogDashboardSeries]
+  ) {
+    self.id = id
+    self.shortID = shortID
+    self.name = name
+    self.derivedName = derivedName
+    self.result = result
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = (try? container.decode(Int.self, forKey: .id)) ?? 0
+    shortID = try container.decodeIfPresent(String.self, forKey: .shortID)
+    name = try container.decodeIfPresent(String.self, forKey: .name)
+    derivedName = try container.decodeIfPresent(String.self, forKey: .derivedName)
+    result = (try? container.decodeIfPresent([PostHogDashboardSeries].self, forKey: .result)) ?? []
   }
 }
 
@@ -57,11 +101,11 @@ struct PostHogDashboardSeries: Decodable, Equatable {
 
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    data = try container.decode([Double].self, forKey: .data)
-    days = try container.decode([String].self, forKey: .days)
+    data = try container.decodeFlexibleDoubleArrayIfPresent(forKey: .data) ?? []
+    days = (try? container.decodeIfPresent([String].self, forKey: .days)) ?? []
     count = try container.decodeFlexibleDoubleIfPresent(forKey: .count)
-    label = try container.decodeIfPresent(String.self, forKey: .label)
-    breakdownValue = try container.decodeIfPresent(String.self, forKey: .breakdownValue)
+    label = try container.decodeFlexibleStringIfPresent(forKey: .label)
+    breakdownValue = try container.decodeFlexibleStringIfPresent(forKey: .breakdownValue)
   }
 }
 
@@ -386,12 +430,52 @@ enum BleepBlogDashboardNormalizer {
 
 private extension KeyedDecodingContainer {
   func decodeFlexibleDoubleIfPresent(forKey key: Key) throws -> Double? {
-    if let double = try decodeIfPresent(Double.self, forKey: key) {
+    if let double = try? decodeIfPresent(Double.self, forKey: key) {
       return double
     }
-    if let int = try decodeIfPresent(Int.self, forKey: key) {
+    if let int = try? decodeIfPresent(Int.self, forKey: key) {
       return Double(int)
+    }
+    if let string = try? decodeIfPresent(String.self, forKey: key),
+      let double = Double(string)
+    {
+      return double
+    }
+    return nil
+  }
+
+  func decodeFlexibleDoubleArrayIfPresent(forKey key: Key) throws -> [Double]? {
+    guard var values = try? nestedUnkeyedContainer(forKey: key) else {
+      return nil
+    }
+
+    var doubles: [Double] = []
+    while values.isAtEnd == false {
+      if let double = try? values.decode(Double.self) {
+        doubles.append(double)
+      } else if let int = try? values.decode(Int.self) {
+        doubles.append(Double(int))
+      } else if let string = try? values.decode(String.self), let double = Double(string) {
+        doubles.append(double)
+      } else {
+        _ = try? values.decode(PostHogDiscardedJSONValue.self)
+      }
+    }
+    return doubles
+  }
+
+  func decodeFlexibleStringIfPresent(forKey key: Key) throws -> String? {
+    if let string = try? decodeIfPresent(String.self, forKey: key) {
+      return string
+    }
+    if let int = try? decodeIfPresent(Int.self, forKey: key) {
+      return "\(int)"
+    }
+    if let double = try? decodeIfPresent(Double.self, forKey: key) {
+      return "\(double)"
     }
     return nil
   }
 }
+
+private struct PostHogDiscardedJSONValue: Decodable {}
