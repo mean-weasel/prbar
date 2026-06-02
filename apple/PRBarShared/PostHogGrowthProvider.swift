@@ -6,19 +6,42 @@ struct PostHogConfiguration: Equatable, Sendable {
   var personalAPIKey: String
   var dashboardID: Int? = nil
 
-  static func live(environment: [String: String]) -> PostHogConfiguration? {
-    guard let projectID = normalized(environment["PRBAR_IOS_POSTHOG_PROJECT_ID"]),
-      let personalAPIKey = normalized(environment["PRBAR_IOS_POSTHOG_PERSONAL_API_KEY"])
+  static func live(
+    environment: [String: String],
+    bundleInfo: [String: Any] = Bundle.main.infoDictionary ?? [:]
+  ) -> PostHogConfiguration? {
+    guard let projectID = configuredValue(
+      environmentKey: "PRBAR_IOS_POSTHOG_PROJECT_ID",
+      bundleKey: "PRBarPostHogProjectID",
+      environment: environment,
+      bundleInfo: bundleInfo
+    ),
+      let personalAPIKey = configuredValue(
+        environmentKey: "PRBAR_IOS_POSTHOG_PERSONAL_API_KEY",
+        bundleKey: "PRBarPostHogPersonalAPIKey",
+        environment: environment,
+        bundleInfo: bundleInfo
+      )
     else {
       return nil
     }
 
-    let hostValue = normalized(environment["PRBAR_IOS_POSTHOG_HOST"]) ?? "https://us.posthog.com"
+    let hostValue = configuredValue(
+      environmentKey: "PRBAR_IOS_POSTHOG_HOST",
+      bundleKey: "PRBarPostHogHost",
+      environment: environment,
+      bundleInfo: bundleInfo
+    ) ?? "https://us.posthog.com"
     guard let host = URL(string: hostValue), host.scheme != nil, host.host != nil else {
       return nil
     }
 
-    let dashboardID = normalized(environment["PRBAR_IOS_POSTHOG_DASHBOARD_ID"]).flatMap(Int.init)
+    let dashboardID = configuredValue(
+      environmentKey: "PRBAR_IOS_POSTHOG_DASHBOARD_ID",
+      bundleKey: "PRBarPostHogDashboardID",
+      environment: environment,
+      bundleInfo: bundleInfo
+    ).flatMap(Int.init)
 
     return PostHogConfiguration(host: host, projectID: projectID, personalAPIKey: personalAPIKey, dashboardID: dashboardID)
   }
@@ -38,6 +61,15 @@ struct PostHogConfiguration: Equatable, Sendable {
       return nil
     }
     return value
+  }
+
+  private static func configuredValue(
+    environmentKey: String,
+    bundleKey: String,
+    environment: [String: String],
+    bundleInfo: [String: Any]
+  ) -> String? {
+    normalized(environment[environmentKey]) ?? normalized(bundleInfo[bundleKey] as? String)
   }
 }
 

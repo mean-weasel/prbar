@@ -12,3 +12,8 @@ For the initial Bleep KPI dashboard experiment, the dashboard id variable points
 at `1362888`. The preview and production install/smoke workflows pass these
 values into Xcode so the installed app uses the same dashboard source that the
 Growth tab labels in-app.
+
+For this internal prototype, the install workflows embed the PostHog settings in
+the app bundle so physical-device installs can read them after launch. Do not
+ship a public build with a personal API key in the bundle; move this behind a
+backend proxy or a narrower read-only token before broader distribution.

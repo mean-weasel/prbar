@@ -28,6 +28,23 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertEqual(configuration?.dashboardID, 1_362_888)
   }
 
+  func testPostHogConfigurationReadsBundleInfoWhenEnvironmentIsEmpty() {
+    let configuration = PostHogConfiguration.live(
+      environment: [:],
+      bundleInfo: [
+        "PRBarPostHogHost": "https://us.posthog.com",
+        "PRBarPostHogProjectID": "324426",
+        "PRBarPostHogPersonalAPIKey": "phx_bundle",
+        "PRBarPostHogDashboardID": "1362888",
+      ]
+    )
+
+    XCTAssertEqual(configuration?.host.absoluteString, "https://us.posthog.com")
+    XCTAssertEqual(configuration?.projectID, "324426")
+    XCTAssertEqual(configuration?.personalAPIKey, "phx_bundle")
+    XCTAssertEqual(configuration?.dashboardID, 1_362_888)
+  }
+
   func testPostHogConfigurationIgnoresInvalidDashboardID() {
     let configuration = PostHogConfiguration.live(
       environment: [

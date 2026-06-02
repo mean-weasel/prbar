@@ -20,6 +20,14 @@
   <string>$(CURRENT_PROJECT_VERSION)</string>
   <key>PRBarGitHubOAuthClientID</key>
   <string>$(PRBAR_IOS_GITHUB_CLIENT_ID)</string>
+  <key>PRBarPostHogHost</key>
+  <string>$(PRBAR_IOS_POSTHOG_HOST)</string>
+  <key>PRBarPostHogProjectID</key>
+  <string>$(PRBAR_IOS_POSTHOG_PROJECT_ID)</string>
+  <key>PRBarPostHogPersonalAPIKey</key>
+  <string>$(PRBAR_IOS_POSTHOG_PERSONAL_API_KEY)</string>
+  <key>PRBarPostHogDashboardID</key>
+  <string>$(PRBAR_IOS_POSTHOG_DASHBOARD_ID)</string>
   <key>UILaunchScreen</key>
   <dict/>
   <key>UISupportedInterfaceOrientations</key>
