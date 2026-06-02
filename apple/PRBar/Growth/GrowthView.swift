@@ -150,7 +150,7 @@ struct GrowthView: View {
   @ViewBuilder
   private var providerSections: some View {
     if snapshot.connection(for: .postHog)?.status == .connected {
-      GrowthProviderSectionView(provider: .postHog, rows: snapshot.topEvents)
+      GrowthProviderSectionView(provider: .postHog, rows: postHogSectionRows)
     }
 
     if snapshot.connection(for: .searchConsole)?.status == .connected {
@@ -170,6 +170,13 @@ struct GrowthView: View {
         GrowthSetupCardView(provider: provider, issue: connection.issue)
       }
     }
+  }
+
+  private var postHogSectionRows: [GrowthListRow] {
+    if snapshot.connection(for: .searchConsole)?.status == .connected {
+      return snapshot.topEvents
+    }
+    return snapshot.topEvents + snapshot.topPages
   }
 
   private func issueView(_ issue: AuthIssue) -> some View {

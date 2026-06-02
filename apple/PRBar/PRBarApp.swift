@@ -1,6 +1,23 @@
 import Darwin
 import SwiftUI
 
+enum GrowthProviderFactory {
+  static func provider(
+    environment: [String: String],
+    baseSnapshot: GrowthDashboardSnapshot = SampleData.growthDashboard
+  ) -> GrowthDashboardProviding {
+    guard let configuration = PostHogConfiguration.live(environment: environment) else {
+      return StaticGrowthDashboardProvider(snapshot: baseSnapshot)
+    }
+
+    if configuration.dashboardID != nil {
+      return PostHogDashboardGrowthProvider(configuration: configuration, baseSnapshot: baseSnapshot)
+    }
+
+    return PostHogGrowthProvider(configuration: configuration, baseSnapshot: baseSnapshot)
+  }
+}
+
 @main
 struct PRBarApp: App {
   @State private var store: PRBarStore
@@ -16,6 +33,9 @@ struct PRBarApp: App {
     let arguments = ProcessInfo.processInfo.arguments
     let environment = ProcessInfo.processInfo.environment
     let isUITesting = arguments.contains("--ui-testing")
+    let isUITestingBleepPostHogDashboard =
+      arguments.contains("--ui-testing-bleep-posthog-dashboard") ||
+      environment["PRBAR_UI_TESTING_BLEEP_POSTHOG_DASHBOARD"] == "1"
     let isLiveGitHubSmokeHeadless = arguments.contains("--live-github-smoke-headless")
     let liveGitHubSession = Self.uiTestingLiveGitHubSession(environment: environment)
     let usesPersistentUITestingState =
@@ -71,12 +91,12 @@ struct PRBarApp: App {
       activityCacheStore = usesPersistentUITestingState
         ? FileGitHubActivityCacheStore(fileURL: Self.uiTestingActivityCacheURL)
         : InMemoryGitHubActivityCacheStore()
-      if arguments.contains("--growth-posthog-needs-attention") {
+      if isUITestingBleepPostHogDashboard {
+        growthProvider = StaticGrowthDashboardProvider(snapshot: Self.uiTestingBleepPostHogDashboardSnapshot)
+      } else if arguments.contains("--growth-posthog-needs-attention") {
         growthProvider = StaticGrowthDashboardProvider(snapshot: Self.uiTestingPostHogNeedsAttentionGrowthSnapshot)
-      } else if let postHogConfiguration = PostHogConfiguration.live(environment: environment) {
-        growthProvider = PostHogGrowthProvider(configuration: postHogConfiguration)
       } else {
-        growthProvider = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard)
+        growthProvider = GrowthProviderFactory.provider(environment: environment)
       }
     } else {
       let sessionStore = KeychainGitHubSessionStore()
@@ -98,11 +118,7 @@ struct PRBarApp: App {
       repositorySelectionStore = UserDefaultsRepositorySelectionStore()
       repositoryColorStore = UserDefaultsRepositoryColorStore()
       activityCacheStore = FileGitHubActivityCacheStore()
-      if let postHogConfiguration = PostHogConfiguration.live(environment: environment) {
-        growthProvider = PostHogGrowthProvider(configuration: postHogConfiguration)
-      } else {
-        growthProvider = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard)
-      }
+      growthProvider = GrowthProviderFactory.provider(environment: environment)
     }
 
     if isLiveGitHubSmokeHeadless,
@@ -137,7 +153,9 @@ struct PRBarApp: App {
       activityCacheStore: activityCacheStore,
       growthProvider: growthProvider
     )
-    if isUITesting, arguments.contains("--growth-posthog-needs-attention") {
+    if isUITesting, isUITestingBleepPostHogDashboard {
+      store.growthSnapshot = Self.uiTestingBleepPostHogDashboardSnapshot
+    } else if isUITesting, arguments.contains("--growth-posthog-needs-attention") {
       store.growthSnapshot = Self.uiTestingPostHogNeedsAttentionGrowthSnapshot
     }
     if ProcessInfo.processInfo.arguments.contains("--signed-out") {
@@ -399,5 +417,117 @@ private extension PRBarApp {
       )
     ]
     return snapshot
+  }
+
+  static var uiTestingBleepPostHogDashboardSnapshot: GrowthDashboardSnapshot {
+    let data = Data(
+      """
+      {
+        "results": [
+          {
+            "id": 6536094,
+            "order": 1,
+            "insight": {
+              "id": 7359526,
+              "name": "Weekly Visitors",
+              "result": [
+                {
+                  "data": [11, 13, 17],
+                  "days": ["2026-05-12", "2026-05-19", "2026-05-26"],
+                  "count": 41,
+                  "label": "$pageview"
+                }
+              ]
+            }
+          },
+          {
+            "id": 6536095,
+            "order": 2,
+            "insight": {
+              "id": 7359527,
+              "name": "Daily Pageviews",
+              "result": [
+                {
+                  "data": [139, 179, 1036],
+                  "days": ["2026-04-27", "2026-04-28", "2026-04-29"],
+                  "count": 1314,
+                  "label": "$pageview"
+                }
+              ]
+            }
+          },
+          {
+            "id": 6536096,
+            "order": 3,
+            "insight": {
+              "id": 7359528,
+              "name": "Traffic Sources",
+              "result": [
+                {
+                  "data": [50],
+                  "days": ["2026-05-26"],
+                  "count": 50,
+                  "label": "direct",
+                  "breakdown_value": "direct"
+                },
+                {
+                  "data": [33],
+                  "days": ["2026-05-26"],
+                  "count": 33,
+                  "label": "newsletter",
+                  "breakdown_value": "newsletter"
+                },
+                {
+                  "data": [12],
+                  "days": ["2026-05-26"],
+                  "count": 12,
+                  "label": "github.com",
+                  "breakdown_value": "github.com"
+                }
+              ]
+            }
+          },
+          {
+            "id": 6536097,
+            "order": 4,
+            "insight": {
+              "id": 7359529,
+              "name": "Top Pages",
+              "result": [
+                {
+                  "data": [1966],
+                  "days": ["2026-05-26"],
+                  "count": 1966,
+                  "label": "/studio",
+                  "breakdown_value": "/studio"
+                },
+                {
+                  "data": [420],
+                  "days": ["2026-05-26"],
+                  "count": 420,
+                  "label": "/blog",
+                  "breakdown_value": "/blog"
+                },
+                {
+                  "data": [300],
+                  "days": ["2026-05-26"],
+                  "count": 300,
+                  "label": "/docs",
+                  "breakdown_value": "/docs"
+                }
+              ]
+            }
+          }
+        ]
+      }
+      """.utf8
+    )
+
+    let response = try! PostHogDashboardRunResponse(data: data)
+    return BleepBlogDashboardNormalizer.snapshot(
+      response: response,
+      range: .week,
+      anchorDate: SampleData.date("2026-05-26")
+    )
   }
 }
