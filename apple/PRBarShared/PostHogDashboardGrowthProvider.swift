@@ -1,5 +1,15 @@
 import Foundation
 
+struct PostHogDashboardMetadataResponse: Decodable, Equatable {
+  var id: Int?
+  var name: String?
+  var description: String?
+
+  init(data: Data) throws {
+    self = try JSONDecoder().decode(Self.self, from: data)
+  }
+}
+
 struct PostHogDashboardRunResponse: Decodable, Equatable {
   var results: [PostHogDashboardTileResult]
 
@@ -52,6 +62,96 @@ struct PostHogDashboardSeries: Decodable, Equatable {
     count = try container.decodeFlexibleDoubleIfPresent(forKey: .count)
     label = try container.decodeIfPresent(String.self, forKey: .label)
     breakdownValue = try container.decodeIfPresent(String.self, forKey: .breakdownValue)
+  }
+}
+
+struct PostHogDashboardGrowthProvider: GrowthDashboardProviding {
+  var configuration: PostHogConfiguration
+  var transport: PostHogQueryTransport
+  var baseSnapshot: GrowthDashboardSnapshot
+
+  init(
+    configuration: PostHogConfiguration,
+    transport: PostHogQueryTransport = URLSessionPostHogQueryTransport(),
+    baseSnapshot: GrowthDashboardSnapshot = SampleData.growthDashboard
+  ) {
+    self.configuration = configuration
+    self.transport = transport
+    self.baseSnapshot = baseSnapshot
+  }
+
+  func dashboard(projectID: GrowthProject.ID, range: ActivityRange, anchorDate: Date) async throws -> GrowthDashboardSnapshot {
+    do {
+      let metadataRequest = try PostHogDashboardRequest.dashboard(configuration: configuration)
+      let metadataData = try await transport.data(for: metadataRequest)
+      _ = try PostHogDashboardMetadataResponse(data: metadataData)
+
+      let runInsightsRequest = try PostHogDashboardRequest.runInsights(
+        configuration: configuration,
+        refresh: "blocking"
+      )
+      let runInsightsData = try await transport.data(for: runInsightsRequest)
+      let response = try PostHogDashboardRunResponse(data: runInsightsData)
+      return BleepBlogDashboardNormalizer.snapshot(
+        response: response,
+        range: range,
+        anchorDate: anchorDate
+      )
+    } catch PostHogAPIError.unauthorized {
+      return attentionSnapshot(
+        projectID: projectID,
+        range: range,
+        anchorDate: anchorDate,
+        message: "PostHog API key needs attention"
+      )
+    } catch PostHogAPIError.rateLimited {
+      return attentionSnapshot(
+        projectID: projectID,
+        range: range,
+        anchorDate: anchorDate,
+        message: "PostHog rate limit reached"
+      )
+    }
+  }
+
+  private func attentionSnapshot(
+    projectID: GrowthProject.ID,
+    range: ActivityRange,
+    anchorDate: Date,
+    message: String
+  ) -> GrowthDashboardSnapshot {
+    var snapshot = baseSnapshot
+    snapshot.dataSource = .sampleFallback
+    snapshot.project.id = projectID
+    snapshot.range = range
+    snapshot.anchorDate = anchorDate
+    snapshot.connections = snapshot.connections.map { connection in
+      guard connection.provider == .postHog else {
+        return connection
+      }
+      return GrowthConnection(
+        id: connection.id,
+        provider: connection.provider,
+        displayName: connection.displayName,
+        status: .needsAttention,
+        lastRefreshedAt: connection.lastRefreshedAt,
+        issue: message
+      )
+    }
+    snapshot.shippingContext = GrowthDashboardSnapshot.fixtureShippingContext(
+      project: snapshot.project,
+      range: range,
+      anchorDate: anchorDate
+    )
+    snapshot.issues = [
+      GrowthDashboardIssue(
+        id: "posthog-needs-attention",
+        provider: .postHog,
+        title: "PostHog needs attention",
+        detail: message
+      )
+    ]
+    return snapshot
   }
 }
 

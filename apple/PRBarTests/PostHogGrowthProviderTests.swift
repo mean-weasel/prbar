@@ -403,6 +403,66 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertTrue(snapshot.issues.contains { $0.detail.contains("Experimental Dashboard Tile") })
   }
 
+  func testPostHogDashboardGrowthProviderFetchesDashboardAndRunInsightsAndReturnsBleepSnapshot() async throws {
+    let transport = RecordingPostHogQueryTransport(responses: [
+      """
+      {
+        "id": 1362888,
+        "name": "Bleep Blog KPI Dashboard",
+        "description": "Bleep dashboard experiment"
+      }
+      """,
+      Self.bleepDashboardRunInsightsJSON,
+    ])
+    let provider = PostHogDashboardGrowthProvider(
+      configuration: PostHogConfiguration(
+        host: URL(string: "https://us.posthog.com")!,
+        projectID: "324426",
+        personalAPIKey: "phx_test",
+        dashboardID: 1_362_888
+      ),
+      transport: transport,
+      baseSnapshot: .fixture(range: .week)
+    )
+
+    let snapshot = try await provider.dashboard(
+      projectID: "prbar-product",
+      range: .month,
+      anchorDate: SampleData.date("2026-05-26")
+    )
+    let requestURLs = await transport.requestURLStrings()
+
+    XCTAssertEqual(snapshot.project.id, "bleep-that-sht")
+    XCTAssertEqual(snapshot.dataSource, .livePostHog)
+    XCTAssertEqual(Array(snapshot.visibleMetrics.map(\.kind).prefix(2)), [.weeklyVisitors, .pageViews])
+    XCTAssertTrue(snapshot.topPages.contains { $0.title == "/studio" })
+    XCTAssertEqual(requestURLs.count, 2)
+    XCTAssertEqual(requestURLs.first?.hasSuffix("/api/environments/324426/dashboards/1362888/"), true)
+    XCTAssertEqual(
+      requestURLs.last?.contains("/run_insights/?output_format=json&refresh=blocking"),
+      true
+    )
+  }
+
+  func testPostHogDashboardGrowthProviderUsesAttentionFallbackWhenUnauthorized() async throws {
+    let transport = RecordingPostHogQueryTransport(results: [.failure(PostHogAPIError.unauthorized)])
+    let provider = PostHogDashboardGrowthProvider(
+      configuration: .fixture,
+      transport: transport,
+      baseSnapshot: .fixture(range: .week)
+    )
+
+    let snapshot = try await provider.dashboard(
+      projectID: "prbar-product",
+      range: .week,
+      anchorDate: SampleData.date("2026-05-24")
+    )
+
+    XCTAssertEqual(snapshot.dataSource, .sampleFallback)
+    XCTAssertEqual(snapshot.connection(for: .postHog)?.status, .needsAttention)
+    XCTAssertEqual(snapshot.issues.first?.title, "PostHog needs attention")
+  }
+
   func testPostHogGrowthProviderMapsDailyMetricsAndTopEvents() async throws {
     let transport = FixturePostHogQueryTransport(responses: [
       """
@@ -471,4 +531,125 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertTrue(snapshot.visibleMetrics.contains { $0.provider == .searchConsole })
     XCTAssertEqual(snapshot.issues.first?.title, "PostHog needs attention")
   }
+}
+
+private actor RecordingPostHogQueryTransport: PostHogQueryTransport {
+  private var results: [Result<Data, Error>]
+  private var requestURLs: [String] = []
+
+  init(responses: [String]) {
+    self.results = responses.map { .success(Data($0.utf8)) }
+  }
+
+  init(results: [Result<Data, Error>]) {
+    self.results = results
+  }
+
+  func data(for request: URLRequest) async throws -> Data {
+    requestURLs.append(request.url?.absoluteString ?? "")
+    guard results.isEmpty == false else {
+      return Data(#"{"results":[]}"#.utf8)
+    }
+    return try results.removeFirst().get()
+  }
+
+  func requestURLStrings() -> [String] {
+    requestURLs
+  }
+}
+
+private extension PostHogGrowthProviderTests {
+  static let bleepDashboardRunInsightsJSON = """
+  {
+    "results": [
+      {
+        "id": 6536094,
+        "order": 1,
+        "insight": {
+          "id": 7359526,
+          "name": "Weekly Visitors",
+          "result": [
+            {
+              "data": [11, 13, 17],
+              "days": ["2026-05-12", "2026-05-19", "2026-05-26"],
+              "count": 41,
+              "label": "$pageview"
+            }
+          ]
+        }
+      },
+      {
+        "id": 6536095,
+        "order": 2,
+        "insight": {
+          "id": 7359527,
+          "name": "Daily Pageviews",
+          "result": [
+            {
+              "data": [139, 179, 1036],
+              "days": ["2026-04-27", "2026-04-28", "2026-04-29"],
+              "count": 1314,
+              "label": "$pageview"
+            }
+          ]
+        }
+      },
+      {
+        "id": 6536096,
+        "order": 3,
+        "insight": {
+          "id": 7359528,
+          "name": "Traffic Sources",
+          "result": [
+            {
+              "data": [12],
+              "days": ["2026-05-26"],
+              "count": 12,
+              "label": "github.com",
+              "breakdown_value": "github.com"
+            },
+            {
+              "data": [50],
+              "days": ["2026-05-26"],
+              "count": 50,
+              "label": "direct",
+              "breakdown_value": "direct"
+            }
+          ]
+        }
+      },
+      {
+        "id": 6536097,
+        "order": 4,
+        "insight": {
+          "id": 7359529,
+          "name": "Top Pages",
+          "result": [
+            {
+              "data": [420],
+              "days": ["2026-05-26"],
+              "count": 420,
+              "label": "/blog",
+              "breakdown_value": "/blog"
+            },
+            {
+              "data": [1966],
+              "days": ["2026-05-26"],
+              "count": 1966,
+              "label": "/studio",
+              "breakdown_value": "/studio"
+            },
+            {
+              "data": [300],
+              "days": ["2026-05-26"],
+              "count": 300,
+              "label": "/docs",
+              "breakdown_value": "/docs"
+            }
+          ]
+        }
+      }
+    ]
+  }
+  """
 }
