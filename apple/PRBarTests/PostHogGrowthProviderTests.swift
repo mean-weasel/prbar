@@ -157,6 +157,64 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertEqual(runInsightsRequest.value(forHTTPHeaderField: "Accept"), "application/json")
   }
 
+  func testPostHogDashboardRunResponseDecodesTrendAndBreakdownTiles() throws {
+    let data = Data(
+      """
+      {
+        "results": [
+          {
+            "id": 6536095,
+            "order": 1,
+            "insight": {
+              "id": 7359527,
+              "short_id": "abc123",
+              "name": "Daily Pageviews",
+              "derived_name": "Daily Pageviews",
+              "result": [
+                {
+                  "data": [139, 179, 1036],
+                  "days": ["2026-04-27", "2026-04-28", "2026-04-29"],
+                  "count": 1314,
+                  "label": "$pageview"
+                }
+              ]
+            }
+          },
+          {
+            "id": 6536096,
+            "order": 2,
+            "insight": {
+              "id": 7359528,
+              "name": "Top Pages",
+              "result": [
+                {
+                  "data": [1087, 879],
+                  "days": ["2026-04-26", "2026-05-03"],
+                  "count": 1966,
+                  "label": "/studio",
+                  "breakdown_value": "/studio"
+                }
+              ]
+            }
+          }
+        ]
+      }
+      """.utf8
+    )
+
+    let response = try PostHogDashboardRunResponse(data: data)
+
+    XCTAssertEqual(response.results.count, 2)
+    XCTAssertEqual(response.results[0].insight.name, "Daily Pageviews")
+    XCTAssertEqual(response.results[0].insight.derivedName, "Daily Pageviews")
+    XCTAssertEqual(response.results[0].insight.result[0].data, [139, 179, 1036])
+    XCTAssertEqual(response.results[0].insight.result[0].count, 1314.0)
+    XCTAssertEqual(response.results[1].insight.name, "Top Pages")
+    XCTAssertEqual(response.results[1].insight.result[0].data, [1087, 879])
+    XCTAssertEqual(response.results[1].insight.result[0].count, 1966.0)
+    XCTAssertEqual(response.results[1].insight.result[0].breakdownValue, "/studio")
+  }
+
   func testPostHogGrowthProviderMapsDailyMetricsAndTopEvents() async throws {
     let transport = FixturePostHogQueryTransport(responses: [
       """
