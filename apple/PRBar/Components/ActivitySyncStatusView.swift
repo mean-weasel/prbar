@@ -75,7 +75,7 @@ struct ActivitySyncStatusView: View {
   private var title: String {
     if isRefreshing {
       if case .setup = context {
-        return "Setup complete. Syncing repos"
+        return "Syncing selected repos"
       }
       return "Refreshing GitHub activity"
     }
@@ -98,7 +98,7 @@ struct ActivitySyncStatusView: View {
     if isRefreshing {
       let setupPrefix: String
       if case let .setup(repositoryCount) = context {
-        setupPrefix = "Fetching PRs and releases from \(repositoryLabel(repositoryCount)) in the background. "
+        setupPrefix = "Fetching PRs and releases from \(repositoryLabel(repositoryCount)). "
       } else {
         setupPrefix = ""
       }

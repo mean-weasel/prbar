@@ -302,7 +302,7 @@ final class PRBarUITests: XCTestCase {
     app.tapButton("Finish setup", untilStaticTextExists: "Shipping rhythm")
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 2))
-    if app.staticTexts["Setup complete. Syncing repos"].waitForExistence(timeout: 4) {
+    if app.staticTexts["Syncing selected repos"].waitForExistence(timeout: 4) {
       XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "1 selected repo")).firstMatch.exists)
       XCTAssertTrue(
         app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Syncing 1 of 1: prbar")).firstMatch.waitForExistence(timeout: 2) ||
@@ -341,11 +341,11 @@ final class PRBarUITests: XCTestCase {
     prbarSwitch.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
 
     app.tapButton("Finish setup", untilStaticTextExists: "Shipping rhythm")
-    XCTAssertTrue(app.staticTexts["Setup complete. Syncing repos"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Syncing selected repos"].waitForExistence(timeout: 4))
 
     app.tapTab("Releases")
     XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["Setup complete. Syncing repos"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Syncing selected repos"].waitForExistence(timeout: 2))
 
     app.tapTab("PRs")
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 2))
