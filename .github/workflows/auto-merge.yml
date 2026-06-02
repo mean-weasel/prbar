@@ -125,5 +125,4 @@ jobs:
           gh pr merge "$PR_TARGET" \
             --repo "$REPOSITORY" \
             --squash \
-            --auto \
-            --delete-branch
+            --auto
