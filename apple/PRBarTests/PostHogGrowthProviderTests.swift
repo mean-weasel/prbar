@@ -73,6 +73,29 @@ final class PostHogGrowthProviderTests: XCTestCase {
     )
   }
 
+  func testGrowthProviderFactoryUsesDashboardProviderWhenDashboardIDIsConfigured() {
+    let dashboardProvider = GrowthProviderFactory.provider(
+      environment: [
+        "PRBAR_IOS_POSTHOG_HOST": "https://us.posthog.com",
+        "PRBAR_IOS_POSTHOG_PROJECT_ID": "12345",
+        "PRBAR_IOS_POSTHOG_PERSONAL_API_KEY": "phx_live",
+        "PRBAR_IOS_POSTHOG_DASHBOARD_ID": "1362888",
+      ]
+    )
+    let postHogProvider = GrowthProviderFactory.provider(
+      environment: [
+        "PRBAR_IOS_POSTHOG_HOST": "https://us.posthog.com",
+        "PRBAR_IOS_POSTHOG_PROJECT_ID": "12345",
+        "PRBAR_IOS_POSTHOG_PERSONAL_API_KEY": "phx_live",
+      ]
+    )
+    let staticProvider = GrowthProviderFactory.provider(environment: [:])
+
+    XCTAssertTrue(dashboardProvider is PostHogDashboardGrowthProvider)
+    XCTAssertTrue(postHogProvider is PostHogGrowthProvider)
+    XCTAssertTrue(staticProvider is StaticGrowthDashboardProvider)
+  }
+
   func testPostHogDiagnosticsSummarizeConfiguredLiveConnection() {
     let snapshot = GrowthDashboardSnapshot.fixture(range: .week)
     let diagnostics = PostHogConnectionDiagnostics.current(

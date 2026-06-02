@@ -1,6 +1,23 @@
 import Darwin
 import SwiftUI
 
+enum GrowthProviderFactory {
+  static func provider(
+    environment: [String: String],
+    baseSnapshot: GrowthDashboardSnapshot = SampleData.growthDashboard
+  ) -> GrowthDashboardProviding {
+    guard let configuration = PostHogConfiguration.live(environment: environment) else {
+      return StaticGrowthDashboardProvider(snapshot: baseSnapshot)
+    }
+
+    if configuration.dashboardID != nil {
+      return PostHogDashboardGrowthProvider(configuration: configuration, baseSnapshot: baseSnapshot)
+    }
+
+    return PostHogGrowthProvider(configuration: configuration, baseSnapshot: baseSnapshot)
+  }
+}
+
 @main
 struct PRBarApp: App {
   @State private var store: PRBarStore
@@ -73,10 +90,8 @@ struct PRBarApp: App {
         : InMemoryGitHubActivityCacheStore()
       if arguments.contains("--growth-posthog-needs-attention") {
         growthProvider = StaticGrowthDashboardProvider(snapshot: Self.uiTestingPostHogNeedsAttentionGrowthSnapshot)
-      } else if let postHogConfiguration = PostHogConfiguration.live(environment: environment) {
-        growthProvider = PostHogGrowthProvider(configuration: postHogConfiguration)
       } else {
-        growthProvider = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard)
+        growthProvider = GrowthProviderFactory.provider(environment: environment)
       }
     } else {
       let sessionStore = KeychainGitHubSessionStore()
@@ -98,11 +113,7 @@ struct PRBarApp: App {
       repositorySelectionStore = UserDefaultsRepositorySelectionStore()
       repositoryColorStore = UserDefaultsRepositoryColorStore()
       activityCacheStore = FileGitHubActivityCacheStore()
-      if let postHogConfiguration = PostHogConfiguration.live(environment: environment) {
-        growthProvider = PostHogGrowthProvider(configuration: postHogConfiguration)
-      } else {
-        growthProvider = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard)
-      }
+      growthProvider = GrowthProviderFactory.provider(environment: environment)
     }
 
     if isLiveGitHubSmokeHeadless,
