@@ -155,7 +155,8 @@ if [[ -n "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ||
   -n "${PRBAR_IOS_LIVE_GITHUB_LOGIN:-}" ||
   -n "${PRBAR_IOS_POSTHOG_HOST:-}" ||
   -n "${PRBAR_IOS_POSTHOG_PROJECT_ID:-}" ||
-  -n "${PRBAR_IOS_POSTHOG_PERSONAL_API_KEY:-}" ]]; then
+  -n "${PRBAR_IOS_POSTHOG_PERSONAL_API_KEY:-}" ||
+  -n "${PRBAR_IOS_POSTHOG_DASHBOARD_ID:-}" ]]; then
   live_xcconfig="$(mktemp "${TMPDIR:-/tmp}/prbar-live-smoke.XXXXXX.xcconfig")"
   TEMP_FILES+=("$live_xcconfig")
   {
@@ -176,6 +177,9 @@ if [[ -n "${PRBAR_IOS_LIVE_GITHUB_TOKEN:-}" ||
     fi
     if [[ -n "${PRBAR_IOS_POSTHOG_PERSONAL_API_KEY:-}" ]]; then
       write_xcconfig_setting PRBAR_IOS_POSTHOG_PERSONAL_API_KEY "$PRBAR_IOS_POSTHOG_PERSONAL_API_KEY"
+    fi
+    if [[ -n "${PRBAR_IOS_POSTHOG_DASHBOARD_ID:-}" ]]; then
+      write_xcconfig_setting PRBAR_IOS_POSTHOG_DASHBOARD_ID "$PRBAR_IOS_POSTHOG_DASHBOARD_ID"
     fi
   } >"$live_xcconfig"
   XCODEBUILD_EXTRA_ARGS+=("-xcconfig" "$live_xcconfig")
