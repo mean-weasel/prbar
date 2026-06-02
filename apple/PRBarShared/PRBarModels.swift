@@ -78,6 +78,35 @@ struct Repository: Identifiable, Codable, Equatable, Sendable {
   }
 }
 
+struct RepositoryColorOption: Identifiable, Equatable, Sendable {
+  var name: String
+  var hex: String
+
+  var id: String { hex }
+}
+
+enum RepositoryColorPalette {
+  static let options: [RepositoryColorOption] = [
+    RepositoryColorOption(name: "Sky", hex: "#0ea5e9"),
+    RepositoryColorOption(name: "Green", hex: "#16a34a"),
+    RepositoryColorOption(name: "Amber", hex: "#f59e0b"),
+    RepositoryColorOption(name: "Violet", hex: "#7c3aed"),
+    RepositoryColorOption(name: "Red", hex: "#ef4444"),
+    RepositoryColorOption(name: "Teal", hex: "#14b8a6"),
+    RepositoryColorOption(name: "Pink", hex: "#ec4899"),
+    RepositoryColorOption(name: "Slate", hex: "#64748b"),
+  ]
+
+  static var hexValues: [String] {
+    options.map(\.hex)
+  }
+
+  static func option(matching hex: String) -> RepositoryColorOption? {
+    let normalizedHex = hex.lowercased()
+    return options.first { $0.hex.lowercased() == normalizedHex }
+  }
+}
+
 struct PullRequest: Identifiable, Codable, Equatable, Sendable {
   var id: String
   var title: String

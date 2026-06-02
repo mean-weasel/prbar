@@ -251,7 +251,7 @@ private struct GitHubRepositoryPayload: Decodable {
   }
 
   private func colorHex(for value: String) -> String {
-    let palette = ["#0ea5e9", "#16a34a", "#f59e0b", "#7c3aed", "#ef4444", "#14b8a6"]
+    let palette = RepositoryColorPalette.hexValues
     let index = abs(value.hashValue) % palette.count
     return palette[index]
   }
@@ -301,6 +301,56 @@ final class UserDefaultsRepositorySelectionStore: RepositorySelectionStoring {
   }
 
   func clearIncludedRepositoryIDs() throws {
+    defaults.removeObject(forKey: key)
+  }
+}
+
+protocol RepositoryColorStoring: AnyObject {
+  func loadRepositoryColors() throws -> [Repository.ID: String]
+  func saveRepositoryColor(_ colorHex: String, for repositoryID: Repository.ID) throws
+  func clearRepositoryColors() throws
+}
+
+final class InMemoryRepositoryColorStore: RepositoryColorStoring {
+  private var repositoryColors: [Repository.ID: String]
+
+  init(repositoryColors: [Repository.ID: String] = [:]) {
+    self.repositoryColors = repositoryColors
+  }
+
+  func loadRepositoryColors() throws -> [Repository.ID: String] {
+    repositoryColors
+  }
+
+  func saveRepositoryColor(_ colorHex: String, for repositoryID: Repository.ID) throws {
+    repositoryColors[repositoryID] = colorHex
+  }
+
+  func clearRepositoryColors() throws {
+    repositoryColors = [:]
+  }
+}
+
+final class UserDefaultsRepositoryColorStore: RepositoryColorStoring {
+  private let key: String
+  private let defaults: UserDefaults
+
+  init(key: String = "github.repositoryColors", defaults: UserDefaults = .standard) {
+    self.key = key
+    self.defaults = defaults
+  }
+
+  func loadRepositoryColors() throws -> [Repository.ID: String] {
+    defaults.dictionary(forKey: key) as? [Repository.ID: String] ?? [:]
+  }
+
+  func saveRepositoryColor(_ colorHex: String, for repositoryID: Repository.ID) throws {
+    var repositoryColors = try loadRepositoryColors()
+    repositoryColors[repositoryID] = colorHex
+    defaults.set(repositoryColors, forKey: key)
+  }
+
+  func clearRepositoryColors() throws {
     defaults.removeObject(forKey: key)
   }
 }

@@ -84,13 +84,9 @@ struct GrowthView: View {
 
   private var header: some View {
     VStack(alignment: .leading, spacing: 12) {
-      VStack(alignment: .leading, spacing: 6) {
-        Text("Growth")
-          .font(.largeTitle.weight(.bold))
-        Text("Usage and search movement near shipped work")
-          .font(.subheadline)
-          .foregroundStyle(.secondary)
-      }
+      Text("Usage and search movement near shipped work")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
 
       HStack(spacing: 8) {
         Label(snapshot.project.name, systemImage: "square.stack.3d.up")

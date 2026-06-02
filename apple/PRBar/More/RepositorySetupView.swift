@@ -304,7 +304,7 @@ struct RepositorySetupView: View {
   }
 
   private func repositoryRow(_ repository: Repository) -> some View {
-    Toggle(isOn: includedBinding(for: repository)) {
+    HStack(spacing: 12) {
       VStack(alignment: .leading, spacing: 4) {
         HStack(spacing: 8) {
           Text(repository.name)
@@ -325,9 +325,46 @@ struct RepositorySetupView: View {
           .font(.caption2)
           .foregroundStyle(.secondary)
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
+
+      repositoryColorMenu(for: repository)
+
+      Toggle("Include \(repository.name)", isOn: includedBinding(for: repository))
+        .labelsHidden()
+        .accessibilityLabel("Include \(repository.name)")
+        .disabled(repository.access == .sso || store == nil)
     }
-    .accessibilityLabel("Include \(repository.name)")
-    .disabled(repository.access == .sso || store == nil)
+    .padding(.vertical, 2)
+  }
+
+  private func repositoryColorMenu(for repository: Repository) -> some View {
+    Menu {
+      ForEach(RepositoryColorPalette.options) { option in
+        Button {
+          store?.setRepositoryColor(repository.id, colorHex: option.hex)
+        } label: {
+          Label(option.name, systemImage: isSelectedColor(option.hex, for: repository) ? "checkmark.circle.fill" : "circle")
+        }
+      }
+    } label: {
+      ZStack {
+        Circle()
+          .fill(PRBarTheme.repositoryColor(repository.colorHex))
+          .frame(width: 26, height: 26)
+        Circle()
+          .strokeBorder(Color(.separator), lineWidth: 1)
+          .frame(width: 26, height: 26)
+      }
+      .frame(width: 36, height: 36)
+      .contentShape(Circle())
+    }
+    .disabled(store == nil)
+    .accessibilityLabel("Repo color for \(repository.name)")
+    .accessibilityValue(RepositoryColorPalette.option(matching: repository.colorHex)?.name ?? "Custom")
+  }
+
+  private func isSelectedColor(_ colorHex: String, for repository: Repository) -> Bool {
+    repository.colorHex.caseInsensitiveCompare(colorHex) == .orderedSame
   }
 
   private func includedBinding(for repository: Repository) -> Binding<Bool> {
