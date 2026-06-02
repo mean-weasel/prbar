@@ -10,6 +10,7 @@ struct PRBarApp: App {
     let repositoryProvider: GitHubRepositoryProviding
     let activityProvider: GitHubActivityProviding
     let repositorySelectionStore: RepositorySelectionStoring
+    let repositoryColorStore: RepositoryColorStoring
     let activityCacheStore: GitHubActivityCacheStoring
     let growthProvider: GrowthDashboardProviding
     let arguments = ProcessInfo.processInfo.arguments
@@ -64,6 +65,9 @@ struct PRBarApp: App {
       repositorySelectionStore = usesPersistentUITestingState
         ? UserDefaultsRepositorySelectionStore(key: "ui-testing.github.includedRepositoryIDs")
         : InMemoryRepositorySelectionStore()
+      repositoryColorStore = usesPersistentUITestingState
+        ? UserDefaultsRepositoryColorStore(key: "ui-testing.github.repositoryColors")
+        : InMemoryRepositoryColorStore()
       activityCacheStore = usesPersistentUITestingState
         ? FileGitHubActivityCacheStore(fileURL: Self.uiTestingActivityCacheURL)
         : InMemoryGitHubActivityCacheStore()
@@ -92,6 +96,7 @@ struct PRBarApp: App {
         transport: URLSessionGitHubRepositoryTransport()
       )
       repositorySelectionStore = UserDefaultsRepositorySelectionStore()
+      repositoryColorStore = UserDefaultsRepositoryColorStore()
       activityCacheStore = FileGitHubActivityCacheStore()
       if let postHogConfiguration = PostHogConfiguration.live(environment: environment) {
         growthProvider = PostHogGrowthProvider(configuration: postHogConfiguration)
@@ -103,12 +108,14 @@ struct PRBarApp: App {
     if isLiveGitHubSmokeHeadless,
       let includedRepo = Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_REPOSITORY"]) {
       try? repositorySelectionStore.clearIncludedRepositoryIDs()
+      try? repositoryColorStore.clearRepositoryColors()
       try? activityCacheStore.clear()
       try? repositorySelectionStore.saveIncludedRepositoryIDs([includedRepo])
     }
 
     if ProcessInfo.processInfo.arguments.contains("--ui-testing-seed-activity-cache") {
       try? repositorySelectionStore.clearIncludedRepositoryIDs()
+      try? repositoryColorStore.clearRepositoryColors()
       try? activityCacheStore.clear()
       try? repositorySelectionStore.saveIncludedRepositoryIDs(["prbar"])
       try? activityCacheStore.save(
@@ -126,6 +133,7 @@ struct PRBarApp: App {
       repositoryProvider: repositoryProvider,
       activityProvider: activityProvider,
       repositorySelectionStore: repositorySelectionStore,
+      repositoryColorStore: repositoryColorStore,
       activityCacheStore: activityCacheStore,
       growthProvider: growthProvider
     )

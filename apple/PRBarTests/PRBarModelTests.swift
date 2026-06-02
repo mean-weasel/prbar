@@ -1032,6 +1032,25 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.includedRepositories.map(\.id), ["example/client-api"])
   }
 
+  func testConnectingGitHubRestoresPersistedRepositoryColors() throws {
+    let colorStore = InMemoryRepositoryColorStore(repositoryColors: ["example/client-api": "#7c3aed"])
+    let store = PRBarStore.sample(
+      authService: StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore(), session: .fixture),
+      repositoryProvider: StaticGitHubRepositoryProvider(
+        repositories: [
+          Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+          Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub")
+        ]
+      ),
+      repositoryColorStore: colorStore
+    )
+
+    store.connectGitHub()
+
+    XCTAssertEqual(store.repositories.first { $0.id == "example/client-api" }?.colorHex, "#7c3aed")
+    XCTAssertEqual(store.repositories.first { $0.id == "mean-weasel/prbar" }?.colorHex, "#0ea5e9")
+  }
+
   func testConnectingGitHubResetsOversizedPersistedRepositorySelection() throws {
     let repositories = Self.manyRepositories(count: 64)
     let selectionStore = InMemoryRepositorySelectionStore(includedRepositoryIDs: repositories.map(\.id))
@@ -1061,6 +1080,20 @@ final class PRBarModelTests: XCTestCase {
 
     store.setRepositoryIncluded("mean-weasel/prbar", included: false)
     XCTAssertEqual(try selectionStore.loadIncludedRepositoryIDs(), ["example/client-api"])
+  }
+
+  func testRepositoryColorSelectionPersistsColorImmediately() throws {
+    let colorStore = InMemoryRepositoryColorStore()
+    let store = PRBarStore.sample(repositoryColorStore: colorStore)
+    store.repositories = [
+      Repository(id: "mean-weasel/prbar", owner: "mean-weasel", name: "prbar", visibility: .public, colorHex: "#0ea5e9", included: true, recommended: false, access: .ready, reason: "Fetched from GitHub"),
+      Repository(id: "example/client-api", owner: "example", name: "client-api", visibility: .private, colorHex: "#f59e0b", included: false, recommended: false, access: .ready, reason: "Fetched from GitHub")
+    ]
+
+    store.setRepositoryColor("example/client-api", colorHex: "#7c3aed")
+
+    XCTAssertEqual(store.repositories.first { $0.id == "example/client-api" }?.colorHex, "#7c3aed")
+    XCTAssertEqual(try colorStore.loadRepositoryColors(), ["example/client-api": "#7c3aed"])
   }
 
   func testBatchRepositoryInclusionPersistsSelectionAndIgnoresBlockedRepos() throws {

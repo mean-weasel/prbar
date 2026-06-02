@@ -32,6 +32,7 @@ final class PRBarStore {
   private let repositoryProvider: GitHubRepositoryProviding
   private let activityProvider: GitHubActivityProviding
   private let repositorySelectionStore: RepositorySelectionStoring
+  private let repositoryColorStore: RepositoryColorStoring
   private let activityCacheStore: GitHubActivityCacheStoring
   private let growthProvider: GrowthDashboardProviding
   private let currentDate: @Sendable () -> Date
@@ -61,6 +62,7 @@ final class PRBarStore {
     repositoryProvider: GitHubRepositoryProviding = StaticGitHubRepositoryProvider(repositories: SampleData.repositories),
     activityProvider: GitHubActivityProviding = StaticGitHubActivityProvider(),
     repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore(),
+    repositoryColorStore: RepositoryColorStoring = InMemoryRepositoryColorStore(),
     activityCacheStore: GitHubActivityCacheStoring = InMemoryGitHubActivityCacheStore(),
     growthSnapshot: GrowthDashboardSnapshot = SampleData.growthDashboard,
     growthRange: ActivityRange = .week,
@@ -85,6 +87,7 @@ final class PRBarStore {
     self.repositoryProvider = repositoryProvider
     self.activityProvider = activityProvider
     self.repositorySelectionStore = repositorySelectionStore
+    self.repositoryColorStore = repositoryColorStore
     self.activityCacheStore = activityCacheStore
     self.growthSnapshot = growthSnapshot
     self.growthRange = growthRange
@@ -98,6 +101,7 @@ final class PRBarStore {
     repositoryProvider: GitHubRepositoryProviding = StaticGitHubRepositoryProvider(repositories: SampleData.repositories),
     activityProvider: GitHubActivityProviding = StaticGitHubActivityProvider(),
     repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore(),
+    repositoryColorStore: RepositoryColorStoring = InMemoryRepositoryColorStore(),
     activityCacheStore: GitHubActivityCacheStoring = InMemoryGitHubActivityCacheStore(),
     growthProvider: GrowthDashboardProviding = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard),
     currentDate: @escaping @Sendable () -> Date = Date.init
@@ -113,6 +117,7 @@ final class PRBarStore {
       repositoryProvider: repositoryProvider,
       activityProvider: activityProvider,
       repositorySelectionStore: repositorySelectionStore,
+      repositoryColorStore: repositoryColorStore,
       activityCacheStore: activityCacheStore,
       growthProvider: growthProvider,
       currentDate: currentDate
@@ -383,6 +388,7 @@ final class PRBarStore {
   func disconnectGitHub() {
     try? authService.disconnect()
     try? repositorySelectionStore.clearIncludedRepositoryIDs()
+    try? repositoryColorStore.clearRepositoryColors()
     try? activityCacheStore.clear()
     githubConnection = .signedOut
     repositories = repositories.map { repository in
@@ -404,6 +410,17 @@ final class PRBarStore {
     persistIncludedRepositorySelection()
   }
 
+  func setRepositoryColor(_ repositoryID: Repository.ID, colorHex: String) {
+    guard let index = repositories.firstIndex(where: { $0.id == repositoryID }),
+      RepositoryColorPalette.option(matching: colorHex) != nil
+    else {
+      return
+    }
+
+    repositories[index].colorHex = colorHex
+    try? repositoryColorStore.saveRepositoryColor(colorHex, for: repositoryID)
+  }
+
   func setRepositoriesIncluded(_ repositoryIDs: Set<Repository.ID>, included: Bool) {
     var didUpdate = false
     for index in repositories.indices where repositoryIDs.contains(repositories[index].id) && repositories[index].access == .ready {
@@ -423,11 +440,11 @@ final class PRBarStore {
     if shouldResetStoredSelection(storedIDs, for: fetchedRepositories) {
       try? repositorySelectionStore.clearIncludedRepositoryIDs()
       try? activityCacheStore.clear()
-      repositories = applyStoredSelection(to: fetchedRepositories, storedIDs: nil)
+      repositories = applyStoredPreferences(to: fetchedRepositories, storedIDs: nil)
       return false
     }
 
-    repositories = applyStoredSelection(to: fetchedRepositories, storedIDs: storedIDs)
+    repositories = applyStoredPreferences(to: fetchedRepositories, storedIDs: storedIDs)
     return storedIDs != nil
   }
 
@@ -501,13 +518,18 @@ final class PRBarStore {
     selectedReleaseID = snapshot.releases.first?.id
   }
 
-  private func applyStoredSelection(to repositories: [Repository], storedIDs: [Repository.ID]?) -> [Repository] {
+  private func applyStoredPreferences(to repositories: [Repository], storedIDs: [Repository.ID]?) -> [Repository] {
+    let storedColors = (try? repositoryColorStore.loadRepositoryColors()) ?? [:]
     return repositories.map { repository in
       var repository = repository
       if let storedIDs {
         repository.included = storedIDs.contains(repository.id)
       } else {
         repository.included = false
+      }
+      if let storedColor = storedColors[repository.id],
+        RepositoryColorPalette.option(matching: storedColor) != nil {
+        repository.colorHex = storedColor
       }
       return repository
     }
