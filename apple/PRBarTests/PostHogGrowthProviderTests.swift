@@ -215,6 +215,194 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertEqual(response.results[1].insight.result[0].breakdownValue, "/studio")
   }
 
+  func testBleepBlogDashboardNormalizerMapsSupportedTilesToGrowthSnapshot() throws {
+    let data = Data(
+      """
+      {
+        "results": [
+          {
+            "id": 6536094,
+            "order": 1,
+            "insight": {
+              "id": 7359526,
+              "name": "Weekly Visitors",
+              "result": [
+                {
+                  "data": [11, 13, 17],
+                  "days": ["2026-05-12", "2026-05-19", "2026-05-26"],
+                  "count": 41,
+                  "label": "$pageview"
+                }
+              ]
+            }
+          },
+          {
+            "id": 6536095,
+            "order": 2,
+            "insight": {
+              "id": 7359527,
+              "name": "Daily Pageviews",
+              "result": [
+                {
+                  "data": [139, 179, 1036],
+                  "days": ["2026-04-27", "2026-04-28", "2026-04-29"],
+                  "count": 1314,
+                  "label": "$pageview"
+                }
+              ]
+            }
+          },
+          {
+            "id": 6536096,
+            "order": 3,
+            "insight": {
+              "id": 7359528,
+              "name": "Traffic Sources",
+              "result": [
+                {
+                  "data": [12],
+                  "days": ["2026-05-26"],
+                  "count": 12,
+                  "label": "github.com",
+                  "breakdown_value": "github.com"
+                },
+                {
+                  "data": [50],
+                  "days": ["2026-05-26"],
+                  "count": 50,
+                  "label": "direct",
+                  "breakdown_value": "direct"
+                },
+                {
+                  "data": [33],
+                  "days": ["2026-05-26"],
+                  "count": 33,
+                  "label": "newsletter",
+                  "breakdown_value": "newsletter"
+                },
+                {
+                  "data": [999],
+                  "days": ["2026-05-26"],
+                  "count": 999,
+                  "label": "Other",
+                  "breakdown_value": "__other__"
+                }
+              ]
+            }
+          },
+          {
+            "id": 6536097,
+            "order": 4,
+            "insight": {
+              "id": 7359529,
+              "name": "Top Pages",
+              "result": [
+                {
+                  "data": [420],
+                  "days": ["2026-05-26"],
+                  "count": 420,
+                  "label": "/blog",
+                  "breakdown_value": "/blog"
+                },
+                {
+                  "data": [9000],
+                  "days": ["2026-05-26"],
+                  "count": 9000,
+                  "label": "Other",
+                  "breakdown_value": "$$_posthog_breakdown_other_$$"
+                },
+                {
+                  "data": [5],
+                  "days": ["2026-05-26"],
+                  "count": 5,
+                  "label": "/pricing",
+                  "breakdown_value": "/pricing"
+                },
+                {
+                  "data": [1966],
+                  "days": ["2026-05-26"],
+                  "count": 1966,
+                  "label": "/studio",
+                  "breakdown_value": "/studio"
+                },
+                {
+                  "data": [300],
+                  "days": ["2026-05-26"],
+                  "count": 300,
+                  "label": "/docs",
+                  "breakdown_value": "/docs"
+                },
+                {
+                  "data": [100],
+                  "days": ["2026-05-26"],
+                  "count": 100,
+                  "label": "/",
+                  "breakdown_value": "/"
+                },
+                {
+                  "data": [50],
+                  "days": ["2026-05-26"],
+                  "count": 50,
+                  "label": "/about",
+                  "breakdown_value": "/about"
+                },
+                {
+                  "data": [25],
+                  "days": ["2026-05-26"],
+                  "count": 25,
+                  "label": "/changelog",
+                  "breakdown_value": "/changelog"
+                }
+              ]
+            }
+          },
+          {
+            "id": 6536098,
+            "order": 5,
+            "insight": {
+              "id": 7359530,
+              "name": "Blog -> Upload Activation",
+              "result": []
+            }
+          },
+          {
+            "id": 6536099,
+            "order": 6,
+            "insight": {
+              "id": 7359531,
+              "derived_name": "Experimental Dashboard Tile",
+              "result": []
+            }
+          }
+        ]
+      }
+      """.utf8
+    )
+
+    let response = try PostHogDashboardRunResponse(data: data)
+    let snapshot = BleepBlogDashboardNormalizer.snapshot(
+      response: response,
+      range: .month,
+      anchorDate: SampleData.date("2026-05-26")
+    )
+
+    XCTAssertEqual(snapshot.dataSource, .livePostHog)
+    XCTAssertEqual(snapshot.project.id, "bleep-that-sht")
+    XCTAssertEqual(snapshot.project.name, "Bleep Blog KPI Dashboard")
+    XCTAssertEqual(snapshot.connection(for: .postHog)?.status, .connected)
+    XCTAssertEqual(snapshot.connection(for: .searchConsole)?.status, .notConnected)
+    XCTAssertEqual(Array(snapshot.visibleMetrics.map(\.kind).prefix(2)), [.weeklyVisitors, .pageViews])
+    XCTAssertEqual(snapshot.visibleMetrics.first { $0.kind == .weeklyVisitors }?.formattedValue, "41")
+    XCTAssertEqual(snapshot.visibleMetrics.first { $0.kind == .pageViews }?.formattedValue, "1,314")
+    XCTAssertEqual(snapshot.topEvents.map(\.title), ["direct", "newsletter", "github.com"])
+    XCTAssertEqual(snapshot.topPages.map(\.title), ["/studio", "/blog", "/docs", "/", "/about"])
+    XCTAssertTrue(snapshot.topQueries.isEmpty)
+    XCTAssertEqual(snapshot.shippingContext.pullRequestCount, 0)
+    XCTAssertEqual(snapshot.shippingContext.releaseCount, 0)
+    XCTAssertTrue(snapshot.issues.contains { $0.detail.contains("Blog -> Upload Activation") })
+    XCTAssertTrue(snapshot.issues.contains { $0.detail.contains("Experimental Dashboard Tile") })
+  }
+
   func testPostHogGrowthProviderMapsDailyMetricsAndTopEvents() async throws {
     let transport = FixturePostHogQueryTransport(responses: [
       """

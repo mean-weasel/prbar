@@ -39,6 +39,8 @@ struct GrowthProject: Identifiable, Codable, Equatable, Sendable {
 }
 
 enum GrowthMetricKind: String, CaseIterable, Identifiable, Codable, Sendable {
+  case weeklyVisitors
+  case pageViews
   case activeUsers
   case keyEventCount
   case conversionRate
@@ -168,6 +170,8 @@ struct GrowthDashboardSnapshot: Codable, Equatable, Sendable {
         .map(\.provider)
     )
     let priority: [GrowthMetricKind] = [
+      .weeklyVisitors,
+      .pageViews,
       .activeUsers,
       .keyEventCount,
       .searchClicks,
