@@ -145,6 +145,7 @@ final class PostHogGrowthProviderTests: XCTestCase {
 
     XCTAssertEqual(snapshot.connection(for: .postHog)?.status, .connected)
     XCTAssertEqual(snapshot.connection(for: .searchConsole)?.status, .notConnected)
+    XCTAssertEqual(snapshot.dataSource, .livePostHog)
     XCTAssertEqual(snapshot.visibleMetrics.map(\.kind), [.activeUsers, .keyEventCount])
     XCTAssertEqual(snapshot.visibleMetrics.first { $0.kind == .activeUsers }?.formattedValue, "32")
     XCTAssertEqual(snapshot.visibleMetrics.first { $0.kind == .keyEventCount }?.formattedValue, "93")
@@ -169,6 +170,7 @@ final class PostHogGrowthProviderTests: XCTestCase {
 
     XCTAssertEqual(snapshot.connection(for: .postHog)?.status, .needsAttention)
     XCTAssertEqual(snapshot.connection(for: .searchConsole)?.status, .connected)
+    XCTAssertEqual(snapshot.dataSource, .sampleFallback)
     XCTAssertFalse(snapshot.visibleMetrics.contains { $0.provider == .postHog })
     XCTAssertTrue(snapshot.visibleMetrics.contains { $0.provider == .searchConsole })
     XCTAssertEqual(snapshot.issues.first?.title, "PostHog needs attention")

@@ -218,6 +218,7 @@ struct PostHogGrowthProvider: GrowthDashboardProviding {
     topEventRows: [PostHogTopEventRow]
   ) -> GrowthDashboardSnapshot {
     var snapshot = baseSnapshot
+    snapshot.dataSource = .livePostHog
     snapshot.project.id = projectID
     snapshot.range = range
     snapshot.anchorDate = anchorDate
@@ -266,6 +267,7 @@ struct PostHogGrowthProvider: GrowthDashboardProviding {
     message: String
   ) -> GrowthDashboardSnapshot {
     var snapshot = baseSnapshot
+    snapshot.dataSource = .sampleFallback
     snapshot.project.id = projectID
     snapshot.range = range
     snapshot.anchorDate = anchorDate

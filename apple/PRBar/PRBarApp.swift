@@ -389,6 +389,7 @@ private extension PRBarApp {
         ),
       ]
     )
+    snapshot.dataSource = .sampleFallback
     snapshot.issues = [
       GrowthDashboardIssue(
         id: "posthog-needs-attention",
