@@ -39,6 +39,8 @@ struct GrowthProject: Identifiable, Codable, Equatable, Sendable {
 }
 
 enum GrowthMetricKind: String, CaseIterable, Identifiable, Codable, Sendable {
+  case weeklyVisitors
+  case pageViews
   case activeUsers
   case keyEventCount
   case conversionRate
@@ -54,6 +56,34 @@ enum GrowthMetricUnit: String, Codable, Sendable {
   case count
   case percent
   case position
+}
+
+enum GrowthDataSource: String, Codable, Equatable, Sendable {
+  case sample
+  case livePostHog
+  case sampleFallback
+
+  var displayName: String {
+    switch self {
+    case .sample:
+      "Sample data"
+    case .livePostHog:
+      "Live PostHog"
+    case .sampleFallback:
+      "Sample fallback"
+    }
+  }
+
+  var detail: String {
+    switch self {
+    case .sample:
+      "Growth is using the built-in demo snapshot."
+    case .livePostHog:
+      "Growth is using live PostHog query results."
+    case .sampleFallback:
+      "Growth is showing cached sample data because the live provider needs attention."
+    }
+  }
 }
 
 struct GrowthDelta: Codable, Equatable, Sendable {
@@ -121,6 +151,7 @@ struct GrowthDashboardIssue: Identifiable, Codable, Equatable, Sendable {
 }
 
 struct GrowthDashboardSnapshot: Codable, Equatable, Sendable {
+  var dataSource: GrowthDataSource
   var project: GrowthProject
   var range: ActivityRange
   var anchorDate: Date
@@ -139,6 +170,8 @@ struct GrowthDashboardSnapshot: Codable, Equatable, Sendable {
         .map(\.provider)
     )
     let priority: [GrowthMetricKind] = [
+      .weeklyVisitors,
+      .pageViews,
       .activeUsers,
       .keyEventCount,
       .searchClicks,
@@ -185,6 +218,7 @@ extension GrowthDashboardSnapshot {
     ]
 
     return GrowthDashboardSnapshot(
+      dataSource: .sample,
       project: project,
       range: range,
       anchorDate: anchorDate,

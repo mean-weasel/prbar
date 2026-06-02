@@ -94,6 +94,16 @@ struct GrowthView: View {
 
         Spacer()
 
+        Label(snapshot.dataSource.displayName, systemImage: dataSourceSymbol(for: snapshot.dataSource))
+          .font(.caption.weight(.semibold))
+          .padding(.horizontal, 8)
+          .padding(.vertical, 5)
+          .background(dataSourceBadgeColor(for: snapshot.dataSource))
+          .clipShape(Capsule())
+          .accessibilityHint(snapshot.dataSource.detail)
+      }
+
+      HStack(spacing: 8) {
         ForEach(snapshot.connections) { connection in
           Text(connection.provider.displayName)
             .font(.caption.weight(.semibold))
@@ -140,7 +150,7 @@ struct GrowthView: View {
   @ViewBuilder
   private var providerSections: some View {
     if snapshot.connection(for: .postHog)?.status == .connected {
-      GrowthProviderSectionView(provider: .postHog, rows: snapshot.topEvents)
+      GrowthProviderSectionView(provider: .postHog, rows: postHogSectionRows)
     }
 
     if snapshot.connection(for: .searchConsole)?.status == .connected {
@@ -162,6 +172,13 @@ struct GrowthView: View {
     }
   }
 
+  private var postHogSectionRows: [GrowthListRow] {
+    if snapshot.connection(for: .searchConsole)?.status == .connected {
+      return snapshot.topEvents
+    }
+    return snapshot.topEvents + snapshot.topPages
+  }
+
   private func issueView(_ issue: AuthIssue) -> some View {
     VStack(alignment: .leading, spacing: 6) {
       Text(issue.title)
@@ -181,6 +198,28 @@ struct GrowthView: View {
     case .connected, .refreshing:
       Color.green.opacity(0.14)
     case .notConnected, .needsAttention:
+      Color.orange.opacity(0.14)
+    }
+  }
+
+  private func dataSourceSymbol(for source: GrowthDataSource) -> String {
+    switch source {
+    case .sample:
+      "sparkles"
+    case .livePostHog:
+      "dot.radiowaves.left.and.right"
+    case .sampleFallback:
+      "exclamationmark.triangle"
+    }
+  }
+
+  private func dataSourceBadgeColor(for source: GrowthDataSource) -> Color {
+    switch source {
+    case .sample:
+      Color.blue.opacity(0.14)
+    case .livePostHog:
+      Color.green.opacity(0.14)
+    case .sampleFallback:
       Color.orange.opacity(0.14)
     }
   }

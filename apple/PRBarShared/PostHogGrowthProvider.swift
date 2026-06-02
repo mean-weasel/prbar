@@ -4,6 +4,7 @@ struct PostHogConfiguration: Equatable, Sendable {
   var host: URL
   var projectID: String
   var personalAPIKey: String
+  var dashboardID: Int? = nil
 
   static func live(environment: [String: String]) -> PostHogConfiguration? {
     guard let projectID = normalized(environment["PRBAR_IOS_POSTHOG_PROJECT_ID"]),
@@ -17,13 +18,16 @@ struct PostHogConfiguration: Equatable, Sendable {
       return nil
     }
 
-    return PostHogConfiguration(host: host, projectID: projectID, personalAPIKey: personalAPIKey)
+    let dashboardID = normalized(environment["PRBAR_IOS_POSTHOG_DASHBOARD_ID"]).flatMap(Int.init)
+
+    return PostHogConfiguration(host: host, projectID: projectID, personalAPIKey: personalAPIKey, dashboardID: dashboardID)
   }
 
   static let fixture = PostHogConfiguration(
     host: URL(string: "https://us.posthog.com")!,
     projectID: "12345",
-    personalAPIKey: "phx_fixture"
+    personalAPIKey: "phx_fixture",
+    dashboardID: 1_362_888
   )
 
   private static func normalized(_ value: String?) -> String? {
@@ -72,6 +76,39 @@ struct PostHogConnectionDiagnostics: Equatable, Sendable {
     case nil:
       "Not connected"
     }
+  }
+}
+
+enum PostHogDashboardRequest {
+  static func dashboard(configuration: PostHogConfiguration) throws -> URLRequest {
+    guard let dashboardID = configuration.dashboardID,
+      let url = URL(string: "/api/environments/\(configuration.projectID)/dashboards/\(dashboardID)/", relativeTo: configuration.host)?.absoluteURL
+    else {
+      throw PostHogAPIError.invalidURL
+    }
+
+    return request(url: url, configuration: configuration)
+  }
+
+  static func runInsights(configuration: PostHogConfiguration, refresh: String) throws -> URLRequest {
+    guard let dashboardID = configuration.dashboardID,
+      let url = URL(
+        string: "/api/environments/\(configuration.projectID)/dashboards/\(dashboardID)/run_insights/?output_format=json&refresh=\(refresh)",
+        relativeTo: configuration.host
+      )?.absoluteURL
+    else {
+      throw PostHogAPIError.invalidURL
+    }
+
+    return request(url: url, configuration: configuration)
+  }
+
+  private static func request(url: URL, configuration: PostHogConfiguration) -> URLRequest {
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET"
+    request.setValue("Bearer \(configuration.personalAPIKey)", forHTTPHeaderField: "Authorization")
+    request.setValue("application/json", forHTTPHeaderField: "Accept")
+    return request
   }
 }
 
@@ -218,6 +255,7 @@ struct PostHogGrowthProvider: GrowthDashboardProviding {
     topEventRows: [PostHogTopEventRow]
   ) -> GrowthDashboardSnapshot {
     var snapshot = baseSnapshot
+    snapshot.dataSource = .livePostHog
     snapshot.project.id = projectID
     snapshot.range = range
     snapshot.anchorDate = anchorDate
@@ -266,6 +304,7 @@ struct PostHogGrowthProvider: GrowthDashboardProviding {
     message: String
   ) -> GrowthDashboardSnapshot {
     var snapshot = baseSnapshot
+    snapshot.dataSource = .sampleFallback
     snapshot.project.id = projectID
     snapshot.range = range
     snapshot.anchorDate = anchorDate

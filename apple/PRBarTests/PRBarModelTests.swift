@@ -5,6 +5,8 @@ final class PRBarModelTests: XCTestCase {
   func testGrowthSnapshotOrdersVisibleMetricsByConnectedProviderPriority() {
     let snapshot = GrowthDashboardSnapshot.fixture(range: .week)
 
+    XCTAssertEqual(snapshot.dataSource, .sample)
+    XCTAssertEqual(snapshot.dataSource.displayName, "Sample data")
     XCTAssertEqual(
       snapshot.visibleMetrics.map(\.kind),
       [.activeUsers, .keyEventCount, .searchClicks, .searchImpressions]
