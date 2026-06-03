@@ -78,6 +78,47 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testLivePostHogGrowthMetricsRender() throws {
+    let environment = ProcessInfo.processInfo.environment
+    guard environment["PRBAR_IOS_POSTHOG_PROJECT_ID"]?.isEmpty == false,
+      environment["PRBAR_IOS_POSTHOG_PERSONAL_API_KEY"]?.isEmpty == false,
+      environment["PRBAR_IOS_POSTHOG_DASHBOARD_ID"]?.isEmpty == false
+    else {
+      throw XCTSkip("PostHog bundle settings are required for live production Growth smoke.")
+    }
+
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    app.tapTab("Growth")
+
+    XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 8))
+    XCTAssertTrue(app.buttons["Refresh growth"].waitForExistence(timeout: 4))
+    app.buttons["Refresh growth"].tap()
+    let dashboardLoaded = app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 30)
+    if dashboardLoaded == false {
+      let hierarchy = app.debugDescription
+      let attachment = XCTAttachment(string: hierarchy)
+      attachment.name = "Growth tab hierarchy after live PostHog refresh"
+      attachment.lifetime = .keepAlways
+      add(attachment)
+
+      if hierarchy.contains("PostHog API key needs attention") {
+        XCTFail("Live PostHog dashboard did not load because the configured API key returned 401/403.")
+      } else if hierarchy.contains("Sample fallback") {
+        XCTFail("Live PostHog dashboard did not load; Growth remained on sample fallback data.")
+      } else {
+        XCTFail("Live PostHog dashboard did not load. See attached Growth tab hierarchy.")
+      }
+      return
+    }
+    XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
+    XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
+    XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
+  }
+
+  @MainActor
   func testPRCalendarAndRepoDistributionAreReachable() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]

@@ -255,6 +255,66 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertEqual(response.results[1].insight.result[0].breakdownValue, "/studio")
   }
 
+  func testPostHogDashboardRunResponseToleratesUnsupportedTileShapes() throws {
+    let data = Data(
+      """
+      {
+        "results": [
+          {
+            "id": 6536094,
+            "order": 1,
+            "insight": {
+              "id": 7359526,
+              "name": "Weekly Visitors",
+              "result": [
+                {
+                  "data": [11, null, "13"],
+                  "days": ["2026-05-12", "2026-05-19", "2026-05-26"],
+                  "count": "24",
+                  "label": "$pageview"
+                }
+              ]
+            }
+          },
+          {
+            "id": 6536098,
+            "order": 5,
+            "insight": {
+              "id": 7359530,
+              "name": "Blog -> Upload Activation"
+            }
+          },
+          {
+            "id": 6536099,
+            "order": 6,
+            "insight": {
+              "id": 7359531,
+              "name": "Null Result Tile",
+              "result": null
+            }
+          },
+          {
+            "id": 6536100,
+            "order": 7,
+            "insight": null
+          }
+        ]
+      }
+      """.utf8
+    )
+
+    let response = try PostHogDashboardRunResponse(data: data)
+
+    XCTAssertEqual(response.results.count, 4)
+    XCTAssertEqual(response.results[0].insight.name, "Weekly Visitors")
+    XCTAssertEqual(response.results[0].insight.result[0].data, [11, 13])
+    XCTAssertEqual(response.results[0].insight.result[0].count, 24)
+    XCTAssertTrue(response.results[1].insight.result.isEmpty)
+    XCTAssertTrue(response.results[2].insight.result.isEmpty)
+    XCTAssertEqual(response.results[3].insight.name, nil)
+    XCTAssertTrue(response.results[3].insight.result.isEmpty)
+  }
+
   func testBleepBlogDashboardNormalizerMapsSupportedTilesToGrowthSnapshot() throws {
     let data = Data(
       """
