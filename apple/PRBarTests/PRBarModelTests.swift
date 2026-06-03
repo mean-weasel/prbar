@@ -295,7 +295,10 @@ final class PRBarModelTests: XCTestCase {
   @MainActor
   func testGrowthRangeRefreshesSnapshotWithoutRefreshingGitHubActivity() async {
     let provider = StaticGrowthDashboardProvider(snapshot: .fixture(range: .week))
-    let store = PRBarStore.sample(growthProvider: provider)
+    let store = PRBarStore.sample(
+      growthProvider: provider,
+      currentDate: { SampleData.dateTime("2026-05-24T18:45:00Z") }
+    )
 
     store.activityAnchorDate = SampleData.date("2026-06-01")
     store.setGrowthRange(.month)
@@ -308,6 +311,27 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.growthSnapshot.shippingContext.summary, "5 releases and 5 PRs landed during this window.")
     XCTAssertFalse(store.isRefreshingActivity)
     XCTAssertFalse(store.isRefreshingGrowth)
+  }
+
+  @MainActor
+  func testGrowthRefreshUsesCurrentDayAnchorInsteadOfStaleSnapshotAnchor() async throws {
+    var staleSnapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    staleSnapshot.anchorDate = SampleData.date("2026-05-24")
+    let provider = RecordingGrowthDashboardProvider(snapshot: staleSnapshot)
+    let store = PRBarStore.sample(
+      growthSnapshot: staleSnapshot,
+      growthProvider: provider,
+      currentDate: { SampleData.dateTime("2026-06-03T14:45:00Z") }
+    )
+
+    store.setGrowthRange(.month)
+    await store.refreshGrowth()
+
+    let requests = await provider.recordedRequests()
+    let request = try XCTUnwrap(requests.first)
+    XCTAssertEqual(request.range, .month)
+    XCTAssertEqual(request.anchorDate, SampleData.date("2026-06-03"))
+    XCTAssertEqual(store.growthSnapshot.anchorDate, SampleData.date("2026-06-03"))
   }
 
   @MainActor
@@ -1857,6 +1881,44 @@ private final class RecordingGitHubActivityProvider: GitHubActivityProviding, @u
     calendar.timeZone = TimeZone(secondsFromGMT: 0)!
     return calendar
   }()
+}
+
+private struct RecordedGrowthDashboardRequest: Equatable, Sendable {
+  var projectID: GrowthProject.ID
+  var range: ActivityRange
+  var anchorDate: Date
+}
+
+private actor RecordingGrowthDashboardProvider: GrowthDashboardProviding {
+  private var snapshot: GrowthDashboardSnapshot
+  private var requests: [RecordedGrowthDashboardRequest] = []
+
+  init(snapshot: GrowthDashboardSnapshot) {
+    self.snapshot = snapshot
+  }
+
+  func dashboard(
+    projectID: GrowthProject.ID,
+    range: ActivityRange,
+    anchorDate: Date
+  ) async throws -> GrowthDashboardSnapshot {
+    requests.append(
+      RecordedGrowthDashboardRequest(
+        projectID: projectID,
+        range: range,
+        anchorDate: anchorDate
+      )
+    )
+    var updated = snapshot
+    updated.project.id = projectID
+    updated.range = range
+    updated.anchorDate = anchorDate
+    return updated
+  }
+
+  func recordedRequests() -> [RecordedGrowthDashboardRequest] {
+    requests
+  }
 }
 
 private final class SuspendedGitHubActivityProvider: GitHubActivityProviding, @unchecked Sendable {

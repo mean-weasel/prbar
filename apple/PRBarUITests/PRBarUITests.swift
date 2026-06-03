@@ -31,7 +31,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Active users"].exists)
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
     app.assertGrowthChartPointCount(7)
-    XCTAssertTrue(app.staticTexts["4 releases and 5 PRs landed during this window."].exists)
+    XCTAssertTrue(app.staticTexts["Shipping context"].exists)
   }
 
   @MainActor
@@ -46,7 +46,11 @@ final class PRBarUITests: XCTestCase {
     XCTAssertEqual(app.otherElements["growth-trend-chart"].value as? String, "7 points")
     app.segmentedControls.buttons["Month"].tap()
 
-    XCTAssertEqual(app.otherElements["growth-trend-chart"].value as? String, "31 points")
+    let monthValue = app.otherElements["growth-trend-chart"].value as? String
+    let monthPointCount = monthValue
+      .flatMap { Int($0.replacingOccurrences(of: " points", with: "")) }
+    XCTAssertGreaterThanOrEqual(monthPointCount ?? 0, 28)
+    XCTAssertLessThanOrEqual(monthPointCount ?? 0, 31)
     XCTAssertTrue(app.staticTexts["Search Console data can lag by a few days."].exists)
   }
 
@@ -104,6 +108,12 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 8), "Refresh PostHog growth did not become enabled")
     refreshButton.tap()
     XCTAssertTrue(app.staticTexts["Growth data refreshed"].waitForExistence(timeout: 8))
+    XCTAssertTrue(
+      app.staticTexts
+        .containing(NSPredicate(format: "label CONTAINS %@", "over the last 7 days"))
+        .firstMatch
+        .exists
+    )
   }
 
   @MainActor

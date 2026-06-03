@@ -220,7 +220,7 @@ struct GrowthView: View {
       "\(message) Pull to refresh reloads only this Growth dashboard."
     case .loaded(_, let source):
       """
-      Showing \(source.displayName) for \(snapshot.project.name). \
+      Showing \(source.displayName) data for \(snapshot.project.name) over the \(store.growthRange.growthRefreshDescription). \
       Pull to refresh reloads this Growth dashboard.
       """
     case .failed(let message):

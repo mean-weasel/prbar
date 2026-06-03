@@ -6,7 +6,7 @@ struct RangePickerView: View {
   var body: some View {
     Picker("Range", selection: $selection) {
       ForEach(ActivityRange.allCases) { range in
-        Text(range.rawValue.capitalized)
+        Text(range.displayName)
           .tag(range)
       }
     }
