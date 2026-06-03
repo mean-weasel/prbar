@@ -297,7 +297,7 @@ final class PRBarStore {
     }
 
     isRefreshingGrowth = true
-    growthRefreshStatus = .loading(message: "Refreshing PostHog...")
+    growthRefreshStatus = .loading(message: "Refreshing Growth from PostHog...")
     growthRefreshIssue = nil
     defer { isRefreshingGrowth = false }
 
