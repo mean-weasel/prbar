@@ -106,6 +106,10 @@ private func runLivePostHogGrowthSmoke(file: StaticString = #filePath, line: UIn
   if let host = environment["PRBAR_IOS_POSTHOG_HOST"], host.isEmpty == false {
     app.launchEnvironment["PRBAR_IOS_POSTHOG_HOST"] = host
   }
+  let dashboardID = environment["PRBAR_IOS_POSTHOG_DASHBOARD_ID"]
+  if let dashboardID = environment["PRBAR_IOS_POSTHOG_DASHBOARD_ID"], dashboardID.isEmpty == false {
+    app.launchEnvironment["PRBAR_IOS_POSTHOG_DASHBOARD_ID"] = dashboardID
+  }
   app.launch()
 
   app.tapTab("Growth", file: file, line: line)
@@ -114,8 +118,15 @@ private func runLivePostHogGrowthSmoke(file: StaticString = #filePath, line: UIn
   XCTAssertTrue(refreshButton.waitForExistence(timeout: 4), file: file, line: line)
   XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 30), "Refresh PostHog growth did not become enabled", file: file, line: line)
   refreshButton.tap()
-  XCTAssertTrue(app.staticTexts["Active users"].waitForExistence(timeout: 30), file: file, line: line)
-  XCTAssertTrue(app.staticTexts["Events"].waitForExistence(timeout: 30), file: file, line: line)
+  if dashboardID?.isEmpty == false {
+    XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 30), file: file, line: line)
+    XCTAssertTrue(app.staticTexts["Weekly visitors"].waitForExistence(timeout: 4), file: file, line: line)
+    XCTAssertTrue(app.staticTexts["Daily pageviews"].waitForExistence(timeout: 4), file: file, line: line)
+  } else {
+    XCTAssertTrue(app.staticTexts["Active users"].waitForExistence(timeout: 30), file: file, line: line)
+    XCTAssertTrue(app.staticTexts["Events"].waitForExistence(timeout: 4), file: file, line: line)
+  }
+  app.assertGrowthChartPointCount(7, file: file, line: line)
 
   app.tapTab("More", file: file, line: line)
   XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 4), file: file, line: line)
@@ -178,6 +189,30 @@ private extension XCUIApplication {
     activate()
     button.tap()
     XCTAssertTrue(staticTexts[expectedText].waitForExistence(timeout: 3), "\(name) did not reach \(expectedText)", file: file, line: line)
+  }
+
+  @MainActor
+  func assertGrowthChartPointCount(
+    _ count: Int,
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) {
+    let chart = otherElements["growth-trend-chart"].firstMatch
+    let expectedAccessibilityValue = "\(count) points"
+    let expectedCaption = "\(count) daily points"
+
+    XCTAssertTrue(
+      chart.waitForExistence(timeout: 4) || staticTexts[expectedCaption].waitForExistence(timeout: 1),
+      "Growth chart did not expose \(expectedAccessibilityValue) or \(expectedCaption).",
+      file: file,
+      line: line
+    )
+
+    if chart.exists {
+      XCTAssertEqual(chart.value as? String, expectedAccessibilityValue, file: file, line: line)
+    } else {
+      XCTAssertTrue(staticTexts[expectedCaption].exists, file: file, line: line)
+    }
   }
 
   @MainActor

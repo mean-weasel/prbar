@@ -30,6 +30,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Active users"].exists)
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
+    app.assertGrowthChartPointCount(7)
     XCTAssertTrue(app.staticTexts["4 releases and 5 PRs landed during this window."].exists)
   }
 
@@ -74,6 +75,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
+    app.assertGrowthChartPointCount(7)
     app.scrollToStaticText("/studio")
   }
 
@@ -140,6 +142,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
+    app.assertGrowthChartPointCount(7)
   }
 
   @MainActor
@@ -607,6 +610,30 @@ private extension XCUIApplication {
     staticTexts
       .matching(NSPredicate(format: "label MATCHES %@", ".*[0-9]+\\.[0-9]+\\.[0-9]+.*"))
       .firstMatch
+  }
+
+  @MainActor
+  func assertGrowthChartPointCount(
+    _ count: Int,
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) {
+    let chart = otherElements["growth-trend-chart"].firstMatch
+    let expectedAccessibilityValue = "\(count) points"
+    let expectedCaption = "\(count) daily points"
+
+    XCTAssertTrue(
+      chart.waitForExistence(timeout: 4) || staticTexts[expectedCaption].waitForExistence(timeout: 1),
+      "Growth chart did not expose \(expectedAccessibilityValue) or \(expectedCaption).",
+      file: file,
+      line: line
+    )
+
+    if chart.exists {
+      XCTAssertEqual(chart.value as? String, expectedAccessibilityValue, file: file, line: line)
+    } else {
+      XCTAssertTrue(staticTexts[expectedCaption].exists, file: file, line: line)
+    }
   }
 
   @MainActor
