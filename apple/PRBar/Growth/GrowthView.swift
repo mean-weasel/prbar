@@ -28,6 +28,8 @@ struct GrowthView: View {
 
           RangePickerView(selection: growthRangeBinding)
 
+          growthRefreshStatusRow
+
           if let issue = store.growthRefreshIssue {
             issueView(issue)
           }
@@ -55,13 +57,14 @@ struct GrowthView: View {
           Button {
             Task { await store.refreshGrowth() }
           } label: {
-            Label("Refresh growth", systemImage: "arrow.clockwise")
+            Label("Refresh PostHog growth", systemImage: "arrow.clockwise")
           }
           .disabled(store.isRefreshingGrowth)
         }
       }
       .task {
         selectedMetricID = selectedMetricID ?? snapshot.defaultMetric?.id
+        await store.refreshGrowthIfNeeded()
       }
       .onChange(of: snapshot.defaultMetric?.id) { _, defaultMetricID in
         guard selectedMetricID == nil || selectedMetric == nil else {
@@ -126,6 +129,33 @@ struct GrowthView: View {
         }
         .buttonStyle(.plain)
       }
+    }
+  }
+
+  @ViewBuilder
+  private var growthRefreshStatusRow: some View {
+    switch store.growthRefreshStatus {
+    case .idle:
+      EmptyView()
+    case let .loading(message):
+      HStack(spacing: 8) {
+        ProgressView()
+        Text(message)
+      }
+      .font(.caption.weight(.semibold))
+      .foregroundStyle(.secondary)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .accessibilityElement(children: .combine)
+    case let .loaded(lastRefreshedAt, source):
+      Label("Last refreshed \(refreshDateLabel(for: lastRefreshedAt)) from \(source.displayName)", systemImage: "checkmark.circle")
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    case let .failed(message):
+      Label(message, systemImage: "exclamationmark.triangle")
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.orange)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
   }
 
@@ -222,6 +252,16 @@ struct GrowthView: View {
     case .sampleFallback:
       Color.orange.opacity(0.14)
     }
+  }
+
+  private func refreshDateLabel(for date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.dateStyle = .medium
+    formatter.timeStyle = .short
+    return formatter.string(from: date)
   }
 }
 

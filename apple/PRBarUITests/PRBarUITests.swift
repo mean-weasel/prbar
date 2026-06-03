@@ -78,6 +78,25 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
+  func testGrowthShowsExplicitPostHogRefreshState() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-bleep-posthog-dashboard"]
+    app.launch()
+
+    app.tapTab("Growth")
+
+    XCTAssertTrue(app.buttons["Refresh PostHog growth"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Live PostHog"].waitForExistence(timeout: 4))
+    XCTAssertTrue(
+      app.staticTexts
+        .containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed"))
+        .firstMatch
+        .waitForExistence(timeout: 4)
+    )
+  }
+
+  @MainActor
   func testLivePostHogGrowthMetricsRender() throws {
     let environment = ProcessInfo.processInfo.environment
     guard environment["PRBAR_IOS_POSTHOG_PROJECT_ID"]?.isEmpty == false,
@@ -94,8 +113,8 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("Growth")
 
     XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 8))
-    XCTAssertTrue(app.buttons["Refresh growth"].waitForExistence(timeout: 4))
-    app.buttons["Refresh growth"].tap()
+    XCTAssertTrue(app.buttons["Refresh PostHog growth"].waitForExistence(timeout: 4))
+    app.buttons["Refresh PostHog growth"].tap()
     let dashboardLoaded = app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 30)
     if dashboardLoaded == false {
       let hierarchy = app.debugDescription

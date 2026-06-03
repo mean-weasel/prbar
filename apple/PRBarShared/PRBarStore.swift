@@ -29,6 +29,7 @@ final class PRBarStore {
   var isRefreshingGrowth = false
   var growthRefreshStatus: GrowthRefreshStatus = .idle
   var growthRefreshIssue: AuthIssue?
+  private var hasAttemptedAutomaticGrowthRefresh = false
   private let authService: GitHubAuthServicing
   private let repositoryProvider: GitHubRepositoryProviding
   private let activityProvider: GitHubActivityProviding
@@ -268,6 +269,16 @@ final class PRBarStore {
 
   func selectGrowthProject(_ projectID: GrowthProject.ID) {
     selectedGrowthProjectID = projectID
+  }
+
+  @MainActor
+  func refreshGrowthIfNeeded() async {
+    guard hasAttemptedAutomaticGrowthRefresh == false else {
+      return
+    }
+
+    hasAttemptedAutomaticGrowthRefresh = true
+    await refreshGrowth()
   }
 
   @MainActor
