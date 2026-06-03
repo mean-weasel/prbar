@@ -79,8 +79,7 @@ final class PRBarModelTests: XCTestCase {
   @MainActor
   func testGrowthRefreshStatusMovesFromLoadingToLoaded() async {
     let now = SampleData.dateTime("2026-05-24T18:45:00Z")
-    var snapshot = GrowthDashboardSnapshot.fixture(range: .week)
-    snapshot.dataSource = .livePostHog
+    let snapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
     let provider = StaticGrowthDashboardProvider(snapshot: snapshot)
     let store = PRBarStore.sample(growthProvider: provider, currentDate: { now })
 
@@ -90,6 +89,43 @@ final class PRBarModelTests: XCTestCase {
 
     XCTAssertEqual(store.growthRefreshStatus, .loaded(lastRefreshedAt: now, source: .livePostHog))
     XCTAssertFalse(store.isRefreshingGrowth)
+  }
+
+  @MainActor
+  func testGrowthRefreshPersistsSuccessfulSnapshotToCache() async throws {
+    let now = SampleData.dateTime("2026-05-24T18:45:00Z")
+    let cacheStore = InMemoryGrowthDashboardCacheStore()
+    var snapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    snapshot.project.name = "Live PRBar"
+    let store = PRBarStore.sample(
+      growthProvider: StaticGrowthDashboardProvider(snapshot: snapshot),
+      growthCacheStore: cacheStore,
+      currentDate: { now }
+    )
+
+    await store.refreshGrowth()
+
+    let record = try XCTUnwrap(try cacheStore.load())
+    XCTAssertEqual(record.savedAt, now)
+    XCTAssertEqual(record.snapshot.dataSource, .livePostHog)
+    XCTAssertEqual(record.snapshot.project.name, "Live PRBar")
+  }
+
+  @MainActor
+  func testRestoreGrowthSnapshotUsesCachedLiveDataBeforeRefresh() throws {
+    let savedAt = SampleData.dateTime("2026-05-24T18:45:00Z")
+    var snapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    snapshot.project.name = "Cached Live PRBar"
+    let cacheStore = InMemoryGrowthDashboardCacheStore(
+      record: GrowthDashboardCacheRecord(snapshot: snapshot, savedAt: savedAt)
+    )
+    let store = PRBarStore.sample(growthCacheStore: cacheStore)
+
+    store.restoreGrowthSnapshot()
+
+    XCTAssertEqual(store.growthSnapshot.dataSource, .livePostHog)
+    XCTAssertEqual(store.growthSnapshot.project.name, "Cached Live PRBar")
+    XCTAssertEqual(store.growthRefreshStatus, .loaded(lastRefreshedAt: savedAt, source: .livePostHog))
   }
 
   @MainActor
@@ -1574,6 +1610,14 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.pullRequests, originalPullRequests)
     XCTAssertNil(store.activityRefreshIssue)
     XCTAssertFalse(store.isRefreshingActivity)
+  }
+}
+
+private extension GrowthDashboardSnapshot {
+  func withDataSource(_ dataSource: GrowthDataSource) -> GrowthDashboardSnapshot {
+    var snapshot = self
+    snapshot.dataSource = dataSource
+    return snapshot
   }
 }
 

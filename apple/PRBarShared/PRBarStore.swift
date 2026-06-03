@@ -36,6 +36,7 @@ final class PRBarStore {
   private let repositoryColorStore: RepositoryColorStoring
   private let activityCacheStore: GitHubActivityCacheStoring
   private let growthProvider: GrowthDashboardProviding
+  private let growthCacheStore: GrowthDashboardCacheStoring
   private let currentDate: @Sendable () -> Date
   private static let maximumRestoredRepositorySelectionCount = 50
 
@@ -69,6 +70,7 @@ final class PRBarStore {
     growthRange: ActivityRange = .week,
     selectedGrowthProjectID: GrowthProject.ID = SampleData.growthDashboard.project.id,
     growthProvider: GrowthDashboardProviding = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard),
+    growthCacheStore: GrowthDashboardCacheStoring = InMemoryGrowthDashboardCacheStore(),
     currentDate: @escaping @Sendable () -> Date = Date.init
   ) {
     self.repositories = repositories
@@ -94,6 +96,7 @@ final class PRBarStore {
     self.growthRange = growthRange
     self.selectedGrowthProjectID = selectedGrowthProjectID
     self.growthProvider = growthProvider
+    self.growthCacheStore = growthCacheStore
     self.currentDate = currentDate
   }
 
@@ -106,6 +109,7 @@ final class PRBarStore {
     activityCacheStore: GitHubActivityCacheStoring = InMemoryGitHubActivityCacheStore(),
     growthSnapshot: GrowthDashboardSnapshot = SampleData.growthDashboard,
     growthProvider: GrowthDashboardProviding = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard),
+    growthCacheStore: GrowthDashboardCacheStoring = InMemoryGrowthDashboardCacheStore(),
     currentDate: @escaping @Sendable () -> Date = Date.init
   ) -> PRBarStore {
     PRBarStore(
@@ -123,6 +127,7 @@ final class PRBarStore {
       activityCacheStore: activityCacheStore,
       growthSnapshot: growthSnapshot,
       growthProvider: growthProvider,
+      growthCacheStore: growthCacheStore,
       currentDate: currentDate
     )
   }
@@ -277,12 +282,15 @@ final class PRBarStore {
     defer { isRefreshingGrowth = false }
 
     do {
-      growthSnapshot = try await growthProvider.dashboard(
+      let snapshot = try await growthProvider.dashboard(
         projectID: selectedGrowthProjectID,
         range: growthRange,
         anchorDate: growthSnapshot.anchorDate
       )
-      growthRefreshStatus = .loaded(lastRefreshedAt: currentDate(), source: growthSnapshot.dataSource)
+      let refreshedAt = currentDate()
+      growthSnapshot = snapshot
+      try? growthCacheStore.save(GrowthDashboardCacheRecord(snapshot: snapshot, savedAt: refreshedAt))
+      growthRefreshStatus = .loaded(lastRefreshedAt: refreshedAt, source: snapshot.dataSource)
     } catch {
       growthRefreshStatus = .failed(message: error.localizedDescription)
       growthRefreshIssue = AuthIssue(
@@ -291,6 +299,16 @@ final class PRBarStore {
         message: error.localizedDescription
       )
     }
+  }
+
+  @MainActor
+  func restoreGrowthSnapshot() {
+    guard let record = try? growthCacheStore.load() else {
+      return
+    }
+
+    growthSnapshot = record.snapshot
+    growthRefreshStatus = .loaded(lastRefreshedAt: record.savedAt, source: record.snapshot.dataSource)
   }
 
   @MainActor

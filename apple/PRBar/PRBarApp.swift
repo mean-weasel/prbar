@@ -30,6 +30,7 @@ struct PRBarApp: App {
     let repositoryColorStore: RepositoryColorStoring
     let activityCacheStore: GitHubActivityCacheStoring
     let growthProvider: GrowthDashboardProviding
+    let growthCacheStore: GrowthDashboardCacheStoring
     let arguments = ProcessInfo.processInfo.arguments
     let environment = ProcessInfo.processInfo.environment
     let isUITesting = arguments.contains("--ui-testing")
@@ -91,6 +92,7 @@ struct PRBarApp: App {
       activityCacheStore = usesPersistentUITestingState
         ? FileGitHubActivityCacheStore(fileURL: Self.uiTestingActivityCacheURL)
         : InMemoryGitHubActivityCacheStore()
+      growthCacheStore = InMemoryGrowthDashboardCacheStore()
       if isUITestingBleepPostHogDashboard {
         growthProvider = StaticGrowthDashboardProvider(snapshot: Self.uiTestingBleepPostHogDashboardSnapshot)
       } else if arguments.contains("--growth-posthog-needs-attention") {
@@ -118,6 +120,7 @@ struct PRBarApp: App {
       repositorySelectionStore = UserDefaultsRepositorySelectionStore()
       repositoryColorStore = UserDefaultsRepositoryColorStore()
       activityCacheStore = FileGitHubActivityCacheStore()
+      growthCacheStore = FileGrowthDashboardCacheStore()
       growthProvider = GrowthProviderFactory.provider(environment: environment)
     }
 
@@ -151,8 +154,10 @@ struct PRBarApp: App {
       repositorySelectionStore: repositorySelectionStore,
       repositoryColorStore: repositoryColorStore,
       activityCacheStore: activityCacheStore,
-      growthProvider: growthProvider
+      growthProvider: growthProvider,
+      growthCacheStore: growthCacheStore
     )
+    store.restoreGrowthSnapshot()
     if isUITesting, isUITestingBleepPostHogDashboard {
       store.growthSnapshot = Self.uiTestingBleepPostHogDashboardSnapshot
     } else if isUITesting, arguments.contains("--growth-posthog-needs-attention") {
