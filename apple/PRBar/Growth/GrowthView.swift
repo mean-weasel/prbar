@@ -29,6 +29,8 @@ struct GrowthView: View {
 
           RangePickerView(selection: growthRangeBinding)
 
+          dashboardScopeStrip
+
           growthProvenancePanel
 
           if let issue = store.growthRefreshIssue {
@@ -88,6 +90,49 @@ struct GrowthView: View {
         Task { await store.refreshGrowth() }
       }
     )
+  }
+
+  private var dashboardScopeStrip: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(spacing: 8) {
+        Label("Growth dashboard", systemImage: "chart.line.uptrend.xyaxis")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.secondary)
+
+        Spacer(minLength: 0)
+
+        Label(snapshot.dataSource.displayName, systemImage: dataSourceSymbol(for: snapshot.dataSource))
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
+          .accessibilityIdentifier("growth-scope-source")
+      }
+
+      VStack(alignment: .leading, spacing: 6) {
+        scopeLine(title: "Dashboard", value: snapshot.project.name, identifier: "growth-scope-dashboard")
+        scopeLine(title: "Window", value: store.growthRange.windowLabel, identifier: "growth-scope-window")
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(12)
+    .background(Color(.tertiarySystemBackground))
+    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .accessibilityIdentifier("growth-dashboard-scope")
+  }
+
+  private func scopeLine(title: String, value: String, identifier: String) -> some View {
+    HStack(alignment: .firstTextBaseline, spacing: 8) {
+      Text(title)
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .frame(width: 70, alignment: .leading)
+
+      Text(value)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.primary)
+        .lineLimit(2)
+        .minimumScaleFactor(0.82)
+        .accessibilityIdentifier(identifier)
+    }
   }
 
   private var header: some View {
@@ -220,7 +265,7 @@ struct GrowthView: View {
       "\(message) Pull to refresh reloads only this Growth dashboard."
     case .loaded(_, let source):
       """
-      Showing \(source.displayName) data for \(snapshot.project.name) over the \(store.growthRange.growthRefreshDescription). \
+      Showing \(provenanceDataSourceLabel(for: source)) for \(snapshot.project.name) over the \(store.growthRange.growthRefreshDescription). \
       Pull to refresh reloads this Growth dashboard.
       """
     case .failed(let message):
@@ -248,6 +293,17 @@ struct GrowthView: View {
       .compactMap(\.lastRefreshedAt)
       .max()
       .map { refreshDateLabel(for: $0) }
+  }
+
+  private func provenanceDataSourceLabel(for source: GrowthDataSource) -> String {
+    switch source {
+    case .sample:
+      "sample data"
+    case .livePostHog:
+      "Live PostHog data"
+    case .sampleFallback:
+      "sample fallback data"
+    }
   }
 
   private var shippingContext: some View {

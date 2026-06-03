@@ -76,6 +76,12 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(normalized.first { CalendarDay.isSameDay($0.date, SampleData.date("2026-05-22")) }?.value, 32)
   }
 
+  func testActivityRangeWindowLabelsMatchRenderedGrowthScope() {
+    XCTAssertEqual(ActivityRange.day.windowLabel, "5-day window")
+    XCTAssertEqual(ActivityRange.week.windowLabel, "7-day window")
+    XCTAssertEqual(ActivityRange.month.windowLabel, "Current month")
+  }
+
   @MainActor
   func testGrowthRefreshStatusMovesFromLoadingToLoaded() async {
     let now = SampleData.dateTime("2026-05-24T18:45:00Z")
