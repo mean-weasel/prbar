@@ -85,14 +85,17 @@ final class PRBarUITests: XCTestCase {
 
     app.tapTab("Growth")
 
-    XCTAssertTrue(app.buttons["Refresh PostHog growth"].waitForExistence(timeout: 4))
+    let refreshButton = app.buttons["Refresh PostHog growth"]
+    XCTAssertTrue(refreshButton.waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["Live PostHog"].waitForExistence(timeout: 4))
+    XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 8), "Refresh PostHog growth did not become enabled")
+    refreshButton.tap()
     XCTAssertTrue(
       app.staticTexts
         .containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed"))
         .firstMatch
-        .waitForExistence(timeout: 4)
+        .waitForExistence(timeout: 8)
     )
   }
 
@@ -113,8 +116,10 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("Growth")
 
     XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 8))
-    XCTAssertTrue(app.buttons["Refresh PostHog growth"].waitForExistence(timeout: 4))
-    app.buttons["Refresh PostHog growth"].tap()
+    let refreshButton = app.buttons["Refresh PostHog growth"]
+    XCTAssertTrue(refreshButton.waitForExistence(timeout: 4))
+    XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 30), "Refresh PostHog growth did not become enabled")
+    refreshButton.tap()
     let dashboardLoaded = app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 30)
     if dashboardLoaded == false {
       let hierarchy = app.debugDescription
@@ -550,6 +555,15 @@ final class PRBarUITests: XCTestCase {
   @MainActor
   func testLiveGitHubSelectsOneRepositoryAndSyncsActivity() throws {
     try runLiveGitHubSetupSmoke()
+  }
+}
+
+private extension XCUIElement {
+  @MainActor
+  func waitUntilEnabled(timeout: TimeInterval) -> Bool {
+    let predicate = NSPredicate(format: "enabled == true")
+    let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+    return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
   }
 }
 

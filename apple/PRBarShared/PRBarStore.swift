@@ -278,6 +278,10 @@ final class PRBarStore {
     }
 
     hasAttemptedAutomaticGrowthRefresh = true
+    guard growthSnapshot.dataSource != .livePostHog else {
+      return
+    }
+
     await refreshGrowth()
   }
 

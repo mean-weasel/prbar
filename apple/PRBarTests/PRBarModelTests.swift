@@ -153,6 +153,30 @@ final class PRBarModelTests: XCTestCase {
   }
 
   @MainActor
+  func testAutomaticGrowthRefreshSkipsRestoredLiveCacheWhenProviderIsSample() async {
+    let savedAt = SampleData.dateTime("2026-05-24T18:45:00Z")
+    var cachedSnapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    cachedSnapshot.project.name = "Cached Live PRBar"
+    var sampleSnapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.sample)
+    sampleSnapshot.project.name = "Sample PRBar"
+    let cacheStore = InMemoryGrowthDashboardCacheStore(
+      record: GrowthDashboardCacheRecord(snapshot: cachedSnapshot, savedAt: savedAt)
+    )
+    let store = PRBarStore.sample(
+      growthProvider: StaticGrowthDashboardProvider(snapshot: sampleSnapshot),
+      growthCacheStore: cacheStore,
+      currentDate: { SampleData.dateTime("2026-05-24T19:00:00Z") }
+    )
+
+    store.restoreGrowthSnapshot()
+    await store.refreshGrowthIfNeeded()
+
+    XCTAssertEqual(store.growthSnapshot.dataSource, .livePostHog)
+    XCTAssertEqual(store.growthSnapshot.project.name, "Cached Live PRBar")
+    XCTAssertEqual(store.growthRefreshStatus, .loaded(lastRefreshedAt: savedAt, source: .livePostHog))
+  }
+
+  @MainActor
   func testRestoreGrowthSnapshotRestoresRangeAndSelectedProject() throws {
     let savedAt = SampleData.dateTime("2026-05-24T18:45:00Z")
     var snapshot = GrowthDashboardSnapshot.fixture(range: .month).withDataSource(.livePostHog)
