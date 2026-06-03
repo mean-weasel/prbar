@@ -136,11 +136,33 @@ struct PostHogDashboardGrowthProvider: GrowthDashboardProviding {
       )
       let runInsightsData = try await transport.data(for: runInsightsRequest)
       let response = try PostHogDashboardRunResponse(data: runInsightsData)
-      return BleepBlogDashboardNormalizer.snapshot(
+      var snapshot = BleepBlogDashboardNormalizer.snapshot(
         response: response,
         range: range,
         anchorDate: anchorDate
       )
+      do {
+        let dailySeriesRequest = try PostHogDashboardDailySeriesQuery.request(
+          configuration: configuration,
+          range: range,
+          anchorDate: anchorDate
+        )
+        let dailySeriesData = try await transport.data(for: dailySeriesRequest)
+        let dailySeries = try PostHogDashboardDailySeriesQuery.decode(dailySeriesData)
+        if dailySeries.isEmpty == false {
+          snapshot = Self.augment(snapshot: snapshot, dailySeries: dailySeries)
+        }
+      } catch {
+        snapshot.issues.append(
+          GrowthDashboardIssue(
+            id: "posthog-daily-series-failed",
+            provider: .postHog,
+            title: "PostHog daily series unavailable",
+            detail: "Dashboard tiles loaded, but the daily PostHog series query failed."
+          )
+        )
+      }
+      return snapshot
     } catch PostHogAPIError.unauthorized {
       return attentionSnapshot(
         projectID: projectID,
@@ -197,6 +219,77 @@ struct PostHogDashboardGrowthProvider: GrowthDashboardProviding {
     ]
     return snapshot
   }
+
+  private static func augment(
+    snapshot: GrowthDashboardSnapshot,
+    dailySeries: [PostHogDashboardDailySeries]
+  ) -> GrowthDashboardSnapshot {
+    var snapshot = snapshot
+    let sortedSeries = dailySeries.sorted { $0.day < $1.day }
+    let metrics = [
+      dailyMetric(
+        id: "posthog-weekly-visitors",
+        kind: .weeklyVisitors,
+        title: "Weekly visitors",
+        dailySeries: sortedSeries,
+        value: \.visitors
+      ),
+      dailyMetric(
+        id: "posthog-page-views",
+        kind: .pageViews,
+        title: "Daily pageviews",
+        dailySeries: sortedSeries,
+        value: \.pageviews
+      ),
+    ]
+
+    for metric in metrics {
+      if let index = snapshot.metrics.firstIndex(where: { $0.kind == metric.kind }) {
+        snapshot.metrics[index] = metric
+      } else {
+        snapshot.metrics.append(metric)
+      }
+    }
+    return snapshot
+  }
+
+  private static func dailyMetric(
+    id: String,
+    kind: GrowthMetricKind,
+    title: String,
+    dailySeries: [PostHogDashboardDailySeries],
+    value: KeyPath<PostHogDashboardDailySeries, Double>
+  ) -> GrowthMetric {
+    let total = dailySeries.reduce(0) { $0 + $1[keyPath: value] }
+    return GrowthMetric(
+      id: id,
+      provider: .postHog,
+      kind: kind,
+      title: title,
+      value: total,
+      formattedValue: formattedCount(total),
+      unit: .count,
+      delta: nil,
+      series: dailySeries.map { row in
+        GrowthMetricPoint(date: row.day, value: row[keyPath: value])
+      }
+    )
+  }
+
+  private static func formattedCount(_ value: Double) -> String {
+    countFormatter.string(from: NSNumber(value: value)) ?? "\(Int(value.rounded()))"
+  }
+
+  private static let countFormatter: NumberFormatter = {
+    let formatter = NumberFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.numberStyle = .decimal
+    formatter.usesGroupingSeparator = true
+    formatter.groupingSeparator = ","
+    formatter.minimumFractionDigits = 0
+    formatter.maximumFractionDigits = 0
+    return formatter
+  }()
 }
 
 enum BleepBlogDashboardNormalizer {
