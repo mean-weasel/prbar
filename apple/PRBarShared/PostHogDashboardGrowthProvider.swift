@@ -232,14 +232,16 @@ struct PostHogDashboardGrowthProvider: GrowthDashboardProviding {
         kind: .weeklyVisitors,
         title: "Weekly visitors",
         dailySeries: sortedSeries,
-        value: \.visitors
+        value: \.visitors,
+        headlineMetric: snapshot.metrics.first { $0.kind == .weeklyVisitors }
       ),
       dailyMetric(
         id: "posthog-page-views",
         kind: .pageViews,
         title: "Daily pageviews",
         dailySeries: sortedSeries,
-        value: \.pageviews
+        value: \.pageviews,
+        headlineMetric: nil
       ),
     ]
 
@@ -258,7 +260,8 @@ struct PostHogDashboardGrowthProvider: GrowthDashboardProviding {
     kind: GrowthMetricKind,
     title: String,
     dailySeries: [PostHogDashboardDailySeries],
-    value: KeyPath<PostHogDashboardDailySeries, Double>
+    value: KeyPath<PostHogDashboardDailySeries, Double>,
+    headlineMetric: GrowthMetric?
   ) -> GrowthMetric {
     let total = dailySeries.reduce(0) { $0 + $1[keyPath: value] }
     return GrowthMetric(
@@ -266,8 +269,8 @@ struct PostHogDashboardGrowthProvider: GrowthDashboardProviding {
       provider: .postHog,
       kind: kind,
       title: title,
-      value: total,
-      formattedValue: formattedCount(total),
+      value: headlineMetric?.value ?? total,
+      formattedValue: headlineMetric?.formattedValue ?? formattedCount(total),
       unit: .count,
       delta: nil,
       series: dailySeries.map { row in

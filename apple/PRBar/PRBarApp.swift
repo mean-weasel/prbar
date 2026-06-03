@@ -31,8 +31,11 @@ struct PRBarApp: App {
     let activityCacheStore: GitHubActivityCacheStoring
     let growthProvider: GrowthDashboardProviding
     let growthCacheStore: GrowthDashboardCacheStoring
+    let growthCacheIdentity: GrowthDashboardCacheIdentity?
     let arguments = ProcessInfo.processInfo.arguments
     let environment = ProcessInfo.processInfo.environment
+    let postHogConfiguration = PostHogConfiguration.live(environment: environment)
+    growthCacheIdentity = postHogConfiguration.map(GrowthDashboardCacheIdentity.init)
     let isUITesting = arguments.contains("--ui-testing")
     let isUITestingBleepPostHogDashboard =
       arguments.contains("--ui-testing-bleep-posthog-dashboard") ||
@@ -155,7 +158,8 @@ struct PRBarApp: App {
       repositoryColorStore: repositoryColorStore,
       activityCacheStore: activityCacheStore,
       growthProvider: growthProvider,
-      growthCacheStore: growthCacheStore
+      growthCacheStore: growthCacheStore,
+      growthCacheIdentity: growthCacheIdentity
     )
     store.restoreGrowthSnapshot()
     if isUITesting, isUITestingBleepPostHogDashboard {

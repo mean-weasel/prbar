@@ -44,11 +44,12 @@ then from these build-time `Info.plist` keys embedded by the iOS workflows:
 - `PRBarPostHogDashboardID`
 
 On launch, Growth restores the last successful live Growth snapshot from the
-local cache before the first render. If that restored snapshot is already marked
-`Live PostHog`, the first-appearance auto-refresh is skipped so relaunches stay
-fast and do not immediately replace live cached data with fallback data. The
-toolbar refresh button and pull-to-refresh always request a fresh PostHog
-snapshot.
+local cache before the first render only when the cached PostHog host, project
+ID, and dashboard ID match the app's current configuration. If that restored
+snapshot is already marked `Live PostHog`, the first-appearance auto-refresh is
+skipped so relaunches stay fast and do not immediately replace live cached data
+with fallback data. The toolbar refresh button and pull-to-refresh always
+request a fresh PostHog snapshot.
 
 The configured Bleep dashboard currently maps PostHog tiles into Growth like
 this:

@@ -1,8 +1,47 @@
 import Foundation
 
+struct GrowthDashboardCacheIdentity: Codable, Equatable, Sendable {
+  var host: String
+  var projectID: String
+  var dashboardID: Int?
+
+  init(host: URL, projectID: String, dashboardID: Int?) {
+    self.host = Self.normalizedHost(host)
+    self.projectID = projectID
+    self.dashboardID = dashboardID
+  }
+
+  init(configuration: PostHogConfiguration) {
+    self.init(
+      host: configuration.host,
+      projectID: configuration.projectID,
+      dashboardID: configuration.dashboardID
+    )
+  }
+
+  private static func normalizedHost(_ host: URL) -> String {
+    var value = host.absoluteString
+    while value.hasSuffix("/") {
+      value.removeLast()
+    }
+    return value
+  }
+}
+
 struct GrowthDashboardCacheRecord: Codable, Equatable, Sendable {
   var snapshot: GrowthDashboardSnapshot
   var savedAt: Date
+  var configurationIdentity: GrowthDashboardCacheIdentity?
+
+  init(
+    snapshot: GrowthDashboardSnapshot,
+    savedAt: Date,
+    configurationIdentity: GrowthDashboardCacheIdentity? = nil
+  ) {
+    self.snapshot = snapshot
+    self.savedAt = savedAt
+    self.configurationIdentity = configurationIdentity
+  }
 }
 
 protocol GrowthDashboardCacheStoring: Sendable {

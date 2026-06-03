@@ -38,6 +38,7 @@ final class PRBarStore {
   private let activityCacheStore: GitHubActivityCacheStoring
   private let growthProvider: GrowthDashboardProviding
   private let growthCacheStore: GrowthDashboardCacheStoring
+  private let growthCacheIdentity: GrowthDashboardCacheIdentity?
   private let currentDate: @Sendable () -> Date
   private static let maximumRestoredRepositorySelectionCount = 50
 
@@ -72,6 +73,7 @@ final class PRBarStore {
     selectedGrowthProjectID: GrowthProject.ID = SampleData.growthDashboard.project.id,
     growthProvider: GrowthDashboardProviding = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard),
     growthCacheStore: GrowthDashboardCacheStoring = InMemoryGrowthDashboardCacheStore(),
+    growthCacheIdentity: GrowthDashboardCacheIdentity? = nil,
     currentDate: @escaping @Sendable () -> Date = Date.init
   ) {
     self.repositories = repositories
@@ -98,6 +100,7 @@ final class PRBarStore {
     self.selectedGrowthProjectID = selectedGrowthProjectID
     self.growthProvider = growthProvider
     self.growthCacheStore = growthCacheStore
+    self.growthCacheIdentity = growthCacheIdentity
     self.currentDate = currentDate
   }
 
@@ -111,6 +114,7 @@ final class PRBarStore {
     growthSnapshot: GrowthDashboardSnapshot = SampleData.growthDashboard,
     growthProvider: GrowthDashboardProviding = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard),
     growthCacheStore: GrowthDashboardCacheStoring = InMemoryGrowthDashboardCacheStore(),
+    growthCacheIdentity: GrowthDashboardCacheIdentity? = nil,
     currentDate: @escaping @Sendable () -> Date = Date.init
   ) -> PRBarStore {
     PRBarStore(
@@ -129,6 +133,7 @@ final class PRBarStore {
       growthSnapshot: growthSnapshot,
       growthProvider: growthProvider,
       growthCacheStore: growthCacheStore,
+      growthCacheIdentity: growthCacheIdentity,
       currentDate: currentDate
     )
   }
@@ -305,7 +310,13 @@ final class PRBarStore {
       let refreshedAt = currentDate()
       growthSnapshot = snapshot
       if snapshot.dataSource == .livePostHog {
-        try? growthCacheStore.save(GrowthDashboardCacheRecord(snapshot: snapshot, savedAt: refreshedAt))
+        try? growthCacheStore.save(
+          GrowthDashboardCacheRecord(
+            snapshot: snapshot,
+            savedAt: refreshedAt,
+            configurationIdentity: growthCacheIdentity
+          )
+        )
       }
       growthRefreshStatus = .loaded(lastRefreshedAt: refreshedAt, source: snapshot.dataSource)
     } catch {
@@ -322,6 +333,13 @@ final class PRBarStore {
   func restoreGrowthSnapshot() {
     guard let record = try? growthCacheStore.load() else {
       return
+    }
+    if record.snapshot.dataSource == .livePostHog {
+      guard let growthCacheIdentity,
+        record.configurationIdentity == growthCacheIdentity
+      else {
+        return
+      }
     }
 
     growthSnapshot = record.snapshot
