@@ -49,20 +49,10 @@ enum PostHogDashboardDailySeriesQuery {
   }
 
   private static func dateInterval(range: ActivityRange, anchorDate: Date) -> (start: Date, end: Date) {
-    let endOfAnchorDay = calendar.startOfDay(for: anchorDate)
-    let end = calendar.date(byAdding: .day, value: 1, to: endOfAnchorDay) ?? anchorDate
-
-    switch range {
-    case .day:
-      return (endOfAnchorDay, end)
-    case .week:
-      let start = calendar.date(byAdding: .day, value: -6, to: endOfAnchorDay) ?? endOfAnchorDay
-      return (start, end)
-    case .month:
-      let components = calendar.dateComponents([.year, .month], from: endOfAnchorDay)
-      let start = calendar.date(from: components) ?? endOfAnchorDay
-      return (start, end)
-    }
+    let days = CalendarDay.days(endingAt: anchorDate, range: range)
+    let start = days.first?.date ?? anchorDate
+    let end = calendar.date(byAdding: .day, value: 1, to: days.last?.date ?? anchorDate) ?? anchorDate
+    return (start, end)
   }
 
   private static let calendar: Calendar = {

@@ -197,6 +197,33 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertEqual(runInsightsRequest.value(forHTTPHeaderField: "Accept"), "application/json")
   }
 
+  func testPostHogDashboardDailySeriesDayRequestUsesFiveDayCalendarWindow() throws {
+    let query = try dashboardDailySeriesQuery(range: .day, anchorDate: SampleData.date("2026-05-24"))
+
+    XCTAssertTrue(query.contains("FROM numbers(5)"))
+    XCTAssertTrue(query.contains("WITH toDate('2026-05-20') AS start_day"))
+    XCTAssertTrue(query.contains("timestamp >= toDateTime('2026-05-20 00:00:00')"))
+    XCTAssertTrue(query.contains("timestamp < toDateTime('2026-05-25 00:00:00')"))
+  }
+
+  func testPostHogDashboardDailySeriesWeekRequestUsesSevenDayCalendarWindow() throws {
+    let query = try dashboardDailySeriesQuery(range: .week, anchorDate: SampleData.date("2026-05-24"))
+
+    XCTAssertTrue(query.contains("FROM numbers(7)"))
+    XCTAssertTrue(query.contains("WITH toDate('2026-05-18') AS start_day"))
+    XCTAssertTrue(query.contains("timestamp >= toDateTime('2026-05-18 00:00:00')"))
+    XCTAssertTrue(query.contains("timestamp < toDateTime('2026-05-25 00:00:00')"))
+  }
+
+  func testPostHogDashboardDailySeriesMonthRequestUsesFullSelectedMonthWindow() throws {
+    let query = try dashboardDailySeriesQuery(range: .month, anchorDate: SampleData.date("2026-05-24"))
+
+    XCTAssertTrue(query.contains("FROM numbers(31)"))
+    XCTAssertTrue(query.contains("WITH toDate('2026-05-01') AS start_day"))
+    XCTAssertTrue(query.contains("timestamp >= toDateTime('2026-05-01 00:00:00')"))
+    XCTAssertTrue(query.contains("timestamp < toDateTime('2026-06-01 00:00:00')"))
+  }
+
   func testPostHogDashboardRunResponseDecodesTrendAndBreakdownTiles() throws {
     let data = Data(
       """
@@ -744,6 +771,18 @@ private actor RecordingPostHogQueryTransport: PostHogQueryTransport {
 }
 
 private extension PostHogGrowthProviderTests {
+  func dashboardDailySeriesQuery(range: ActivityRange, anchorDate: Date) throws -> String {
+    let request = try PostHogDashboardDailySeriesQuery.request(
+      configuration: .fixture,
+      range: range,
+      anchorDate: anchorDate
+    )
+    let body = try XCTUnwrap(request.httpBody)
+    let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+    let query = try XCTUnwrap(json?["query"] as? [String: Any])
+    return try XCTUnwrap(query["query"] as? String)
+  }
+
   static let bleepDashboardRunInsightsJSON = """
   {
     "results": [
