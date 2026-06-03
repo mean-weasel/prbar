@@ -34,6 +34,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Active users"].exists)
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
     app.assertGrowthChartPointCount(7)
+    app.assertGrowthChartHasYAxis()
     XCTAssertTrue(app.staticTexts["Shipping context"].exists)
   }
 
@@ -46,12 +47,12 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("Growth")
 
     XCTAssertTrue(app.segmentedControls.buttons["Week"].waitForExistence(timeout: 2))
-    XCTAssertEqual(app.otherElements["growth-trend-chart"].value as? String, "7 points")
+    app.assertGrowthChartPointCount(7)
     app.segmentedControls.buttons["Month"].tap()
 
     let monthValue = app.otherElements["growth-trend-chart"].value as? String
     let monthPointCount = monthValue
-      .flatMap { Int($0.replacingOccurrences(of: " points", with: "")) }
+      .flatMap { Int($0.components(separatedBy: " points").first ?? "") }
     XCTAssertGreaterThanOrEqual(monthPointCount ?? 0, 28)
     XCTAssertLessThanOrEqual(monthPointCount ?? 0, 31)
     XCTAssertTrue(app.staticTexts["Current month"].waitForExistence(timeout: 4))
@@ -88,6 +89,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
+    app.assertGrowthChartHasYAxis()
     app.scrollToStaticText("/studio")
   }
 
@@ -165,6 +167,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
+    app.assertGrowthChartHasYAxis()
   }
 
   @MainActor
@@ -652,10 +655,29 @@ private extension XCUIApplication {
     )
 
     if chart.exists {
-      XCTAssertEqual(chart.value as? String, expectedAccessibilityValue, file: file, line: line)
+      XCTAssertTrue(
+        (chart.value as? String)?.hasPrefix(expectedAccessibilityValue) == true,
+        "Growth chart value did not start with \(expectedAccessibilityValue): \(chart.value as? String ?? "<nil>")",
+        file: file,
+        line: line
+      )
     } else {
       XCTAssertTrue(staticTexts[expectedCaption].exists, file: file, line: line)
     }
+  }
+
+  @MainActor
+  func assertGrowthChartHasYAxis(file: StaticString = #filePath, line: UInt = #line) {
+    let chart = otherElements["growth-trend-chart"].firstMatch
+    XCTAssertTrue(chart.waitForExistence(timeout: 4), "Growth chart did not render.", file: file, line: line)
+
+    let value = chart.value as? String
+    XCTAssertTrue(
+      value?.contains("y-axis 0 to") == true,
+      "Growth chart did not expose a y-axis range: \(value ?? "<nil>")",
+      file: file,
+      line: line
+    )
   }
 
   @MainActor
