@@ -77,6 +77,37 @@ final class PRBarModelTests: XCTestCase {
   }
 
   @MainActor
+  func testGrowthRefreshStatusMovesFromLoadingToLoaded() async {
+    let now = SampleData.dateTime("2026-05-24T18:45:00Z")
+    var snapshot = GrowthDashboardSnapshot.fixture(range: .week)
+    snapshot.dataSource = .livePostHog
+    let provider = StaticGrowthDashboardProvider(snapshot: snapshot)
+    let store = PRBarStore.sample(growthProvider: provider, currentDate: { now })
+
+    XCTAssertEqual(store.growthRefreshStatus, .idle)
+
+    await store.refreshGrowth()
+
+    XCTAssertEqual(store.growthRefreshStatus, .loaded(lastRefreshedAt: now, source: .livePostHog))
+    XCTAssertFalse(store.isRefreshingGrowth)
+  }
+
+  @MainActor
+  func testGrowthRefreshStatusReportsFailureWithoutClearingCurrentSnapshot() async {
+    let original = GrowthDashboardSnapshot.fixture(range: .week)
+    let store = PRBarStore.sample(
+      growthSnapshot: original,
+      growthProvider: FailingGrowthDashboardProvider(error: GrowthProviderError.providerUnavailable("PostHog is unavailable"))
+    )
+
+    await store.refreshGrowth()
+
+    XCTAssertEqual(store.growthSnapshot, original)
+    XCTAssertEqual(store.growthRefreshStatus, .failed(message: "PostHog is unavailable"))
+    XCTAssertEqual(store.growthRefreshIssue?.title, "Growth refresh failed")
+  }
+
+  @MainActor
   func testGrowthRangeRefreshesSnapshotWithoutRefreshingGitHubActivity() async {
     let provider = StaticGrowthDashboardProvider(snapshot: .fixture(range: .week))
     let store = PRBarStore.sample(growthProvider: provider)

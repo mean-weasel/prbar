@@ -27,6 +27,7 @@ final class PRBarStore {
   var growthRange: ActivityRange
   var selectedGrowthProjectID: GrowthProject.ID
   var isRefreshingGrowth = false
+  var growthRefreshStatus: GrowthRefreshStatus = .idle
   var growthRefreshIssue: AuthIssue?
   private let authService: GitHubAuthServicing
   private let repositoryProvider: GitHubRepositoryProviding
@@ -103,6 +104,7 @@ final class PRBarStore {
     repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore(),
     repositoryColorStore: RepositoryColorStoring = InMemoryRepositoryColorStore(),
     activityCacheStore: GitHubActivityCacheStoring = InMemoryGitHubActivityCacheStore(),
+    growthSnapshot: GrowthDashboardSnapshot = SampleData.growthDashboard,
     growthProvider: GrowthDashboardProviding = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard),
     currentDate: @escaping @Sendable () -> Date = Date.init
   ) -> PRBarStore {
@@ -119,6 +121,7 @@ final class PRBarStore {
       repositorySelectionStore: repositorySelectionStore,
       repositoryColorStore: repositoryColorStore,
       activityCacheStore: activityCacheStore,
+      growthSnapshot: growthSnapshot,
       growthProvider: growthProvider,
       currentDate: currentDate
     )
@@ -269,6 +272,7 @@ final class PRBarStore {
     }
 
     isRefreshingGrowth = true
+    growthRefreshStatus = .loading(message: "Refreshing PostHog...")
     growthRefreshIssue = nil
     defer { isRefreshingGrowth = false }
 
@@ -278,7 +282,9 @@ final class PRBarStore {
         range: growthRange,
         anchorDate: growthSnapshot.anchorDate
       )
+      growthRefreshStatus = .loaded(lastRefreshedAt: currentDate(), source: growthSnapshot.dataSource)
     } catch {
+      growthRefreshStatus = .failed(message: error.localizedDescription)
       growthRefreshIssue = AuthIssue(
         id: "growth-refresh-failed",
         title: "Growth refresh failed",
