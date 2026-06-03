@@ -289,7 +289,9 @@ final class PRBarStore {
       )
       let refreshedAt = currentDate()
       growthSnapshot = snapshot
-      try? growthCacheStore.save(GrowthDashboardCacheRecord(snapshot: snapshot, savedAt: refreshedAt))
+      if snapshot.dataSource == .livePostHog {
+        try? growthCacheStore.save(GrowthDashboardCacheRecord(snapshot: snapshot, savedAt: refreshedAt))
+      }
       growthRefreshStatus = .loaded(lastRefreshedAt: refreshedAt, source: snapshot.dataSource)
     } catch {
       growthRefreshStatus = .failed(message: error.localizedDescription)
@@ -308,6 +310,8 @@ final class PRBarStore {
     }
 
     growthSnapshot = record.snapshot
+    growthRange = record.snapshot.range
+    selectedGrowthProjectID = record.snapshot.project.id
     growthRefreshStatus = .loaded(lastRefreshedAt: record.savedAt, source: record.snapshot.dataSource)
   }
 

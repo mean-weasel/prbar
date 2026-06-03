@@ -112,6 +112,30 @@ final class PRBarModelTests: XCTestCase {
   }
 
   @MainActor
+  func testGrowthRefreshDoesNotReplaceLiveCacheWithSampleFallback() async throws {
+    let savedAt = SampleData.dateTime("2026-05-24T18:00:00Z")
+    var liveSnapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    liveSnapshot.project.name = "Cached Live PRBar"
+    var fallbackSnapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.sampleFallback)
+    fallbackSnapshot.project.name = "Fallback PRBar"
+    let cacheStore = InMemoryGrowthDashboardCacheStore(
+      record: GrowthDashboardCacheRecord(snapshot: liveSnapshot, savedAt: savedAt)
+    )
+    let store = PRBarStore.sample(
+      growthProvider: StaticGrowthDashboardProvider(snapshot: fallbackSnapshot),
+      growthCacheStore: cacheStore,
+      currentDate: { SampleData.dateTime("2026-05-24T18:45:00Z") }
+    )
+
+    await store.refreshGrowth()
+
+    let record = try XCTUnwrap(try cacheStore.load())
+    XCTAssertEqual(record.savedAt, savedAt)
+    XCTAssertEqual(record.snapshot.dataSource, .livePostHog)
+    XCTAssertEqual(record.snapshot.project.name, "Cached Live PRBar")
+  }
+
+  @MainActor
   func testRestoreGrowthSnapshotUsesCachedLiveDataBeforeRefresh() throws {
     let savedAt = SampleData.dateTime("2026-05-24T18:45:00Z")
     var snapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
@@ -126,6 +150,22 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.growthSnapshot.dataSource, .livePostHog)
     XCTAssertEqual(store.growthSnapshot.project.name, "Cached Live PRBar")
     XCTAssertEqual(store.growthRefreshStatus, .loaded(lastRefreshedAt: savedAt, source: .livePostHog))
+  }
+
+  @MainActor
+  func testRestoreGrowthSnapshotRestoresRangeAndSelectedProject() throws {
+    let savedAt = SampleData.dateTime("2026-05-24T18:45:00Z")
+    var snapshot = GrowthDashboardSnapshot.fixture(range: .month).withDataSource(.livePostHog)
+    snapshot.project.id = "cached-growth-project"
+    let cacheStore = InMemoryGrowthDashboardCacheStore(
+      record: GrowthDashboardCacheRecord(snapshot: snapshot, savedAt: savedAt)
+    )
+    let store = PRBarStore.sample(growthCacheStore: cacheStore)
+
+    store.restoreGrowthSnapshot()
+
+    XCTAssertEqual(store.growthRange, .month)
+    XCTAssertEqual(store.selectedGrowthProjectID, "cached-growth-project")
   }
 
   @MainActor
