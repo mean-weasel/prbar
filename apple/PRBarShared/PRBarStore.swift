@@ -296,8 +296,12 @@ final class PRBarStore {
       return
     }
 
+    let refreshedAt = currentDate()
+    let anchorDate = Self.fixtureCalendar.startOfDay(for: refreshedAt)
     isRefreshingGrowth = true
-    growthRefreshStatus = .loading(message: "Refreshing Growth from PostHog...")
+    growthRefreshStatus = .loading(
+      message: "Refreshing Growth from PostHog for the \(growthRange.growthRefreshDescription)..."
+    )
     growthRefreshIssue = nil
     defer { isRefreshingGrowth = false }
 
@@ -305,9 +309,8 @@ final class PRBarStore {
       let snapshot = try await growthProvider.dashboard(
         projectID: selectedGrowthProjectID,
         range: growthRange,
-        anchorDate: growthSnapshot.anchorDate
+        anchorDate: anchorDate
       )
-      let refreshedAt = currentDate()
       growthSnapshot = snapshot
       if snapshot.dataSource == .livePostHog {
         try? growthCacheStore.save(

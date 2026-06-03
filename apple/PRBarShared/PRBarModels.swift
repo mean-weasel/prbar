@@ -162,6 +162,21 @@ enum ActivityRange: String, CaseIterable, Identifiable, Codable, Sendable {
   case month
 
   var id: String { rawValue }
+
+  var displayName: String {
+    rawValue.capitalized
+  }
+
+  var growthRefreshDescription: String {
+    switch self {
+    case .day:
+      "last 5 days"
+    case .week:
+      "last 7 days"
+    case .month:
+      "selected month"
+    }
+  }
 }
 
 struct CalendarDay: Identifiable, Equatable, Sendable {
