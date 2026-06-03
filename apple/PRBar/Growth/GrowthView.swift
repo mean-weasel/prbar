@@ -14,7 +14,8 @@ struct GrowthView: View {
 
   private var selectedMetric: GrowthMetric? {
     if let selectedMetricID,
-      let metric = visibleMetrics.first(where: { $0.id == selectedMetricID }) {
+      let metric = visibleMetrics.first(where: { $0.id == selectedMetricID })
+    {
       return metric
     }
     return snapshot.defaultMetric
@@ -28,7 +29,7 @@ struct GrowthView: View {
 
           RangePickerView(selection: growthRangeBinding)
 
-          growthRefreshStatusRow
+          growthProvenancePanel
 
           if let issue = store.growthRefreshIssue {
             issueView(issue)
@@ -37,7 +38,11 @@ struct GrowthView: View {
           metricTiles
 
           if let selectedMetric {
-            GrowthTrendChartView(metric: selectedMetric, range: store.growthRange, anchorDate: snapshot.anchorDate)
+            GrowthTrendChartView(
+              metric: selectedMetric,
+              range: store.growthRange,
+              anchorDate: snapshot.anchorDate
+            )
           }
 
           shippingContext
@@ -97,13 +102,16 @@ struct GrowthView: View {
 
         Spacer()
 
-        Label(snapshot.dataSource.displayName, systemImage: dataSourceSymbol(for: snapshot.dataSource))
-          .font(.caption.weight(.semibold))
-          .padding(.horizontal, 8)
-          .padding(.vertical, 5)
-          .background(dataSourceBadgeColor(for: snapshot.dataSource))
-          .clipShape(Capsule())
-          .accessibilityHint(snapshot.dataSource.detail)
+        Label(
+          snapshot.dataSource.displayName,
+          systemImage: dataSourceSymbol(for: snapshot.dataSource)
+        )
+        .font(.caption.weight(.semibold))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(dataSourceBadgeColor(for: snapshot.dataSource))
+        .clipShape(Capsule())
+        .accessibilityHint(snapshot.dataSource.detail)
       }
 
       HStack(spacing: 8) {
@@ -132,31 +140,114 @@ struct GrowthView: View {
     }
   }
 
-  @ViewBuilder
-  private var growthRefreshStatusRow: some View {
-    switch store.growthRefreshStatus {
-    case .idle:
-      EmptyView()
-    case let .loading(message):
-      HStack(spacing: 8) {
-        ProgressView()
-        Text(message)
+  private var growthProvenancePanel: some View {
+    HStack(alignment: .top, spacing: 10) {
+      provenanceIcon
+        .font(.subheadline.weight(.semibold))
+        .frame(width: 20, height: 20)
+
+      VStack(alignment: .leading, spacing: 8) {
+        Text(growthProvenanceTitle)
+          .font(.subheadline.weight(.semibold))
+
+        Text(growthProvenanceDetail)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+
+        VStack(alignment: .leading, spacing: 4) {
+          provenanceRow(title: "Project", value: snapshot.project.name)
+          provenanceRow(title: "Source", value: snapshot.dataSource.displayName)
+          provenanceRow(title: "Updated", value: growthUpdatedLabel)
+        }
       }
-      .font(.caption.weight(.semibold))
-      .foregroundStyle(.secondary)
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .accessibilityElement(children: .combine)
-    case let .loaded(lastRefreshedAt, source):
-      Label("Last refreshed \(refreshDateLabel(for: lastRefreshedAt)) from \(source.displayName)", systemImage: "checkmark.circle")
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.secondary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    case let .failed(message):
-      Label(message, systemImage: "exclamationmark.triangle")
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.orange)
-        .frame(maxWidth: .infinity, alignment: .leading)
+
+      Spacer(minLength: 0)
     }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(12)
+    .background(Color(.secondarySystemBackground))
+    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .accessibilityIdentifier("growth-provenance-status")
+  }
+
+  @ViewBuilder
+  private var provenanceIcon: some View {
+    switch store.growthRefreshStatus {
+    case .loading:
+      ProgressView()
+    case .failed:
+      Image(systemName: "exclamationmark.triangle.fill")
+        .foregroundStyle(.orange)
+    case .loaded:
+      Image(systemName: "checkmark.circle.fill")
+        .foregroundStyle(.green)
+    case .idle:
+      Image(systemName: dataSourceSymbol(for: snapshot.dataSource))
+        .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
+    }
+  }
+
+  private func provenanceRow(title: String, value: String) -> some View {
+    HStack(alignment: .firstTextBaseline, spacing: 6) {
+      Text(title)
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .frame(width: 48, alignment: .leading)
+      Text(value)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.primary)
+        .lineLimit(2)
+        .minimumScaleFactor(0.82)
+    }
+  }
+
+  private var growthProvenanceTitle: String {
+    switch store.growthRefreshStatus {
+    case .loading:
+      "Refreshing Growth from PostHog"
+    case .loaded:
+      "Growth data refreshed"
+    case .failed:
+      "Growth refresh needs attention"
+    case .idle:
+      "Growth data source"
+    }
+  }
+
+  private var growthProvenanceDetail: String {
+    switch store.growthRefreshStatus {
+    case .loading(let message):
+      "\(message) Pull to refresh reloads only this Growth dashboard."
+    case .loaded(_, let source):
+      """
+      Showing \(source.displayName) for \(snapshot.project.name). \
+      Pull to refresh reloads this Growth dashboard.
+      """
+    case .failed(let message):
+      "\(message) Existing Growth data remains visible."
+    case .idle:
+      "\(snapshot.dataSource.detail) Pull to refresh reloads this Growth dashboard."
+    }
+  }
+
+  private var growthUpdatedLabel: String {
+    switch store.growthRefreshStatus {
+    case .loaded(let lastRefreshedAt, _):
+      refreshDateLabel(for: lastRefreshedAt)
+    case .loading:
+      "Refreshing now"
+    case .failed:
+      "Refresh failed"
+    case .idle:
+      connectionRefreshLabel ?? "Not refreshed yet"
+    }
+  }
+
+  private var connectionRefreshLabel: String? {
+    snapshot.connections
+      .compactMap(\.lastRefreshedAt)
+      .max()
+      .map { refreshDateLabel(for: $0) }
   }
 
   private var shippingContext: some View {
@@ -184,7 +275,10 @@ struct GrowthView: View {
     }
 
     if snapshot.connection(for: .searchConsole)?.status == .connected {
-      GrowthProviderSectionView(provider: .searchConsole, rows: snapshot.topQueries + snapshot.topPages)
+      GrowthProviderSectionView(
+        provider: .searchConsole,
+        rows: snapshot.topQueries + snapshot.topPages
+      )
 
       Text("Search Console data can lag by a few days.")
         .font(.caption)
@@ -196,7 +290,8 @@ struct GrowthView: View {
   private var setupCards: some View {
     ForEach(GrowthProviderKind.allCases) { provider in
       if let connection = snapshot.connection(for: provider),
-        connection.status == .notConnected || connection.status == .needsAttention {
+        connection.status == .notConnected || connection.status == .needsAttention
+      {
         GrowthSetupCardView(provider: provider, issue: connection.issue)
       }
     }
@@ -251,6 +346,17 @@ struct GrowthView: View {
       Color.green.opacity(0.14)
     case .sampleFallback:
       Color.orange.opacity(0.14)
+    }
+  }
+
+  private func dataSourceIconColor(for source: GrowthDataSource) -> Color {
+    switch source {
+    case .sample:
+      PRBarTheme.accent
+    case .livePostHog:
+      .green
+    case .sampleFallback:
+      .orange
     }
   }
 

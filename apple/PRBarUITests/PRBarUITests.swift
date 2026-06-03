@@ -73,6 +73,9 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Growth"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
+    XCTAssertTrue(app.staticTexts["Growth data source"].exists)
+    XCTAssertTrue(app.staticTexts["Project"].exists)
+    XCTAssertTrue(app.staticTexts["Source"].exists)
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
@@ -91,14 +94,16 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(refreshButton.waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["Live PostHog"].waitForExistence(timeout: 4))
-    XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 8), "Refresh PostHog growth did not become enabled")
-    refreshButton.tap()
+    XCTAssertTrue(app.staticTexts["Growth data source"].exists)
     XCTAssertTrue(
       app.staticTexts
-        .containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed"))
+        .containing(NSPredicate(format: "label CONTAINS %@", "Pull to refresh reloads this Growth dashboard."))
         .firstMatch
-        .waitForExistence(timeout: 8)
+        .exists
     )
+    XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 8), "Refresh PostHog growth did not become enabled")
+    refreshButton.tap()
+    XCTAssertTrue(app.staticTexts["Growth data refreshed"].waitForExistence(timeout: 8))
   }
 
   @MainActor
@@ -140,6 +145,7 @@ final class PRBarUITests: XCTestCase {
       return
     }
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
+    XCTAssertTrue(app.staticTexts["Growth data refreshed"].exists)
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
