@@ -197,6 +197,33 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertEqual(runInsightsRequest.value(forHTTPHeaderField: "Accept"), "application/json")
   }
 
+  func testPostHogDashboardDailySeriesDayRequestUsesFiveDayCalendarWindow() throws {
+    let query = try dashboardDailySeriesQuery(range: .day, anchorDate: SampleData.date("2026-05-24"))
+
+    XCTAssertTrue(query.contains("FROM numbers(5)"))
+    XCTAssertTrue(query.contains("WITH toDate('2026-05-20') AS start_day"))
+    XCTAssertTrue(query.contains("timestamp >= toDateTime('2026-05-20 00:00:00')"))
+    XCTAssertTrue(query.contains("timestamp < toDateTime('2026-05-25 00:00:00')"))
+  }
+
+  func testPostHogDashboardDailySeriesWeekRequestUsesSevenDayCalendarWindow() throws {
+    let query = try dashboardDailySeriesQuery(range: .week, anchorDate: SampleData.date("2026-05-24"))
+
+    XCTAssertTrue(query.contains("FROM numbers(7)"))
+    XCTAssertTrue(query.contains("WITH toDate('2026-05-18') AS start_day"))
+    XCTAssertTrue(query.contains("timestamp >= toDateTime('2026-05-18 00:00:00')"))
+    XCTAssertTrue(query.contains("timestamp < toDateTime('2026-05-25 00:00:00')"))
+  }
+
+  func testPostHogDashboardDailySeriesMonthRequestUsesFullSelectedMonthWindow() throws {
+    let query = try dashboardDailySeriesQuery(range: .month, anchorDate: SampleData.date("2026-05-24"))
+
+    XCTAssertTrue(query.contains("FROM numbers(31)"))
+    XCTAssertTrue(query.contains("WITH toDate('2026-05-01') AS start_day"))
+    XCTAssertTrue(query.contains("timestamp >= toDateTime('2026-05-01 00:00:00')"))
+    XCTAssertTrue(query.contains("timestamp < toDateTime('2026-06-01 00:00:00')"))
+  }
+
   func testPostHogDashboardRunResponseDecodesTrendAndBreakdownTiles() throws {
     let data = Data(
       """
@@ -536,12 +563,97 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertEqual(snapshot.dataSource, .livePostHog)
     XCTAssertEqual(Array(snapshot.visibleMetrics.map(\.kind).prefix(2)), [.weeklyVisitors, .pageViews])
     XCTAssertTrue(snapshot.topPages.contains { $0.title == "/studio" })
-    XCTAssertEqual(requestURLs.count, 2)
+    XCTAssertEqual(requestURLs.count, 3)
     XCTAssertEqual(requestURLs.first?.hasSuffix("/api/environments/324426/dashboards/1362888/"), true)
-    XCTAssertEqual(
-      requestURLs.last?.contains("/run_insights/?output_format=json&refresh=blocking"),
-      true
+    XCTAssertEqual(requestURLs[1].contains("/run_insights/?output_format=json&refresh=blocking"), true)
+    XCTAssertEqual(requestURLs.last?.hasSuffix("/api/projects/324426/query/"), true)
+  }
+
+  func testDashboardProviderAugmentsSparseDashboardTilesWithDailyPostHogSeries() async throws {
+    let transport = FixturePostHogQueryTransport(responses: [
+      """
+      {
+        "id": 1362888,
+        "name": "Bleep Blog KPI Dashboard",
+        "description": "Bleep dashboard experiment"
+      }
+      """,
+      Self.sparseBleepDashboardRunInsightsJSON,
+      """
+      {
+        "results": [
+          ["2026-05-18", 2, 5],
+          ["2026-05-19", 4, 8],
+          ["2026-05-20", 0, 0],
+          ["2026-05-21", 5, 12],
+          ["2026-05-22", 6, 13],
+          ["2026-05-23", 7, 21],
+          ["2026-05-24", 8, 34]
+        ]
+      }
+      """,
+    ])
+    let provider = PostHogDashboardGrowthProvider(
+      configuration: .fixture,
+      transport: transport,
+      baseSnapshot: .fixture(range: .week)
     )
+
+    let snapshot = try await provider.dashboard(
+      projectID: "prbar-product",
+      range: .week,
+      anchorDate: SampleData.date("2026-05-24")
+    )
+    let visitors = try XCTUnwrap(snapshot.visibleMetrics.first { $0.kind == .weeklyVisitors })
+    let pageviews = try XCTUnwrap(snapshot.visibleMetrics.first { $0.kind == .pageViews })
+
+    XCTAssertEqual(snapshot.dataSource, .livePostHog)
+    XCTAssertEqual(visitors.series.count, 7)
+    XCTAssertEqual(pageviews.series.count, 7)
+    XCTAssertEqual(visitors.value, 11)
+    XCTAssertEqual(visitors.formattedValue, "11")
+    XCTAssertEqual(pageviews.value, 93)
+    XCTAssertEqual(pageviews.formattedValue, "93")
+    XCTAssertEqual(visitors.series.map(\.value), [2, 4, 0, 5, 6, 7, 8])
+    XCTAssertEqual(pageviews.series.map(\.value), [5, 8, 0, 12, 13, 21, 34])
+  }
+
+  func testDashboardProviderFallsBackToDashboardTilesWhenDailySeriesQueryFails() async throws {
+    let transport = FixturePostHogQueryTransport(results: [
+      .success(
+        Data(
+          """
+          {
+            "id": 1362888,
+            "name": "Bleep Blog KPI Dashboard",
+            "description": "Bleep dashboard experiment"
+          }
+          """.utf8
+        )
+      ),
+      .success(Data(Self.sparseBleepDashboardRunInsightsJSON.utf8)),
+      .failure(PostHogAPIError.server(statusCode: 500)),
+    ])
+    let provider = PostHogDashboardGrowthProvider(
+      configuration: .fixture,
+      transport: transport,
+      baseSnapshot: .fixture(range: .week)
+    )
+
+    let snapshot = try await provider.dashboard(
+      projectID: "prbar-product",
+      range: .week,
+      anchorDate: SampleData.date("2026-05-24")
+    )
+    let visitors = try XCTUnwrap(snapshot.visibleMetrics.first { $0.kind == .weeklyVisitors })
+    let pageviews = try XCTUnwrap(snapshot.visibleMetrics.first { $0.kind == .pageViews })
+
+    XCTAssertEqual(snapshot.dataSource, .livePostHog)
+    XCTAssertEqual(visitors.series.count, 1)
+    XCTAssertEqual(pageviews.series.count, 1)
+    XCTAssertEqual(visitors.value, 11)
+    XCTAssertEqual(pageviews.value, 139)
+    XCTAssertTrue(snapshot.issues.contains { $0.id == "posthog-daily-series-failed" })
   }
 
   func testPostHogDashboardGrowthProviderUsesAttentionFallbackWhenUnauthorized() async throws {
@@ -659,6 +771,18 @@ private actor RecordingPostHogQueryTransport: PostHogQueryTransport {
 }
 
 private extension PostHogGrowthProviderTests {
+  func dashboardDailySeriesQuery(range: ActivityRange, anchorDate: Date) throws -> String {
+    let request = try PostHogDashboardDailySeriesQuery.request(
+      configuration: .fixture,
+      range: range,
+      anchorDate: anchorDate
+    )
+    let body = try XCTUnwrap(request.httpBody)
+    let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+    let query = try XCTUnwrap(json?["query"] as? [String: Any])
+    return try XCTUnwrap(query["query"] as? String)
+  }
+
   static let bleepDashboardRunInsightsJSON = """
   {
     "results": [
@@ -745,6 +869,45 @@ private extension PostHogGrowthProviderTests {
               "count": 300,
               "label": "/docs",
               "breakdown_value": "/docs"
+            }
+          ]
+        }
+      }
+    ]
+  }
+  """
+
+  static let sparseBleepDashboardRunInsightsJSON = """
+  {
+    "results": [
+      {
+        "id": 6536094,
+        "order": 1,
+        "insight": {
+          "id": 7359526,
+          "name": "Weekly Visitors",
+          "result": [
+            {
+              "data": [11],
+              "days": ["2026-05-24"],
+              "count": 11,
+              "label": "$pageview"
+            }
+          ]
+        }
+      },
+      {
+        "id": 6536095,
+        "order": 2,
+        "insight": {
+          "id": 7359527,
+          "name": "Daily Pageviews",
+          "result": [
+            {
+              "data": [139],
+              "days": ["2026-05-24"],
+              "count": 139,
+              "label": "$pageview"
             }
           ]
         }

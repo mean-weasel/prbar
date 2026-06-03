@@ -77,6 +77,222 @@ final class PRBarModelTests: XCTestCase {
   }
 
   @MainActor
+  func testGrowthRefreshStatusMovesFromLoadingToLoaded() async {
+    let now = SampleData.dateTime("2026-05-24T18:45:00Z")
+    let snapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    let provider = StaticGrowthDashboardProvider(snapshot: snapshot)
+    let store = PRBarStore.sample(growthProvider: provider, currentDate: { now })
+
+    XCTAssertEqual(store.growthRefreshStatus, .idle)
+
+    await store.refreshGrowth()
+
+    XCTAssertEqual(store.growthRefreshStatus, .loaded(lastRefreshedAt: now, source: .livePostHog))
+    XCTAssertFalse(store.isRefreshingGrowth)
+  }
+
+  @MainActor
+  func testGrowthRefreshPersistsSuccessfulSnapshotToCache() async throws {
+    let now = SampleData.dateTime("2026-05-24T18:45:00Z")
+    let identity = GrowthDashboardCacheIdentity(
+      host: URL(string: "https://us.posthog.com")!,
+      projectID: "324426",
+      dashboardID: 1_362_888
+    )
+    let cacheStore = InMemoryGrowthDashboardCacheStore()
+    var snapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    snapshot.project.name = "Live PRBar"
+    let store = PRBarStore.sample(
+      growthProvider: StaticGrowthDashboardProvider(snapshot: snapshot),
+      growthCacheStore: cacheStore,
+      growthCacheIdentity: identity,
+      currentDate: { now }
+    )
+
+    await store.refreshGrowth()
+
+    let record = try XCTUnwrap(try cacheStore.load())
+    XCTAssertEqual(record.savedAt, now)
+    XCTAssertEqual(record.snapshot.dataSource, .livePostHog)
+    XCTAssertEqual(record.snapshot.project.name, "Live PRBar")
+    XCTAssertEqual(record.configurationIdentity, identity)
+  }
+
+  @MainActor
+  func testGrowthRefreshDoesNotReplaceLiveCacheWithSampleFallback() async throws {
+    let savedAt = SampleData.dateTime("2026-05-24T18:00:00Z")
+    var liveSnapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    liveSnapshot.project.name = "Cached Live PRBar"
+    var fallbackSnapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.sampleFallback)
+    fallbackSnapshot.project.name = "Fallback PRBar"
+    let cacheStore = InMemoryGrowthDashboardCacheStore(
+      record: GrowthDashboardCacheRecord(
+        snapshot: liveSnapshot,
+        savedAt: savedAt,
+        configurationIdentity: nil
+      )
+    )
+    let store = PRBarStore.sample(
+      growthProvider: StaticGrowthDashboardProvider(snapshot: fallbackSnapshot),
+      growthCacheStore: cacheStore,
+      currentDate: { SampleData.dateTime("2026-05-24T18:45:00Z") }
+    )
+
+    await store.refreshGrowth()
+
+    let record = try XCTUnwrap(try cacheStore.load())
+    XCTAssertEqual(record.savedAt, savedAt)
+    XCTAssertEqual(record.snapshot.dataSource, .livePostHog)
+    XCTAssertEqual(record.snapshot.project.name, "Cached Live PRBar")
+  }
+
+  @MainActor
+  func testRestoreGrowthSnapshotUsesCachedLiveDataBeforeRefresh() throws {
+    let savedAt = SampleData.dateTime("2026-05-24T18:45:00Z")
+    let identity = GrowthDashboardCacheIdentity(
+      host: URL(string: "https://us.posthog.com")!,
+      projectID: "324426",
+      dashboardID: 1_362_888
+    )
+    var snapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    snapshot.project.name = "Cached Live PRBar"
+    let cacheStore = InMemoryGrowthDashboardCacheStore(
+      record: GrowthDashboardCacheRecord(
+        snapshot: snapshot,
+        savedAt: savedAt,
+        configurationIdentity: identity
+      )
+    )
+    let store = PRBarStore.sample(growthCacheStore: cacheStore, growthCacheIdentity: identity)
+
+    store.restoreGrowthSnapshot()
+
+    XCTAssertEqual(store.growthSnapshot.dataSource, .livePostHog)
+    XCTAssertEqual(store.growthSnapshot.project.name, "Cached Live PRBar")
+    XCTAssertEqual(store.growthRefreshStatus, .loaded(lastRefreshedAt: savedAt, source: .livePostHog))
+  }
+
+  @MainActor
+  func testRestoreGrowthSnapshotSkipsLiveCacheWhenConfigurationIdentityDiffers() throws {
+    let savedAt = SampleData.dateTime("2026-05-24T18:45:00Z")
+    let cachedIdentity = GrowthDashboardCacheIdentity(
+      host: URL(string: "https://us.posthog.com")!,
+      projectID: "324426",
+      dashboardID: 1_362_888
+    )
+    let currentIdentity = GrowthDashboardCacheIdentity(
+      host: URL(string: "https://us.posthog.com")!,
+      projectID: "999999",
+      dashboardID: 1_362_888
+    )
+    var snapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    snapshot.project.name = "Cached Live PRBar"
+    let cacheStore = InMemoryGrowthDashboardCacheStore(
+      record: GrowthDashboardCacheRecord(
+        snapshot: snapshot,
+        savedAt: savedAt,
+        configurationIdentity: cachedIdentity
+      )
+    )
+    let store = PRBarStore.sample(growthCacheStore: cacheStore, growthCacheIdentity: currentIdentity)
+
+    store.restoreGrowthSnapshot()
+
+    XCTAssertNotEqual(store.growthSnapshot.project.name, "Cached Live PRBar")
+    XCTAssertEqual(store.growthRefreshStatus, .idle)
+  }
+
+  @MainActor
+  func testRestoreGrowthSnapshotSkipsUnscopedLiveCacheWhenConfigurationIsMissing() throws {
+    let savedAt = SampleData.dateTime("2026-05-24T18:45:00Z")
+    var snapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    snapshot.project.name = "Old Unscoped Live PRBar"
+    let cacheStore = InMemoryGrowthDashboardCacheStore(
+      record: GrowthDashboardCacheRecord(snapshot: snapshot, savedAt: savedAt)
+    )
+    let store = PRBarStore.sample(growthCacheStore: cacheStore, growthCacheIdentity: nil)
+
+    store.restoreGrowthSnapshot()
+
+    XCTAssertNotEqual(store.growthSnapshot.project.name, "Old Unscoped Live PRBar")
+    XCTAssertEqual(store.growthRefreshStatus, .idle)
+  }
+
+  @MainActor
+  func testAutomaticGrowthRefreshSkipsRestoredLiveCacheWhenProviderIsSample() async {
+    let savedAt = SampleData.dateTime("2026-05-24T18:45:00Z")
+    var cachedSnapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.livePostHog)
+    cachedSnapshot.project.name = "Cached Live PRBar"
+    var sampleSnapshot = GrowthDashboardSnapshot.fixture(range: .week).withDataSource(.sample)
+    sampleSnapshot.project.name = "Sample PRBar"
+    let identity = GrowthDashboardCacheIdentity(
+      host: URL(string: "https://us.posthog.com")!,
+      projectID: "324426",
+      dashboardID: 1_362_888
+    )
+    let cacheStore = InMemoryGrowthDashboardCacheStore(
+      record: GrowthDashboardCacheRecord(
+        snapshot: cachedSnapshot,
+        savedAt: savedAt,
+        configurationIdentity: identity
+      )
+    )
+    let store = PRBarStore.sample(
+      growthProvider: StaticGrowthDashboardProvider(snapshot: sampleSnapshot),
+      growthCacheStore: cacheStore,
+      growthCacheIdentity: identity,
+      currentDate: { SampleData.dateTime("2026-05-24T19:00:00Z") }
+    )
+
+    store.restoreGrowthSnapshot()
+    await store.refreshGrowthIfNeeded()
+
+    XCTAssertEqual(store.growthSnapshot.dataSource, .livePostHog)
+    XCTAssertEqual(store.growthSnapshot.project.name, "Cached Live PRBar")
+    XCTAssertEqual(store.growthRefreshStatus, .loaded(lastRefreshedAt: savedAt, source: .livePostHog))
+  }
+
+  @MainActor
+  func testRestoreGrowthSnapshotRestoresRangeAndSelectedProject() throws {
+    let savedAt = SampleData.dateTime("2026-05-24T18:45:00Z")
+    let identity = GrowthDashboardCacheIdentity(
+      host: URL(string: "https://us.posthog.com")!,
+      projectID: "324426",
+      dashboardID: 1_362_888
+    )
+    var snapshot = GrowthDashboardSnapshot.fixture(range: .month).withDataSource(.livePostHog)
+    snapshot.project.id = "cached-growth-project"
+    let cacheStore = InMemoryGrowthDashboardCacheStore(
+      record: GrowthDashboardCacheRecord(
+        snapshot: snapshot,
+        savedAt: savedAt,
+        configurationIdentity: identity
+      )
+    )
+    let store = PRBarStore.sample(growthCacheStore: cacheStore, growthCacheIdentity: identity)
+
+    store.restoreGrowthSnapshot()
+
+    XCTAssertEqual(store.growthRange, .month)
+    XCTAssertEqual(store.selectedGrowthProjectID, "cached-growth-project")
+  }
+
+  @MainActor
+  func testGrowthRefreshStatusReportsFailureWithoutClearingCurrentSnapshot() async {
+    let original = GrowthDashboardSnapshot.fixture(range: .week)
+    let store = PRBarStore.sample(
+      growthSnapshot: original,
+      growthProvider: FailingGrowthDashboardProvider(error: GrowthProviderError.providerUnavailable("PostHog is unavailable"))
+    )
+
+    await store.refreshGrowth()
+
+    XCTAssertEqual(store.growthSnapshot, original)
+    XCTAssertEqual(store.growthRefreshStatus, .failed(message: "PostHog is unavailable"))
+    XCTAssertEqual(store.growthRefreshIssue?.title, "Growth refresh failed")
+  }
+
+  @MainActor
   func testGrowthRangeRefreshesSnapshotWithoutRefreshingGitHubActivity() async {
     let provider = StaticGrowthDashboardProvider(snapshot: .fixture(range: .week))
     let store = PRBarStore.sample(growthProvider: provider)
@@ -1543,6 +1759,14 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(store.pullRequests, originalPullRequests)
     XCTAssertNil(store.activityRefreshIssue)
     XCTAssertFalse(store.isRefreshingActivity)
+  }
+}
+
+private extension GrowthDashboardSnapshot {
+  func withDataSource(_ dataSource: GrowthDataSource) -> GrowthDashboardSnapshot {
+    var snapshot = self
+    snapshot.dataSource = dataSource
+    return snapshot
   }
 }
 

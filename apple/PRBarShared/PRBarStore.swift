@@ -27,7 +27,9 @@ final class PRBarStore {
   var growthRange: ActivityRange
   var selectedGrowthProjectID: GrowthProject.ID
   var isRefreshingGrowth = false
+  var growthRefreshStatus: GrowthRefreshStatus = .idle
   var growthRefreshIssue: AuthIssue?
+  private var hasAttemptedAutomaticGrowthRefresh = false
   private let authService: GitHubAuthServicing
   private let repositoryProvider: GitHubRepositoryProviding
   private let activityProvider: GitHubActivityProviding
@@ -35,6 +37,8 @@ final class PRBarStore {
   private let repositoryColorStore: RepositoryColorStoring
   private let activityCacheStore: GitHubActivityCacheStoring
   private let growthProvider: GrowthDashboardProviding
+  private let growthCacheStore: GrowthDashboardCacheStoring
+  private let growthCacheIdentity: GrowthDashboardCacheIdentity?
   private let currentDate: @Sendable () -> Date
   private static let maximumRestoredRepositorySelectionCount = 50
 
@@ -68,6 +72,8 @@ final class PRBarStore {
     growthRange: ActivityRange = .week,
     selectedGrowthProjectID: GrowthProject.ID = SampleData.growthDashboard.project.id,
     growthProvider: GrowthDashboardProviding = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard),
+    growthCacheStore: GrowthDashboardCacheStoring = InMemoryGrowthDashboardCacheStore(),
+    growthCacheIdentity: GrowthDashboardCacheIdentity? = nil,
     currentDate: @escaping @Sendable () -> Date = Date.init
   ) {
     self.repositories = repositories
@@ -93,6 +99,8 @@ final class PRBarStore {
     self.growthRange = growthRange
     self.selectedGrowthProjectID = selectedGrowthProjectID
     self.growthProvider = growthProvider
+    self.growthCacheStore = growthCacheStore
+    self.growthCacheIdentity = growthCacheIdentity
     self.currentDate = currentDate
   }
 
@@ -103,7 +111,10 @@ final class PRBarStore {
     repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore(),
     repositoryColorStore: RepositoryColorStoring = InMemoryRepositoryColorStore(),
     activityCacheStore: GitHubActivityCacheStoring = InMemoryGitHubActivityCacheStore(),
+    growthSnapshot: GrowthDashboardSnapshot = SampleData.growthDashboard,
     growthProvider: GrowthDashboardProviding = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard),
+    growthCacheStore: GrowthDashboardCacheStoring = InMemoryGrowthDashboardCacheStore(),
+    growthCacheIdentity: GrowthDashboardCacheIdentity? = nil,
     currentDate: @escaping @Sendable () -> Date = Date.init
   ) -> PRBarStore {
     PRBarStore(
@@ -119,7 +130,10 @@ final class PRBarStore {
       repositorySelectionStore: repositorySelectionStore,
       repositoryColorStore: repositoryColorStore,
       activityCacheStore: activityCacheStore,
+      growthSnapshot: growthSnapshot,
       growthProvider: growthProvider,
+      growthCacheStore: growthCacheStore,
+      growthCacheIdentity: growthCacheIdentity,
       currentDate: currentDate
     )
   }
@@ -263,28 +277,75 @@ final class PRBarStore {
   }
 
   @MainActor
+  func refreshGrowthIfNeeded() async {
+    guard hasAttemptedAutomaticGrowthRefresh == false else {
+      return
+    }
+
+    hasAttemptedAutomaticGrowthRefresh = true
+    guard growthSnapshot.dataSource != .livePostHog else {
+      return
+    }
+
+    await refreshGrowth()
+  }
+
+  @MainActor
   func refreshGrowth() async {
     guard isRefreshingGrowth == false else {
       return
     }
 
     isRefreshingGrowth = true
+    growthRefreshStatus = .loading(message: "Refreshing PostHog...")
     growthRefreshIssue = nil
     defer { isRefreshingGrowth = false }
 
     do {
-      growthSnapshot = try await growthProvider.dashboard(
+      let snapshot = try await growthProvider.dashboard(
         projectID: selectedGrowthProjectID,
         range: growthRange,
         anchorDate: growthSnapshot.anchorDate
       )
+      let refreshedAt = currentDate()
+      growthSnapshot = snapshot
+      if snapshot.dataSource == .livePostHog {
+        try? growthCacheStore.save(
+          GrowthDashboardCacheRecord(
+            snapshot: snapshot,
+            savedAt: refreshedAt,
+            configurationIdentity: growthCacheIdentity
+          )
+        )
+      }
+      growthRefreshStatus = .loaded(lastRefreshedAt: refreshedAt, source: snapshot.dataSource)
     } catch {
+      growthRefreshStatus = .failed(message: error.localizedDescription)
       growthRefreshIssue = AuthIssue(
         id: "growth-refresh-failed",
         title: "Growth refresh failed",
         message: error.localizedDescription
       )
     }
+  }
+
+  @MainActor
+  func restoreGrowthSnapshot() {
+    guard let record = try? growthCacheStore.load() else {
+      return
+    }
+    if record.snapshot.dataSource == .livePostHog {
+      guard let growthCacheIdentity,
+        record.configurationIdentity == growthCacheIdentity
+      else {
+        return
+      }
+    }
+
+    growthSnapshot = record.snapshot
+    growthRange = record.snapshot.range
+    selectedGrowthProjectID = record.snapshot.project.id
+    growthRefreshStatus = .loaded(lastRefreshedAt: record.savedAt, source: record.snapshot.dataSource)
   }
 
   @MainActor

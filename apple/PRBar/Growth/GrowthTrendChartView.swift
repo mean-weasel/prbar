@@ -46,6 +46,10 @@ struct GrowthTrendChartView: View {
       }
       .frame(height: 150, alignment: .bottom)
       .scrollIndicators(.hidden)
+
+      Text("\(points.count) daily points")
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(14)

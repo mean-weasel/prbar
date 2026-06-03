@@ -445,34 +445,34 @@ struct PostHogGrowthProvider: GrowthDashboardProviding {
   }()
 }
 
-private struct PostHogQueryBody: Encodable {
+struct PostHogQueryBody: Encodable {
   var query: PostHogHogQLQuery
 }
 
-private struct PostHogHogQLQuery: Encodable {
+struct PostHogHogQLQuery: Encodable {
   var kind = "HogQLQuery"
   var query: String
 }
 
-private struct PostHogDailyMetricRow: Equatable {
+fileprivate struct PostHogDailyMetricRow: Equatable {
   var date: Date
   var activeUsers: Int
   var eventCount: Int
 }
 
-private struct PostHogTopEventRow: Equatable {
+fileprivate struct PostHogTopEventRow: Equatable {
   var event: String
   var count: Int
 }
 
-private struct PostHogQueryResponse {
+struct PostHogQueryResponse {
   var rows: [[PostHogJSONValue]]
 
   init(data: Data) throws {
     rows = try JSONDecoder().decode(PostHogQueryPayload.self, from: data).results
   }
 
-  func dailyMetricRows() throws -> [PostHogDailyMetricRow] {
+  fileprivate func dailyMetricRows() throws -> [PostHogDailyMetricRow] {
     try rows.map { row in
       guard row.count >= 3,
         let day = row[0].string,
@@ -486,7 +486,7 @@ private struct PostHogQueryResponse {
     }
   }
 
-  func topEventRows() throws -> [PostHogTopEventRow] {
+  fileprivate func topEventRows() throws -> [PostHogTopEventRow] {
     try rows.map { row in
       guard row.count >= 2,
         let event = row[0].string,
@@ -495,6 +495,20 @@ private struct PostHogQueryResponse {
         throw PostHogAPIError.invalidResponse
       }
       return PostHogTopEventRow(event: event, count: count)
+    }
+  }
+
+  func dashboardDailySeriesRows() throws -> [PostHogDashboardDailySeries] {
+    try rows.map { row in
+      guard row.count >= 3,
+        let day = row[0].stringValue,
+        let date = Self.dayFormatter.date(from: day),
+        let visitors = row[1].doubleValue,
+        let pageviews = row[2].doubleValue
+      else {
+        throw PostHogAPIError.invalidResponse
+      }
+      return PostHogDashboardDailySeries(day: date, visitors: visitors, pageviews: pageviews)
     }
   }
 
@@ -508,11 +522,11 @@ private struct PostHogQueryResponse {
   }()
 }
 
-private struct PostHogQueryPayload: Decodable {
+struct PostHogQueryPayload: Decodable {
   var results: [[PostHogJSONValue]]
 }
 
-private enum PostHogJSONValue: Decodable {
+enum PostHogJSONValue: Decodable {
   case string(String)
   case int(Int)
   case double(Double)
@@ -537,6 +551,10 @@ private enum PostHogJSONValue: Decodable {
   }
 
   var string: String? {
+    stringValue
+  }
+
+  var stringValue: String? {
     if case let .string(value) = self {
       return value
     }
@@ -551,6 +569,19 @@ private enum PostHogJSONValue: Decodable {
       Int(value)
     case let .string(value):
       Int(value)
+    case .bool, .null:
+      nil
+    }
+  }
+
+  var doubleValue: Double? {
+    switch self {
+    case let .int(value):
+      Double(value)
+    case let .double(value):
+      value
+    case let .string(value):
+      Double(value)
     case .bool, .null:
       nil
     }

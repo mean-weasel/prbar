@@ -30,6 +30,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Active users"].exists)
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
+    app.assertGrowthChartPointCount(7)
     XCTAssertTrue(app.staticTexts["4 releases and 5 PRs landed during this window."].exists)
   }
 
@@ -74,7 +75,30 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
+    app.assertGrowthChartPointCount(7)
     app.scrollToStaticText("/studio")
+  }
+
+  @MainActor
+  func testGrowthShowsExplicitPostHogRefreshState() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing", "--ui-testing-bleep-posthog-dashboard"]
+    app.launch()
+
+    app.tapTab("Growth")
+
+    let refreshButton = app.buttons["Refresh PostHog growth"]
+    XCTAssertTrue(refreshButton.waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Live PostHog"].waitForExistence(timeout: 4))
+    XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 8), "Refresh PostHog growth did not become enabled")
+    refreshButton.tap()
+    XCTAssertTrue(
+      app.staticTexts
+        .containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed"))
+        .firstMatch
+        .waitForExistence(timeout: 8)
+    )
   }
 
   @MainActor
@@ -94,8 +118,10 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("Growth")
 
     XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 8))
-    XCTAssertTrue(app.buttons["Refresh growth"].waitForExistence(timeout: 4))
-    app.buttons["Refresh growth"].tap()
+    let refreshButton = app.buttons["Refresh PostHog growth"]
+    XCTAssertTrue(refreshButton.waitForExistence(timeout: 4))
+    XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 30), "Refresh PostHog growth did not become enabled")
+    refreshButton.tap()
     let dashboardLoaded = app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 30)
     if dashboardLoaded == false {
       let hierarchy = app.debugDescription
@@ -116,6 +142,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
+    app.assertGrowthChartPointCount(7)
   }
 
   @MainActor
@@ -534,6 +561,15 @@ final class PRBarUITests: XCTestCase {
   }
 }
 
+private extension XCUIElement {
+  @MainActor
+  func waitUntilEnabled(timeout: TimeInterval) -> Bool {
+    let predicate = NSPredicate(format: "enabled == true")
+    let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+    return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
+  }
+}
+
 private extension XCUIApplication {
   @MainActor
   func tapTab(_ name: String, file: StaticString = #filePath, line: UInt = #line) {
@@ -574,6 +610,30 @@ private extension XCUIApplication {
     staticTexts
       .matching(NSPredicate(format: "label MATCHES %@", ".*[0-9]+\\.[0-9]+\\.[0-9]+.*"))
       .firstMatch
+  }
+
+  @MainActor
+  func assertGrowthChartPointCount(
+    _ count: Int,
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) {
+    let chart = otherElements["growth-trend-chart"].firstMatch
+    let expectedAccessibilityValue = "\(count) points"
+    let expectedCaption = "\(count) daily points"
+
+    XCTAssertTrue(
+      chart.waitForExistence(timeout: 4) || staticTexts[expectedCaption].waitForExistence(timeout: 1),
+      "Growth chart did not expose \(expectedAccessibilityValue) or \(expectedCaption).",
+      file: file,
+      line: line
+    )
+
+    if chart.exists {
+      XCTAssertEqual(chart.value as? String, expectedAccessibilityValue, file: file, line: line)
+    } else {
+      XCTAssertTrue(staticTexts[expectedCaption].exists, file: file, line: line)
+    }
   }
 
   @MainActor

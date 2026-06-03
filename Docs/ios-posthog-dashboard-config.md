@@ -32,3 +32,42 @@ For this internal prototype, the install workflows embed the PostHog settings in
 the app bundle so physical-device installs can read them after launch. Do not
 ship a public build with a personal API key in the bundle; move this behind a
 backend proxy or a narrower read-only token before broader distribution.
+
+## Current iOS Growth UX
+
+The app reads live PostHog configuration from runtime environment values first,
+then from these build-time `Info.plist` keys embedded by the iOS workflows:
+
+- `PRBarPostHogHost`
+- `PRBarPostHogProjectID`
+- `PRBarPostHogPersonalAPIKey`
+- `PRBarPostHogDashboardID`
+
+On launch, Growth restores the last successful live Growth snapshot from the
+local cache before the first render only when the cached PostHog host, project
+ID, and dashboard ID match the app's current configuration. If that restored
+snapshot is already marked `Live PostHog`, the first-appearance auto-refresh is
+skipped so relaunches stay fast and do not immediately replace live cached data
+with fallback data. The toolbar refresh button and pull-to-refresh always
+request a fresh PostHog snapshot.
+
+The configured Bleep dashboard currently maps PostHog tiles into Growth like
+this:
+
+- `Weekly Visitors` -> `Weekly visitors`, augmented with a daily `$pageview`
+  distinct-person series for the selected range when the daily query succeeds.
+- `Daily Pageviews` -> `Daily pageviews`, augmented with a daily `$pageview`
+  count series for the selected range when the daily query succeeds.
+- `Traffic Sources` -> the PostHog source list.
+- `Top Pages` -> the PostHog top pages list.
+
+Daily series augmentation is best-effort. If the separate HogQL daily-series
+query fails after the dashboard tiles load, Growth keeps the dashboard-backed
+snapshot, surfaces a `PostHog daily series unavailable` issue in the snapshot,
+and renders the selected date window from the available dashboard tile data.
+The physical-device preflight currently probes dashboard metadata and
+`run_insights`; it does not yet preflight this separate daily-series query.
+
+Dashboard selection is still configuration-driven. The iOS app shows the
+configured dashboard and connection diagnostics, but does not yet let users edit
+the PostHog project, API key, or dashboard selection in-app.
