@@ -110,8 +110,8 @@ private func runLivePostHogGrowthSmoke(file: StaticString = #filePath, line: UIn
 
   app.tapTab("Growth", file: file, line: line)
   XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 8), file: file, line: line)
-  XCTAssertTrue(app.buttons["Refresh growth"].waitForExistence(timeout: 4), file: file, line: line)
-  app.buttons["Refresh growth"].tap()
+  XCTAssertTrue(app.buttons["Refresh PostHog growth"].waitForExistence(timeout: 4), file: file, line: line)
+  app.buttons["Refresh PostHog growth"].tap()
   XCTAssertTrue(app.staticTexts["Active users"].waitForExistence(timeout: 30), file: file, line: line)
   XCTAssertTrue(app.staticTexts["Events"].waitForExistence(timeout: 30), file: file, line: line)
 
