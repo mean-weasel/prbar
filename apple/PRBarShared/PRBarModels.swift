@@ -167,6 +167,17 @@ enum ActivityRange: String, CaseIterable, Identifiable, Codable, Sendable {
     rawValue.capitalized
   }
 
+  var windowLabel: String {
+    switch self {
+    case .day:
+      "5-day window"
+    case .week:
+      "7-day window"
+    case .month:
+      "Current month"
+    }
+  }
+
   var growthRefreshDescription: String {
     switch self {
     case .day:
