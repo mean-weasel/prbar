@@ -63,7 +63,7 @@ visual_board:
     url: "http://goalbuddy.localhost:41737/posthog-dashboard-axis-fidelity-2/"
     command: "npx goalbuddy board Docs/goals/posthog-dashboard-axis-fidelity"
 
-active_task: T007
+active_task: T008
 
 tasks:
   - id: T001
@@ -329,7 +329,7 @@ tasks:
   - id: T007
     type: worker
     assignee: Worker
-    status: active
+    status: done
     reasoning_hint: medium
     objective: "Prepare, push, and open a PR for approved axis-fidelity work."
     inputs:
@@ -350,12 +350,25 @@ tasks:
     acceptance_criteria:
       - "PR exists with a clear summary and verification."
       - "CI and iOS PR checks are green or failure logs are triaged with a follow-up task."
-    receipt: null
+    receipt:
+      result: done
+      summary: "Committed, pushed, and opened a ready PR for the axis-fidelity tranche."
+      note: "Docs/goals/posthog-dashboard-axis-fidelity/notes/T007-axis-fidelity-pr-worker.md"
+      pr: "https://github.com/mean-weasel/prbar/pull/132"
+      branch: "codex/posthog-axis-fidelity"
+      commit: "0148f14 Preserve PostHog dashboard axis labels"
+      verify:
+        - "git status --short reviewed before staging."
+        - "git diff --check passed."
+        - "./scripts/format-check.sh passed."
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh passed."
+        - "Focused Growth UI xcodebuild test passed."
+        - "./scripts/ios-test.sh passed."
 
   - id: T008
     type: worker
     assignee: Worker
-    status: queued
+    status: active
     reasoning_hint: medium
     objective: "Merge through the merge queue when green, monitor post-merge main checks, install on iPhone-prod, and run production Growth smoke."
     inputs:
