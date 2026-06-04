@@ -430,7 +430,9 @@ enum BleepBlogDashboardNormalizer {
               kind: .weeklyVisitors,
               title: "Weekly visitors",
               insight: tile.insight,
-              series: series
+              series: series,
+              fallbackXAxisLabel: "Calendar day",
+              fallbackYAxisLabel: "Visitors"
             )
           )
         }
@@ -442,7 +444,9 @@ enum BleepBlogDashboardNormalizer {
               kind: .pageViews,
               title: "Daily pageviews",
               insight: tile.insight,
-              series: series
+              series: series,
+              fallbackXAxisLabel: "Calendar day",
+              fallbackYAxisLabel: "Pageviews"
             )
           )
         }
@@ -531,7 +535,9 @@ enum BleepBlogDashboardNormalizer {
     kind: GrowthMetricKind,
     title: String,
     insight: PostHogDashboardInsight,
-    series: PostHogDashboardSeries
+    series: PostHogDashboardSeries,
+    fallbackXAxisLabel: String? = nil,
+    fallbackYAxisLabel: String? = nil
   ) -> GrowthMetric {
     let value = count(from: series)
     return GrowthMetric(
@@ -544,7 +550,11 @@ enum BleepBlogDashboardNormalizer {
       unit: .count,
       delta: nil,
       series: metricPoints(from: series),
-      chartMetadata: chartMetadata(from: insight)
+      chartMetadata: chartMetadata(
+        from: insight,
+        fallbackXAxisLabel: fallbackXAxisLabel,
+        fallbackYAxisLabel: fallbackYAxisLabel
+      )
     )
   }
 
@@ -633,7 +643,11 @@ enum BleepBlogDashboardNormalizer {
     series.count ?? series.data.reduce(0, +)
   }
 
-  private static func chartMetadata(from insight: PostHogDashboardInsight) -> GrowthMetricChartMetadata {
+  private static func chartMetadata(
+    from insight: PostHogDashboardInsight,
+    fallbackXAxisLabel: String? = nil,
+    fallbackYAxisLabel: String? = nil
+  ) -> GrowthMetricChartMetadata {
     let trendsFilter = insight.query?.trendsFilter ?? insight.query?.source?.trendsFilter
     let display = normalized(trendsFilter?.display)
       ?? normalized(insight.filters?.display)
@@ -644,8 +658,12 @@ enum BleepBlogDashboardNormalizer {
 
     return GrowthMetricChartMetadata(
       kind: chartKind(display: display),
-      xAxisLabel: normalized(trendsFilter?.xAxisLabel) ?? normalized(insight.filters?.xAxisLabel),
-      yAxisLabel: normalized(trendsFilter?.yAxisLabel) ?? normalized(insight.filters?.yAxisLabel),
+      xAxisLabel: normalized(trendsFilter?.xAxisLabel)
+        ?? normalized(insight.filters?.xAxisLabel)
+        ?? fallbackXAxisLabel,
+      yAxisLabel: normalized(trendsFilter?.yAxisLabel)
+        ?? normalized(insight.filters?.yAxisLabel)
+        ?? fallbackYAxisLabel,
       yAxisScale: yAxisScale.flatMap(GrowthMetricYAxisScale.init(rawValue:)),
       sourceInsightID: "\(insight.id)",
       sourceInsightName: normalized(insight.name) ?? normalized(insight.derivedName),
