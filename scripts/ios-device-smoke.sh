@@ -16,6 +16,8 @@ PRODUCT_BUNDLE_IDENTIFIER="${PRODUCT_BUNDLE_IDENTIFIER:-com.neonwatty.PRBar.ios.
 PROFILE="${IOS_UI_SMOKE_PROFILE:-pr}"
 DEVICE_READY_TIMEOUT="${IOS_DEVICE_READY_TIMEOUT:-45}"
 AUTOMATION_MODE_RETRY_DELAY="${IOS_AUTOMATION_MODE_RETRY_DELAY:-20}"
+AUTOMATION_MODE_MAX_ATTEMPTS="${IOS_AUTOMATION_MODE_MAX_ATTEMPTS:-3}"
+XCODEBUILD_LOG_SETTLE_TIMEOUT="${IOS_XCODEBUILD_LOG_SETTLE_TIMEOUT:-8}"
 LOCKED_DEVICE_FAIL_FAST="${IOS_LOCKED_DEVICE_FAIL_FAST:-1}"
 XCODEBUILD_EXTRA_ARGS=()
 TEMP_FILES=()
@@ -31,7 +33,6 @@ trap cleanup EXIT
 run_xcodebuild_test_with_automation_retry() {
   local -a command=("$@")
   local attempt=1
-  local max_attempts=2
   local log_file
   local status
 
@@ -51,9 +52,9 @@ run_xcodebuild_test_with_automation_retry() {
       return 0
     fi
 
-    if [[ "$attempt" -lt "$max_attempts" ]] && grep -Fq "Timed out while enabling automation mode" "$log_file"; then
+    if [[ "$attempt" -lt "$AUTOMATION_MODE_MAX_ATTEMPTS" ]] && log_contains_automation_mode_timeout "$log_file"; then
       cat >&2 <<EOF
-Xcode timed out while enabling Automation Mode on $DEVICE_NAME.
+Xcode timed out while enabling Automation Mode on $DEVICE_NAME during attempt $attempt of $AUTOMATION_MODE_MAX_ATTEMPTS.
 
 Keep the iPhone unlocked and awake, then accept the Automation Mode prompt if it appears.
 If no prompt appears, run this once in an interactive terminal on the runner Mac:
@@ -61,6 +62,7 @@ If no prompt appears, run this once in an interactive terminal on the runner Mac
 
 Retrying the physical UI smoke in ${AUTOMATION_MODE_RETRY_DELAY}s...
 EOF
+      probe_device_readiness_before_retry
       sleep "$AUTOMATION_MODE_RETRY_DELAY"
       attempt=$((attempt + 1))
       continue
@@ -68,6 +70,45 @@ EOF
 
     return "$status"
   done
+}
+
+log_contains_automation_mode_timeout() {
+  local log_file="$1"
+  local deadline=$((SECONDS + XCODEBUILD_LOG_SETTLE_TIMEOUT))
+
+  while true; do
+    if grep -Fq "Timed out while enabling automation mode" "$log_file"; then
+      return 0
+    fi
+
+    if [[ "$SECONDS" -ge "$deadline" ]]; then
+      return 1
+    fi
+
+    sleep 1
+  done
+}
+
+probe_device_readiness_before_retry() {
+  if [[ -z "${IOS_DEVICE_ID:-}" ]]; then
+    return 0
+  fi
+
+  echo "Re-checking $DEVICE_NAME readiness before Automation Mode retry."
+  if ! xcrun devicectl device info details --device "$IOS_DEVICE_ID" --quiet --timeout 10 >/dev/null 2>&1; then
+    echo "Warning: $DEVICE_NAME did not answer the readiness probe before retry; retrying xcodebuild anyway." >&2
+    return 0
+  fi
+
+  local retry_lock_json
+  retry_lock_json="$(mktemp "${TMPDIR:-/tmp}/prbar-device-lock-retry.XXXXXX")"
+  TEMP_FILES+=("$retry_lock_json")
+  if xcrun devicectl device info lockState --device "$IOS_DEVICE_ID" --json-output "$retry_lock_json" --quiet --timeout 10 >/dev/null 2>&1; then
+    echo "Device lock state before retry:"
+    jq -r '.result | "  passcodeRequired=\(.passcodeRequired) unlockedSinceBoot=\(.unlockedSinceBoot)"' "$retry_lock_json"
+  else
+    echo "Warning: could not read $DEVICE_NAME lock state before retry." >&2
+  fi
 }
 
 run_xcodebuild_with_live_fail_fast() {
