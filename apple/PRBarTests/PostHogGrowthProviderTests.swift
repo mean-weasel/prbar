@@ -237,6 +237,12 @@ final class PostHogGrowthProviderTests: XCTestCase {
               "short_id": "abc123",
               "name": "Daily Pageviews",
               "derived_name": "Daily Pageviews",
+              "filters": {
+                "display": "ActionsLineGraph",
+                "x_axis_label": "Calendar day",
+                "y_axis_label": "Pageviews",
+                "y_axis_scale_type": "linear"
+              },
               "result": [
                 {
                   "data": [139, 179, 1036],
@@ -274,6 +280,10 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertEqual(response.results.count, 2)
     XCTAssertEqual(response.results[0].insight.name, "Daily Pageviews")
     XCTAssertEqual(response.results[0].insight.derivedName, "Daily Pageviews")
+    XCTAssertEqual(response.results[0].insight.filters?.display, "ActionsLineGraph")
+    XCTAssertEqual(response.results[0].insight.filters?.xAxisLabel, "Calendar day")
+    XCTAssertEqual(response.results[0].insight.filters?.yAxisLabel, "Pageviews")
+    XCTAssertEqual(response.results[0].insight.filters?.yAxisScaleType, "linear")
     XCTAssertEqual(response.results[0].insight.result[0].data, [139, 179, 1036])
     XCTAssertEqual(response.results[0].insight.result[0].count, 1314.0)
     XCTAssertEqual(response.results[1].insight.name, "Top Pages")
@@ -528,6 +538,141 @@ final class PostHogGrowthProviderTests: XCTestCase {
     XCTAssertEqual(snapshot.shippingContext.releaseCount, 0)
     XCTAssertTrue(snapshot.issues.contains { $0.detail.contains("Blog -> Upload Activation") })
     XCTAssertTrue(snapshot.issues.contains { $0.detail.contains("Experimental Dashboard Tile") })
+  }
+
+  func testBleepBlogDashboardNormalizerPreservesPostHogAxisLabels() throws {
+    let data = Data(
+      """
+      {
+        "results": [
+          {
+            "id": 6536094,
+            "order": 1,
+            "insight": {
+              "id": 7359526,
+              "name": "Weekly Visitors",
+              "filters": {
+                "display": "ActionsLineGraph",
+                "x_axis_label": "Signup date",
+                "y_axis_label": "Unique visitors",
+                "y_axis_scale_type": "linear"
+              },
+              "result": [
+                {
+                  "data": [11, 13, 17],
+                  "days": ["2026-05-12", "2026-05-19", "2026-05-26"],
+                  "count": 41,
+                  "label": "$pageview"
+                }
+              ]
+            }
+          },
+          {
+            "id": 6536095,
+            "order": 2,
+            "insight": {
+              "id": 7359527,
+              "name": "Daily Pageviews",
+              "query": {
+                "kind": "InsightVizNode",
+                "source": {
+                  "kind": "TrendsQuery",
+                  "trendsFilter": {
+                    "display": "ActionsBar",
+                    "xAxisLabel": "Calendar day",
+                    "yAxisLabel": "Pageviews",
+                    "yAxisScaleType": "log10"
+                  }
+                }
+              },
+              "filters": {
+                "x_axis_label": "Legacy day",
+                "y_axis_label": "Legacy pageviews"
+              },
+              "result": [
+                {
+                  "data": [139, 179, 1036],
+                  "days": ["2026-04-27", "2026-04-28", "2026-04-29"],
+                  "count": 1314,
+                  "label": "$pageview"
+                }
+              ]
+            }
+          }
+        ]
+      }
+      """.utf8
+    )
+
+    let response = try PostHogDashboardRunResponse(data: data)
+    let snapshot = BleepBlogDashboardNormalizer.snapshot(
+      response: response,
+      range: .week,
+      anchorDate: SampleData.date("2026-05-26")
+    )
+    let visitors = try XCTUnwrap(snapshot.visibleMetrics.first { $0.kind == .weeklyVisitors })
+    let pageviews = try XCTUnwrap(snapshot.visibleMetrics.first { $0.kind == .pageViews })
+
+    XCTAssertEqual(visitors.chartMetadata?.kind, .line)
+    XCTAssertEqual(visitors.chartMetadata?.xAxisLabel, "Signup date")
+    XCTAssertEqual(visitors.chartMetadata?.yAxisLabel, "Unique visitors")
+    XCTAssertEqual(visitors.chartMetadata?.yAxisScale, .linear)
+    XCTAssertEqual(visitors.chartMetadata?.sourceInsightID, "7359526")
+    XCTAssertEqual(visitors.chartMetadata?.sourceDisplay, "ActionsLineGraph")
+
+    XCTAssertEqual(pageviews.chartMetadata?.kind, .bar)
+    XCTAssertEqual(pageviews.chartMetadata?.xAxisLabel, "Calendar day")
+    XCTAssertEqual(pageviews.chartMetadata?.yAxisLabel, "Pageviews")
+    XCTAssertEqual(pageviews.chartMetadata?.yAxisScale, .log10)
+    XCTAssertEqual(pageviews.chartMetadata?.sourceInsightID, "7359527")
+    XCTAssertEqual(pageviews.chartMetadata?.sourceDisplay, "ActionsBar")
+  }
+
+  func testBleepBlogDashboardNormalizerCreatesCustomMetricForFutureTrendTile() throws {
+    let data = Data(
+      """
+      {
+        "results": [
+          {
+            "id": 6536111,
+            "order": 1,
+            "insight": {
+              "id": 7359600,
+              "name": "Activation Events",
+              "filters": {
+                "display": "ActionsLineGraph",
+                "x_axis_label": "Activation day",
+                "y_axis_label": "Events"
+              },
+              "result": [
+                {
+                  "data": [2, 4, 8],
+                  "days": ["2026-05-20", "2026-05-21", "2026-05-22"],
+                  "count": 14,
+                  "label": "activation"
+                }
+              ]
+            }
+          }
+        ]
+      }
+      """.utf8
+    )
+
+    let response = try PostHogDashboardRunResponse(data: data)
+    let snapshot = BleepBlogDashboardNormalizer.snapshot(
+      response: response,
+      range: .week,
+      anchorDate: SampleData.date("2026-05-26")
+    )
+    let metric = try XCTUnwrap(snapshot.visibleMetrics.first)
+
+    XCTAssertEqual(metric.kind, .custom)
+    XCTAssertEqual(metric.title, "Activation Events")
+    XCTAssertEqual(metric.formattedValue, "14")
+    XCTAssertEqual(metric.chartMetadata?.xAxisLabel, "Activation day")
+    XCTAssertEqual(metric.chartMetadata?.yAxisLabel, "Events")
+    XCTAssertTrue(snapshot.issues.isEmpty)
   }
 
   func testPostHogDashboardGrowthProviderFetchesDashboardAndRunInsightsAndReturnsBleepSnapshot() async throws {
@@ -789,10 +934,15 @@ private extension PostHogGrowthProviderTests {
       {
         "id": 6536094,
         "order": 1,
-        "insight": {
-          "id": 7359526,
-          "name": "Weekly Visitors",
-          "result": [
+          "insight": {
+            "id": 7359526,
+            "name": "Weekly Visitors",
+            "filters": {
+              "display": "ActionsLineGraph",
+              "x_axis_label": "Calendar day",
+              "y_axis_label": "Visitors"
+            },
+            "result": [
             {
               "data": [11, 13, 17],
               "days": ["2026-05-12", "2026-05-19", "2026-05-26"],
@@ -805,10 +955,20 @@ private extension PostHogGrowthProviderTests {
       {
         "id": 6536095,
         "order": 2,
-        "insight": {
-          "id": 7359527,
-          "name": "Daily Pageviews",
-          "result": [
+          "insight": {
+            "id": 7359527,
+            "name": "Daily Pageviews",
+            "query": {
+              "source": {
+                "kind": "TrendsQuery",
+                "trendsFilter": {
+                  "display": "ActionsLineGraph",
+                  "xAxisLabel": "Calendar day",
+                  "yAxisLabel": "Pageviews"
+                }
+              }
+            },
+            "result": [
             {
               "data": [139, 179, 1036],
               "days": ["2026-04-27", "2026-04-28", "2026-04-29"],

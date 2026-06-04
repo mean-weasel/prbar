@@ -1,0 +1,433 @@
+version: 2
+
+goal:
+  title: PostHog Dashboard Axis Fidelity
+  slug: posthog-dashboard-axis-fidelity
+  kind: specific
+  tranche: "Complete an overnight semantic-fidelity tranche so trend-style PostHog dashboard imports preserve x/y axis labels, units, and chart metadata through model, rendering, tests, PR, merge, and production-device proof."
+  status: active
+  oracle:
+    signal: "A representative PostHog dashboard fixture with explicit x-axis and y-axis labels imports into PRBar, renders those exact labels in the iOS Growth chart, exposes them in accessibility metadata, passes unit/UI tests, and the production iPhone Growth smoke passes after install."
+    cadence: "After each Scout/Judge/Worker package and at final audit."
+    final_proof: "Merged PR with green post-merge CI/iOS, local simulator or workflow visual/accessibility proof, production install success, and iOS Physical Production Growth smoke success on iPhone-prod."
+  intake:
+    original_request: "Make a detailed plan to ensure future dashboards import with their proper x/y axis labels, using a queue of GoalBuddy Prep boards so this can run autonomously overnight."
+    interpreted_outcome: "Future PostHog dashboard imports should preserve and render semantic x/y axis labels and units instead of only generating unlabeled chart scales."
+    input_shape: specific
+    audience: "PRBar iOS users reviewing PostHog Growth dashboard data on iPhone."
+    authority: requested
+    proof_type: test
+    completion_proof: "A merged PR proves exact axis-label round-trip with fixture/unit/UI tests, post-merge main checks, production install, and physical production iPhone Growth smoke."
+    likely_misfire: "Adding more generated tick marks or chart polish while still not decoding, storing, rendering, and testing PostHog-provided x/y axis labels."
+    blind_spots_considered:
+      - "PostHog axis labels may live in insight filters, display config, query metadata, or not exist for some chart types."
+      - "Exact PostHog visual parity may be too broad; this tranche targets semantic axis fidelity for trend-style dashboard tiles."
+      - "Unsupported chart shapes must be explicit diagnostics, not misleading rendered charts."
+      - "Production iPhone proof should use automation/workflow evidence before asking for manual visual verification."
+      - "Secrets and live PostHog responses must not be logged in a way that exposes API keys or private data."
+    existing_plan_facts:
+      - "PR #131 added y-axis ticks/gridlines and passed production Growth smoke."
+      - "Current GrowthMetric model has title/unit/series but no explicit xAxisTitle or yAxisTitle contract."
+      - "Current chart rendering generates date x-axis labels and numeric y-axis ticks, but does not render imported axis titles."
+      - "The next tranche should add model/import/render/test support for exact x/y labels."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/posthog-dashboard-axis-fidelity-2/"
+    command: "npx goalbuddy board Docs/goals/posthog-dashboard-axis-fidelity"
+
+active_task: T008
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: high
+    objective: "Map the actual PostHog dashboard/insight response shape for axis labels, units, chart type, display config, and result metadata without editing implementation files."
+    inputs:
+      - "Docs/goals/posthog-dashboard-axis-fidelity/goal.md"
+      - "Current repo PostHog dashboard provider/tests"
+      - "Configured live PostHog dashboard only if credentials are already available in the repo/workflow environment"
+      - "PostHog API docs or live response excerpts with secrets redacted"
+    constraints:
+      - "Read-only."
+      - "Do not edit product files."
+      - "Do not print API keys or secrets."
+      - "Prefer exact file-path and response-field evidence over generic assumptions."
+      - "If live PostHog access is unavailable, use existing fixtures/tests and record the blocker."
+    expected_output:
+      - "Where current code decodes PostHog dashboard metadata/results."
+      - "Exact fields currently decoded and missing for axis labels/chart metadata."
+      - "Candidate PostHog response fields that carry x-axis title, y-axis title, unit, chart type, interval/date fields, and breakdown labels."
+      - "Unsupported chart types or ambiguous cases."
+      - "Candidate test fixture shape for exact axis-label round-trip."
+      - "Recommended next Judge decision."
+    receipt:
+      result: done
+      summary: "Mapped current PRBar and PostHog axis metadata surfaces. PRBar decodes only dashboard tile ids/order, insight names, result series data/days/count/label/breakdown_value, and hard-coded Bleep tile names. GrowthMetric has no explicit x/y axis title, chart kind, source, or y-axis scale metadata. PostHog source confirms legacy filters carry x_axis_label/y_axis_label/y_axis_scale_type and newer Trends filters carry xAxisLabel/yAxisLabel/yAxisScaleType, which line/bar charts pass into rendering. No local PRBAR_IOS_POSTHOG_* env keys were present, so live capture is unavailable from this shell; proceed with fixture-backed implementation plus workflow/device smoke."
+      note: "Docs/goals/posthog-dashboard-axis-fidelity/notes/T001-posthog-axis-schema-scout.md"
+      evidence:
+        - "apple/PRBarShared/GrowthModels.swift: GrowthMetric lacks axis metadata."
+        - "apple/PRBarShared/PostHogDashboardGrowthProvider.swift: PostHogDashboardInsight decodes id/short_id/name/derived_name/result only."
+        - "apple/PRBarShared/PostHogDashboardGrowthProvider.swift: PostHogDashboardSeries decodes data/days/count/label/breakdown_value only."
+        - "apple/PRBarShared/PostHogDashboardGrowthProvider.swift: BleepBlogDashboardNormalizer hard-codes Weekly Visitors, Daily Pageviews, Traffic Sources, and Top Pages."
+        - "apple/PRBar/Growth/GrowthTrendChartView.swift: chart renders generated axis ticks but not imported axis titles."
+        - "apple/PRBarUITests/PRBarUITests.swift: existing assertions check y-axis range, not exact imported labels."
+        - "PostHog/posthog frontend/src/types.ts: TrendsFilterType includes x_axis_label, y_axis_label, y_axis_scale_type."
+        - "PostHog/posthog filtersToQueryNode.ts: maps legacy x_axis_label/y_axis_label/y_axis_scale_type to query trendsFilter xAxisLabel/yAxisLabel/yAxisScaleType."
+        - "PostHog/posthog TrendsLineChart.tsx: passes trendsFilter xAxisLabel/yAxisLabel into chart rendering."
+      risks:
+        - "The configured live Bleep dashboard may not have custom axis titles; exact-label proof should use deterministic fixtures and live smoke should prove the configured dashboard still renders with axis metadata."
+        - "Not all PostHog chart types map safely to PRBar's current mobile trend chart; unsupported display/query shapes need explicit issues."
+        - "Older cached Growth snapshots need backward-compatible Codable decoding."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the durable model/import contract for PostHog chart axis metadata and bound the first implementation package."
+    inputs:
+      - "T001 receipt"
+      - "Docs/goals/posthog-dashboard-axis-fidelity/goal.md"
+    constraints:
+      - "Do not implement."
+      - "Prefer a semantic model contract over UI-only string hacks."
+      - "Keep first tranche focused on trend-style dashboard tiles unless Scout proves a broader shape is equally safe."
+    expected_output:
+      - "Decision: approved implementation package or request more scouting."
+      - "Exact model fields to add or avoid, such as xAxisTitle, yAxisTitle, valueUnitLabel, chartKind, and source metadata."
+      - "Supported PostHog tile/chart shapes for this tranche."
+      - "Unsupported diagnostics policy."
+      - "allowed_files for Worker T003/T004."
+      - "verify commands."
+      - "stop_if conditions."
+    receipt:
+      result: done
+      decision: "Add semantic optional GrowthMetric chart metadata; decode PostHog legacy filters and newer query/trendsFilter axis fields; preserve metadata through daily-series augmentation; render exact labels in GrowthTrendChartView; add deterministic unit/UI tests."
+      note: "Docs/goals/posthog-dashboard-axis-fidelity/notes/T002-axis-contract-judge.md"
+      full_outcome_complete: false
+      supported_shapes:
+        - "Trend-style PostHog dashboard tiles with date-like days and numeric data."
+        - "Existing hard-coded Bleep tiles: Weekly Visitors, Daily Pageviews, Traffic Sources, Top Pages."
+        - "Future trend-style tiles should become custom PostHog Growth metrics rather than unsupported issues."
+      unsupported_policy: "Non-trend, empty-result, or ambiguous chart shapes must create explicit GrowthDashboardIssue entries."
+      allowed_files:
+        - "apple/PRBarShared/GrowthModels.swift"
+        - "apple/PRBarShared/PostHogDashboardGrowthProvider.swift"
+        - "apple/PRBar/Growth/GrowthTrendChartView.swift"
+        - "apple/PRBar/PRBarApp.swift"
+        - "apple/PRBarTests/PostHogGrowthProviderTests.swift"
+        - "apple/PRBarTests/PRBarModelTests.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - "Docs/goals/posthog-dashboard-axis-fidelity/**"
+      verify:
+        - "git diff --check"
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+        - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/PostHogAxisFidelityUITest.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testGrowthTabRendersBleepPostHogDashboardExperiment"
+        - "./scripts/ios-test.sh"
+      stop_if:
+        - "Need files outside allowed_files."
+        - "PostHog metadata fields are not represented by Scout evidence."
+        - "Existing Growth cache decoding breaks."
+        - "UI labels overlap or cannot be asserted reliably after two attempts."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: high
+    objective: "Implement model and PostHog importer support for exact axis-label and unit metadata selected by Judge."
+    inputs:
+      - "T002 receipt"
+      - "T001 evidence"
+    constraints:
+      - "Write only inside Judge-approved allowed_files."
+      - "Do not broaden into unrelated Growth redesign."
+      - "Keep Codable compatibility in mind for persisted Growth dashboard cache."
+      - "Unsupported chart metadata must produce explicit issues rather than silent data loss."
+    allowed_files:
+      - "apple/PRBarShared/GrowthModels.swift"
+      - "apple/PRBarShared/PostHogDashboardGrowthProvider.swift"
+      - "apple/PRBar/Growth/GrowthTrendChartView.swift"
+      - "apple/PRBar/PRBarApp.swift"
+      - "apple/PRBarTests/PostHogGrowthProviderTests.swift"
+      - "apple/PRBarTests/PRBarModelTests.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - "Docs/goals/posthog-dashboard-axis-fidelity/**"
+    verify:
+      - "git diff --check"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "focused Growth UI xcodebuild test"
+    stop_if:
+      - "Need files outside Judge-approved allowed_files."
+      - "PostHog field semantics are unclear enough that implementation would guess."
+      - "Persisted cache migration/decoding compatibility becomes risky without a Judge decision."
+      - "Verification fails twice for the same unexplained reason."
+    acceptance_criteria:
+      - "Growth model can carry explicit x-axis and y-axis titles or an intentional nil when absent."
+      - "PostHog dashboard fixture with custom labels decodes/imports exact label strings."
+      - "Existing Bleep KPI dashboard import still works."
+      - "Unsupported chart shapes create clear GrowthDashboardIssue entries."
+      - "Unit tests prove label round-trip and backward-compatible decoding."
+    receipt:
+      result: done
+      summary: "Added optional semantic GrowthMetric chart metadata for exact PostHog x/y axis labels, chart kind, y-axis scale, and source insight information. Decoded both legacy filters and query/trends metadata, preserved metadata through daily-series augmentation, retained existing Bleep KPI behavior, and added custom metrics for future trend-style PostHog tiles."
+      note: "Docs/goals/posthog-dashboard-axis-fidelity/notes/T003-axis-metadata-import-worker.md"
+      evidence:
+        - "apple/PRBarShared/GrowthModels.swift: GrowthMetric carries optional chartMetadata."
+        - "apple/PRBarShared/PostHogDashboardGrowthProvider.swift: legacy x_axis_label/y_axis_label/y_axis_scale_type and query xAxisLabel/yAxisLabel/yAxisScaleType are decoded."
+        - "apple/PRBarShared/PostHogDashboardGrowthProvider.swift: daily-series augmentation preserves axis metadata without changing pageview totals."
+        - "apple/PRBarTests/PostHogGrowthProviderTests.swift: fixture tests assert exact model labels and custom trend tile import."
+        - "apple/PRBarTests/PRBarModelTests.swift: cached metrics without chartMetadata still decode."
+      verify:
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh passed: 134 tests, 0 failures."
+        - "git diff --check passed."
+        - "./scripts/format-check.sh passed."
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: high
+    objective: "Render imported x/y axis labels in the SwiftUI Growth chart and expose exact labels through accessibility."
+    inputs:
+      - "T003 receipt"
+      - "T002 render contract"
+    constraints:
+      - "Write only inside Judge-approved allowed_files or request Judge expansion."
+      - "Do not sacrifice mobile readability for desktop-like chart clutter."
+      - "Visible labels must fit on iPhone widths without overlapping chart content."
+    allowed_files: []
+    verify: []
+    stop_if:
+      - "Need a broader charting library or chart-type redesign beyond the tranche."
+      - "Labels cannot be rendered readably without product tradeoff."
+      - "Verification fails twice for the same unexplained reason."
+    acceptance_criteria:
+      - "Growth chart visibly renders an x-axis label when imported metadata provides one."
+      - "Growth chart visibly renders a y-axis label when imported metadata provides one."
+      - "Accessibility value or child elements include exact x/y labels."
+      - "Existing y-axis ticks/gridlines remain."
+      - "Month/week/day chart windows remain usable."
+    receipt:
+      result: done
+      summary: "Rendered imported Growth chart axis labels visibly and exposed exact labels in chart accessibility metadata. Moved the x-axis label out of horizontal scroll content after the first focused UI run proved it could be missed."
+      note: "Docs/goals/posthog-dashboard-axis-fidelity/notes/T004-axis-label-render-worker.md"
+      evidence:
+        - "apple/PRBar/Growth/GrowthTrendChartView.swift: y-axis label renders above the chart when metadata provides one."
+        - "apple/PRBar/Growth/GrowthTrendChartView.swift: x-axis label renders below the chart in fixed card layout."
+        - "apple/PRBar/Growth/GrowthTrendChartView.swift: chart accessibility value includes exact x/y labels."
+      verify:
+        - "Focused Growth UI test failed once before layout fix because Calendar day was not visible."
+        - "Focused Growth UI test passed after layout fix with apple/PostHogAxisFidelityUITest-2.xcresult."
+        - "./scripts/ios-test.sh passed."
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add deterministic unit/UI tests that prove exact PostHog axis labels survive import and render."
+    inputs:
+      - "T003 receipt"
+      - "T004 receipt"
+    constraints:
+      - "Keep tests deterministic and fixture-backed."
+      - "Avoid live-network assertions for exact labels unless workflow secrets/config are already present."
+      - "Do not weaken existing Growth smoke coverage."
+    allowed_files: []
+    verify: []
+    stop_if:
+      - "Exact UI assertion is flaky after two local attempts."
+      - "Fixture shape conflicts with Scout evidence."
+    acceptance_criteria:
+      - "Unit test imports a fixture dashboard with custom x/y labels and asserts exact model labels."
+      - "UI test opens Growth and asserts exact visible/accessibility x/y labels."
+      - "Existing live PostHog Growth test continues to assert chart/y-axis presence."
+      - "Tests fail on the old unlabeled model/rendering path."
+    receipt:
+      result: done
+      summary: "Added deterministic unit and UI coverage proving exact PostHog axis labels survive fixture decoding, normalization, model storage, and SwiftUI rendering."
+      note: "Docs/goals/posthog-dashboard-axis-fidelity/notes/T005-axis-label-tests-worker.md"
+      evidence:
+        - "apple/PRBarTests/PostHogGrowthProviderTests.swift: exact label round-trip tests for legacy filters and query/trends metadata."
+        - "apple/PRBarUITests/PRBarUITests.swift: Growth dashboard experiment asserts visible Calendar day and Visitors labels plus accessibility metadata."
+        - "apple/PRBar/PRBarApp.swift: UI fixture includes representative axis metadata."
+      verify:
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh passed: 134 tests, 0 failures."
+        - "Focused Growth UI xcodebuild test passed."
+        - "./scripts/ios-test.sh passed: 134 unit tests and 26 UI tests, 2 live-credential tests skipped locally, 0 failures."
+
+  - id: T006
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review implementation, test strength, and product fidelity before PR."
+    inputs:
+      - "T003 receipt"
+      - "T004 receipt"
+      - "T005 receipt"
+      - "Current diff"
+      - "Verification output"
+    constraints:
+      - "Read-only."
+      - "Reject UI-only fixes that do not preserve imported labels in the model."
+      - "Reject completion if exact-label fixture/UI tests are missing."
+    expected_output:
+      - "approved | needs_changes"
+      - "Specific required fixes if not approved."
+      - "Whether the slice is ready for PR."
+      - "Any follow-up tasks for unsupported chart types."
+    receipt:
+      result: done
+      decision: approved
+      summary: "Approved for PR. The implementation preserves exact PostHog axis labels through model, importer, daily augmentation, rendering, accessibility, and deterministic tests. One UI-layout issue found during verification was fixed before approval."
+      note: "Docs/goals/posthog-dashboard-axis-fidelity/notes/T006-axis-fidelity-judge.md"
+      full_outcome_complete: false
+      evidence:
+        - "PostHog axis metadata is stored semantically on GrowthMetric.chartMetadata."
+        - "Importer decodes both legacy filter and query/trends axis fields."
+        - "GrowthTrendChartView renders exact x/y labels and exposes them in accessibility."
+        - "Unit/UI tests fail the old unlabeled path and pass after implementation."
+      verify:
+        - "git diff --check passed."
+        - "./scripts/format-check.sh passed."
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh passed."
+        - "Focused Growth UI xcodebuild test passed after layout fix."
+        - "./scripts/ios-test.sh passed."
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Prepare, push, and open a PR for approved axis-fidelity work."
+    inputs:
+      - "T006 approval receipt"
+    constraints:
+      - "Stage only files belonging to this goal."
+      - "Do not include unrelated dirty work."
+      - "PR body must include exact verification commands and mention model/import/render/test coverage."
+    allowed_files: []
+    verify:
+      - "git status --short"
+      - "git diff --check"
+      - "Goal-selected unit/UI test commands"
+      - "gh pr checks <new-pr>"
+    stop_if:
+      - "Unrelated dirty files cannot be separated safely."
+      - "Required local verification is red."
+    acceptance_criteria:
+      - "PR exists with a clear summary and verification."
+      - "CI and iOS PR checks are green or failure logs are triaged with a follow-up task."
+    receipt:
+      result: done
+      summary: "Committed, pushed, and opened a ready PR for the axis-fidelity tranche."
+      note: "Docs/goals/posthog-dashboard-axis-fidelity/notes/T007-axis-fidelity-pr-worker.md"
+      pr: "https://github.com/mean-weasel/prbar/pull/132"
+      branch: "codex/posthog-axis-fidelity"
+      commit: "0148f14 Preserve PostHog dashboard axis labels"
+      verify:
+        - "git status --short reviewed before staging."
+        - "git diff --check passed."
+        - "./scripts/format-check.sh passed."
+        - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh passed."
+        - "Focused Growth UI xcodebuild test passed."
+        - "./scripts/ios-test.sh passed."
+
+  - id: T008
+    type: worker
+    assignee: Worker
+    status: active
+    reasoning_hint: medium
+    objective: "Merge through the merge queue when green, monitor post-merge main checks, install on iPhone-prod, and run production Growth smoke."
+    inputs:
+      - "T007 PR receipt"
+      - "Repo AGENTS.md iOS visual verification instructions"
+    constraints:
+      - "Do not ask user for visual verification before attempting automation/workflow/device inspection."
+      - "Use merge queue rather than bypassing requirements unless explicitly authorized."
+      - "Record exact run links and blockers."
+    allowed_files:
+      - "Docs/goals/posthog-dashboard-axis-fidelity/**"
+    verify:
+      - "gh pr checks <new-pr>"
+      - "gh pr merge <new-pr>"
+      - "post-merge main CI/iOS/Release checks"
+      - "iOS Production Install workflow on iPhone-prod"
+      - "iOS Physical Production workflow with Growth smoke on iPhone-prod"
+    stop_if:
+      - "Merge queue rejects or stalls after documented retry."
+      - "Production device is offline, locked, untrusted, or signing/preflight fails."
+      - "Physical smoke fails and logs are insufficient to diagnose."
+    acceptance_criteria:
+      - "PR merged."
+      - "Post-merge main CI/iOS green."
+      - "Production app installed."
+      - "Physical production Growth smoke passes and verifies axis-label metadata or records exact blocker."
+    receipt: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Final audit: prove whether PostHog dashboard axis-label fidelity is complete for the tranche."
+    inputs:
+      - "All done task receipts"
+      - "Merged PR"
+      - "Post-merge checks"
+      - "Production install/smoke receipts"
+      - "Current repo state"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if exact x/y labels are not preserved through model, import, render, tests, and device proof."
+      - "Reject completion if unsupported dashboard behavior is silent or misleading."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "mapped proof against oracle"
+      - "known limitations and follow-up board candidates"
+    receipt: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T005
+    commands:
+      - "git diff --check"
+      - "./scripts/format-check.sh"
+      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/PostHogAxisFidelityUITest-2.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testGrowthTabRendersBleepPostHogDashboardExperiment"
+      - "./scripts/ios-test.sh"

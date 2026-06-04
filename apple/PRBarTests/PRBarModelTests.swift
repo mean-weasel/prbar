@@ -76,6 +76,28 @@ final class PRBarModelTests: XCTestCase {
     XCTAssertEqual(normalized.first { CalendarDay.isSameDay($0.date, SampleData.date("2026-05-22")) }?.value, 32)
   }
 
+  func testGrowthMetricChartMetadataIsOptionalForCachedSnapshots() throws {
+    let metric = GrowthMetric(
+      id: "search-clicks",
+      provider: .searchConsole,
+      kind: .searchClicks,
+      title: "Search clicks",
+      value: 42,
+      formattedValue: "42",
+      unit: .count,
+      delta: nil,
+      series: [
+        GrowthMetricPoint(date: SampleData.date("2026-05-20"), value: 10),
+      ]
+    )
+
+    let data = try JSONEncoder().encode(metric)
+    let decoded = try JSONDecoder().decode(GrowthMetric.self, from: data)
+
+    XCTAssertNil(decoded.chartMetadata)
+    XCTAssertEqual(decoded.title, "Search clicks")
+  }
+
   func testActivityRangeWindowLabelsMatchRenderedGrowthScope() {
     XCTAssertEqual(ActivityRange.day.windowLabel, "5-day window")
     XCTAssertEqual(ActivityRange.week.windowLabel, "7-day window")

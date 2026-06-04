@@ -439,6 +439,11 @@ private extension PRBarApp {
             "insight": {
               "id": 7359526,
               "name": "Weekly Visitors",
+              "filters": {
+                "display": "ActionsLineGraph",
+                "x_axis_label": "Calendar day",
+                "y_axis_label": "Visitors"
+              },
               "result": [
                 {
                   "data": [11, 13, 17],
@@ -455,6 +460,16 @@ private extension PRBarApp {
             "insight": {
               "id": 7359527,
               "name": "Daily Pageviews",
+              "query": {
+                "source": {
+                  "kind": "TrendsQuery",
+                  "trendsFilter": {
+                    "display": "ActionsLineGraph",
+                    "xAxisLabel": "Calendar day",
+                    "yAxisLabel": "Pageviews"
+                  }
+                }
+              },
               "result": [
                 {
                   "data": [139, 179, 1036],

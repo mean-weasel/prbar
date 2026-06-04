@@ -48,6 +48,7 @@ enum GrowthMetricKind: String, CaseIterable, Identifiable, Codable, Sendable {
   case searchImpressions
   case searchCTR
   case averagePosition
+  case custom
 
   var id: String { rawValue }
 }
@@ -56,6 +57,29 @@ enum GrowthMetricUnit: String, Codable, Sendable {
   case count
   case percent
   case position
+}
+
+enum GrowthMetricChartKind: String, Codable, Sendable {
+  case trend
+  case line
+  case bar
+  case area
+  case value
+}
+
+enum GrowthMetricYAxisScale: String, Codable, Sendable {
+  case linear
+  case log10
+}
+
+struct GrowthMetricChartMetadata: Codable, Equatable, Sendable {
+  var kind: GrowthMetricChartKind
+  var xAxisLabel: String?
+  var yAxisLabel: String?
+  var yAxisScale: GrowthMetricYAxisScale?
+  var sourceInsightID: String?
+  var sourceInsightName: String?
+  var sourceDisplay: String?
 }
 
 enum GrowthDataSource: String, Codable, Equatable, Sendable {
@@ -115,6 +139,7 @@ struct GrowthMetric: Identifiable, Codable, Equatable, Sendable {
   var unit: GrowthMetricUnit
   var delta: GrowthDelta?
   var series: [GrowthMetricPoint]
+  var chartMetadata: GrowthMetricChartMetadata? = nil
 
   func normalizedSeries(endingAt endDate: Date, range: ActivityRange) -> [GrowthMetricPoint] {
     CalendarDay.days(endingAt: endDate, range: range).map { day in
@@ -179,6 +204,7 @@ struct GrowthDashboardSnapshot: Codable, Equatable, Sendable {
       .conversionRate,
       .searchCTR,
       .averagePosition,
+      .custom,
     ]
 
     return metrics
