@@ -90,6 +90,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
     app.assertGrowthChartHasYAxis()
+    app.assertGrowthChartHasAxisLabels(xAxis: "Calendar day", yAxis: "Visitors")
     app.scrollToStaticText("/studio")
   }
 
@@ -675,6 +676,33 @@ private extension XCUIApplication {
     XCTAssertTrue(
       value?.contains("y-axis 0 to") == true,
       "Growth chart did not expose a y-axis range: \(value ?? "<nil>")",
+      file: file,
+      line: line
+    )
+  }
+
+  @MainActor
+  func assertGrowthChartHasAxisLabels(
+    xAxis: String,
+    yAxis: String,
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) {
+    let chart = otherElements["growth-trend-chart"].firstMatch
+    XCTAssertTrue(chart.waitForExistence(timeout: 4), "Growth chart did not render.", file: file, line: line)
+    XCTAssertTrue(staticTexts[xAxis].exists, "Missing x-axis label \(xAxis)", file: file, line: line)
+    XCTAssertTrue(staticTexts[yAxis].exists, "Missing y-axis label \(yAxis)", file: file, line: line)
+
+    let value = chart.value as? String
+    XCTAssertTrue(
+      value?.contains("x-axis \(xAxis)") == true,
+      "Growth chart did not expose x-axis label: \(value ?? "<nil>")",
+      file: file,
+      line: line
+    )
+    XCTAssertTrue(
+      value?.contains("y-axis label \(yAxis)") == true,
+      "Growth chart did not expose y-axis label: \(value ?? "<nil>")",
       file: file,
       line: line
     )

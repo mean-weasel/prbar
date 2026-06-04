@@ -42,6 +42,8 @@ struct PostHogDashboardInsight: Decodable, Equatable {
   var shortID: String?
   var name: String?
   var derivedName: String?
+  var filters: PostHogDashboardInsightFilters?
+  var query: PostHogDashboardInsightQuery?
   var result: [PostHogDashboardSeries]
 
   private enum CodingKeys: String, CodingKey {
@@ -49,6 +51,8 @@ struct PostHogDashboardInsight: Decodable, Equatable {
     case shortID = "short_id"
     case name
     case derivedName = "derived_name"
+    case filters
+    case query
     case result
   }
 
@@ -57,6 +61,8 @@ struct PostHogDashboardInsight: Decodable, Equatable {
     shortID: nil,
     name: nil,
     derivedName: nil,
+    filters: nil,
+    query: nil,
     result: []
   )
 
@@ -65,12 +71,16 @@ struct PostHogDashboardInsight: Decodable, Equatable {
     shortID: String?,
     name: String?,
     derivedName: String?,
+    filters: PostHogDashboardInsightFilters?,
+    query: PostHogDashboardInsightQuery?,
     result: [PostHogDashboardSeries]
   ) {
     self.id = id
     self.shortID = shortID
     self.name = name
     self.derivedName = derivedName
+    self.filters = filters
+    self.query = query
     self.result = result
   }
 
@@ -80,7 +90,94 @@ struct PostHogDashboardInsight: Decodable, Equatable {
     shortID = try container.decodeIfPresent(String.self, forKey: .shortID)
     name = try container.decodeIfPresent(String.self, forKey: .name)
     derivedName = try container.decodeIfPresent(String.self, forKey: .derivedName)
+    filters = try container.decodeIfPresent(PostHogDashboardInsightFilters.self, forKey: .filters)
+    query = try container.decodeIfPresent(PostHogDashboardInsightQuery.self, forKey: .query)
     result = (try? container.decodeIfPresent([PostHogDashboardSeries].self, forKey: .result)) ?? []
+  }
+}
+
+struct PostHogDashboardInsightFilters: Decodable, Equatable {
+  var xAxisLabel: String?
+  var yAxisLabel: String?
+  var yAxisScaleType: String?
+  var display: String?
+  var insight: String?
+  var interval: String?
+
+  private enum CodingKeys: String, CodingKey {
+    case xAxisLabel = "x_axis_label"
+    case yAxisLabel = "y_axis_label"
+    case yAxisScaleType = "y_axis_scale_type"
+    case display
+    case insight
+    case interval
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    xAxisLabel = try container.decodeFlexibleStringIfPresent(forKey: .xAxisLabel)
+    yAxisLabel = try container.decodeFlexibleStringIfPresent(forKey: .yAxisLabel)
+    yAxisScaleType = try container.decodeFlexibleStringIfPresent(forKey: .yAxisScaleType)
+    display = try container.decodeFlexibleStringIfPresent(forKey: .display)
+    insight = try container.decodeFlexibleStringIfPresent(forKey: .insight)
+    interval = try container.decodeFlexibleStringIfPresent(forKey: .interval)
+  }
+}
+
+struct PostHogDashboardInsightQuery: Decodable, Equatable {
+  var kind: String?
+  var trendsFilter: PostHogDashboardTrendsFilter?
+  var source: PostHogDashboardInsightQuerySource?
+
+  private enum CodingKeys: String, CodingKey {
+    case kind
+    case trendsFilter
+    case source
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    kind = try container.decodeFlexibleStringIfPresent(forKey: .kind)
+    trendsFilter = try container.decodeIfPresent(PostHogDashboardTrendsFilter.self, forKey: .trendsFilter)
+    source = try container.decodeIfPresent(PostHogDashboardInsightQuerySource.self, forKey: .source)
+  }
+}
+
+struct PostHogDashboardInsightQuerySource: Decodable, Equatable {
+  var kind: String?
+  var trendsFilter: PostHogDashboardTrendsFilter?
+
+  private enum CodingKeys: String, CodingKey {
+    case kind
+    case trendsFilter
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    kind = try container.decodeFlexibleStringIfPresent(forKey: .kind)
+    trendsFilter = try container.decodeIfPresent(PostHogDashboardTrendsFilter.self, forKey: .trendsFilter)
+  }
+}
+
+struct PostHogDashboardTrendsFilter: Decodable, Equatable {
+  var xAxisLabel: String?
+  var yAxisLabel: String?
+  var yAxisScaleType: String?
+  var display: String?
+
+  private enum CodingKeys: String, CodingKey {
+    case xAxisLabel
+    case yAxisLabel
+    case yAxisScaleType
+    case display
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    xAxisLabel = try container.decodeFlexibleStringIfPresent(forKey: .xAxisLabel)
+    yAxisLabel = try container.decodeFlexibleStringIfPresent(forKey: .yAxisLabel)
+    yAxisScaleType = try container.decodeFlexibleStringIfPresent(forKey: .yAxisScaleType)
+    display = try container.decodeFlexibleStringIfPresent(forKey: .display)
   }
 }
 
@@ -233,7 +330,8 @@ struct PostHogDashboardGrowthProvider: GrowthDashboardProviding {
         title: "Weekly visitors",
         dailySeries: sortedSeries,
         value: \.visitors,
-        headlineMetric: snapshot.metrics.first { $0.kind == .weeklyVisitors }
+        headlineMetric: snapshot.metrics.first { $0.kind == .weeklyVisitors },
+        usesHeadlineValue: true
       ),
       dailyMetric(
         id: "posthog-page-views",
@@ -241,7 +339,8 @@ struct PostHogDashboardGrowthProvider: GrowthDashboardProviding {
         title: "Daily pageviews",
         dailySeries: sortedSeries,
         value: \.pageviews,
-        headlineMetric: nil
+        headlineMetric: snapshot.metrics.first { $0.kind == .pageViews },
+        usesHeadlineValue: false
       ),
     ]
 
@@ -261,21 +360,27 @@ struct PostHogDashboardGrowthProvider: GrowthDashboardProviding {
     title: String,
     dailySeries: [PostHogDashboardDailySeries],
     value: KeyPath<PostHogDashboardDailySeries, Double>,
-    headlineMetric: GrowthMetric?
+    headlineMetric: GrowthMetric?,
+    usesHeadlineValue: Bool
   ) -> GrowthMetric {
     let total = dailySeries.reduce(0) { $0 + $1[keyPath: value] }
+    let displayValue = usesHeadlineValue ? headlineMetric?.value ?? total : total
+    let formattedValue = usesHeadlineValue
+      ? headlineMetric?.formattedValue ?? formattedCount(total)
+      : formattedCount(total)
     return GrowthMetric(
       id: id,
       provider: .postHog,
       kind: kind,
       title: title,
-      value: headlineMetric?.value ?? total,
-      formattedValue: headlineMetric?.formattedValue ?? formattedCount(total),
+      value: displayValue,
+      formattedValue: formattedValue,
       unit: .count,
       delta: nil,
       series: dailySeries.map { row in
         GrowthMetricPoint(date: row.day, value: row[keyPath: value])
-      }
+      },
+      chartMetadata: headlineMetric?.chartMetadata
     )
   }
 
@@ -324,6 +429,7 @@ enum BleepBlogDashboardNormalizer {
               id: "posthog-weekly-visitors",
               kind: .weeklyVisitors,
               title: "Weekly visitors",
+              insight: tile.insight,
               series: series
             )
           )
@@ -335,6 +441,7 @@ enum BleepBlogDashboardNormalizer {
               id: "posthog-page-views",
               kind: .pageViews,
               title: "Daily pageviews",
+              insight: tile.insight,
               series: series
             )
           )
@@ -352,15 +459,19 @@ enum BleepBlogDashboardNormalizer {
           detail: "top page"
         )
       default:
-        let name = tile.insight.name ?? tile.insight.derivedName ?? "Untitled dashboard tile"
-        issues.append(
-          GrowthDashboardIssue(
-            id: "unsupported-dashboard-tile-\(tile.id)",
-            provider: .postHog,
-            title: "Unsupported dashboard tile",
-            detail: "Dashboard tile \"\(name)\" is not supported yet."
+        if let customMetric = customTrendMetric(from: tile) {
+          metrics.append(customMetric)
+        } else {
+          let name = tile.insight.name ?? tile.insight.derivedName ?? "Untitled dashboard tile"
+          issues.append(
+            GrowthDashboardIssue(
+              id: "unsupported-dashboard-tile-\(tile.id)",
+              provider: .postHog,
+              title: "Unsupported dashboard tile",
+              detail: "Dashboard tile \"\(name)\" is not supported yet."
+            )
           )
-        )
+        }
       }
     }
 
@@ -419,6 +530,7 @@ enum BleepBlogDashboardNormalizer {
     id: String,
     kind: GrowthMetricKind,
     title: String,
+    insight: PostHogDashboardInsight,
     series: PostHogDashboardSeries
   ) -> GrowthMetric {
     let value = count(from: series)
@@ -431,8 +543,30 @@ enum BleepBlogDashboardNormalizer {
       formattedValue: formattedCount(value),
       unit: .count,
       delta: nil,
-      series: metricPoints(from: series)
+      series: metricPoints(from: series),
+      chartMetadata: chartMetadata(from: insight)
     )
+  }
+
+  private static func customTrendMetric(from tile: PostHogDashboardTileResult) -> GrowthMetric? {
+    guard let series = tile.insight.result.first,
+      isTrendSeries(series),
+      let title = normalized(tile.insight.name) ?? normalized(tile.insight.derivedName)
+    else {
+      return nil
+    }
+
+    return metric(
+      id: "posthog-insight-\(tile.insight.id)-\(tile.id)",
+      kind: .custom,
+      title: title,
+      insight: tile.insight,
+      series: series
+    )
+  }
+
+  private static func isTrendSeries(_ series: PostHogDashboardSeries) -> Bool {
+    metricPoints(from: series).isEmpty == false
   }
 
   private static func metricPoints(from series: PostHogDashboardSeries) -> [GrowthMetricPoint] {
@@ -497,6 +631,54 @@ enum BleepBlogDashboardNormalizer {
 
   private static func count(from series: PostHogDashboardSeries) -> Double {
     series.count ?? series.data.reduce(0, +)
+  }
+
+  private static func chartMetadata(from insight: PostHogDashboardInsight) -> GrowthMetricChartMetadata {
+    let trendsFilter = insight.query?.trendsFilter ?? insight.query?.source?.trendsFilter
+    let display = normalized(trendsFilter?.display)
+      ?? normalized(insight.filters?.display)
+      ?? normalized(insight.query?.kind)
+      ?? normalized(insight.query?.source?.kind)
+    let yAxisScale = normalized(trendsFilter?.yAxisScaleType)
+      ?? normalized(insight.filters?.yAxisScaleType)
+
+    return GrowthMetricChartMetadata(
+      kind: chartKind(display: display),
+      xAxisLabel: normalized(trendsFilter?.xAxisLabel) ?? normalized(insight.filters?.xAxisLabel),
+      yAxisLabel: normalized(trendsFilter?.yAxisLabel) ?? normalized(insight.filters?.yAxisLabel),
+      yAxisScale: yAxisScale.flatMap(GrowthMetricYAxisScale.init(rawValue:)),
+      sourceInsightID: "\(insight.id)",
+      sourceInsightName: normalized(insight.name) ?? normalized(insight.derivedName),
+      sourceDisplay: display
+    )
+  }
+
+  private static func chartKind(display: String?) -> GrowthMetricChartKind {
+    guard let display = display?.lowercased() else {
+      return .trend
+    }
+    if display.contains("bar") {
+      return .bar
+    }
+    if display.contains("area") {
+      return .area
+    }
+    if display.contains("number") || display.contains("bold") {
+      return .value
+    }
+    if display.contains("line") || display.contains("graph") {
+      return .line
+    }
+    return .trend
+  }
+
+  private static func normalized(_ value: String?) -> String? {
+    guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+      value.isEmpty == false
+    else {
+      return nil
+    }
+    return value
   }
 
   private static func formattedCount(_ value: Double) -> String {

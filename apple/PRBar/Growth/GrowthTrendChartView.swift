@@ -22,10 +22,26 @@ struct GrowthTrendChartView: View {
     range == .month ? 4 : 8
   }
 
+  private var xAxisTitle: String? {
+    normalizedAxisTitle(metric.chartMetadata?.xAxisLabel)
+  }
+
+  private var yAxisTitle: String? {
+    normalizedAxisTitle(metric.chartMetadata?.yAxisLabel)
+  }
+
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       Text(metric.title)
         .font(.headline)
+
+      if let yAxisTitle {
+        Text(yAxisTitle)
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(.secondary)
+          .lineLimit(2)
+          .accessibilityIdentifier("growth-y-axis-title")
+      }
 
       HStack(alignment: .top, spacing: 8) {
         VStack(alignment: .trailing, spacing: 0) {
@@ -77,10 +93,19 @@ struct GrowthTrendChartView: View {
                   .frame(width: barWidth)
               }
             }
+
           }
           .frame(maxWidth: range == .month ? nil : .infinity, alignment: .bottom)
         }
         .scrollIndicators(.hidden)
+      }
+
+      if let xAxisTitle {
+        Text(xAxisTitle)
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(.secondary)
+          .frame(maxWidth: .infinity, alignment: .center)
+          .accessibilityIdentifier("growth-x-axis-title")
       }
 
       Text("\(points.count) daily points")
@@ -94,7 +119,21 @@ struct GrowthTrendChartView: View {
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("\(metric.title) trend")
     .accessibilityIdentifier("growth-trend-chart")
-    .accessibilityValue("\(points.count) points, y-axis \(axisLabel(axisScale.minimum)) to \(axisLabel(axisScale.maximum))")
+    .accessibilityValue(chartAccessibilityValue)
+  }
+
+  private var chartAccessibilityValue: String {
+    var parts = [
+      "\(points.count) points",
+      "y-axis \(axisLabel(axisScale.minimum)) to \(axisLabel(axisScale.maximum))",
+    ]
+    if let xAxisTitle {
+      parts.append("x-axis \(xAxisTitle)")
+    }
+    if let yAxisTitle {
+      parts.append("y-axis label \(yAxisTitle)")
+    }
+    return parts.joined(separator: ", ")
   }
 
   private func barHeight(for value: Double) -> CGFloat {
@@ -162,6 +201,15 @@ struct GrowthTrendChartView: View {
     formatter.timeZone = TimeZone(secondsFromGMT: 0)
     formatter.dateFormat = "MMM d"
     return formatter.string(from: date)
+  }
+
+  private func normalizedAxisTitle(_ value: String?) -> String? {
+    guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+      value.isEmpty == false
+    else {
+      return nil
+    }
+    return value
   }
 }
 
