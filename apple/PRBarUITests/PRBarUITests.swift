@@ -169,6 +169,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
     app.assertGrowthChartHasYAxis()
+    app.assertGrowthChartHasAxisLabels(xAxis: "Calendar day", yAxis: "Visitors")
   }
 
   @MainActor
