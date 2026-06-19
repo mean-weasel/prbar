@@ -29,10 +29,6 @@ struct GrowthView: View {
 
           RangePickerView(selection: growthRangeBinding)
 
-          dashboardScopeStrip
-
-          growthProvenancePanel
-
           if let issue = store.growthRefreshIssue {
             issueView(issue)
           }
@@ -48,6 +44,12 @@ struct GrowthView: View {
           }
 
           shippingContext
+
+          compactProvenanceRow
+
+          dashboardScopeStrip
+
+          growthProvenancePanel
 
           providerSections
 
@@ -170,6 +172,26 @@ struct GrowthView: View {
         }
       }
     }
+  }
+
+  private var compactProvenanceRow: some View {
+    HStack(spacing: 8) {
+      Label(snapshot.dataSource.displayName, systemImage: dataSourceSymbol(for: snapshot.dataSource))
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
+
+      Text("·")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+
+      Text(growthUpdatedLabel)
+        .font(.caption)
+        .foregroundStyle(.secondary)
+
+      Spacer(minLength: 0)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("\(snapshot.dataSource.displayName), updated \(growthUpdatedLabel)")
   }
 
   private var metricTiles: some View {

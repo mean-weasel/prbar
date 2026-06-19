@@ -8,15 +8,15 @@ final class PRBarUITests: XCTestCase {
     app.launch()
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
-
-    app.tapTab("Releases")
-    XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Latest meaningful work"].waitForExistence(timeout: 2))
+    XCTAssertFalse(app.tabBars.buttons["Releases"].exists)
 
     app.tapTab("Share")
-    XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Share a work card"].waitForExistence(timeout: 2))
 
-    app.tapTab("More")
-    XCTAssertTrue(app.staticTexts["Menu"].waitForExistence(timeout: 2))
+    app.tapTab("Settings")
+    XCTAssertTrue(app.staticTexts["Account"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Mode"].exists)
   }
 
   @MainActor
@@ -185,13 +185,47 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
-  func testReleasesCalendarShowsSelectedReleaseDetail() {
+  func testRepoDistributionDrillsIntoSingleRepoPRTimeline() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]
     app.launch()
 
-    app.tapTab("Releases")
-    XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Distribution by repo"].exists)
+
+    app.scrollToStaticText("Distribution by repo")
+    let prbarRepoRow = app.buttons.containing(.staticText, identifier: "prbar").firstMatch
+    for _ in 0..<3 where prbarRepoRow.exists == false || prbarRepoRow.isHittable == false {
+      app.swipeUp()
+    }
+    XCTAssertTrue(prbarRepoRow.waitForExistence(timeout: 2))
+    XCTAssertTrue(prbarRepoRow.isHittable)
+    prbarRepoRow.tap()
+
+    XCTAssertTrue(app.staticTexts["Repo activity"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["mean-weasel/prbar"].exists)
+    XCTAssertTrue(app.staticTexts["3 merged"].exists)
+    XCTAssertTrue(app.staticTexts["2 active days"].exists)
+    XCTAssertTrue(app.staticTexts["PR distribution"].exists)
+    XCTAssertTrue(app.staticTexts["7-day window by merge date"].exists)
+    XCTAssertTrue(app.buttons["May 24, selected, 2 pull requests"].exists)
+    XCTAssertTrue(app.staticTexts["2 merged on May 24"].exists)
+    XCTAssertTrue(app.staticTexts["#39 Connect GitHub auth fallback"].exists)
+    XCTAssertTrue(app.staticTexts["#38 Update GitHub Pages actions"].exists)
+
+    app.buttons["May 23, not selected, 1 pull request"].tap()
+    XCTAssertTrue(app.staticTexts["1 merged on May 23"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["#36 Expand app smoke coverage"].exists)
+  }
+
+  @MainActor
+  func testActivityReleaseCalendarShowsSelectedReleaseDetail() {
+    let app = XCUIApplication()
+    app.launchArguments = ["--ui-testing"]
+    app.launch()
+
+    XCTAssertTrue(app.staticTexts["This week's cadence"].waitForExistence(timeout: 2))
+    app.scrollToStaticText("Release cadence")
     app.buttons["May 21, not selected, 1 release"].tap()
     XCTAssertTrue(app.staticTexts["v1.0.0 Tagged v1.0.0"].waitForExistence(timeout: 2))
   }
@@ -203,11 +237,11 @@ final class PRBarUITests: XCTestCase {
     app.launch()
 
     app.tapTab("Share")
-    XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Share a work card"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Public side"].exists)
     app.buttons["Export card"].tap()
-    XCTAssertTrue(app.staticTexts["Choose what leaves the app"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.buttons["Share public-side image"].exists)
+    XCTAssertTrue(app.staticTexts["Share public-safe card"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Share public-safe image"].exists)
     XCTAssertTrue(app.buttons["Copy caption"].exists)
   }
 
@@ -222,15 +256,15 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
 
     app.tapTab("Share")
-    XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Share a work card"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["1 merged"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Proof source"].exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed")).firstMatch.exists)
 
     app.buttons["Export card"].tap()
-    XCTAssertTrue(app.staticTexts["Image and caption stay local"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Share public-safe card"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Progress recap")).firstMatch.exists)
-    XCTAssertTrue(app.buttons["Share public-side image"].exists)
+    XCTAssertTrue(app.buttons["Share public-safe image"].exists)
     app.buttons["Copy caption"].tap()
     XCTAssertTrue(app.staticTexts["Caption copied from GitHub activity."].waitForExistence(timeout: 2))
   }
@@ -250,20 +284,20 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
     app.tapTab("Share")
-    XCTAssertTrue(app.staticTexts["Create a work card"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Share a work card"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed")).firstMatch.exists)
     app.buttons["Export card"].tap()
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed")).firstMatch.waitForExistence(timeout: 2))
-    XCTAssertTrue(app.buttons["Share public-side image"].exists)
+    XCTAssertTrue(app.buttons["Share public-safe image"].exists)
   }
 
   @MainActor
-  func testMoreMenuContainsRepositoryAndPrivacySettings() {
+  func testSettingsMenuContainsRepositoryAndPrivacySettings() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]
     app.launch()
 
-    app.tapTab("More")
+    app.tapTab("Settings")
     XCTAssertTrue(app.buttons["Repos"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.buttons["Privacy"].exists)
     app.buttons["Repos"].tap()
@@ -271,14 +305,14 @@ final class PRBarUITests: XCTestCase {
   }
 
   @MainActor
-  func testMoreSettingsAndAboutShowProductVersion() {
+  func testSettingsAccountDataAndAboutShowProductVersion() {
     let app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]
     app.launch()
 
-    app.tapTab("More")
-    XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 2))
-    app.buttons["Settings"].tap()
+    app.tapTab("Settings")
+    XCTAssertTrue(app.buttons["Account & data"].waitForExistence(timeout: 2))
+    app.buttons["Account & data"].tap()
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "@neonwatty")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Connected")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "GitHub")).firstMatch.exists)
@@ -288,22 +322,22 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Manage included repos"].exists)
     app.buttons["Manage included repos"].tap()
     XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.navigationBars.buttons["Settings"].waitForExistence(timeout: 2))
-    app.navigationBars.buttons["Settings"].tap()
+    XCTAssertTrue(app.navigationBars.buttons["Account & data"].waitForExistence(timeout: 2))
+    app.navigationBars.buttons["Account & data"].tap()
 
     XCTAssertTrue(app.buttons["PostHog"].exists)
     app.buttons["PostHog"].tap()
     XCTAssertTrue(app.staticTexts["Connection"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Configuration"].exists)
     XCTAssertTrue(app.staticTexts["Personal API key"].exists)
-    XCTAssertTrue(app.navigationBars.buttons["Settings"].waitForExistence(timeout: 2))
-    app.navigationBars.buttons["Settings"].tap()
+    XCTAssertTrue(app.navigationBars.buttons["Account & data"].waitForExistence(timeout: 2))
+    app.navigationBars.buttons["Account & data"].tap()
 
     app.scrollToStaticText("Version")
     XCTAssertTrue(app.versionText().waitForExistence(timeout: 2))
 
-    XCTAssertTrue(app.navigationBars.buttons["More"].waitForExistence(timeout: 2))
-    app.navigationBars.buttons["More"].tap()
+    XCTAssertTrue(app.navigationBars.buttons["Settings"].waitForExistence(timeout: 2))
+    app.navigationBars.buttons["Settings"].tap()
     XCTAssertTrue(app.buttons["About"].waitForExistence(timeout: 2))
     app.buttons["About"].tap()
     XCTAssertTrue(app.staticTexts["Product version"].waitForExistence(timeout: 2))
@@ -321,8 +355,8 @@ final class PRBarUITests: XCTestCase {
     app.buttons["Refresh activity"].tap()
     XCTAssertTrue(app.staticTexts["Showing cached GitHub data"].waitForExistence(timeout: 4))
 
-    app.tapTab("More")
-    app.buttons["Settings"].tap()
+    app.tapTab("Settings")
+    app.buttons["Account & data"].tap()
 
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Showing cached data")).firstMatch.waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["GitHub is unreachable"].exists)
@@ -336,7 +370,7 @@ final class PRBarUITests: XCTestCase {
     app.launchArguments = ["--ui-testing"]
     app.launch()
 
-    app.tapTab("More")
+    app.tapTab("Settings")
     XCTAssertTrue(app.buttons["Repos"].waitForExistence(timeout: 2))
     app.buttons["Repos"].tap()
 
@@ -428,7 +462,6 @@ final class PRBarUITests: XCTestCase {
     }
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 10))
 
-    app.tapTab("Releases")
     XCTAssertTrue(app.staticTexts["v9.9.9 UI refresh release"].waitForExistence(timeout: 4))
   }
 
@@ -454,11 +487,10 @@ final class PRBarUITests: XCTestCase {
     app.tapButton("Finish setup", untilStaticTextExists: "Shipping rhythm")
     XCTAssertTrue(app.staticTexts["Syncing selected repos"].waitForExistence(timeout: 4))
 
-    app.tapTab("Releases")
-    XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Latest meaningful work"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Syncing selected repos"].waitForExistence(timeout: 2))
 
-    app.tapTab("PRs")
+    app.tapTab("Activity")
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 10))
   }
@@ -476,8 +508,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Synced selected repositories")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
 
-    app.tapTab("Releases")
-    XCTAssertTrue(app.staticTexts["Shipping moments"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Latest meaningful work"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 2))
     app.buttons["Refresh activity"].tap()
     XCTAssertTrue(app.staticTexts["v9.9.9 UI refresh release"].waitForExistence(timeout: 4))
@@ -512,7 +543,6 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Authorize SSO for example/client-api")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts["1 merged"].waitForExistence(timeout: 4))
 
-    app.tapTab("Releases")
     XCTAssertTrue(app.staticTexts["Partial GitHub sync"].waitForExistence(timeout: 2))
     app.scrollToStaticText("v10.0.1 Partial sync visible release")
   }
@@ -536,7 +566,6 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "May 24, 2026")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts["#424 Cached relaunch PR"].exists)
 
-    app.tabBars.buttons["Releases"].tap()
     XCTAssertTrue(app.staticTexts["v4.2.4 Cached relaunch release"].waitForExistence(timeout: 2))
   }
 
@@ -791,16 +820,15 @@ private func runLiveGitHubSetupSmoke(file: StaticString = #filePath, line: UInt 
   XCTAssertTrue(
     app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "#")).firstMatch.waitForExistence(timeout: 10) ||
       app.staticTexts["No merged PRs"].waitForExistence(timeout: 2),
-    "PRs tab did not render synced PR data or an intentional empty state.",
+    "Activity tab did not render synced PR data or an intentional empty state.",
     file: file,
     line: line
   )
 
-  app.tapTab("Releases", file: file, line: line)
   XCTAssertTrue(
     app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", repositoryName)).firstMatch.waitForExistence(timeout: 10) ||
       app.staticTexts["No releases or tags"].waitForExistence(timeout: 2),
-    "Releases tab did not render synced release/tag data or an intentional empty state.",
+    "Activity tab did not render synced release/tag data or an intentional empty state.",
     file: file,
     line: line
   )

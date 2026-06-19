@@ -99,7 +99,7 @@ struct OnboardingView: View {
         .accessibilityIdentifier("refresh-github-device-code")
 
         Button("Use sample data") {
-          store.routeState = .authenticated
+          store.useSampleData()
         }
       }
     }
@@ -111,6 +111,18 @@ struct OnboardingView: View {
 
   private var signInList: some View {
     List {
+      Section {
+        VStack(alignment: .leading, spacing: 10) {
+          Label("Preview PRBar", systemImage: "chart.bar.xaxis")
+            .font(.title3.weight(.semibold))
+
+          Text("See shipping rhythm, release moments, growth signals, and proof-of-work cards before connecting GitHub.")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 6)
+      }
+
       Section {
         VStack(alignment: .leading, spacing: 10) {
           Label("Connect GitHub", systemImage: "person.crop.circle.badge.checkmark")
@@ -125,13 +137,14 @@ struct OnboardingView: View {
 
       Section("Privacy defaults") {
         Label("Private by default", systemImage: "lock.shield")
-        Label("Public cards hide private repo names", systemImage: "eye.slash")
+        Label("Public cards hide private repo names and labels", systemImage: "eye.slash")
+        Label("You review exact counts and evidence before export", systemImage: "checkmark.shield")
       }
 
-      Section("Setup") {
-        row("Choose repos", step: .repositories, systemImage: "folder.badge.gearshape")
-        row("Set privacy defaults", step: .privacy, systemImage: "lock.shield")
-        row("Sync sample activity", step: .sync, systemImage: "arrow.triangle.2.circlepath")
+      Section("After sign-in") {
+        setupStep("Choose repos", detail: "Pick the repositories PRBar can summarize.", systemImage: "folder.badge.gearshape")
+        setupStep("Set privacy defaults", detail: "Choose what appears on public cards.", systemImage: "lock.shield")
+        setupStep("Sync activity", detail: "Load merged PRs and release moments from GitHub.", systemImage: "arrow.triangle.2.circlepath")
       }
 
       if case let .issue(issue) = store.routeState {
@@ -155,7 +168,7 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity)
 
         Button("Use sample data") {
-          store.routeState = .authenticated
+          store.useSampleData()
         }
         .font(.subheadline)
       }
@@ -164,26 +177,20 @@ struct OnboardingView: View {
       .padding(.bottom, 8)
       .background(.bar)
     }
-    .toolbar {
-      ToolbarItem(placement: .topBarTrailing) {
-        Button("Done") {
-          store.routeState = .authenticated
-        }
-      }
-    }
   }
 
-  private func row(_ title: String, step: OnboardingStep, systemImage: String) -> some View {
-    Button {
-      store.routeState = .onboarding(step)
-    } label: {
-      HStack {
-        Label(title, systemImage: systemImage)
-        Spacer()
-        if store.routeState == .onboarding(step) {
-          Image(systemName: "checkmark")
-            .foregroundStyle(PRBarTheme.accent)
-        }
+  private func setupStep(_ title: String, detail: String, systemImage: String) -> some View {
+    HStack(alignment: .top, spacing: 10) {
+      Image(systemName: systemImage)
+        .foregroundStyle(PRBarTheme.accent)
+        .frame(width: 22)
+
+      VStack(alignment: .leading, spacing: 3) {
+        Text(title)
+          .font(.subheadline.weight(.semibold))
+        Text(detail)
+          .font(.caption)
+          .foregroundStyle(.secondary)
       }
     }
   }

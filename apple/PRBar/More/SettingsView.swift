@@ -46,7 +46,7 @@ struct SettingsView: View {
         LabeledContent("Version", value: AppVersion.current.displayValue)
       }
     }
-    .navigationTitle("Settings")
+    .navigationTitle("Account & data")
   }
 }
 

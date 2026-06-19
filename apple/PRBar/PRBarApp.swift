@@ -104,14 +104,19 @@ struct PRBarApp: App {
         growthProvider = GrowthProviderFactory.provider(environment: environment)
       }
     } else {
-      let sessionStore = KeychainGitHubSessionStore()
-      if isLiveGitHubSmokeHeadless, let liveGitHubSession {
-        try? sessionStore.saveSession(liveGitHubSession)
+      let sessionStore: GitHubSessionStoring
+      if let liveGitHubSession {
+        let liveSessionStore = InMemoryGitHubSessionStore(session: liveGitHubSession)
+        sessionStore = liveSessionStore
+        authService = StaticGitHubAuthService(sessionStore: liveSessionStore, session: liveGitHubSession)
+      } else {
+        let keychainSessionStore = KeychainGitHubSessionStore()
+        sessionStore = keychainSessionStore
+        authService = GitHubDeviceFlowAuthService(
+          configuration: .appDefault(),
+          sessionStore: keychainSessionStore
+        )
       }
-      authService = GitHubDeviceFlowAuthService(
-        configuration: .appDefault(),
-        sessionStore: sessionStore
-      )
       repositoryProvider = GitHubRepositoryClient(
         sessionStore: sessionStore,
         transport: URLSessionGitHubRepositoryTransport()
@@ -127,7 +132,7 @@ struct PRBarApp: App {
       growthProvider = GrowthProviderFactory.provider(environment: environment)
     }
 
-    if isLiveGitHubSmokeHeadless,
+    if liveGitHubSession != nil,
       let includedRepo = Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_REPOSITORY"]) {
       try? repositorySelectionStore.clearIncludedRepositoryIDs()
       try? repositoryColorStore.clearRepositoryColors()
@@ -188,6 +193,8 @@ struct PRBarApp: App {
         expectedLogin: Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_GITHUB_LOGIN"]),
         includedRepo: Self.normalizedLiveSmokeValue(environment["PRBAR_IOS_LIVE_REPOSITORY"])
       )
+    } else if liveGitHubSession != nil {
+      Self.startLiveGitHubVisualRefresh(store: store)
     }
     _store = State(initialValue: store)
   }
@@ -300,6 +307,12 @@ private extension PRBarApp {
     }
   }
 
+  static func startLiveGitHubVisualRefresh(store: PRBarStore) {
+    Task { @MainActor in
+      await store.refreshActivity()
+    }
+  }
+
   @MainActor
   static func runHeadlessLiveGitHubSmoke(store: PRBarStore, expectedLogin: String?, includedRepo: String?) async -> Int32 {
     guard let expectedLogin, let includedRepo else {
@@ -317,6 +330,16 @@ private extension PRBarApp {
     guard user.login == expectedLogin else {
       fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=unexpected-github-login expected=\(expectedLogin) actual=\(user.login)\n", stderr)
       return 65
+    }
+
+    guard store.repositories.contains(where: { $0.id == includedRepo }) else {
+      let available = store.repositories.map(\.id).prefix(10).joined(separator: ",")
+      fputs("PRBAR_LIVE_SMOKE_RESULT failure reason=repository-not-found expected=\(includedRepo) available=\(available)\n", stderr)
+      return 65
+    }
+
+    for index in store.repositories.indices {
+      store.repositories[index].included = store.repositories[index].id == includedRepo && store.repositories[index].access == .ready
     }
 
     let includedRepositories = store.includedRepositories

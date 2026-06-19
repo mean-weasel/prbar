@@ -29,13 +29,14 @@ struct ReleasesView: View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 24) {
-          if store.isRefreshingActivity {
+          if shouldPromoteSyncStatus {
             syncStatus
           }
 
           header
+          releaseBriefing
 
-          if store.isRefreshingActivity == false {
+          if shouldPromoteSyncStatus == false {
             syncStatus
           }
 
@@ -77,8 +78,13 @@ struct ReleasesView: View {
       lastRefreshedAt: store.lastActivityRefreshAt,
       lastRefreshAttemptAt: store.lastActivityRefreshAttemptAt,
       issue: store.activityRefreshIssue,
-      repositoryIssues: store.activityRepositoryIssues
+      repositoryIssues: store.activityRepositoryIssues,
+      isSampleData: store.isUsingSampleData
     )
+  }
+
+  private var shouldPromoteSyncStatus: Bool {
+    store.isRefreshingActivity || store.activityRefreshIssue != nil || store.activityRepositoryIssues.isEmpty == false
   }
 
   private var header: some View {
@@ -93,6 +99,38 @@ struct ReleasesView: View {
 
       RepositoryEditLink(store: store, systemImage: "folder")
     }
+  }
+
+  private var releaseBriefing: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack(alignment: .firstTextBaseline) {
+        Text("Latest")
+          .font(.headline)
+        Spacer()
+        Text(store.activitySourceLabel)
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(store.isUsingSampleData ? PRBarTheme.accent : .secondary)
+      }
+
+      if let release = groupedReleases.first?.releases.first {
+        Text("\(release.tag) \(release.title)")
+          .font(.title3.weight(.bold))
+          .lineLimit(2)
+        Text(repository(for: release.repoID)?.name ?? release.repoID)
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+      } else {
+        Text("No releases in selected repos")
+          .font(.title3.weight(.bold))
+        Text("Refresh GitHub or choose more repositories.")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(14)
+    .background(Color(.secondarySystemBackground))
+    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
   }
 
   @ViewBuilder

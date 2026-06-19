@@ -8,6 +8,7 @@ struct ActivitySyncStatusView: View {
   var lastRefreshAttemptAt: Date?
   var issue: AuthIssue?
   var repositoryIssues: [ActivityRepositoryIssue]
+  var isSampleData: Bool
 
   init(
     isRefreshing: Bool,
@@ -16,7 +17,8 @@ struct ActivitySyncStatusView: View {
     lastRefreshedAt: Date?,
     lastRefreshAttemptAt: Date?,
     issue: AuthIssue?,
-    repositoryIssues: [ActivityRepositoryIssue] = []
+    repositoryIssues: [ActivityRepositoryIssue] = [],
+    isSampleData: Bool = false
   ) {
     self.isRefreshing = isRefreshing
     self.context = context
@@ -25,6 +27,7 @@ struct ActivitySyncStatusView: View {
     self.lastRefreshAttemptAt = lastRefreshAttemptAt
     self.issue = issue
     self.repositoryIssues = repositoryIssues
+    self.isSampleData = isSampleData
   }
 
   var body: some View {
@@ -54,6 +57,9 @@ struct ActivitySyncStatusView: View {
   private var statusIcon: some View {
     if isRefreshing {
       ProgressView()
+    } else if isSampleData {
+      Image(systemName: "sparkles")
+        .foregroundStyle(PRBarTheme.accent)
     } else if repositoryIssues.isEmpty == false {
       Image(systemName: "exclamationmark.circle.fill")
         .foregroundStyle(.orange)
@@ -78,6 +84,9 @@ struct ActivitySyncStatusView: View {
         return "Syncing selected repos"
       }
       return "Refreshing GitHub activity"
+    }
+    if isSampleData {
+      return "Sample data"
     }
     if repositoryIssues.isEmpty == false {
       return "Partial GitHub sync"
@@ -114,6 +123,9 @@ struct ActivitySyncStatusView: View {
         repoText = "Synced \(progress.completedRepositories) of \(progress.totalRepositories) repositories."
       }
       return "\(setupPrefix)\(repoText) Found \(progress.pullRequestCount) PRs and \(progress.releaseCount) releases so far."
+    }
+    if isSampleData {
+      return "Built-in demo activity. Connect GitHub to sync your repositories."
     }
     if repositoryIssues.isEmpty == false {
       let issueCount = repositoryIssues.count

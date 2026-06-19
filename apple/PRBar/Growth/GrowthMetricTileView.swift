@@ -36,6 +36,15 @@ struct GrowthMetricTileView: View {
     )
     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     .accessibilityElement(children: .combine)
+    .accessibilityLabel("\(metric.provider.displayName), \(metric.title)")
+    .accessibilityValue(accessibilityValue)
+  }
+
+  private var accessibilityValue: String {
+    if let delta = metric.delta {
+      return "\(metric.formattedValue), \(delta.formattedValue)"
+    }
+    return metric.formattedValue
   }
 
   private func deltaColor(_ direction: GrowthDelta.Direction) -> Color {
