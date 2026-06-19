@@ -15,7 +15,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Share a work card"].waitForExistence(timeout: 2))
 
     app.tapTab("Settings")
-    XCTAssertTrue(app.staticTexts["Account"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Account & data"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Mode"].exists)
   }
 
