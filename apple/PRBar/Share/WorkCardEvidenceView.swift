@@ -39,6 +39,9 @@ struct WorkCardEvidenceView: View {
                 .lineLimit(2)
             }
           }
+          .accessibilityElement(children: .combine)
+          .accessibilityLabel(item.isPrivate ? "Private evidence, \(item.title)" : "Evidence, \(item.title)")
+          .accessibilityValue(item.detail)
         }
       }
 
@@ -60,6 +63,7 @@ struct WorkCardEvidenceView: View {
         .stroke(Color(.separator).opacity(0.4))
     )
     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .accessibilityElement(children: .contain)
   }
 }
 

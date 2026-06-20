@@ -16,6 +16,7 @@ final class PRBarStore {
   var cardDraft: WorkCardDraft
   var routeState: AppRouteState
   var githubConnection: GitHubConnection
+  var isUsingSampleData: Bool
   var isRefreshingActivity = false
   var activityRefreshContext: ActivityRefreshContext?
   var activityRefreshProgress: ActivityRefreshProgress?
@@ -62,6 +63,7 @@ final class PRBarStore {
     cardDraft: WorkCardDraft = WorkCardDraft(source: .shippingSnapshot, theme: .clean, side: .publicSide, showRepos: true, showHandle: true, exactCounts: true, showPrivateLabels: false),
     routeState: AppRouteState = .authenticated,
     githubConnection: GitHubConnection = GitHubConnection(status: .connected, user: GitHubUser(login: "neonwatty", displayName: "Neon Watty")),
+    isUsingSampleData: Bool = false,
     authService: GitHubAuthServicing = StaticGitHubAuthService(sessionStore: InMemoryGitHubSessionStore()),
     repositoryProvider: GitHubRepositoryProviding = StaticGitHubRepositoryProvider(repositories: SampleData.repositories),
     activityProvider: GitHubActivityProviding = StaticGitHubActivityProvider(),
@@ -89,6 +91,7 @@ final class PRBarStore {
     self.cardDraft = cardDraft
     self.routeState = routeState
     self.githubConnection = githubConnection
+    self.isUsingSampleData = isUsingSampleData
     self.authService = authService
     self.repositoryProvider = repositoryProvider
     self.activityProvider = activityProvider
@@ -111,6 +114,7 @@ final class PRBarStore {
     repositorySelectionStore: RepositorySelectionStoring = InMemoryRepositorySelectionStore(),
     repositoryColorStore: RepositoryColorStoring = InMemoryRepositoryColorStore(),
     activityCacheStore: GitHubActivityCacheStoring = InMemoryGitHubActivityCacheStore(),
+    isUsingSampleData: Bool = false,
     growthSnapshot: GrowthDashboardSnapshot = SampleData.growthDashboard,
     growthProvider: GrowthDashboardProviding = StaticGrowthDashboardProvider(snapshot: SampleData.growthDashboard),
     growthCacheStore: GrowthDashboardCacheStoring = InMemoryGrowthDashboardCacheStore(),
@@ -124,6 +128,7 @@ final class PRBarStore {
       selectedPRDate: SampleData.today,
       selectedReleaseDate: SampleData.today,
       activityAnchorDate: SampleData.today,
+      isUsingSampleData: isUsingSampleData,
       authService: authService,
       repositoryProvider: repositoryProvider,
       activityProvider: activityProvider,
@@ -160,6 +165,19 @@ final class PRBarStore {
     includedRepositories.contains { $0.visibility == .private }
   }
 
+  var activitySourceLabel: String {
+    if isUsingSampleData {
+      return "Sample data"
+    }
+    if lastActivityRefreshAt != nil {
+      return "GitHub"
+    }
+    if activityRefreshIssue != nil || activityRepositoryIssues.isEmpty == false {
+      return "GitHub needs attention"
+    }
+    return "GitHub not synced"
+  }
+
   var settingsDiagnostics: SettingsDiagnostics {
     SettingsDiagnostics(
       account: settingsAccountLabel,
@@ -178,6 +196,7 @@ final class PRBarStore {
   func restoreGitHubSession() {
     do {
       if let connection = try authService.restoreConnection() {
+        isUsingSampleData = false
         githubConnection = connection
         let hasStoredSelection = try loadRepositoriesForConnectedUser()
         if hasStoredSelection {
@@ -187,6 +206,7 @@ final class PRBarStore {
           routeState = .onboarding(.repositories)
         }
       } else {
+        isUsingSampleData = false
         githubConnection = .signedOut
         routeState = .signedOut
       }
@@ -196,6 +216,7 @@ final class PRBarStore {
   }
 
   func connectGitHub() {
+    isUsingSampleData = false
     githubConnection = GitHubConnection(status: .signingIn, user: nil)
     do {
       githubConnection = try authService.connect()
@@ -226,6 +247,7 @@ final class PRBarStore {
     githubConnection = GitHubConnection(status: .signingIn, user: nil)
     do {
       githubConnection = try authService.continueDeviceAuthorization(authorization)
+      isUsingSampleData = false
       try loadRepositoriesForConnectedUser()
       routeState = .onboarding(.repositories)
     } catch {
@@ -268,6 +290,31 @@ final class PRBarStore {
     connectGitHub()
   }
 
+  func useSampleData() {
+    repositories = SampleData.repositories
+    pullRequests = SampleData.pullRequests
+    releases = SampleData.releases
+    selectedPRDate = SampleData.today
+    selectedReleaseDate = SampleData.today
+    selectedReleaseID = "rel-prbar-140"
+    activityAnchorDate = SampleData.today
+    activityRefreshIssue = nil
+    activityRepositoryIssues = []
+    activityRefreshProgress = nil
+    activityRefreshContext = nil
+    lastActivityRefreshAt = nil
+    lastActivityRefreshAttemptAt = nil
+    growthSnapshot = SampleData.growthDashboard
+    growthRange = SampleData.growthDashboard.range
+    selectedGrowthProjectID = SampleData.growthDashboard.project.id
+    growthRefreshStatus = .loaded(lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"), source: .sample)
+    growthRefreshIssue = nil
+    hasAttemptedAutomaticGrowthRefresh = true
+    githubConnection = GitHubConnection(status: .signedOut, user: nil)
+    isUsingSampleData = true
+    routeState = .authenticated
+  }
+
   func setGrowthRange(_ range: ActivityRange) {
     growthRange = range
   }
@@ -283,6 +330,12 @@ final class PRBarStore {
     }
 
     hasAttemptedAutomaticGrowthRefresh = true
+    guard isUsingSampleData == false else {
+      growthSnapshot = GrowthDashboardSnapshot.fixture(range: growthRange)
+      selectedGrowthProjectID = growthSnapshot.project.id
+      growthRefreshStatus = .loaded(lastRefreshedAt: SampleData.dateTime("2026-05-24T18:00:00Z"), source: .sample)
+      return
+    }
     guard growthSnapshot.dataSource != .livePostHog else {
       return
     }
@@ -454,6 +507,7 @@ final class PRBarStore {
     try? repositorySelectionStore.clearIncludedRepositoryIDs()
     try? repositoryColorStore.clearRepositoryColors()
     try? activityCacheStore.clear()
+    isUsingSampleData = false
     githubConnection = .signedOut
     repositories = repositories.map { repository in
       var repository = repository
@@ -691,6 +745,9 @@ final class PRBarStore {
 
 private extension PRBarStore {
   var settingsAccountLabel: String {
+    if isUsingSampleData {
+      return "Sample preview"
+    }
     if let login = githubConnection.user?.login {
       return "@\(login)"
     }
@@ -698,6 +755,9 @@ private extension PRBarStore {
   }
 
   var settingsAuthLabel: String {
+    if isUsingSampleData {
+      return "Sample mode"
+    }
     switch githubConnection.status {
     case .signedOut:
       return "Signed out"
@@ -711,6 +771,9 @@ private extension PRBarStore {
   }
 
   var settingsDataSourceLabel: String {
+    if isUsingSampleData {
+      return "Built-in sample data"
+    }
     switch githubConnection.status {
     case .signedOut:
       return "Not connected"
@@ -724,6 +787,9 @@ private extension PRBarStore {
   }
 
   var settingsSyncLabel: String {
+    if isUsingSampleData {
+      return "Sample data"
+    }
     if isRefreshingActivity {
       if case .setup = activityRefreshContext {
         return "Setup sync in progress"

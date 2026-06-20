@@ -13,11 +13,33 @@ struct PRsView: View {
     pullRequests(on: store.selectedPRDate)
   }
 
+  private var releaseCalendarDays: [CalendarDay] {
+    CalendarDay.days(endingAt: store.activityAnchorDate, range: store.releaseRange).map { day in
+      CalendarDay(date: day.date, count: releases(on: day.date).count)
+    }
+  }
+
+  private var selectedRelease: ReleaseMoment? {
+    releases(on: store.selectedReleaseDate).first
+      ?? store.releases.first { $0.id == store.selectedReleaseID }
+  }
+
   private var includedPullRequests: [PullRequest] {
     let includedIDs = Set(store.includedRepositories.map(\.id))
     return store.pullRequests
       .filter { includedIDs.contains($0.repoID) }
       .sorted { $0.mergedAt > $1.mergedAt }
+  }
+
+  private var groupedReleases: [(date: Date, releases: [ReleaseMoment])] {
+    let includedIDs = Set(store.includedRepositories.map(\.id))
+    let grouped = Dictionary(grouping: store.releases.filter { includedIDs.contains($0.repoID) }) { release in
+      fixtureCalendar.startOfDay(for: release.date)
+    }
+
+    return grouped
+      .map { (date: $0.key, releases: $0.value.sorted { $0.date > $1.date }) }
+      .sorted { $0.date > $1.date }
   }
 
   private var chartDays: [DailyPRChartDay] {
@@ -54,38 +76,58 @@ struct PRsView: View {
     .sorted { $0.count > $1.count }
   }
 
+  private var latestWorkRows: [ActivityWorkRow] {
+    let pullRequestRows = includedPullRequests.map { pullRequest in
+      ActivityWorkRow(
+        id: "pr-\(pullRequest.id)",
+        kind: "PR",
+        title: "#\(pullRequest.number) \(pullRequest.title)",
+        repositoryName: repository(for: pullRequest.repoID)?.name ?? pullRequest.repoID,
+        happenedAt: pullRequest.mergedAt,
+        systemImage: "arrow.triangle.pull"
+      )
+    }
+
+    let releaseRows = groupedReleases.flatMap { group in
+      group.releases.map { release in
+        ActivityWorkRow(
+          id: "release-\(release.id)",
+          kind: "Release",
+          title: "\(release.tag) \(release.title)",
+          repositoryName: repository(for: release.repoID)?.name ?? release.repoID,
+          happenedAt: release.date,
+          systemImage: "tag"
+        )
+      }
+    }
+
+    return Array((pullRequestRows + releaseRows).sorted { $0.happenedAt > $1.happenedAt }.prefix(8))
+  }
+
   var body: some View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 24) {
-          if store.isRefreshingActivity {
+          if shouldPromoteSyncStatus {
             syncStatus
           }
 
           header
+          pulseSection
 
-          if store.isRefreshingActivity == false {
+          if shouldPromoteSyncStatus == false {
             syncStatus
           }
 
-          RangePickerView(selection: $store.prRange)
-
-          calendar
-
-          selectedDayMetric
-
-          DailyPRBarChart(days: chartDays)
-
-          RepoDistributionView(rows: repoRows)
-
-          recentPRs
+          cadenceSection
+          latestWorkSection
         }
         .padding()
       }
       .refreshable {
         await store.refreshActivity()
       }
-      .navigationTitle("PRs")
+      .navigationTitle("Activity")
       .toolbar {
         ToolbarItem(placement: .topBarTrailing) {
           Button {
@@ -101,7 +143,9 @@ struct PRsView: View {
       .navigationDestination(for: Repository.ID.self) { repositoryID in
         PRRepositoryDetailView(
           repository: repository(for: repositoryID),
-          pullRequests: store.pullRequests.filter { $0.repoID == repositoryID }
+          pullRequests: store.pullRequests.filter { $0.repoID == repositoryID },
+          anchorDate: store.activityAnchorDate,
+          range: store.prRange
         )
       }
     }
@@ -115,8 +159,13 @@ struct PRsView: View {
       lastRefreshedAt: store.lastActivityRefreshAt,
       lastRefreshAttemptAt: store.lastActivityRefreshAttemptAt,
       issue: store.activityRefreshIssue,
-      repositoryIssues: store.activityRepositoryIssues
+      repositoryIssues: store.activityRepositoryIssues,
+      isSampleData: store.isUsingSampleData
     )
+  }
+
+  private var shouldPromoteSyncStatus: Bool {
+    store.isRefreshingActivity || store.activityRefreshIssue != nil || store.activityRepositoryIssues.isEmpty == false
   }
 
   private var header: some View {
@@ -124,7 +173,7 @@ struct PRsView: View {
       VStack(alignment: .leading, spacing: 6) {
         Text("Shipping rhythm")
           .font(.largeTitle.weight(.bold))
-        Text("Merged work across included repositories")
+        Text("What shipped today, this week, and most recently.")
           .font(.subheadline)
           .foregroundStyle(.secondary)
       }
@@ -133,12 +182,163 @@ struct PRsView: View {
     }
   }
 
+  private var pulseSection: some View {
+    VStack(alignment: .leading, spacing: 14) {
+      HStack(alignment: .firstTextBaseline) {
+        Text("Today's pulse")
+          .font(.headline)
+        Spacer()
+        Text(store.activitySourceLabel)
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(store.isUsingSampleData ? PRBarTheme.accent : .secondary)
+      }
+
+      HStack(spacing: 10) {
+        ActivitySummaryMetric(
+          value: "\(selectedPullRequests.count)",
+          label: "Merged",
+          systemImage: "arrow.triangle.pull"
+        )
+
+        ActivitySummaryMetric(
+          value: "\(releases(on: store.selectedReleaseDate).count)",
+          label: "Releases",
+          systemImage: "tag"
+        )
+      }
+
+      if includedPullRequests.isEmpty == false {
+        ActivityLatestRow(
+          label: "PR",
+          value: "#\(includedPullRequests[0].number) \(includedPullRequests[0].title)"
+        )
+      }
+
+      if let release = groupedReleases.first?.releases.first {
+        ActivityLatestRow(
+          label: "Release",
+          value: "\(release.tag) \(release.title)"
+        )
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(16)
+    .background(Color(.secondarySystemBackground))
+    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+  }
+
   @ViewBuilder
-  private var calendar: some View {
+  private var prCalendar: some View {
     if store.prRange == .month {
       MonthHeatMapView(days: calendarDays, selectedDate: $store.selectedPRDate, countLabel: pullRequestCountLabel)
     } else {
       CalendarStripView(days: calendarDays, selectedDate: $store.selectedPRDate, countLabel: pullRequestCountLabel)
+    }
+  }
+
+  private var cadenceSection: some View {
+    VStack(alignment: .leading, spacing: 16) {
+      ActivitySectionHeader(
+        title: "This week's cadence",
+        detail: "Merged PRs and release moments across included repositories."
+      )
+
+      RangePickerView(selection: $store.prRange)
+      prCalendar
+      selectedDayMetric
+      DailyPRBarChart(days: chartDays)
+      RepoDistributionView(rows: repoRows)
+
+      Divider()
+        .padding(.vertical, 2)
+
+      HStack(alignment: .firstTextBaseline) {
+        Label("Release cadence", systemImage: "tag")
+          .font(.headline)
+        Spacer()
+        Text(releaseCadenceSummary)
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.secondary)
+      }
+
+      RangePickerView(selection: $store.releaseRange)
+      releaseCalendar
+      selectedReleaseCard
+    }
+  }
+
+  @ViewBuilder
+  private var releaseCalendar: some View {
+    Group {
+      if store.releaseRange == .month {
+        MonthHeatMapView(days: releaseCalendarDays, selectedDate: $store.selectedReleaseDate, countLabel: releaseCountLabel)
+      } else {
+        CalendarStripView(days: releaseCalendarDays, selectedDate: $store.selectedReleaseDate, countLabel: releaseCountLabel)
+      }
+    }
+    .onChange(of: store.selectedReleaseDate) { _, date in
+      store.selectedReleaseID = releases(on: date).first?.id
+    }
+  }
+
+  @ViewBuilder
+  private var selectedReleaseCard: some View {
+    if let selectedRelease {
+      VStack(alignment: .leading, spacing: 10) {
+        Text("Selected release")
+          .font(.headline)
+
+        Text("\(selectedRelease.tag) \(selectedRelease.title)")
+          .font(.title3.weight(.bold))
+
+        Text(repository(for: selectedRelease.repoID)?.name ?? selectedRelease.repoID)
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+
+        Text(selectedRelease.notes)
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(14)
+      .background(Color(.secondarySystemBackground))
+      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    } else {
+      ActivityEmptyStateView(
+        title: "No release selected",
+        detail: selectedReleaseEmptyDetail,
+        systemImage: "tag",
+        identifier: "selected-release-empty-state"
+      )
+    }
+  }
+
+  private var latestWorkSection: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      ActivitySectionHeader(
+        title: "Latest meaningful work",
+        detail: "PRs, tags, and release notes in one recent stream."
+      )
+
+      if latestWorkRows.isEmpty {
+        ActivityEmptyStateView(
+          title: "No recent activity",
+          detail: latestWorkEmptyDetail,
+          systemImage: "tray",
+          identifier: "activity-empty-state"
+        )
+      } else {
+        VStack(spacing: 0) {
+          ForEach(latestWorkRows) { row in
+            ActivityWorkRowView(row: row, dateLabel: shortDateLabel(for: row.happenedAt))
+
+            if row.id != latestWorkRows.last?.id {
+              Divider()
+                .padding(.leading, 34)
+            }
+          }
+        }
+      }
     }
   }
 
@@ -199,6 +399,13 @@ struct PRsView: View {
     }
   }
 
+  private func releases(on date: Date) -> [ReleaseMoment] {
+    let includedIDs = Set(store.includedRepositories.map(\.id))
+    return store.releases.filter {
+      includedIDs.contains($0.repoID) && CalendarDay.isSameDay($0.date, date)
+    }
+  }
+
   private var prEmptyStateTitle: String {
     if store.includedRepositories.isEmpty {
       return "No repos selected"
@@ -238,8 +445,191 @@ struct PRsView: View {
     return formatter.string(from: date)
   }
 
+  private func longDateLabel(for date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.dateFormat = "MMMM d"
+    return formatter.string(from: date)
+  }
+
   private func pullRequestCountLabel(for count: Int) -> String {
     count == 1 ? "pull request" : "pull requests"
+  }
+
+  private func releaseCountLabel(for count: Int) -> String {
+    count == 1 ? "release" : "releases"
+  }
+
+  private var selectedReleaseEmptyDetail: String {
+    if store.includedRepositories.isEmpty {
+      return "Choose repos before looking for release details."
+    }
+    if store.isRefreshingActivity {
+      return "Syncing included repositories. Release details will appear when refresh finishes."
+    }
+    return "Choose a day with releases or refresh GitHub activity."
+  }
+
+  private var releaseRowsEmptyTitle: String {
+    if store.includedRepositories.isEmpty {
+      return "No repos selected"
+    }
+    return "No releases or tags"
+  }
+
+  private var releaseRowsEmptyDetail: String {
+    if store.includedRepositories.isEmpty {
+      return "Choose repos to decide which GitHub releases and tags PRBar should sync."
+    }
+    if store.isRefreshingActivity {
+      return "Syncing included repositories. Releases and tags will appear here when refresh finishes."
+    }
+    if store.activityRepositoryIssues.isEmpty == false {
+      return "Synced available repositories, but none published releases or tags yet. Review the partial sync note above."
+    }
+    if store.activityRefreshIssue != nil {
+      return "Refresh did not finish. Existing release data stays visible when available."
+    }
+    if store.lastActivityRefreshAt != nil {
+      return "Selected repos did not publish releases or tags in this window."
+    }
+    return "Refresh GitHub activity to load releases and tags for selected repos."
+  }
+
+  private var releaseCadenceSummary: String {
+    let count = releaseCalendarDays.reduce(0) { $0 + $1.count }
+    return count == 1 ? "1 release" : "\(count) releases"
+  }
+
+  private var latestWorkEmptyDetail: String {
+    if store.includedRepositories.isEmpty {
+      return "Choose repos to decide which GitHub activity PRBar should sync."
+    }
+    if store.isRefreshingActivity {
+      return "Syncing included repositories. Recent work will appear when refresh finishes."
+    }
+    if store.lastActivityRefreshAt != nil {
+      return "No PRs, tags, or releases were found in selected repos for this window."
+    }
+    return "Refresh GitHub activity to load recent work from selected repos."
+  }
+
+  private var fixtureCalendar: Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+    return calendar
+  }
+}
+
+private struct ActivitySummaryMetric: View {
+  var value: String
+  var label: String
+  var systemImage: String
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Image(systemName: systemImage)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(PRBarTheme.accent)
+
+      Text(value)
+        .font(.title2.weight(.bold))
+        .monospacedDigit()
+
+      Text(label)
+        .font(.caption.weight(.medium))
+        .foregroundStyle(.secondary)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(12)
+    .background(Color(.tertiarySystemBackground))
+    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+  }
+}
+
+private struct ActivityLatestRow: View {
+  var label: String
+  var value: String
+
+  var body: some View {
+    HStack(alignment: .firstTextBaseline, spacing: 10) {
+      Text(label)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .frame(width: 86, alignment: .leading)
+
+      Text(value)
+        .font(.subheadline)
+        .lineLimit(2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+  }
+}
+
+private struct ActivitySectionHeader: View {
+  var title: String
+  var detail: String
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(title)
+        .font(.title3.weight(.bold))
+      Text(detail)
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+}
+
+private struct ActivityWorkRow: Identifiable {
+  var id: String
+  var kind: String
+  var title: String
+  var repositoryName: String
+  var happenedAt: Date
+  var systemImage: String
+}
+
+private struct ActivityWorkRowView: View {
+  var row: ActivityWorkRow
+  var dateLabel: String
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 10) {
+      Image(systemName: row.systemImage)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(PRBarTheme.accent)
+        .frame(width: 24, height: 24)
+        .background(PRBarTheme.accent.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+      VStack(alignment: .leading, spacing: 3) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+          Text(row.kind)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+          Text(dateLabel)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+
+        Text(row.title)
+          .font(.subheadline.weight(.semibold))
+          .lineLimit(2)
+
+        Text(row.repositoryName)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+
+      Spacer(minLength: 0)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.vertical, 10)
   }
 }
 
@@ -300,28 +690,6 @@ private struct DailyPRBarChart: View {
       }
       .frame(height: 96)
     }
-  }
-}
-
-private struct PRRepositoryDetailView: View {
-  var repository: Repository?
-  var pullRequests: [PullRequest]
-
-  var body: some View {
-    List {
-      Section(repository?.name ?? "Repository") {
-        ForEach(pullRequests.sorted { $0.mergedAt > $1.mergedAt }) { pullRequest in
-          VStack(alignment: .leading, spacing: 4) {
-            Text("#\(pullRequest.number) \(pullRequest.title)")
-              .font(.subheadline.weight(.semibold))
-            Text("Merged")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-          }
-        }
-      }
-    }
-    .navigationTitle(repository?.name ?? "Repository")
   }
 }
 

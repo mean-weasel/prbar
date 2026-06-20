@@ -18,10 +18,7 @@ struct RootTabView: View {
   private var tabs: some View {
     TabView {
       PRsView(store: store)
-        .tabItem { Label("PRs", systemImage: "chart.bar.xaxis") }
-
-      ReleasesView(store: store)
-        .tabItem { Label("Releases", systemImage: "tag") }
+        .tabItem { Label("Activity", systemImage: "chart.bar.xaxis") }
 
       GrowthView(store: store)
         .tabItem { Label("Growth", systemImage: "chart.line.uptrend.xyaxis") }
@@ -30,7 +27,7 @@ struct RootTabView: View {
         .tabItem { Label("Share", systemImage: "square.and.arrow.up") }
 
       MoreView(store: store)
-        .tabItem { Label("More", systemImage: "ellipsis") }
+        .tabItem { Label("Settings", systemImage: "gearshape") }
     }
   }
 }

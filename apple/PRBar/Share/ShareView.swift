@@ -5,9 +5,12 @@ struct ShareView: View {
   @Bindable var store: PRBarStore
 
   @State private var isExportSheetPresented = false
+  @State private var isStylePrivacyPresented = false
   @State private var isNativeSharePresented = false
   @State private var nativeShareItems: [Any] = []
   @State private var exportMessage: String?
+  @State private var pendingSensitiveExportAction: ExportAction?
+  @State private var isSensitiveExportConfirmationPresented = false
   @State private var alertTitle = ""
   @State private var isAlertPresented = false
 
@@ -47,16 +50,10 @@ struct ShareView: View {
             .buttonStyle(.bordered)
 
             Button("Style & Privacy") {
-              presentAlert("Style & Privacy")
+              isStylePrivacyPresented = true
             }
             .buttonStyle(.bordered)
           }
-
-          Button("Export card") {
-            isExportSheetPresented = true
-          }
-          .buttonStyle(.borderedProminent)
-          .frame(maxWidth: .infinity, alignment: .leading)
 
           if let exportMessage {
             Text(exportMessage)
@@ -72,22 +69,41 @@ struct ShareView: View {
           handleExportAction(action)
         }
       }
+      .sheet(isPresented: $isStylePrivacyPresented) {
+        StylePrivacySheet(store: store)
+      }
       .sheet(isPresented: $isNativeSharePresented) {
         WorkCardActivityView(activityItems: nativeShareItems)
       }
       .alert(alertTitle, isPresented: $isAlertPresented) {
         Button("OK", role: .cancel) {}
       }
+      .confirmationDialog("Export private evidence?", isPresented: $isSensitiveExportConfirmationPresented, titleVisibility: .visible) {
+        Button(pendingSensitiveExportAction?.rawValue ?? "Export", role: .destructive) {
+          if let pendingSensitiveExportAction {
+            performExportAction(pendingSensitiveExportAction)
+          }
+          pendingSensitiveExportAction = nil
+        }
+        Button("Cancel", role: .cancel) {
+          pendingSensitiveExportAction = nil
+        }
+      } message: {
+        Text("This can include private repo names, PR titles, release notes, exact counts, or private labels. Review the evidence side before sharing.")
+      }
+      .safeAreaInset(edge: .bottom) {
+        exportBar
+      }
     }
   }
 
   private var header: some View {
     VStack(alignment: .leading, spacing: 6) {
-      Text("Create a work card")
+      Text("Share a work card")
         .font(.largeTitle.weight(.bold))
-      Text("Work cards")
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(PRBarTheme.accent)
+      Text("Public-safe by default, evidence available when you choose it.")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
     }
   }
 
@@ -172,7 +188,41 @@ struct ShareView: View {
     WorkCardExportBuilder.export(for: store)
   }
 
+  private var exportBar: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack {
+        Label(currentExport.includesPrivateEvidence ? "Review private evidence before export" : "Ready to export", systemImage: currentExport.includesPrivateEvidence ? "lock.shield" : "checkmark.shield")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(currentExport.includesPrivateEvidence ? .orange : .secondary)
+        Spacer(minLength: 0)
+      }
+
+      Button {
+        isExportSheetPresented = true
+      } label: {
+        Label("Export card", systemImage: "square.and.arrow.up")
+          .frame(maxWidth: .infinity)
+      }
+      .buttonStyle(.borderedProminent)
+      .controlSize(.large)
+    }
+    .padding(.horizontal)
+    .padding(.top, 10)
+    .padding(.bottom, 8)
+    .background(.bar)
+  }
+
   private func handleExportAction(_ action: ExportAction) {
+    if action.needsSensitiveConfirmation && currentExport.includesPrivateEvidence {
+      pendingSensitiveExportAction = action
+      isSensitiveExportConfirmationPresented = true
+      return
+    }
+
+    performExportAction(action)
+  }
+
+  private func performExportAction(_ action: ExportAction) {
     switch action {
     case .sharePublicImage:
       share(side: .publicSide)
@@ -242,4 +292,69 @@ struct ShareView: View {
 
 #Preview {
   ShareView(store: .sample())
+}
+
+private struct StylePrivacySheet: View {
+  @Environment(\.dismiss) private var dismiss
+  @Bindable var store: PRBarStore
+
+  var body: some View {
+    NavigationStack {
+      Form {
+        Section("Card side") {
+          Picker("Card side", selection: $store.cardDraft.side) {
+            Text("Public").tag(CardSide.publicSide)
+            Text("Evidence").tag(CardSide.evidenceSide)
+          }
+          .pickerStyle(.segmented)
+        }
+
+        Section("Style") {
+          Picker("Theme", selection: $store.cardDraft.theme) {
+            ForEach(WorkCardDraft.Theme.allCases) { theme in
+              Text(theme.displayName).tag(theme)
+            }
+          }
+        }
+
+        Section {
+          Toggle("Show repos", isOn: $store.cardDraft.showRepos)
+          Toggle("Show handle", isOn: $store.cardDraft.showHandle)
+          Toggle("Exact counts", isOn: $store.cardDraft.exactCounts)
+          Toggle("Show private labels", isOn: $store.cardDraft.showPrivateLabels)
+        } header: {
+          Text("Public card privacy")
+        } footer: {
+          Text("Private repo names, exact counts, PR titles, release notes, and private labels can reveal sensitive work. Review the evidence side before sharing beyond your team.")
+        }
+      }
+      .navigationTitle("Style & Privacy")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .topBarTrailing) {
+          Button("Done") {
+            dismiss()
+          }
+        }
+      }
+    }
+    .presentationDetents([.medium, .large])
+  }
+}
+
+private extension WorkCardDraft.Theme {
+  var displayName: String {
+    switch self {
+    case .clean:
+      "Clean"
+    case .terminal:
+      "Terminal"
+    case .launch:
+      "Launch"
+    case .hype:
+      "Hype"
+    case .minimal:
+      "Minimal"
+    }
+  }
 }

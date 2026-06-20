@@ -2,14 +2,15 @@ import SwiftUI
 
 struct MoreView: View {
   var store: PRBarStore
+  @State private var isSignOutConfirmationPresented = false
 
   var body: some View {
     NavigationStack {
       List {
-        Section {
-          Text("Menu")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
+        Section("Account") {
+          LabeledContent("Mode", value: store.settingsDiagnostics.auth)
+          LabeledContent("Data", value: store.settingsDiagnostics.dataSource)
+          LabeledContent("Repos", value: store.settingsDiagnostics.includedRepositories)
         }
 
         Section {
@@ -17,7 +18,7 @@ struct MoreView: View {
             RepositorySetupView(store: store)
           }
 
-          NavigationLink("Settings") {
+          NavigationLink("Account & data") {
             SettingsView(store: store)
           }
 
@@ -27,20 +28,32 @@ struct MoreView: View {
         }
 
         Section {
-          Button("Sample Data") {}
+          Button(store.isUsingSampleData ? "Reset sample data" : "Switch to sample data") {
+            store.useSampleData()
+          }
           NavigationLink("About") {
             AboutView()
           }
         }
       }
-      .navigationTitle("More")
-      .accessibilityIdentifier("MoreMenu")
+      .navigationTitle("Settings")
+      .accessibilityIdentifier("SettingsMenu")
       .toolbar {
         ToolbarItem(placement: .topBarTrailing) {
-          Button("Sign out") {
-            store.disconnectGitHub()
+          if store.isUsingSampleData == false && store.githubConnection.status == .connected {
+            Button("Sign out", role: .destructive) {
+              isSignOutConfirmationPresented = true
+            }
           }
         }
+      }
+      .confirmationDialog("Sign out of GitHub?", isPresented: $isSignOutConfirmationPresented, titleVisibility: .visible) {
+        Button("Sign out", role: .destructive) {
+          store.disconnectGitHub()
+        }
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        Text("PRBar keeps local app data until you reconnect or switch to sample data.")
       }
     }
   }

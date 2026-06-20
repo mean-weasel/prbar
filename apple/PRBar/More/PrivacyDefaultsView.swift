@@ -11,7 +11,7 @@ struct PrivacyDefaultsView: View {
         Toggle("Exact counts", isOn: $store.cardDraft.exactCounts)
         Toggle("Show private labels", isOn: $store.cardDraft.showPrivateLabels)
       } footer: {
-        Text("These defaults apply to new work-card exports.")
+        Text("These defaults apply to work-card exports. Private repo names, exact counts, PR titles, release notes, and private labels can reveal sensitive work.")
       }
     }
     .navigationTitle("Privacy")

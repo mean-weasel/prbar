@@ -82,6 +82,10 @@ enum WorkCardExportBuilder {
   }
 
   private static func freshnessLabel(for store: PRBarStore) -> String {
+    if store.isUsingSampleData {
+      return "Sample data"
+    }
+
     if store.activityRefreshIssue != nil, let lastRefreshedAt = store.lastActivityRefreshAt {
       return "Cached GitHub data from \(dateLabel(for: lastRefreshedAt))"
     }

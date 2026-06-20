@@ -28,7 +28,7 @@ struct WorkCardView: View {
         }
       }
       .frame(height: 86, alignment: .bottom)
-      .accessibilityLabel("Card distribution chart")
+      .accessibilityHidden(true)
 
       HStack(alignment: .firstTextBaseline) {
         Text(draft.showHandle ? source.handle : "handle hidden")
@@ -47,6 +47,9 @@ struct WorkCardView: View {
         .stroke(Color(.separator).opacity(0.4))
     )
     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Public work card")
+    .accessibilityValue("\(metric). \(source.caption). \(draft.showHandle ? source.handle : "Handle hidden"). \(repoLine).")
   }
 
   private var metric: String {
