@@ -11,7 +11,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
     XCTAssertFalse(app.staticTexts["Latest meaningful work"].exists)
     app.openWorkLog()
-    XCTAssertTrue(app.staticTexts["Recent work"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.workLogDetailText().waitForExistence(timeout: 2))
     app.navigationBars.buttons.element(boundBy: 0).tap()
     XCTAssertFalse(app.tabBars.buttons["Releases"].exists)
 
@@ -515,7 +515,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 2))
     app.openWorkLog()
-    XCTAssertTrue(app.staticTexts["Recent work"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.workLogDetailText().waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["v9.9.9 UI refresh release"].waitForExistence(timeout: 4))
   }
@@ -676,6 +676,13 @@ private extension XCUIApplication {
     XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing Work log drilldown", file: file, line: line)
     activate()
     button.tap()
+  }
+
+  @MainActor
+  func workLogDetailText() -> XCUIElement {
+    staticTexts
+      .containing(NSPredicate(format: "label CONTAINS %@", "Detailed pull requests"))
+      .firstMatch
   }
 
   @MainActor
