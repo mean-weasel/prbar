@@ -8,7 +8,11 @@ final class PRBarUITests: XCTestCase {
     app.launch()
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
-    XCTAssertTrue(app.staticTexts["Latest meaningful work"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
+    XCTAssertFalse(app.staticTexts["Latest meaningful work"].exists)
+    app.openWorkLog()
+    XCTAssertTrue(app.staticTexts["Recent work"].waitForExistence(timeout: 2))
+    app.navigationBars.buttons.element(boundBy: 0).tap()
     XCTAssertFalse(app.tabBars.buttons["Releases"].exists)
 
     app.tapTab("Share")
@@ -461,8 +465,8 @@ final class PRBarUITests: XCTestCase {
       XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 8))
     }
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 10))
-
     XCTAssertTrue(app.staticTexts["v9.9.9 UI refresh release"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
   }
 
   @MainActor
@@ -487,7 +491,7 @@ final class PRBarUITests: XCTestCase {
     app.tapButton("Finish setup", untilStaticTextExists: "Shipping rhythm")
     XCTAssertTrue(app.staticTexts["Syncing selected repos"].waitForExistence(timeout: 4))
 
-    XCTAssertTrue(app.staticTexts["Latest meaningful work"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Syncing selected repos"].waitForExistence(timeout: 2))
 
     app.tapTab("Activity")
@@ -508,9 +512,11 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Synced selected repositories")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
 
-    XCTAssertTrue(app.staticTexts["Latest meaningful work"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 2))
-    app.buttons["Refresh activity"].tap()
+    app.openWorkLog()
+    XCTAssertTrue(app.staticTexts["Recent work"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["v9.9.9 UI refresh release"].waitForExistence(timeout: 4))
   }
 
@@ -659,6 +665,17 @@ private extension XCUIApplication {
       swipeUp()
     }
     XCTAssertTrue(text.waitForExistence(timeout: 2), "Missing \(label)", file: file, line: line)
+  }
+
+  @MainActor
+  func openWorkLog(file: StaticString = #filePath, line: UInt = #line) {
+    let button = buttons["Work log"].firstMatch
+    for _ in 0..<3 where button.exists == false {
+      swipeUp()
+    }
+    XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing Work log drilldown", file: file, line: line)
+    activate()
+    button.tap()
   }
 
   @MainActor
