@@ -19,41 +19,11 @@ struct ShareView: View {
       ScrollView {
         VStack(alignment: .leading, spacing: 16) {
           header
-          sourcePanel
 
-          if store.cardHasPrivateEvidence {
-            privateWarningPanel
-          }
-
-          provenancePanel
-          exportSummary
-
-          Group {
-            if store.cardDraft.side == .publicSide {
-              WorkCardView(
-                source: WorkCardRenderer.source(for: store),
-                draft: store.cardDraft
-              )
-            } else {
-              WorkCardEvidenceView(
-                source: WorkCardRenderer.source(for: store),
-                draft: store.cardDraft,
-                evidence: WorkCardRenderer.evidence(for: store)
-              )
-            }
-          }
-
-          HStack(spacing: 10) {
-            Button(store.cardDraft.side == .publicSide ? "Show evidence" : "Show public card") {
-              store.cardDraft.side = store.cardDraft.side == .publicSide ? .evidenceSide : .publicSide
-            }
-            .buttonStyle(.bordered)
-
-            Button("Style & Privacy") {
-              isStylePrivacyPresented = true
-            }
-            .buttonStyle(.bordered)
-          }
+          cardControls
+          workCardPreview
+          primaryExportButton
+          exportReadinessPanel
 
           if let exportMessage {
             Text(exportMessage)
@@ -91,9 +61,36 @@ struct ShareView: View {
       } message: {
         Text("This can include private repo names, PR titles, release notes, exact counts, or private labels. Review the evidence side before sharing.")
       }
-      .safeAreaInset(edge: .bottom) {
-        exportBar
+    }
+  }
+
+  private var cardControls: some View {
+    HStack(spacing: 10) {
+      Button(store.cardDraft.side == .publicSide ? "Show evidence" : "Show public card") {
+        store.cardDraft.side = store.cardDraft.side == .publicSide ? .evidenceSide : .publicSide
       }
+      .buttonStyle(.bordered)
+
+      Button("Style & Privacy") {
+        isStylePrivacyPresented = true
+      }
+      .buttonStyle(.bordered)
+    }
+  }
+
+  @ViewBuilder
+  private var workCardPreview: some View {
+    if store.cardDraft.side == .publicSide {
+      WorkCardView(
+        source: WorkCardRenderer.source(for: store),
+        draft: store.cardDraft
+      )
+    } else {
+      WorkCardEvidenceView(
+        source: WorkCardRenderer.source(for: store),
+        draft: store.cardDraft,
+        evidence: WorkCardRenderer.evidence(for: store)
+      )
     }
   }
 
@@ -107,109 +104,53 @@ struct ShareView: View {
     }
   }
 
-  private var sourcePanel: some View {
-    let source = WorkCardRenderer.source(for: store)
-
-    return VStack(alignment: .leading, spacing: 8) {
-      Text("Source")
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.secondary)
-      Text(source.title)
-        .font(.headline)
-      Text(source.caption)
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(14)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-  }
-
-  private var privateWarningPanel: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      Label("This export may reveal private work", systemImage: "lock.shield")
-        .font(.headline)
-      Text("Review repo names, exact counts, PR titles, release notes, and the evidence side before exporting.")
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(14)
-    .background(Color.orange.opacity(0.14))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-  }
-
-  private var provenancePanel: some View {
+  private var exportReadinessPanel: some View {
     let export = currentExport
 
-    return VStack(alignment: .leading, spacing: 8) {
-      Text("Proof source")
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.secondary)
-      Text(export.provenance)
-        .font(.subheadline.weight(.semibold))
-      Text(export.freshness)
-        .font(.caption)
-        .foregroundStyle(export.freshness.hasPrefix("Cached") ? .orange : .secondary)
-      Text(export.privacyMessage)
-        .font(.caption)
-        .foregroundStyle(export.includesPrivateEvidence ? .orange : .secondary)
+    return HStack(alignment: .top, spacing: 10) {
+      Image(systemName: export.includesPrivateEvidence ? "lock.shield" : "checkmark.shield")
+        .foregroundStyle(export.includesPrivateEvidence ? .orange : PRBarTheme.accent)
+
+      VStack(alignment: .leading, spacing: 3) {
+        Text(export.includesPrivateEvidence ? "Review evidence before sharing" : "Public-safe preview ready")
+          .font(.subheadline.weight(.semibold))
+        Text(export.includesPrivateEvidence ? "Evidence stays behind review/export choices." : "Evidence stays optional.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .lineLimit(2)
+      }
+
+      Spacer(minLength: 8)
+
+      VStack(alignment: .trailing, spacing: 3) {
+        Text("Proof")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.secondary)
+        Text(export.freshness)
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(export.freshness.hasPrefix("Cached") ? .orange : .secondary)
+          .multilineTextAlignment(.trailing)
+      }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(14)
+    .padding(12)
     .background(Color(.secondarySystemBackground))
     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-  }
-
-  private var exportSummary: some View {
-    VStack(spacing: 10) {
-      summaryRow(label: "Image", value: store.cardDraft.side == .publicSide ? "Public side" : "Evidence side")
-      Divider()
-      summaryRow(label: "Caption", value: WorkCardRenderer.source(for: store).captionKind)
-    }
-    .padding(14)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-  }
-
-  private func summaryRow(label: String, value: String) -> some View {
-    HStack {
-      Text(label)
-        .foregroundStyle(.secondary)
-      Spacer()
-      Text(value)
-        .fontWeight(.semibold)
-    }
-    .font(.subheadline)
   }
 
   private var currentExport: WorkCardExport {
     WorkCardExportBuilder.export(for: store)
   }
 
-  private var exportBar: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      HStack {
-        Label(currentExport.includesPrivateEvidence ? "Review private evidence before export" : "Ready to export", systemImage: currentExport.includesPrivateEvidence ? "lock.shield" : "checkmark.shield")
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(currentExport.includesPrivateEvidence ? .orange : .secondary)
-        Spacer(minLength: 0)
-      }
-
-      Button {
-        isExportSheetPresented = true
-      } label: {
-        Label("Export card", systemImage: "square.and.arrow.up")
-          .frame(maxWidth: .infinity)
-      }
-      .buttonStyle(.borderedProminent)
-      .controlSize(.large)
+  private var primaryExportButton: some View {
+    Button {
+      isExportSheetPresented = true
+    } label: {
+      Label("Export card", systemImage: "square.and.arrow.up")
+        .frame(maxWidth: .infinity)
     }
-    .padding(.horizontal)
-    .padding(.top, 10)
-    .padding(.bottom, 8)
-    .background(.bar)
+    .buttonStyle(.borderedProminent)
+    .controlSize(.large)
   }
 
   private func handleExportAction(_ action: ExportAction) {

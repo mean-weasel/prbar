@@ -1,0 +1,392 @@
+# GoalBuddy v2 state.yaml
+version: 2
+
+goal:
+  title: "iOS Tab Hero Detail Simplification"
+  slug: "ios-tab-hero-detail-simplification"
+  kind: existing_plan
+  tranche: "Screenshot-led hero/detail split and style simplification across PRBar iOS tabs."
+  status: done
+  oracle:
+    signal: "A final Judge audit verifies that PRBar iOS tabs are hero-first, fine-grain detail has moved into intentional drilldowns or disclosures, required controls remain reachable and safe, tests pass, and simulator screenshots prove the rendered UX."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Passing targeted build/test commands plus XcodeBuildMCP screenshots for every changed tab/detail workflow."
+  intake:
+    original_request: "Do that after agreeing that fine-grain details should move to separate screens while each tab keeps the big picture as the hero."
+    interpreted_outcome: "Prepare and execute a GoalBuddy board for simplifying PRBar iOS into hero-first tabs with detail screens for deeper work, validated in simulator."
+    input_shape: existing_plan
+    audience: "PRBar iOS users who need fast shipping-rhythm, growth, sharing, and setup understanding."
+    authority: approved
+    proof_type: demo
+    completion_proof: "The simulator visibly shows hero-first tabs, detail/drilldown routes for fine-grain content, preserved controls, and passing verification."
+    likely_misfire: "Applying cosmetic style tweaks while leaving dense details on the main tabs, or hiding privacy/setup controls that should remain reachable."
+    blind_spots_considered:
+      - "A passing UI smoke can miss cramped, visually incoherent hierarchy."
+      - "Live GitHub/PostHog credentials may be absent locally, so deterministic simulator sample paths need to prove the UX while live-only checks are documented."
+      - "The worktree already contains unrelated dirty files; the PM must preserve them and avoid broad reverts."
+      - "PR #138's Work Log detail split should be treated as a successful pattern to preserve."
+    existing_plan_facts:
+      - "Each tab should lead with the big picture as the hero."
+      - "Fine-grain details such as Latest meaningful work should be separate screens or deliberate drilldowns."
+      - "The simulator is the validation surface."
+      - "Simplification should improve styles without turning into unbounded restyling."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: generated
+    url: "http://goalbuddy.localhost:41737/ios-tab-hero-detail-simplification/"
+    command: "npx goalbuddy board Docs/goals/ios-tab-hero-detail-simplification"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Map current iOS tab/detail hierarchy and identify where fine-grain content still competes with each tab's hero."
+    inputs:
+      - "PR #138 Activity Work Log detail split"
+      - "Docs/goals/ios-shipping-rhythm-simplification/notes/T007-screenshot-brainstorm.md"
+      - "Current SwiftUI views and UI tests"
+      - "AGENTS.md simulator visual-inspection requirements"
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation files."
+      - "Prefer concrete file-path and screenshot evidence over generic taste advice."
+      - "Attempt automated simulator visual inspection before asking the user to verify manually."
+    expected_output:
+      - "Current tab-by-tab hierarchy map"
+      - "Fine-grain content that should move to drilldowns/disclosures"
+      - "Style/hierarchy repetition that harms the hero"
+      - "Recommended largest safe first Worker slice"
+    receipt:
+      result: done
+      summary: "Mapped the current iOS hierarchy from code, dirty diff, saved screenshots, and a fresh XcodeBuildMCP simulator launch. Activity still has the most detail pressure: the hero is clear, but the main tab also carries dual range pickers, calendars, selected-day metric, repo distribution, release cadence, selected release, sync provenance, and Work Log entry. Work Log, repo detail, Share, and Settings already show useful hero/detail movement. Recommend the first Worker slice focus on Activity's main tab and release/cadence detail split."
+      evidence:
+        - "apple/PRBar/RootTabView.swift: Activity, Growth, Share, and Settings are the authenticated tabs."
+        - "apple/PRBar/PRs/PRsView.swift: Activity owns Shipping rhythm hero, Shipping snapshot, cadence, repo distribution, release cadence, selected release, sync status, and Work Log link."
+        - "apple/PRBar/PRs/ActivityWorkLogView.swift: Work Log is already a dedicated detail screen for recent PR/release rows."
+        - "apple/PRBar/PRs/PRRepositoryDetailView.swift: repo drilldown is already timeline-first with PR distribution and selected-day PR rows."
+        - "apple/PRBar/Growth/GrowthView.swift: Growth leads with metrics/chart but still exposes range, provider badges, dashboard scope, provenance, provider sections, and setup cards in one scroll."
+        - "apple/PRBar/Share/ShareView.swift and apple/PRBar/Share/ExportCardSheet.swift: Share leads with a public-safe export flow, while privacy/evidence copy remains prominent."
+        - "apple/PRBar/More/MoreView.swift, SettingsView.swift, RepositorySetupView.swift, PrivacyDefaultsView.swift: Settings already behaves like a hub, with diagnostics and repo/privacy details pushed into child screens."
+        - "Docs/goals/ios-shipping-rhythm-simplification/notes/T007-screenshot-brainstorm.md: prior screenshot read identified Activity/repo detail, Share/export, Settings/setup, and style-system slices."
+        - "Fresh XcodeBuildMCP simulator launch on iPhone 17 with --ui-testing: Activity, Growth, Share, and Settings snapshots captured and inspected."
+      facts:
+        - "Current tab map: Activity is the shipping-rhythm dashboard; Growth is after-shipping metrics; Share is work-card export; Settings is account/setup hub."
+        - "Activity's Work Log split proves the desired pattern: the main tab can carry a compact summary while detailed PR/release rows live in a drilldown."
+        - "Activity's release cadence and selected release detail still live on the main tab and compete with the high-level Shipping rhythm readout."
+        - "Activity has two independent range pickers/calendars for PRs and releases on one tab, which makes the main tab feel like multiple analytical screens stacked together."
+        - "Repo detail no longer matches the older brainstorm's duplicate Recent PRs critique; the current file has PR distribution plus selected-day PRs only."
+        - "Settings already matches the hero/detail intent better than the other tabs: status hero, Manage links, Diagnostics link, App links."
+        - "Share is improved but privacy/evidence copy is safety-sensitive; it should follow Activity unless Judge decides safety copy can be simplified without weakening export protection."
+        - "Current dirty files already include Share, Settings, repo detail, repo distribution, and UI-test edits, so the first Worker must preserve existing user/worktree changes."
+      contradictions:
+        - "The prior screenshot brainstorm says repo detail has a duplicate Recent PRs list, but the current worktree's PRRepositoryDetailView no longer contains that list."
+        - "Saved contact-sheet screenshots show older dense Settings/Share states, while fresh code and simulator snapshots show later simplifications."
+      ambiguity_requiring_judge:
+        - "Should the first Worker create an Activity release/cadence detail destination inside PRsView, or only collapse release cadence behind a disclosure?"
+        - "Should Activity keep one PR-focused range picker on the main tab while release range moves to detail, or should both ranges move behind drilldowns?"
+        - "Can the Worker edit only PRsView/UI tests, or should it include shared components such as RepoDistributionView and CalendarStripView?"
+      commands:
+        - cmd: "node /Users/neonwatty/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.8/skills/goalbuddy/scripts/check-update.mjs --json"
+          status: pass
+        - cmd: "npx goalbuddy prompt Docs/goals/ios-tab-hero-detail-simplification"
+          status: pass
+        - cmd: "git status --short --branch"
+          status: pass
+        - cmd: "XcodeBuildMCP session_set_defaults + build_run_sim --ui-testing + snapshot_ui + screenshots"
+          status: pass
+      recommended_first_worker:
+        objective: "Make Activity's main tab more hero-first by moving release cadence/selected-release detail and any secondary calendar controls into an intentional Activity detail drilldown or disclosure, while preserving the Shipping snapshot, primary cadence readout, repo distribution drilldown, Work Log, sync state, and tests."
+        likely_allowed_files:
+          - "apple/PRBar/PRs/PRsView.swift"
+          - "apple/PRBar/PRs/ActivityWorkLogView.swift"
+          - "apple/PRBar/Components/RepoDistributionView.swift"
+          - "apple/PRBarUITests/PRBarUITests.swift"
+          - "Docs/goals/ios-tab-hero-detail-simplification/state.yaml"
+        verify:
+          - "./scripts/ios-build.sh"
+          - "Focused Activity UI tests or updated PRBarUITests for Work Log, release detail, and repo drilldown."
+          - "XcodeBuildMCP screenshots: Activity top, Activity scrolled cadence/release entry, Work Log detail, release/cadence detail, repo detail."
+      note_needed: false
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the first safe implementation slice from the Scout findings."
+    inputs:
+      - "T001 receipt"
+      - "Goal oracle"
+      - "Current dirty diff"
+    constraints:
+      - "Read-only."
+      - "Reject cosmetic-only work."
+      - "Reject any slice that hides required privacy, export, repository, or diagnostics controls."
+      - "Pick the largest safe useful slice with explicit allowed_files, verification, and stop conditions."
+    expected_output:
+      - "Decision"
+      - "Exact Worker objective"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+      - "Deferred risks or follow-up tasks"
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "Approve Activity as the first Worker slice. Scout evidence shows Share and Settings have already moved toward hero/detail structure, while Activity still stacks the core hero with PR cadence, release cadence, selected-day detail, selected-release detail, repo distribution, sync provenance, and Work Log entry. The safe useful slice is to keep Activity's main tab as the big-picture shipping dashboard and move release/cadence detail behind an intentional drilldown without weakening repo selection, Work Log, sync, or release visibility."
+      evidence:
+        - "T001 receipt: Activity has the most detail pressure; Work Log split already proves the target interaction pattern."
+        - "Fresh XcodeBuildMCP Activity snapshot: Shipping rhythm hero is followed immediately by cadence controls and selected-day detail."
+        - "apple/PRBar/PRs/PRsView.swift: Release cadence and selected release live on the main Activity tab below PR cadence."
+        - "apple/PRBar/Share/ShareView.swift and MoreView.swift: Share and Settings already have clearer hero/detail boundaries but carry safety-sensitive semantics."
+        - "Current dirty diff includes Share/Settings/repo-detail work; first Worker should avoid those areas unless necessary."
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates:
+        - "Activate T003 with Activity-only allowed files, simulator screenshots, focused UI-test verification, and stop conditions."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Make Activity's main tab more hero-first by moving release/cadence detail behind an intentional drilldown while preserving Shipping snapshot, primary PR cadence, repo distribution drilldown, Work Log, sync state, and release visibility."
+    allowed_files:
+      - "apple/PRBar/PRs/PRsView.swift"
+      - "apple/PRBar/PRs/ActivityWorkLogView.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - ".codex/ios-tab-hero-detail-simplification/"
+    verify:
+      - "git diff --check -- apple/PRBar/PRs/PRsView.swift apple/PRBar/PRs/ActivityWorkLogView.swift apple/PRBarUITests/PRBarUITests.swift"
+      - "./scripts/ios-build.sh"
+      - "Focused Activity UI tests covering the main Activity tab, Work Log, release/cadence detail, and repo drilldown if feasible."
+      - "XcodeBuildMCP simulator screenshots: Activity top, Activity scrolled detail entry, release/cadence detail, Work Log detail, and repo detail."
+    stop_if:
+      - "Need files outside allowed_files, except PM-owned board/receipt updates."
+      - "Need a new Swift file or Xcode project membership change."
+      - "Release context disappears from Activity instead of moving to a reachable detail route."
+      - "Work Log or repo distribution drilldown regresses."
+      - "Privacy/export, Settings, Growth, repository setup, or live integration behavior needs to change."
+      - "Verification fails twice and the root cause is not isolated."
+      - "Simulator visual inspection is unavailable after attempting XcodeBuildMCP and documented fallback tools."
+    receipt:
+      result: done
+      changed_files:
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - ".codex/ios-tab-hero-detail-simplification/"
+      commands:
+        - cmd: "git diff --check -- apple/PRBar/PRs/PRsView.swift apple/PRBar/PRs/ActivityWorkLogView.swift apple/PRBarUITests/PRBarUITests.swift"
+          status: pass
+        - cmd: "./scripts/ios-build.sh"
+          status: pass
+        - cmd: "IOS_TEST_ONLY='PRBarUITests/PRBarUITests/testActivityReleaseCalendarShowsSelectedReleaseDetail' ./scripts/ios-test.sh"
+          status: pass
+          note: "Release cadence entry opened the detail screen, May 21 release selection worked, and selected-release detail rendered."
+        - cmd: "./scripts/ios-ui-smoke.sh"
+          status: pass
+          note: "2 UI smoke tests passed, including Work Log navigation and tab reachability."
+        - cmd: "XcodeBuildMCP build_run_sim --ui-testing + snapshot_ui + screenshots"
+          status: pass
+          note: "Captured and visually inspected Activity top, scrolled drilldown entries, Release cadence detail, Work Log detail, and repo detail."
+      artifacts:
+        - ".codex/ios-tab-hero-detail-simplification/T003-activity-top.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T003-activity-scrolled-release-entry.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T003-activity-drilldown-entries.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T003-release-cadence-detail.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T003-work-log-detail.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T003-repo-detail.jpg"
+      summary: "Moved Activity's release calendar and selected-release detail behind a Release cadence drilldown while keeping the main Activity tab focused on Shipping snapshot, primary cadence, repo distribution, Release cadence entry, Work Log entry, and sync state. Work Log and repo timeline drilldowns remained reachable."
+      remaining_blockers: []
+      verification_attempts: 1
+      stopped_because: null
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Simplify Share/export hierarchy so the Share tab leads with the public-safe work card and primary export action while privacy/evidence detail remains reachable and at least as protective."
+    allowed_files:
+      - "apple/PRBar/Share/ShareView.swift"
+      - "apple/PRBar/Share/ExportCardSheet.swift"
+      - "apple/PRBar/Share/WorkCardEvidenceView.swift"
+      - "apple/PRBar/Share/WorkCardExport.swift"
+      - "apple/PRBar/Share/WorkCardView.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - ".codex/ios-tab-hero-detail-simplification/"
+    verify:
+      - "git diff --check -- apple/PRBar/Share/ShareView.swift apple/PRBar/Share/ExportCardSheet.swift apple/PRBar/Share/WorkCardEvidenceView.swift apple/PRBar/Share/WorkCardExport.swift apple/PRBar/Share/WorkCardView.swift apple/PRBarUITests/PRBarUITests.swift"
+      - "./scripts/ios-build.sh"
+      - "Focused Share/export UI tests covering Share tab, export sheet, public-safe share/copy actions, and sensitive evidence confirmation if touched."
+      - "XcodeBuildMCP simulator screenshots: Share top, Style & Privacy sheet if touched, export sheet, and evidence side if touched."
+    stop_if:
+      - "Need files outside allowed_files, except PM-owned board/receipt updates."
+      - "The slice depends on unresolved product direction."
+      - "Privacy warnings, sensitive evidence confirmation, or public-safe defaults become weaker."
+      - "The export sheet loses share image, copy image, copy caption, evidence side, or both-sides export behavior."
+      - "Activity, Growth, Settings, or repository setup files need changes."
+      - "Simulator visual inspection is unavailable after attempting XcodeBuildMCP and documented fallback tools."
+    receipt:
+      result: done
+      changed_files:
+        - "apple/PRBar/Share/ShareView.swift"
+        - ".codex/ios-tab-hero-detail-simplification/"
+      commands:
+        - cmd: "git diff --check -- apple/PRBar/Share/ShareView.swift apple/PRBar/Share/ExportCardSheet.swift apple/PRBar/Share/WorkCardEvidenceView.swift apple/PRBar/Share/WorkCardExport.swift apple/PRBar/Share/WorkCardView.swift apple/PRBarUITests/PRBarUITests.swift"
+          status: pass
+        - cmd: "./scripts/ios-build.sh"
+          status: pass
+        - cmd: "IOS_TEST_ONLY='PRBarUITests/PRBarUITests/testShareTabExplainsWorkCardExport' ./scripts/ios-test.sh"
+          status: pass
+          note: "Focused Share/export UI test passed after the hierarchy changes."
+        - cmd: "XcodeBuildMCP build_run_sim --ui-testing + snapshot_ui + screenshots"
+          status: pass
+          note: "Captured and visually inspected Share top and export sheet; fixed an export-button/safety-copy overlap found during screenshot review."
+      artifacts:
+        - ".codex/ios-tab-hero-detail-simplification/T004-share-top.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T004-export-sheet.jpg"
+      summary: "Reordered Share so the tab leads with controls, the public-safe work card, and the primary Export card action. Replaced the long top-level privacy/proof panels with a compact protective status row, leaving detailed proof and advanced evidence exports in the export sheet. Public-safe export, copy image, copy caption, and advanced evidence entry remained reachable."
+      remaining_blockers: []
+      verification_attempts: 3
+      stopped_because: null
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Make Growth's main tab more hero-first by keeping the high-level metrics and chart central while moving provider/provenance/setup detail behind intentional drilldowns or compact disclosures."
+    allowed_files:
+      - "apple/PRBar/Growth/GrowthView.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - ".codex/ios-tab-hero-detail-simplification/"
+    verify:
+      - "git diff --check -- apple/PRBar/Growth/GrowthView.swift apple/PRBarUITests/PRBarUITests.swift"
+      - "./scripts/ios-build.sh"
+      - "Focused Growth UI tests if Growth assertions need updating; otherwise the nearest existing UI smoke covering tab reachability."
+      - "XcodeBuildMCP simulator screenshots: Growth top, Growth scrolled detail entry/disclosure, and any new Growth detail/disclosure screen."
+    stop_if:
+      - "Need files outside allowed_files, except PM-owned board/receipt updates."
+      - "The pass becomes a broad redesign rather than a Growth hero/detail simplification."
+      - "PostHog, dashboard, or setup controls become unreachable."
+      - "Activity, Share, Settings, repository setup, or live integration behavior needs changes."
+      - "Need new dependencies or a design-system rewrite."
+      - "Simulator visual inspection is unavailable after attempting XcodeBuildMCP and documented fallback tools."
+    receipt:
+      result: done
+      changed_files:
+        - "apple/PRBar/Growth/GrowthView.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - ".codex/ios-tab-hero-detail-simplification/"
+      commands:
+        - cmd: "git diff --check -- apple/PRBar/Growth/GrowthView.swift apple/PRBarUITests/PRBarUITests.swift"
+          status: pass
+        - cmd: "./scripts/ios-build.sh"
+          status: pass
+        - cmd: "Focused Growth UI test batch: fixture metrics, range/window, provider setup, Bleep dashboard, refresh state"
+          status: pass
+          note: "All five targeted Growth UI tests passed after moving dashboard/provider/setup detail behind Growth details."
+        - cmd: "XcodeBuildMCP build_run_sim --ui-testing + snapshot_ui + screenshots"
+          status: pass
+          note: "Captured and visually inspected Growth top/entry and Growth details screens."
+      artifacts:
+        - ".codex/ios-tab-hero-detail-simplification/T005-growth-top.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T005-growth-detail-entry.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T005-growth-details.jpg"
+      summary: "Moved Growth dashboard scope, provenance, provider rows, and setup cards behind a Growth details route. The main Growth tab now centers range, metric tiles, chart, and a visible detail entry before Shipping context, while PostHog/Search Console details and setup controls remain reachable."
+      remaining_blockers: []
+      verification_attempts: 3
+      stopped_because: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether the hero/detail simplification satisfies the user's UX outcome."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "Latest simulator screenshots"
+    constraints:
+      - "Read-only."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion if tabs still bury their big-picture hero under fine-grain detail."
+      - "Reject completion if screenshots are missing, stale, or show overlap/truncation."
+      - "Reject completion if privacy/export/setup controls are weakened."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "screenshot-by-screenshot evidence mapping"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      rationale: "The tranche satisfies the user's hero/detail simplification outcome. Activity keeps Shipping rhythm big-picture content and moves release detail to Release cadence. Share leads with the card and export action while preserving privacy/evidence controls. Growth centers metrics/chart and moves dashboard/provider/setup detail to Growth details. Settings remained a hub-style screen from existing work. Tests pass and simulator screenshots prove the changed rendered flows."
+      evidence:
+        - "T003 Activity screenshots: Activity top, release/detail entry, Release cadence detail, Work Log detail, and repo detail."
+        - "T004 Share screenshots: Share top and export sheet after fixing overlap."
+        - "T005 Growth screenshots: Growth top, Growth details entry before Shipping context, and Growth details screen."
+        - "T003 verification: ios-build, focused release cadence UI test, ios-ui-smoke passed."
+        - "T004 verification: ios-build and focused Share export UI test passed."
+        - "T005 verification: ios-build and five focused Growth UI tests passed."
+        - "Board checker passed before final audit."
+      screenshot_evidence:
+        - ".codex/ios-tab-hero-detail-simplification/T003-activity-top.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T003-activity-drilldown-entries.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T003-release-cadence-detail.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T004-share-top.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T004-export-sheet.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T005-growth-top.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T005-growth-detail-entry.jpg"
+        - ".codex/ios-tab-hero-detail-simplification/T005-growth-details.jpg"
+      missing_evidence: []
+      blocked_tasks: []
+      required_board_updates: []
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T005
+    commands:
+      - "git diff --check -- apple/PRBar/Growth/GrowthView.swift apple/PRBarUITests/PRBarUITests.swift"
+      - "./scripts/ios-build.sh"
+      - "Focused Growth UI test batch: fixture metrics, range/window, provider setup, Bleep dashboard, refresh state"
+      - "XcodeBuildMCP build_run_sim --ui-testing + snapshot_ui + screenshots"

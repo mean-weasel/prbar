@@ -20,7 +20,7 @@ final class PRBarUITests: XCTestCase {
 
     app.tapTab("Settings")
     XCTAssertTrue(app.buttons["Account & data"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["Mode"].exists)
+    XCTAssertTrue(app.staticTexts["Manage"].exists)
   }
 
   @MainActor
@@ -60,7 +60,8 @@ final class PRBarUITests: XCTestCase {
     XCTAssertGreaterThanOrEqual(monthPointCount ?? 0, 28)
     XCTAssertLessThanOrEqual(monthPointCount ?? 0, 31)
     XCTAssertTrue(app.staticTexts["Current month"].waitForExistence(timeout: 4))
-    XCTAssertTrue(app.staticTexts["Search Console data can lag by a few days."].exists)
+    app.buttons["growth-details-entry"].tap()
+    app.scrollToStaticText("Search Console data can lag by a few days.")
   }
 
   @MainActor
@@ -71,8 +72,10 @@ final class PRBarUITests: XCTestCase {
 
     app.tapTab("Growth")
 
-    XCTAssertTrue(app.staticTexts["Connect PostHog"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
+    XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 2))
+    app.buttons["growth-details-entry"].tap()
+    app.scrollToStaticText("Connect PostHog")
   }
 
   @MainActor
@@ -87,14 +90,16 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
     XCTAssertTrue(app.staticTexts["7-day window"].exists)
-    XCTAssertTrue(app.staticTexts["Growth data source"].exists)
-    XCTAssertTrue(app.staticTexts["Project"].exists)
-    XCTAssertTrue(app.staticTexts["Source"].exists)
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
     app.assertGrowthChartHasYAxis()
     app.assertGrowthChartHasAxisLabels(xAxis: "Calendar day", yAxis: "Visitors")
+
+    app.buttons["growth-details-entry"].tap()
+    XCTAssertTrue(app.staticTexts["Growth data source"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Project"].exists)
+    XCTAssertTrue(app.staticTexts["Source"].exists)
     app.scrollToStaticText("/studio")
   }
 
@@ -110,6 +115,8 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(refreshButton.waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["Live PostHog"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 2))
+    app.buttons["growth-details-entry"].tap()
     XCTAssertTrue(app.staticTexts["Growth data source"].exists)
     XCTAssertTrue(
       app.staticTexts
@@ -117,9 +124,11 @@ final class PRBarUITests: XCTestCase {
         .firstMatch
         .exists
     )
+    app.navigationBars.buttons.element(boundBy: 0).tap()
     XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 8), "Refresh PostHog growth did not become enabled")
     refreshButton.tap()
     XCTAssertTrue(app.staticTexts["Growth data refreshed"].waitForExistence(timeout: 8))
+    app.buttons["growth-details-entry"].tap()
     XCTAssertTrue(
       app.staticTexts
         .containing(NSPredicate(format: "label CONTAINS %@", "over the last 7 days"))
@@ -211,7 +220,8 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["3 merged"].exists)
     XCTAssertTrue(app.staticTexts["2 active days"].exists)
     XCTAssertTrue(app.staticTexts["PR distribution"].exists)
-    XCTAssertTrue(app.staticTexts["7-day window by merge date"].exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Pick a bar")).firstMatch.exists)
+    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "was busiest")).firstMatch.exists)
     XCTAssertTrue(app.buttons["May 24, selected, 2 pull requests"].exists)
     XCTAssertTrue(app.staticTexts["2 merged on May 24"].exists)
     XCTAssertTrue(app.staticTexts["#39 Connect GitHub auth fallback"].exists)
@@ -230,6 +240,9 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["This week's cadence"].waitForExistence(timeout: 2))
     app.scrollToStaticText("Release cadence")
+    XCTAssertTrue(app.buttons["Release cadence"].waitForExistence(timeout: 2))
+    app.buttons["Release cadence"].tap()
+    XCTAssertTrue(app.staticTexts["Release and tag timing across included repositories."].waitForExistence(timeout: 2))
     app.buttons["May 21, not selected, 1 release"].tap()
     XCTAssertTrue(app.staticTexts["v1.0.0 Tagged v1.0.0"].waitForExistence(timeout: 2))
   }
@@ -262,7 +275,7 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("Share")
     XCTAssertTrue(app.staticTexts["Share a work card"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["1 merged"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["Proof source"].exists)
+    XCTAssertTrue(app.staticTexts["Proof"].exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Last refreshed")).firstMatch.exists)
 
     app.buttons["Export card"].tap()
@@ -305,7 +318,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Repos"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.buttons["Privacy"].exists)
     app.buttons["Repos"].tap()
-    XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Selected repos power Activity, Growth context, and work cards."].waitForExistence(timeout: 2))
   }
 
   @MainActor
@@ -325,10 +338,11 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Not refreshed")).firstMatch.exists)
     XCTAssertTrue(app.buttons["Manage included repos"].exists)
     app.buttons["Manage included repos"].tap()
-    XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Selected repos power Activity, Growth context, and work cards."].waitForExistence(timeout: 2))
     XCTAssertTrue(app.navigationBars.buttons["Account & data"].waitForExistence(timeout: 2))
     app.navigationBars.buttons["Account & data"].tap()
 
+    app.scrollToStaticText("PostHog")
     XCTAssertTrue(app.buttons["PostHog"].exists)
     app.buttons["PostHog"].tap()
     XCTAssertTrue(app.staticTexts["Connection"].waitForExistence(timeout: 2))
@@ -378,7 +392,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Repos"].waitForExistence(timeout: 2))
     app.buttons["Repos"].tap()
 
-    XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Selected repos power Activity, Growth context, and work cards."].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["3 of 5 selected"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["1 repo needs access"].waitForExistence(timeout: 2))
 
@@ -405,6 +419,7 @@ final class PRBarUITests: XCTestCase {
     app.textFields["repo-search-field"].tap()
     app.textFields["repo-search-field"].typeText("docs")
     XCTAssertTrue(app.switches["Include docs-site"].waitForExistence(timeout: 2))
+    app.buttons["Bulk selection"].tap()
     app.tapButton("Select visible", untilStaticTextExists: "4 of 5 selected")
     XCTAssertTrue(app.staticTexts["4 of 5 selected"].waitForExistence(timeout: 2))
   }
@@ -418,7 +433,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.buttons["Edit repos"].waitForExistence(timeout: 2))
     app.buttons["Edit repos"].tap()
-    XCTAssertTrue(app.staticTexts["Included repos power PRs, Releases, and Cards."].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Selected repos power Activity, Growth context, and work cards."].waitForExistence(timeout: 2))
     XCTAssertTrue(app.textFields["repo-search-field"].exists)
   }
 

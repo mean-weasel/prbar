@@ -266,23 +266,54 @@ struct PRsView: View {
       selectedDayMetric
       DailyPRBarChart(days: chartDays)
       RepoDistributionView(rows: repoRows)
-
-      Divider()
-        .padding(.vertical, 2)
-
-      HStack(alignment: .firstTextBaseline) {
-        Label("Release cadence", systemImage: "tag")
-          .font(.headline)
-        Spacer()
-        Text(releaseCadenceSummary)
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(.secondary)
-      }
-
-      RangePickerView(selection: $store.releaseRange)
-      releaseCalendar
-      selectedReleaseCard
+      releaseCadenceEntrySection
     }
+  }
+
+  private var releaseCadenceEntrySection: some View {
+    NavigationLink {
+      ActivityReleaseCadenceView(store: store)
+    } label: {
+      HStack(alignment: .center, spacing: 12) {
+        Image(systemName: "tag")
+          .font(.headline.weight(.semibold))
+          .foregroundStyle(PRBarTheme.accent)
+          .frame(width: 34, height: 34)
+          .background(PRBarTheme.accent.opacity(0.10))
+          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+        VStack(alignment: .leading, spacing: 4) {
+          HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("Release cadence")
+              .font(.headline)
+              .foregroundStyle(.primary)
+
+            Text(releaseCadenceSummary)
+              .font(.caption.weight(.semibold))
+              .foregroundStyle(.secondary)
+          }
+
+          Text(selectedReleaseSummary)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+
+        Spacer(minLength: 8)
+
+        Image(systemName: "chevron.right")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.tertiary)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(14)
+      .background(Color(.secondarySystemBackground))
+      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("activity-release-cadence-entry")
+    .accessibilityLabel("Release cadence")
+    .accessibilityHint("Shows release and tag timing details.")
   }
 
   @ViewBuilder
@@ -476,6 +507,14 @@ struct PRsView: View {
     return count == 1 ? "1 release" : "\(count) releases"
   }
 
+  private var selectedReleaseSummary: String {
+    guard let selectedRelease else {
+      return selectedReleaseEmptyDetail
+    }
+
+    return "\(selectedRelease.tag) \(selectedRelease.title)"
+  }
+
   private var latestWorkEmptyDetail: String {
     if store.includedRepositories.isEmpty {
       return "Choose repos to decide which GitHub activity PRBar should sync."
@@ -502,6 +541,153 @@ struct PRsView: View {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(secondsFromGMT: 0)!
     return calendar
+  }
+}
+
+private struct ActivityReleaseCadenceView: View {
+  @Bindable var store: PRBarStore
+
+  private var releaseCalendarDays: [CalendarDay] {
+    CalendarDay.days(endingAt: store.activityAnchorDate, range: store.releaseRange).map { day in
+      CalendarDay(date: day.date, count: releases(on: day.date).count)
+    }
+  }
+
+  private var selectedRelease: ReleaseMoment? {
+    releases(on: store.selectedReleaseDate).first
+      ?? store.releases.first { $0.id == store.selectedReleaseID }
+  }
+
+  var body: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 20) {
+        header
+        releaseSummary
+        RangePickerView(selection: $store.releaseRange)
+        releaseCalendar
+        selectedReleaseCard
+      }
+      .padding()
+    }
+    .navigationTitle("Release cadence")
+    .navigationBarTitleDisplayMode(.inline)
+  }
+
+  private var header: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text("Release cadence")
+        .font(.largeTitle.weight(.bold))
+      Text("Release and tag timing across included repositories.")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+
+  private var releaseSummary: some View {
+    HStack(spacing: 10) {
+      ActivitySummaryMetric(
+        value: releaseCadenceSummary,
+        label: store.releaseRange.windowLabel,
+        systemImage: "tag"
+      )
+
+      ActivitySummaryMetric(
+        value: selectedReleaseDateLabel,
+        label: "Selected",
+        systemImage: "calendar"
+      )
+    }
+  }
+
+  @ViewBuilder
+  private var releaseCalendar: some View {
+    Group {
+      if store.releaseRange == .month {
+        MonthHeatMapView(days: releaseCalendarDays, selectedDate: $store.selectedReleaseDate, countLabel: releaseCountLabel)
+      } else {
+        CalendarStripView(days: releaseCalendarDays, selectedDate: $store.selectedReleaseDate, countLabel: releaseCountLabel)
+      }
+    }
+    .onChange(of: store.selectedReleaseDate) { _, date in
+      store.selectedReleaseID = releases(on: date).first?.id
+    }
+  }
+
+  @ViewBuilder
+  private var selectedReleaseCard: some View {
+    if let selectedRelease {
+      VStack(alignment: .leading, spacing: 10) {
+        Text("Selected release")
+          .font(.headline)
+
+        Text("\(selectedRelease.tag) \(selectedRelease.title)")
+          .font(.title3.weight(.bold))
+
+        Text(repository(for: selectedRelease.repoID)?.name ?? selectedRelease.repoID)
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+
+        Text(selectedRelease.notes)
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(14)
+      .background(Color(.secondarySystemBackground))
+      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    } else {
+      ActivityEmptyStateView(
+        title: "No release selected",
+        detail: selectedReleaseEmptyDetail,
+        systemImage: "tag",
+        identifier: "selected-release-empty-state"
+      )
+    }
+  }
+
+  private var releaseCadenceSummary: String {
+    let count = releaseCalendarDays.reduce(0) { $0 + $1.count }
+    return count == 1 ? "1 release" : "\(count) releases"
+  }
+
+  private var selectedReleaseDateLabel: String {
+    shortDateLabel(for: store.selectedReleaseDate)
+  }
+
+  private var selectedReleaseEmptyDetail: String {
+    if store.includedRepositories.isEmpty {
+      return "Choose repos before looking for release details."
+    }
+    if store.isRefreshingActivity {
+      return "Syncing included repositories. Release details will appear when refresh finishes."
+    }
+    return "Choose a day with releases or refresh GitHub activity."
+  }
+
+  private func releases(on date: Date) -> [ReleaseMoment] {
+    let includedIDs = Set(store.includedRepositories.map(\.id))
+    return store.releases.filter {
+      includedIDs.contains($0.repoID) && CalendarDay.isSameDay($0.date, date)
+    }
+  }
+
+  private func repository(for id: Repository.ID) -> Repository? {
+    store.repositories.first { $0.id == id }
+  }
+
+  private func releaseCountLabel(for count: Int) -> String {
+    count == 1 ? "release" : "releases"
+  }
+
+  private func shortDateLabel(for date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.dateFormat = "MMM d"
+    return formatter.string(from: date)
   }
 }
 
