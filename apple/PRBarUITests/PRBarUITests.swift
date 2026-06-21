@@ -47,7 +47,10 @@ final class PRBarUITests: XCTestCase {
     let chartValue = app.otherElements["growth-trend-chart"].firstMatch.value as? String
     XCTAssertTrue(chartValue?.contains("bar chart") == true)
     XCTAssertTrue(chartValue?.contains("selected metric Active users") == true)
-    XCTAssertTrue(app.staticTexts["Shipping context"].exists)
+    XCTAssertFalse(app.staticTexts["Shipping context"].exists)
+    XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 2))
+    app.buttons["growth-details-entry"].tap()
+    XCTAssertTrue(app.staticTexts["Shipping context"].waitForExistence(timeout: 2))
   }
 
   @MainActor

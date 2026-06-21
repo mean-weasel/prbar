@@ -44,8 +44,6 @@ struct GrowthView: View {
           }
 
           growthDetailsEntry
-
-          shippingContext
         }
         .padding()
       }
@@ -240,6 +238,7 @@ struct GrowthView: View {
       VStack(alignment: .leading, spacing: PRBarTheme.sectionSpacing) {
         dashboardScopeStrip
         growthProvenancePanel
+        shippingContext
         providerSections
         setupCards
       }
