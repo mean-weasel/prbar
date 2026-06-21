@@ -8,10 +8,15 @@ final class PRBarUITests: XCTestCase {
     app.launch()
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Shipping snapshot"].waitForExistence(timeout: 2))
+    XCTAssertFalse(app.staticTexts["#39 Connect GitHub auth fallback"].isHittable)
+    XCTAssertFalse(app.staticTexts["v1.4.0 GitHub auth fallback"].isHittable)
     XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
     XCTAssertFalse(app.staticTexts["Latest meaningful work"].exists)
     app.openWorkLog()
     XCTAssertTrue(app.workLogDetailText().waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["#39 Connect GitHub auth fallback"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["v1.4.0 GitHub auth fallback"].exists)
     app.navigationBars.buttons.element(boundBy: 0).tap()
     XCTAssertFalse(app.tabBars.buttons["Releases"].exists)
 

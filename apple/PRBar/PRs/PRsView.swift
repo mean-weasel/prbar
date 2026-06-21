@@ -217,20 +217,6 @@ struct PRsView: View {
           systemImage: "tag"
         )
       }
-
-      if includedPullRequests.isEmpty == false {
-        ActivityLatestRow(
-          label: "PR",
-          value: "#\(includedPullRequests[0].number) \(includedPullRequests[0].title)"
-        )
-      }
-
-      if let release = groupedReleases.first?.releases.first {
-        ActivityLatestRow(
-          label: "Release",
-          value: "\(release.tag) \(release.title)"
-        )
-      }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .prbarSurface()
@@ -700,25 +686,6 @@ private struct ActivitySummaryMetric: View {
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .prbarSurface()
-  }
-}
-
-private struct ActivityLatestRow: View {
-  var label: String
-  var value: String
-
-  var body: some View {
-    HStack(alignment: .firstTextBaseline, spacing: 10) {
-      Text(label)
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.secondary)
-        .frame(width: 86, alignment: .leading)
-
-      Text(value)
-        .font(.subheadline)
-        .lineLimit(2)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
   }
 }
 
