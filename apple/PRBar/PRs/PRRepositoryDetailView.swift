@@ -117,6 +117,14 @@ struct PRRepositoryDetailView: View {
         Text("\(range.windowLabel) by merge date")
           .font(.caption)
           .foregroundStyle(.secondary)
+
+        Text("Pick a bar to inspect daily PRs.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+
+        Text(busiestDaySummary)
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.secondary)
       }
 
       if range == .month {
@@ -173,6 +181,15 @@ struct PRRepositoryDetailView: View {
 
   private func pullRequests(on date: Date) -> [PullRequest] {
     sortedPullRequests.filter { CalendarDay.isSameDay($0.mergedAt, date) }
+  }
+
+  private var busiestDaySummary: String {
+    guard let busiestDay = calendarDays.max(by: { $0.count < $1.count }), busiestDay.count > 0 else {
+      return "No merged PRs in this window yet."
+    }
+
+    let countText = busiestDay.count == 1 ? "1 merged PR" : "\(busiestDay.count) merged PRs"
+    return "\(monthDayLabel(for: busiestDay.date)) was busiest with \(countText)."
   }
 
   private func monthDayLabel(for date: Date) -> String {
@@ -258,9 +275,7 @@ private struct RepoActivityMetric: View {
         .monospacedDigit()
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(12)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .prbarSurface()
   }
 }
 
@@ -301,10 +316,10 @@ private struct RepoPRDistributionChart: View {
           .frame(height: 126, alignment: .bottom)
           .padding(.horizontal, 4)
           .padding(.vertical, 8)
-          .background(isSelected ? PRBarTheme.accent.opacity(0.12) : Color(.secondarySystemBackground))
-          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+          .background(isSelected ? PRBarTheme.selectedSurfaceBackground : PRBarTheme.surfaceBackground)
+          .clipShape(RoundedRectangle(cornerRadius: PRBarTheme.surfaceCornerRadius, style: .continuous))
           .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: PRBarTheme.surfaceCornerRadius, style: .continuous)
               .stroke(isSelected ? PRBarTheme.accent.opacity(0.65) : Color.clear, lineWidth: 1)
         }
         }
@@ -349,9 +364,7 @@ private struct RepoActivityPullRequestRow: View {
         .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(12)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .prbarSurface()
   }
 }
 
