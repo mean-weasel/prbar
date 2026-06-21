@@ -158,7 +158,9 @@ struct RepositorySetupView: View {
     }
     .navigationTitle(title)
     .safeAreaInset(edge: .bottom) {
-      selectionSummaryBar
+      if showsFinishButton {
+        selectionSummaryBar
+      }
     }
     .toolbar {
       if showsFinishButton {

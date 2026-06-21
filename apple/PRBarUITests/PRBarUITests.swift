@@ -37,8 +37,6 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("Growth")
 
     XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["Growth dashboard"].exists)
-    XCTAssertTrue(app.staticTexts["7-day window"].exists)
     XCTAssertTrue(app.staticTexts["Sample data"].exists)
     XCTAssertTrue(app.staticTexts["Active users"].exists)
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
@@ -49,8 +47,12 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(chartValue?.contains("selected metric Active users") == true)
     XCTAssertFalse(app.staticTexts["Shipping context"].exists)
     XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["growth-details-entry"].label.contains("7-day window"))
+    XCTAssertTrue(app.buttons["growth-details-entry"].label.contains("Sample data"))
     app.buttons["growth-details-entry"].tap()
     XCTAssertTrue(app.staticTexts["Shipping context"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Growth dashboard"].exists)
+    XCTAssertTrue(app.staticTexts["7-day window"].exists)
   }
 
   @MainActor
@@ -70,8 +72,9 @@ final class PRBarUITests: XCTestCase {
       .flatMap { Int($0.components(separatedBy: " points").first ?? "") }
     XCTAssertGreaterThanOrEqual(monthPointCount ?? 0, 28)
     XCTAssertLessThanOrEqual(monthPointCount ?? 0, 31)
-    XCTAssertTrue(app.staticTexts["Current month"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.buttons["growth-details-entry"].label.contains("Current month"))
     app.buttons["growth-details-entry"].tap()
+    XCTAssertTrue(app.staticTexts["Current month"].waitForExistence(timeout: 4))
     app.scrollToStaticText("Search Console data can lag by a few days.")
   }
 
@@ -100,7 +103,6 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Growth"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
-    XCTAssertTrue(app.staticTexts["7-day window"].exists)
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
@@ -108,6 +110,7 @@ final class PRBarUITests: XCTestCase {
     app.assertGrowthChartHasAxisLabels(xAxis: "Calendar day", yAxis: "Visitors")
 
     app.buttons["growth-details-entry"].tap()
+    XCTAssertTrue(app.staticTexts["7-day window"].exists)
     XCTAssertTrue(app.staticTexts["Growth data source"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Project"].exists)
     XCTAssertTrue(app.staticTexts["Source"].exists)
@@ -138,8 +141,9 @@ final class PRBarUITests: XCTestCase {
     app.navigationBars.buttons.element(boundBy: 0).tap()
     XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 8), "Refresh PostHog growth did not become enabled")
     refreshButton.tap()
-    XCTAssertTrue(app.staticTexts["Growth data refreshed"].waitForExistence(timeout: 8))
+    XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 8))
     app.buttons["growth-details-entry"].tap()
+    XCTAssertTrue(app.staticTexts["Growth data refreshed"].waitForExistence(timeout: 8))
     XCTAssertTrue(
       app.staticTexts
         .containing(NSPredicate(format: "label CONTAINS %@", "over the last 7 days"))

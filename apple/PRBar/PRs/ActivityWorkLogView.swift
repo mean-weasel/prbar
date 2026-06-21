@@ -38,6 +38,9 @@ struct ActivityWorkLogView: View {
       }
     }
     .listStyle(.insetGrouped)
+    .safeAreaInset(edge: .bottom) {
+      Color.clear.frame(height: PRBarTheme.tabContentBottomPadding)
+    }
     .navigationTitle("Work log")
     .navigationBarTitleDisplayMode(.inline)
   }

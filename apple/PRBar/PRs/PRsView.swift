@@ -122,6 +122,7 @@ struct PRsView: View {
           }
         }
         .padding()
+        .padding(.bottom, PRBarTheme.tabContentBottomPadding)
       }
       .refreshable {
         await store.refreshActivity()
@@ -544,6 +545,7 @@ private struct ActivityReleaseCadenceView: View {
         selectedReleaseCard
       }
       .padding()
+      .padding(.bottom, PRBarTheme.tabContentBottomPadding)
     }
     .navigationTitle("Release cadence")
     .navigationBarTitleDisplayMode(.inline)

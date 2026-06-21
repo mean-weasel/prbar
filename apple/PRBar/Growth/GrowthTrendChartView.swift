@@ -5,7 +5,7 @@ struct GrowthTrendChartView: View {
   var range: ActivityRange
   var anchorDate: Date
   private var chartHeight: CGFloat {
-    axisScale.maximum <= 1 ? 112 : 148
+    axisScale.maximum <= 1 ? 76 : 148
   }
 
   private var points: [GrowthMetricPoint] {

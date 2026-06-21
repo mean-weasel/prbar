@@ -35,6 +35,8 @@ struct GrowthView: View {
 
           metricTiles
 
+          growthDetailsEntry
+
           if let selectedMetric {
             GrowthTrendChartView(
               metric: selectedMetric,
@@ -42,10 +44,9 @@ struct GrowthView: View {
               anchorDate: snapshot.anchorDate
             )
           }
-
-          growthDetailsEntry
         }
         .padding()
+        .padding(.bottom, PRBarTheme.tabContentBottomPadding)
       }
       .refreshable {
         await store.refreshGrowth()
@@ -186,51 +187,42 @@ struct GrowthView: View {
     NavigationLink {
       growthDetailsView
     } label: {
-      HStack(alignment: .center, spacing: 12) {
+      HStack(alignment: .center, spacing: 10) {
         Image(systemName: dataSourceSymbol(for: snapshot.dataSource))
-          .font(.headline)
+          .font(.subheadline.weight(.semibold))
           .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
-          .frame(width: 28, height: 28)
+          .frame(width: 24, height: 24)
 
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
           Text("Growth details")
-            .font(.headline)
+            .font(.subheadline.weight(.semibold))
             .foregroundStyle(.primary)
-          HStack(spacing: PRBarTheme.compactSpacing) {
-            detailChip("Growth dashboard")
-            detailChip(store.growthRange.windowLabel)
-            detailChip(snapshot.dataSource.displayName)
-          }
-          Text(growthProvenanceTitle)
+          Text("\(store.growthRange.windowLabel) / \(snapshot.dataSource.displayName)")
             .font(.caption.weight(.semibold))
             .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
         }
 
         Spacer(minLength: 8)
 
-        VStack(alignment: .trailing, spacing: 4) {
-          Text(growthUpdatedLabel)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(store.growthRefreshStatus.isFailed ? .orange : .secondary)
-            .multilineTextAlignment(.trailing)
-          Image(systemName: "chevron.right")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.tertiary)
-        }
+        Text(growthUpdatedLabel)
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(store.growthRefreshStatus.isFailed ? .orange : .secondary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.82)
+
+        Image(systemName: "chevron.right")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.tertiary)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .prbarSurface()
+      .padding(12)
+      .background(PRBarTheme.surfaceBackground)
+      .clipShape(RoundedRectangle(cornerRadius: PRBarTheme.surfaceCornerRadius, style: .continuous))
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier("growth-details-entry")
-  }
-
-  private func detailChip(_ title: String) -> some View {
-    Text(title)
-      .font(.caption.weight(.semibold))
-      .foregroundStyle(.secondary)
-      .lineLimit(1)
-      .minimumScaleFactor(0.82)
   }
 
   private var growthDetailsView: some View {
@@ -243,6 +235,7 @@ struct GrowthView: View {
         setupCards
       }
       .padding()
+      .padding(.bottom, PRBarTheme.tabContentBottomPadding)
     }
     .navigationTitle("Growth details")
     .navigationBarTitleDisplayMode(.inline)
