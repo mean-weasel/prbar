@@ -112,33 +112,27 @@ struct ShareView: View {
   private var exportReadinessPanel: some View {
     let export = currentExport
 
-    return HStack(alignment: .top, spacing: 10) {
+    return HStack(spacing: 8) {
       Image(systemName: export.includesPrivateEvidence ? "lock.shield" : "checkmark.shield")
         .foregroundStyle(export.includesPrivateEvidence ? .orange : PRBarTheme.accent)
 
-      VStack(alignment: .leading, spacing: 3) {
-        Text(export.includesPrivateEvidence ? "Review evidence before sharing" : "Public-safe preview ready")
-          .font(.subheadline.weight(.semibold))
-        Text(export.includesPrivateEvidence ? "Evidence stays behind review/export choices." : "Evidence stays optional.")
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .lineLimit(2)
-      }
+      Text(export.includesPrivateEvidence ? "Evidence review available" : "Public-safe preview")
+        .font(.caption.weight(.semibold))
 
       Spacer(minLength: 8)
 
-      VStack(alignment: .trailing, spacing: 3) {
-        Text("Proof")
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(.secondary)
-        Text(export.freshness)
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(export.freshness.hasPrefix("Cached") ? .orange : .secondary)
-          .multilineTextAlignment(.trailing)
-      }
+      Text("Proof")
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.secondary)
+
+      Text(export.freshness)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(export.freshness.hasPrefix("Cached") ? .orange : .secondary)
+        .lineLimit(1)
+        .minimumScaleFactor(0.82)
     }
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .prbarSurface()
+    .padding(.horizontal, 4)
+    .accessibilityElement(children: .combine)
   }
 
   private var currentExport: WorkCardExport {

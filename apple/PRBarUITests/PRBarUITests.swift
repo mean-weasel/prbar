@@ -269,6 +269,8 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Evidence"].exists)
     XCTAssertTrue(app.buttons["Style"].exists)
     XCTAssertTrue(app.staticTexts["Public side"].exists)
+    XCTAssertFalse(app.staticTexts["Review evidence before sharing"].isHittable)
+    XCTAssertTrue(app.staticTexts["Proof"].exists)
     app.buttons["Export card"].tap()
     XCTAssertTrue(app.staticTexts["Share public-safe card"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.buttons["Share public-safe image"].exists)
@@ -283,7 +285,10 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
     app.buttons["Refresh activity"].tap()
+    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 4))
+    app.buttons["Work log"].tap()
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
+    app.navigationBars.buttons.element(boundBy: 0).tap()
 
     app.tapTab("Share")
     XCTAssertTrue(app.staticTexts["Share a work card"].waitForExistence(timeout: 2))
@@ -305,6 +310,8 @@ final class PRBarUITests: XCTestCase {
     seedApp.launchArguments = ["--ui-testing", "--ui-testing-seed-activity-cache"]
     seedApp.launch()
 
+    XCTAssertTrue(seedApp.buttons["Work log"].waitForExistence(timeout: 4))
+    seedApp.buttons["Work log"].tap()
     XCTAssertTrue(seedApp.staticTexts["#424 Cached relaunch PR"].waitForExistence(timeout: 4))
     seedApp.terminate()
 
