@@ -43,17 +43,9 @@ struct GrowthView: View {
             )
           }
 
+          growthDetailsEntry
+
           shippingContext
-
-          compactProvenanceRow
-
-          dashboardScopeStrip
-
-          growthProvenancePanel
-
-          providerSections
-
-          setupCards
         }
         .padding()
       }
@@ -192,6 +184,73 @@ struct GrowthView: View {
     }
     .accessibilityElement(children: .combine)
     .accessibilityLabel("\(snapshot.dataSource.displayName), updated \(growthUpdatedLabel)")
+  }
+
+  private var growthDetailsEntry: some View {
+    NavigationLink {
+      growthDetailsView
+    } label: {
+      HStack(alignment: .center, spacing: 12) {
+        Image(systemName: dataSourceSymbol(for: snapshot.dataSource))
+          .font(.headline)
+          .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
+          .frame(width: 28, height: 28)
+
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Growth details")
+            .font(.headline)
+            .foregroundStyle(.primary)
+          HStack(spacing: 6) {
+            detailChip("Growth dashboard")
+            detailChip(store.growthRange.windowLabel)
+            detailChip(snapshot.dataSource.displayName)
+          }
+          Text(growthProvenanceTitle)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+        }
+
+        Spacer(minLength: 8)
+
+        VStack(alignment: .trailing, spacing: 4) {
+          Text(growthUpdatedLabel)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(store.growthRefreshStatus.isFailed ? .orange : .secondary)
+            .multilineTextAlignment(.trailing)
+          Image(systemName: "chevron.right")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.tertiary)
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(14)
+      .background(Color(.secondarySystemBackground))
+      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("growth-details-entry")
+  }
+
+  private func detailChip(_ title: String) -> some View {
+    Text(title)
+      .font(.caption.weight(.semibold))
+      .foregroundStyle(.secondary)
+      .lineLimit(1)
+      .minimumScaleFactor(0.82)
+  }
+
+  private var growthDetailsView: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 16) {
+        dashboardScopeStrip
+        growthProvenancePanel
+        providerSections
+        setupCards
+      }
+      .padding()
+    }
+    .navigationTitle("Growth details")
+    .navigationBarTitleDisplayMode(.inline)
   }
 
   private var metricTiles: some View {
@@ -446,6 +505,15 @@ struct GrowthView: View {
     formatter.dateStyle = .medium
     formatter.timeStyle = .short
     return formatter.string(from: date)
+  }
+}
+
+private extension GrowthRefreshStatus {
+  var isFailed: Bool {
+    if case .failed = self {
+      return true
+    }
+    return false
   }
 }
 

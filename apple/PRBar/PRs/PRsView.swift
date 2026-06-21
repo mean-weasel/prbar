@@ -107,20 +107,19 @@ struct PRsView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 22) {
           if shouldPromoteSyncStatus {
             syncStatus
           }
 
           header
           pulseSection
+          cadenceSection
+          workLogEntrySection
 
           if shouldPromoteSyncStatus == false {
             syncStatus
           }
-
-          cadenceSection
-          latestWorkSection
         }
         .padding()
       }
@@ -184,13 +183,25 @@ struct PRsView: View {
 
   private var pulseSection: some View {
     VStack(alignment: .leading, spacing: 14) {
-      HStack(alignment: .firstTextBaseline) {
-        Text("Today's pulse")
-          .font(.headline)
+      HStack(alignment: .top, spacing: 12) {
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Shipping snapshot")
+            .font(.title3.weight(.bold))
+          Text(snapshotSummary)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+
         Spacer()
+
         Text(store.activitySourceLabel)
-          .font(.caption.weight(.semibold))
+          .font(.caption2.weight(.semibold))
           .foregroundStyle(store.isUsingSampleData ? PRBarTheme.accent : .secondary)
+          .padding(.horizontal, 8)
+          .padding(.vertical, 5)
+          .background((store.isUsingSampleData ? PRBarTheme.accent : Color.secondary).opacity(0.10))
+          .clipShape(Capsule())
       }
 
       HStack(spacing: 10) {
@@ -227,6 +238,13 @@ struct PRsView: View {
     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
   }
 
+  private var snapshotSummary: String {
+    let pullRequestText = selectedPullRequests.count == 1 ? "1 PR" : "\(selectedPullRequests.count) PRs"
+    let releaseCount = releases(on: store.selectedReleaseDate).count
+    let releaseText = releaseCount == 1 ? "1 release" : "\(releaseCount) releases"
+    return "\(pullRequestText) merged and \(releaseText) visible in this rhythm window."
+  }
+
   @ViewBuilder
   private var prCalendar: some View {
     if store.prRange == .month {
@@ -248,23 +266,54 @@ struct PRsView: View {
       selectedDayMetric
       DailyPRBarChart(days: chartDays)
       RepoDistributionView(rows: repoRows)
-
-      Divider()
-        .padding(.vertical, 2)
-
-      HStack(alignment: .firstTextBaseline) {
-        Label("Release cadence", systemImage: "tag")
-          .font(.headline)
-        Spacer()
-        Text(releaseCadenceSummary)
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(.secondary)
-      }
-
-      RangePickerView(selection: $store.releaseRange)
-      releaseCalendar
-      selectedReleaseCard
+      releaseCadenceEntrySection
     }
+  }
+
+  private var releaseCadenceEntrySection: some View {
+    NavigationLink {
+      ActivityReleaseCadenceView(store: store)
+    } label: {
+      HStack(alignment: .center, spacing: 12) {
+        Image(systemName: "tag")
+          .font(.headline.weight(.semibold))
+          .foregroundStyle(PRBarTheme.accent)
+          .frame(width: 34, height: 34)
+          .background(PRBarTheme.accent.opacity(0.10))
+          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+        VStack(alignment: .leading, spacing: 4) {
+          HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("Release cadence")
+              .font(.headline)
+              .foregroundStyle(.primary)
+
+            Text(releaseCadenceSummary)
+              .font(.caption.weight(.semibold))
+              .foregroundStyle(.secondary)
+          }
+
+          Text(selectedReleaseSummary)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+
+        Spacer(minLength: 8)
+
+        Image(systemName: "chevron.right")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.tertiary)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(14)
+      .background(Color(.secondarySystemBackground))
+      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("activity-release-cadence-entry")
+    .accessibilityLabel("Release cadence")
+    .accessibilityHint("Shows release and tag timing details.")
   }
 
   @ViewBuilder
@@ -313,33 +362,44 @@ struct PRsView: View {
     }
   }
 
-  private var latestWorkSection: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      ActivitySectionHeader(
-        title: "Latest meaningful work",
-        detail: "PRs, tags, and release notes in one recent stream."
-      )
+  private var workLogEntrySection: some View {
+    NavigationLink {
+      ActivityWorkLogView(rows: latestWorkRows, emptyDetail: latestWorkEmptyDetail)
+    } label: {
+      HStack(alignment: .center, spacing: 12) {
+        Image(systemName: "list.bullet.rectangle")
+          .font(.headline.weight(.semibold))
+          .foregroundStyle(PRBarTheme.accent)
+          .frame(width: 34, height: 34)
+          .background(PRBarTheme.accent.opacity(0.10))
+          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-      if latestWorkRows.isEmpty {
-        ActivityEmptyStateView(
-          title: "No recent activity",
-          detail: latestWorkEmptyDetail,
-          systemImage: "tray",
-          identifier: "activity-empty-state"
-        )
-      } else {
-        VStack(spacing: 0) {
-          ForEach(latestWorkRows) { row in
-            ActivityWorkRowView(row: row, dateLabel: shortDateLabel(for: row.happenedAt))
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Work log")
+            .font(.headline)
+            .foregroundStyle(.primary)
 
-            if row.id != latestWorkRows.last?.id {
-              Divider()
-                .padding(.leading, 34)
-            }
-          }
+          Text(workLogSummary)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
         }
+
+        Spacer(minLength: 8)
+
+        Image(systemName: "chevron.right")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.tertiary)
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(14)
+      .background(Color(.secondarySystemBackground))
+      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
+    .buttonStyle(.plain)
+    .accessibilityIdentifier("activity-work-log-entry")
+    .accessibilityLabel("Work log")
+    .accessibilityHint("Shows detailed pull requests, tags, and releases.")
   }
 
   private var selectedDayMetric: some View {
@@ -362,36 +422,6 @@ struct PRsView: View {
     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
   }
 
-  private var recentPRs: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Text("Recent PRs")
-        .font(.headline)
-
-      if includedPullRequests.isEmpty {
-        ActivityEmptyStateView(
-          title: prEmptyStateTitle,
-          detail: prEmptyStateDetail,
-          systemImage: "arrow.triangle.pull",
-          identifier: "prs-empty-state"
-        )
-      } else {
-        ForEach(includedPullRequests.prefix(5)) { pullRequest in
-          VStack(alignment: .leading, spacing: 4) {
-            Text("#\(pullRequest.number) \(pullRequest.title)")
-              .font(.subheadline.weight(.semibold))
-            Text(repository(for: pullRequest.repoID)?.name ?? pullRequest.repoID)
-              .font(.caption)
-              .foregroundStyle(.secondary)
-          }
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .padding(12)
-          .background(Color(.secondarySystemBackground))
-          .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        }
-      }
-    }
-  }
-
   private func pullRequests(on date: Date) -> [PullRequest] {
     let includedIDs = Set(store.includedRepositories.map(\.id))
     return store.pullRequests.filter {
@@ -404,32 +434,6 @@ struct PRsView: View {
     return store.releases.filter {
       includedIDs.contains($0.repoID) && CalendarDay.isSameDay($0.date, date)
     }
-  }
-
-  private var prEmptyStateTitle: String {
-    if store.includedRepositories.isEmpty {
-      return "No repos selected"
-    }
-    return "No merged PRs"
-  }
-
-  private var prEmptyStateDetail: String {
-    if store.includedRepositories.isEmpty {
-      return "Choose repos to decide which GitHub activity PRBar should sync."
-    }
-    if store.isRefreshingActivity {
-      return "Syncing included repositories. Merged PRs will appear here when refresh finishes."
-    }
-    if store.activityRepositoryIssues.isEmpty == false {
-      return "Synced available repositories, but none have merged PRs yet. Review the partial sync note above."
-    }
-    if store.activityRefreshIssue != nil {
-      return "Refresh did not finish. Existing PR data stays visible when available."
-    }
-    if store.lastActivityRefreshAt != nil {
-      return "No merged PRs were found in selected repos for this window."
-    }
-    return "Refresh GitHub activity to load merged PRs for selected repos."
   }
 
   private func repository(for id: Repository.ID) -> Repository? {
@@ -503,6 +507,14 @@ struct PRsView: View {
     return count == 1 ? "1 release" : "\(count) releases"
   }
 
+  private var selectedReleaseSummary: String {
+    guard let selectedRelease else {
+      return selectedReleaseEmptyDetail
+    }
+
+    return "\(selectedRelease.tag) \(selectedRelease.title)"
+  }
+
   private var latestWorkEmptyDetail: String {
     if store.includedRepositories.isEmpty {
       return "Choose repos to decide which GitHub activity PRBar should sync."
@@ -516,10 +528,166 @@ struct PRsView: View {
     return "Refresh GitHub activity to load recent work from selected repos."
   }
 
+  private var workLogSummary: String {
+    guard latestWorkRows.isEmpty == false else {
+      return latestWorkEmptyDetail
+    }
+
+    let itemText = latestWorkRows.count == 1 ? "1 recent item" : "\(latestWorkRows.count) recent items"
+    return "\(itemText) across pull requests, tags, and releases."
+  }
+
   private var fixtureCalendar: Calendar {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(secondsFromGMT: 0)!
     return calendar
+  }
+}
+
+private struct ActivityReleaseCadenceView: View {
+  @Bindable var store: PRBarStore
+
+  private var releaseCalendarDays: [CalendarDay] {
+    CalendarDay.days(endingAt: store.activityAnchorDate, range: store.releaseRange).map { day in
+      CalendarDay(date: day.date, count: releases(on: day.date).count)
+    }
+  }
+
+  private var selectedRelease: ReleaseMoment? {
+    releases(on: store.selectedReleaseDate).first
+      ?? store.releases.first { $0.id == store.selectedReleaseID }
+  }
+
+  var body: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 20) {
+        header
+        releaseSummary
+        RangePickerView(selection: $store.releaseRange)
+        releaseCalendar
+        selectedReleaseCard
+      }
+      .padding()
+    }
+    .navigationTitle("Release cadence")
+    .navigationBarTitleDisplayMode(.inline)
+  }
+
+  private var header: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text("Release cadence")
+        .font(.largeTitle.weight(.bold))
+      Text("Release and tag timing across included repositories.")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+
+  private var releaseSummary: some View {
+    HStack(spacing: 10) {
+      ActivitySummaryMetric(
+        value: releaseCadenceSummary,
+        label: store.releaseRange.windowLabel,
+        systemImage: "tag"
+      )
+
+      ActivitySummaryMetric(
+        value: selectedReleaseDateLabel,
+        label: "Selected",
+        systemImage: "calendar"
+      )
+    }
+  }
+
+  @ViewBuilder
+  private var releaseCalendar: some View {
+    Group {
+      if store.releaseRange == .month {
+        MonthHeatMapView(days: releaseCalendarDays, selectedDate: $store.selectedReleaseDate, countLabel: releaseCountLabel)
+      } else {
+        CalendarStripView(days: releaseCalendarDays, selectedDate: $store.selectedReleaseDate, countLabel: releaseCountLabel)
+      }
+    }
+    .onChange(of: store.selectedReleaseDate) { _, date in
+      store.selectedReleaseID = releases(on: date).first?.id
+    }
+  }
+
+  @ViewBuilder
+  private var selectedReleaseCard: some View {
+    if let selectedRelease {
+      VStack(alignment: .leading, spacing: 10) {
+        Text("Selected release")
+          .font(.headline)
+
+        Text("\(selectedRelease.tag) \(selectedRelease.title)")
+          .font(.title3.weight(.bold))
+
+        Text(repository(for: selectedRelease.repoID)?.name ?? selectedRelease.repoID)
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+
+        Text(selectedRelease.notes)
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(14)
+      .background(Color(.secondarySystemBackground))
+      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    } else {
+      ActivityEmptyStateView(
+        title: "No release selected",
+        detail: selectedReleaseEmptyDetail,
+        systemImage: "tag",
+        identifier: "selected-release-empty-state"
+      )
+    }
+  }
+
+  private var releaseCadenceSummary: String {
+    let count = releaseCalendarDays.reduce(0) { $0 + $1.count }
+    return count == 1 ? "1 release" : "\(count) releases"
+  }
+
+  private var selectedReleaseDateLabel: String {
+    shortDateLabel(for: store.selectedReleaseDate)
+  }
+
+  private var selectedReleaseEmptyDetail: String {
+    if store.includedRepositories.isEmpty {
+      return "Choose repos before looking for release details."
+    }
+    if store.isRefreshingActivity {
+      return "Syncing included repositories. Release details will appear when refresh finishes."
+    }
+    return "Choose a day with releases or refresh GitHub activity."
+  }
+
+  private func releases(on date: Date) -> [ReleaseMoment] {
+    let includedIDs = Set(store.includedRepositories.map(\.id))
+    return store.releases.filter {
+      includedIDs.contains($0.repoID) && CalendarDay.isSameDay($0.date, date)
+    }
+  }
+
+  private func repository(for id: Repository.ID) -> Repository? {
+    store.repositories.first { $0.id == id }
+  }
+
+  private func releaseCountLabel(for count: Int) -> String {
+    count == 1 ? "release" : "releases"
+  }
+
+  private func shortDateLabel(for date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.dateFormat = "MMM d"
+    return formatter.string(from: date)
   }
 }
 
@@ -581,55 +749,6 @@ private struct ActivitySectionHeader: View {
         .foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
     }
-  }
-}
-
-private struct ActivityWorkRow: Identifiable {
-  var id: String
-  var kind: String
-  var title: String
-  var repositoryName: String
-  var happenedAt: Date
-  var systemImage: String
-}
-
-private struct ActivityWorkRowView: View {
-  var row: ActivityWorkRow
-  var dateLabel: String
-
-  var body: some View {
-    HStack(alignment: .top, spacing: 10) {
-      Image(systemName: row.systemImage)
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(PRBarTheme.accent)
-        .frame(width: 24, height: 24)
-        .background(PRBarTheme.accent.opacity(0.10))
-        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-
-      VStack(alignment: .leading, spacing: 3) {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-          Text(row.kind)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .textCase(.uppercase)
-          Text(dateLabel)
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
-
-        Text(row.title)
-          .font(.subheadline.weight(.semibold))
-          .lineLimit(2)
-
-        Text(row.repositoryName)
-          .font(.caption)
-          .foregroundStyle(.secondary)
-      }
-
-      Spacer(minLength: 0)
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(.vertical, 10)
   }
 }
 

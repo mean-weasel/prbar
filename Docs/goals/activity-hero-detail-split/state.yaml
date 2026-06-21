@@ -1,0 +1,352 @@
+# GoalBuddy v2 state.yaml
+version: 2
+
+goal:
+  title: "Activity Hero Detail Split"
+  slug: "activity-hero-detail-split"
+  kind: existing_plan
+  tranche: "Simplify Activity by keeping the big-picture shipping hero on the tab and moving fine-grain work inspection into detail screens."
+  status: complete
+  oracle:
+    signal: "The iOS simulator shows Activity's first viewport as a calm shipping hero/dashboard, with Latest meaningful work replaced by a compact drilldown entry and a separate detail screen for detailed PR/release inspection."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Passing local verification, classified CI state, and XcodeBuildMCP screenshots for Activity hero, Work Log/detail screen, repo drilldown, and relevant tab navigation."
+  intake:
+    original_request: "Plan this out as a detailed and grounded /goal."
+    interpreted_outcome: "Create a GoalBuddy plan to simplify PRBar iOS Activity around big-picture hero surfaces and separate detail screens, starting with Latest meaningful work."
+    input_shape: existing_plan
+    audience: "PRBar iOS users who want the big picture first and details on demand."
+    authority: approved
+    proof_type: demo
+    completion_proof: "Simulator screenshots and UI tests prove Activity opens as a hero/dashboard and detailed work inspection is available on a separate screen; CI/local failures are resolved or classified."
+    likely_misfire: "Removing or burying detailed work without a clear drilldown, or leaving the main Activity screen visually dense while only changing labels."
+    blind_spots_considered:
+      - "CI was reported red immediately before this UX planning request; the first execution task must classify current CI/local failure state."
+      - "A separate detail screen needs obvious entry points and accessibility labels so users do not lose trust that details still exist."
+      - "Activity must retain release context and repo timeline drilldowns, not become PR-only."
+      - "Build/test success is not enough; screenshots must prove the rendered hierarchy."
+      - "If a new SwiftUI file is introduced, XcodeGen/project membership and tests must prove it is compiled."
+    existing_plan_facts:
+      - "Each tab should keep the big picture as the hero."
+      - "Fine-grain detail such as Latest meaningful work should move to separate screens."
+      - "Activity is the first simplification target."
+      - "The previous Activity/Share/Settings simplification work should be preserved."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/activity-hero-detail-split/"
+    command: "npx goalbuddy board Docs/goals/activity-hero-detail-split"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Map the current Activity UX/code/tests, latest screenshot evidence, and CI/local failure state before any implementation."
+    inputs:
+      - "User plan: keep big-picture hero on each tab; move Latest meaningful work to a separate screen."
+      - "Previous screenshot-led simplification receipts and screenshots."
+      - "Current branch/worktree and current CI status."
+      - "AGENTS.md simulator visual-inspection requirements."
+    constraints:
+      - "Read-only."
+      - "Do not edit implementation files."
+      - "Classify CI/local failures as pre-existing, unrelated, or likely caused by current UX work."
+      - "Prefer concrete file paths, test names, screenshot paths, and failure URLs over generic design advice."
+    expected_output:
+      - "Current Activity screen structure and files involved."
+      - "Existing tests covering Activity, repo drilldown, Share, and Settings navigation affected by the split."
+      - "Current CI/local failure classification and recommended verification commands."
+      - "A grounded information architecture proposal for Activity hero plus Work Log/detail screen."
+      - "Candidate Worker slices ranked by impact, risk, and verification strength."
+    receipt:
+      result: done
+      summary: "Mapped Activity's current structure, tests, CI/local state, baseline screenshots, and a bounded hero/detail IA before implementation."
+      evidence:
+        activity_structure:
+          - "apple/PRBar/PRs/PRsView.swift currently owns the Activity header, Shipping snapshot, cadence section, release cadence, selected release detail, repo distribution drilldown, and an inline Latest meaningful work stream."
+          - "latestWorkRows merges included PRs and grouped releases, sorted newest-first and capped at 8 rows."
+          - "latestWorkSection renders ActivitySectionHeader(title: Latest meaningful work) plus ActivityWorkRowView rows directly on the Activity dashboard."
+          - "navigationDestination(for: Repository.ID.self) already supports repo drilldown via apple/PRBar/PRs/PRRepositoryDetailView.swift."
+          - "apple/PRBar/Components/RepoDistributionView.swift already communicates that repo distribution rows drill into a PR timeline."
+        impacted_tests:
+          - "apple/PRBarUITests/PRBarUITests.swift testTabsExposeReviewedPrototypeSurfaces currently expects Latest meaningful work on the main Activity tab."
+          - "testFirstRunSelectsOneRepoFinishesSetupAndShowsSyncedActivity currently expects Latest meaningful work after first-run setup."
+          - "testFirstRunCanNavigateWhileSetupSyncRuns currently expects Latest meaningful work while setup sync is still running."
+          - "testPullToRefreshUpdatesPRsAndReleases currently expects Latest meaningful work after refresh data loads."
+          - "testRepoDistributionDrillsIntoSingleRepoPRTimeline and testActivityReleaseCalendarShowsSelectedReleaseDetail cover behavior that must remain intact."
+        ci_and_local:
+          - "Current branch codex/ios-screenshot-rhythm-polish has no open PR and no branch workflow runs visible via gh."
+          - "origin/main at HEAD 0449441e1dd74ec47a9df4e00aa7e966607b48e9 shows latest CI, iOS, Release, and Auto-merge runs as successful."
+          - "User-reported CI failure is not reproduced or attributable to this local branch from current gh evidence; classify as currently unbound to this branch unless a later run proves otherwise."
+          - "Local git diff --check passed."
+          - "Local ./scripts/ios-build.sh passed."
+          - "Local ./scripts/ios-ui-smoke.sh passed."
+        screenshots:
+          - ".codex/activity-hero-detail-split/T001-activity-baseline-top.jpg shows the current first viewport with Shipping rhythm, Shipping snapshot, and start of cadence."
+          - ".codex/activity-hero-detail-split/T001-activity-baseline-latest-work.jpg shows Latest meaningful work as an inline detailed stream on the main Activity dashboard."
+      ia_proposal:
+        - "Keep the Activity first viewport focused on the shipping hero: header, selected repos entry, Shipping snapshot, and weekly cadence."
+        - "Replace the inline Latest meaningful work list with a compact Work Log drilldown entry that preserves confidence that detailed PR/release history still exists."
+        - "Add a Work Log detail screen for the merged PR, tag, and release-note stream using the existing latestWorkRows data."
+        - "Preserve repo distribution drilldown, release cadence, sync/cache states, and live GitHub behavior."
+      candidate_worker_slices:
+        - "Highest impact and safe: add Work Log detail navigation, move detailed work rows out of PRsView's main scroll, update tests, and capture simulator screenshots."
+        - "Optional follow-up: if screenshots still show Activity as too dense, move selected release detail into a separate release detail route."
+        - "Deferred: apply the hero/detail pattern to Growth, Share, or Settings after Activity is proven."
+      recommended_verification:
+        - "git diff --check -- apple/PRBar/PRs/PRsView.swift apple/PRBar/PRs/ActivityWorkLogView.swift apple/PRBarUITests/PRBarUITests.swift"
+        - "./scripts/ios-build.sh"
+        - "Focused UI coverage for Activity tab, first-run setup, pull-to-refresh, repo drilldown, and Work Log detail."
+        - "./scripts/ios-ui-smoke.sh"
+        - "XcodeBuildMCP screenshots for Activity hero and Work Log detail."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Validate the Activity hero/detail information architecture and choose the largest safe first implementation slice."
+    inputs:
+      - "T001 receipt"
+      - "Goal oracle"
+      - "Current dirty diff"
+    constraints:
+      - "Read-only."
+      - "Do not implement."
+      - "Reject cosmetic-only changes."
+      - "Reject any slice that hides detailed work without an obvious detail route."
+      - "Reject implementation until CI/local failure state is classified."
+    expected_output:
+      - "Decision: approved | revise | blocked"
+      - "Exact Worker objective"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+      - "Deferred risks or follow-up tasks"
+    receipt:
+      result: approved
+      decision: "approved"
+      rationale:
+        - "T001 classified current CI/local state: latest main is green, there are no branch PR/runs, and local diff check/build/UI smoke pass before this slice."
+        - "The proposed slice addresses the oracle directly: it removes the dense Latest meaningful work stream from Activity and replaces it with an explicit detail route."
+        - "The slice is large enough to be meaningful because it changes navigation, reusable row ownership, tests, and simulator proof in one vertical package."
+      worker_objective: "Move latest work out of Activity's main dashboard into a Work Log detail screen while keeping a compact Activity entrypoint and preserving release context, repo drilldown, sync states, and tab navigation."
+      allowed_files:
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/PRs/ActivityWorkLogView.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+        - ".codex/activity-hero-detail-split/"
+        - "Docs/goals/activity-hero-detail-split/state.yaml"
+      verify:
+        - "git diff --check -- apple/PRBar/PRs/PRsView.swift apple/PRBar/PRs/ActivityWorkLogView.swift apple/PRBarUITests/PRBarUITests.swift Docs/goals/activity-hero-detail-split/state.yaml"
+        - "./scripts/ios-build.sh"
+        - "Focused UI tests covering Activity tab, first-run setup, setup sync navigation, pull-to-refresh, repo drilldown, release selected detail, and Work Log detail."
+        - "./scripts/ios-ui-smoke.sh"
+        - "XcodeBuildMCP screenshots for Activity hero and Work Log detail."
+      stop_if:
+        - "Need files outside allowed_files except generated project metadata required to compile a new Swift file."
+        - "Need Growth, Share, Settings, auth, live GitHub, or broad release redesign changes."
+        - "Work Log route is not visible, tappable, or accessibly labeled."
+        - "Activity loses release context, repo distribution drilldown, or refresh/sync status."
+      deferred:
+        - "If final screenshots still show Activity as too detail-heavy, evaluate moving selected release detail to its own route in T005."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the first approved Activity hero/detail split slice selected by Judge."
+    allowed_files:
+      - "apple/PRBar/PRs/PRsView.swift"
+      - "apple/PRBar/PRs/ActivityWorkLogView.swift"
+      - "apple/PRBarUITests/PRBarUITests.swift"
+      - ".codex/activity-hero-detail-split/"
+      - "Docs/goals/activity-hero-detail-split/state.yaml"
+    verify:
+      - "git diff --check -- apple/PRBar/PRs/PRsView.swift apple/PRBar/PRs/ActivityWorkLogView.swift apple/PRBarUITests/PRBarUITests.swift Docs/goals/activity-hero-detail-split/state.yaml"
+      - "./scripts/ios-build.sh"
+      - "Focused UI tests covering Activity tab, first-run setup, setup sync navigation, pull-to-refresh, repo drilldown, release selected detail, and Work Log detail."
+      - "./scripts/ios-ui-smoke.sh"
+      - "XcodeBuildMCP screenshots for Activity hero and Work Log detail."
+    stop_if:
+      - "Need files outside Judge-approved allowed_files."
+      - "Need to change Growth, Share, Settings, auth, or live GitHub behavior to complete the Activity slice."
+      - "The Activity main screen loses release context, repo drilldown access, or detailed work access."
+      - "New detail navigation is not discoverable in screenshots or accessibility labels."
+      - "Build/test failures persist after two focused attempts and appear unrelated to the slice."
+      - "Simulator visual inspection is unavailable after attempting XcodeBuildMCP and documented fallback tools."
+    receipt:
+      result: done
+      summary: "Moved detailed recent work inspection out of the Activity dashboard into a Work Log detail screen and updated Activity UI coverage around the new route."
+      changed_files:
+        - "apple/PRBar/PRs/PRsView.swift"
+        - "apple/PRBar/PRs/ActivityWorkLogView.swift"
+        - "apple/PRBarUITests/PRBarUITests.swift"
+      implementation:
+        - "Replaced the inline Latest meaningful work section with a compact Work log NavigationLink card."
+        - "Added ActivityWorkLogView to own the detailed PR/release stream and reusable ActivityWorkRow model."
+        - "Trimmed stale inline recent-PR fallback code from PRsView after the detail route took ownership."
+        - "Updated UI tests to assert Work log exists, Latest meaningful work is absent on Activity, the detail route opens, and existing tab navigation still works."
+      visual_evidence:
+        - ".codex/activity-hero-detail-split/T003-activity-hero.jpg"
+        - ".codex/activity-hero-detail-split/T003-activity-work-log-entry.jpg"
+        - ".codex/activity-hero-detail-split/T003-work-log-detail.jpg"
+        - ".codex/activity-hero-detail-split/T003-repo-drilldown.jpg"
+      verification:
+        - "npx goalbuddy doctor --target codex --goal-ready passed; GoalBuddy runtime ready."
+        - "npx goalbuddy check-update --json reported current_version=0.3.8 and latest_version=0.3.8."
+        - "git diff --check -- apple/PRBar/PRs/PRsView.swift apple/PRBar/PRs/ActivityWorkLogView.swift apple/PRBarUITests/PRBarUITests.swift Docs/goals/activity-hero-detail-split/state.yaml passed."
+        - "grep -n '[[:blank:]]$' on touched Swift/state files found no trailing whitespace."
+        - "./scripts/ios-build.sh passed after final code edits."
+        - "Focused xcodebuild UI run passed 6 tests: Activity tab surface, first-run setup, setup sync navigation, pull-to-refresh, repo drilldown, and release selected detail."
+        - "./scripts/ios-ui-smoke.sh passed after final code edits."
+        - "XcodeBuildMCP build_run_sim with --ui-testing succeeded and runtime snapshots/screenshots confirmed Activity hero, compact Work log entry, Work Log detail, and repo drilldown."
+      notes:
+        - "The focused 6-test run occurred before removing only unreachable stale recentPRs fallback code; final build and final smoke occurred after that cleanup."
+        - "Raw git diff contains older uncommitted UX changes in the same branch; this Worker slice stayed within the Judge-approved Activity files plus receipts/screenshots."
+
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit the first Activity hero/detail implementation and decide whether a second simplification slice is required."
+    inputs:
+      - "T003 receipt"
+      - "Simulator screenshots"
+      - "Latest verification commands"
+    constraints:
+      - "Read-only."
+      - "Reject completion if Activity still reads like a detailed report in the first viewport."
+      - "Reject completion if Latest meaningful work is merely renamed or moved lower without a true detail path."
+      - "Reject completion if tests pass but screenshots show visual ambiguity, overlap, or lost navigation."
+    expected_output:
+      - "approved | needs_followup | blocked"
+      - "Whether full_outcome_complete is true for this goal"
+      - "If follow-up is needed: exact next Worker objective, allowed_files, verify, stop_if"
+    receipt:
+      result: approved
+      decision: "approved"
+      full_outcome_complete: true
+      audit:
+        - "Activity first viewport screenshot T003-activity-hero.jpg reads as a shipping hero/dashboard: header, repo count, Shipping snapshot, and cadence start."
+        - "Compact drilldown screenshot T003-activity-work-log-entry.jpg shows Work log as one navigable summary card, not an inline detailed stream."
+        - "Work Log detail screenshot T003-work-log-detail.jpg shows the detailed PR/release stream on its own screen."
+        - "Repo drilldown screenshot T003-repo-drilldown.jpg proves repo PR distribution over time remains reachable."
+        - "UI test testTabsExposeReviewedPrototypeSurfaces explicitly asserts Latest meaningful work is absent from the Activity tab and Work log opens to Recent work."
+        - "Focused Activity UI tests and final PR smoke passed; build succeeded after all code edits."
+      decision_notes:
+        - "No T005 follow-up slice is required for this goal; the selected-release card still adds release context without competing with the first viewport hero."
+        - "Future simplification may move selected release details to a release detail screen, but it is not required to satisfy this Activity-first tranche."
+      ci_classification:
+        - "gh run list --branch codex/ios-screenshot-rhythm-polish returned no runs."
+        - "gh pr list --head codex/ios-screenshot-rhythm-polish returned no PRs."
+        - "Latest main runs for 0449441e1dd74ec47a9df4e00aa7e966607b48e9 are successful for CI, iOS, Release, and Auto-merge."
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Execute a second Activity simplification slice only if T004 Judge says the first slice is not enough."
+    allowed_files: []
+    verify: []
+    stop_if:
+      - "T004 does not provide allowed_files and verification."
+      - "The follow-up expands beyond Activity hero/detail simplification."
+      - "The follow-up would weaken Share export safety, Settings diagnostics, or live GitHub setup."
+    receipt:
+      result: not_needed
+      reason: "T004 approved the first vertical slice as satisfying the Activity hero/detail oracle; no second Activity simplification slice is required before final audit."
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Final audit for the Activity hero/detail split."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "Simulator screenshots for Activity hero and detail route"
+      - "CI/local failure classification"
+    constraints:
+      - "Read-only."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion if CI/local failures are unclassified."
+      - "Reject completion if the main Activity viewport still gives equal weight to detailed PR/release lists."
+      - "Reject completion if detailed work inspection is not reachable and understandable."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "screenshot-by-screenshot evidence mapping"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: complete
+      full_outcome_complete: true
+      summary: "The Activity hero/detail split satisfies the oracle: Activity opens as a big-picture shipping dashboard, detailed work moved to a Work Log route, repo drilldown remains intact, and CI/local state is classified."
+      screenshot_evidence:
+        - ".codex/activity-hero-detail-split/T003-activity-hero.jpg: first viewport shows Activity, Shipping rhythm, Shipping snapshot, repo count, and cadence start without the dense latest-work stream."
+        - ".codex/activity-hero-detail-split/T003-activity-work-log-entry.jpg: lower Activity dashboard shows Work log as a compact navigable summary card below release context."
+        - ".codex/activity-hero-detail-split/T003-work-log-detail.jpg: Work Log detail screen shows the detailed PR/release stream."
+        - ".codex/activity-hero-detail-split/T003-repo-drilldown.jpg: repo timeline/detail screen remains reachable and shows PR distribution over time."
+      verification:
+        - "git diff --check on touched Activity/test/state files passed after final board updates."
+        - "./scripts/ios-build.sh passed after final code edits."
+        - "./scripts/ios-ui-smoke.sh passed after final code edits."
+        - "Focused Activity UI run passed 6 tests covering Activity surface, first-run setup, setup sync navigation, pull-to-refresh, repo drilldown, and selected release detail."
+        - "XcodeBuildMCP build_run_sim and runtime snapshots confirmed the rendered screens."
+      ci:
+        - "No PR or branch runs exist yet for codex/ios-screenshot-rhythm-polish."
+        - "Latest main runs at 0449441e1dd74ec47a9df4e00aa7e966607b48e9 are successful for CI, iOS, Release, and Auto-merge."
+      missing_evidence: []
+      next_task: null
+
+checks:
+  dirty_fingerprint: "worktree contains pre-existing unrelated dirty/untracked files plus this goal's Activity slice; see git status receipts"
+  last_verification:
+    result: passed
+    task: T999
+    commands:
+      - "git diff --check -- apple/PRBar/PRs/PRsView.swift apple/PRBar/PRs/ActivityWorkLogView.swift apple/PRBarUITests/PRBarUITests.swift Docs/goals/activity-hero-detail-split/state.yaml"
+      - "./scripts/ios-build.sh"
+      - "./scripts/ios-ui-smoke.sh"
+      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -only-testing:PRBarUITests/PRBarUITests/testTabsExposeReviewedPrototypeSurfaces -only-testing:PRBarUITests/PRBarUITests/testFirstRunSelectsOneRepoFinishesSetupAndShowsSyncedActivity -only-testing:PRBarUITests/PRBarUITests/testFirstRunCanNavigateWhileSetupSyncRuns -only-testing:PRBarUITests/PRBarUITests/testPullToRefreshUpdatesPRsAndReleases -only-testing:PRBarUITests/PRBarUITests/testRepoDistributionDrillsIntoSingleRepoPRTimeline -only-testing:PRBarUITests/PRBarUITests/testActivityReleaseCalendarShowsSelectedReleaseDetail CODE_SIGNING_ALLOWED=NO"
+      - "XcodeBuildMCP build_run_sim / wait_for_ui / screenshot / swipe / tap"
+      - "gh run list --branch codex/ios-screenshot-rhythm-polish --limit 5 --json databaseId,status,conclusion,workflowName,headSha,displayTitle,createdAt"
+      - "gh run list --branch main --limit 8 --json databaseId,status,conclusion,workflowName,headSha,displayTitle,createdAt"
+      - "gh pr list --head codex/ios-screenshot-rhythm-polish --json number,title,state,headRefName,statusCheckRollup,url"
