@@ -85,47 +85,6 @@ struct GrowthView: View {
     )
   }
 
-  private var dashboardScopeStrip: some View {
-    VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
-      HStack(spacing: PRBarTheme.compactSpacing) {
-        Label("Growth dashboard", systemImage: "chart.line.uptrend.xyaxis")
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(.secondary)
-
-        Spacer(minLength: 0)
-
-        Label(snapshot.dataSource.displayName, systemImage: dataSourceSymbol(for: snapshot.dataSource))
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
-          .accessibilityIdentifier("growth-scope-source")
-      }
-
-      VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
-        scopeLine(title: "Dashboard", value: snapshot.project.name, identifier: "growth-scope-dashboard")
-        scopeLine(title: "Window", value: store.growthRange.windowLabel, identifier: "growth-scope-window")
-      }
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .prbarSurface()
-    .accessibilityIdentifier("growth-dashboard-scope")
-  }
-
-  private func scopeLine(title: String, value: String, identifier: String) -> some View {
-    HStack(alignment: .firstTextBaseline, spacing: 8) {
-      Text(title)
-        .font(.caption2.weight(.semibold))
-        .foregroundStyle(.secondary)
-        .frame(width: 70, alignment: .leading)
-
-      Text(value)
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.primary)
-        .lineLimit(2)
-        .minimumScaleFactor(0.82)
-        .accessibilityIdentifier(identifier)
-    }
-  }
-
   private var header: some View {
     VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
       Text("Usage and search movement near shipped work")
@@ -163,29 +122,13 @@ struct GrowthView: View {
     }
   }
 
-  private var compactProvenanceRow: some View {
-    HStack(spacing: 8) {
-      Label(snapshot.dataSource.displayName, systemImage: dataSourceSymbol(for: snapshot.dataSource))
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
-
-      Text("·")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-
-      Text(growthUpdatedLabel)
-        .font(.caption)
-        .foregroundStyle(.secondary)
-
-      Spacer(minLength: 0)
-    }
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel("\(snapshot.dataSource.displayName), updated \(growthUpdatedLabel)")
-  }
-
   private var growthDetailsEntry: some View {
     NavigationLink {
-      growthDetailsView
+      GrowthDetailsView(
+        snapshot: snapshot,
+        range: store.growthRange,
+        refreshStatus: store.growthRefreshStatus
+      )
     } label: {
       HStack(alignment: .center, spacing: 10) {
         Image(systemName: dataSourceSymbol(for: snapshot.dataSource))
@@ -225,22 +168,6 @@ struct GrowthView: View {
     .accessibilityIdentifier("growth-details-entry")
   }
 
-  private var growthDetailsView: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: PRBarTheme.sectionSpacing) {
-        dashboardScopeStrip
-        growthProvenancePanel
-        shippingContext
-        providerSections
-        setupCards
-      }
-      .padding()
-      .padding(.bottom, PRBarTheme.tabContentBottomPadding)
-    }
-    .navigationTitle("Growth details")
-    .navigationBarTitleDisplayMode(.inline)
-  }
-
   private var metricTiles: some View {
     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: PRBarTheme.compactSpacing) {
       ForEach(visibleMetrics) { metric in
@@ -251,94 +178,6 @@ struct GrowthView: View {
         }
         .buttonStyle(.plain)
       }
-    }
-  }
-
-  private var growthProvenancePanel: some View {
-    HStack(alignment: .top, spacing: 10) {
-      provenanceIcon
-        .font(.subheadline.weight(.semibold))
-        .frame(width: 20, height: 20)
-
-      VStack(alignment: .leading, spacing: 8) {
-        Text(growthProvenanceTitle)
-          .font(.subheadline.weight(.semibold))
-
-        Text(growthProvenanceDetail)
-          .font(.caption)
-          .foregroundStyle(.secondary)
-
-        VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
-          provenanceRow(title: "Project", value: snapshot.project.name)
-          provenanceRow(title: "Source", value: snapshot.dataSource.displayName)
-          provenanceRow(title: "Updated", value: growthUpdatedLabel)
-        }
-      }
-
-      Spacer(minLength: 0)
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .prbarSurface()
-    .accessibilityIdentifier("growth-provenance-status")
-  }
-
-  @ViewBuilder
-  private var provenanceIcon: some View {
-    switch store.growthRefreshStatus {
-    case .loading:
-      ProgressView()
-    case .failed:
-      Image(systemName: "exclamationmark.triangle.fill")
-        .foregroundStyle(.orange)
-    case .loaded:
-      Image(systemName: "checkmark.circle.fill")
-        .foregroundStyle(.green)
-    case .idle:
-      Image(systemName: dataSourceSymbol(for: snapshot.dataSource))
-        .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
-    }
-  }
-
-  private func provenanceRow(title: String, value: String) -> some View {
-    HStack(alignment: .firstTextBaseline, spacing: 6) {
-      Text(title)
-        .font(.caption2.weight(.semibold))
-        .foregroundStyle(.secondary)
-        .frame(width: 48, alignment: .leading)
-      Text(value)
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.primary)
-        .lineLimit(2)
-        .minimumScaleFactor(0.82)
-    }
-  }
-
-  private var growthProvenanceTitle: String {
-    switch store.growthRefreshStatus {
-    case .loading:
-      "Refreshing Growth from PostHog"
-    case .loaded:
-      "Growth data refreshed"
-    case .failed:
-      "Growth refresh needs attention"
-    case .idle:
-      "Growth data source"
-    }
-  }
-
-  private var growthProvenanceDetail: String {
-    switch store.growthRefreshStatus {
-    case .loading(let message):
-      "\(message) Pull to refresh reloads only this Growth dashboard."
-    case .loaded(_, let source):
-      """
-      Showing \(provenanceDataSourceLabel(for: source)) for \(snapshot.project.name) over the \(store.growthRange.growthRefreshDescription). \
-      Pull to refresh reloads this Growth dashboard.
-      """
-    case .failed(let message):
-      "\(message) Existing Growth data remains visible."
-    case .idle:
-      "\(snapshot.dataSource.detail) Pull to refresh reloads this Growth dashboard."
     }
   }
 
@@ -360,69 +199,6 @@ struct GrowthView: View {
       .compactMap(\.lastRefreshedAt)
       .max()
       .map { refreshDateLabel(for: $0) }
-  }
-
-  private func provenanceDataSourceLabel(for source: GrowthDataSource) -> String {
-    switch source {
-    case .sample:
-      "sample data"
-    case .livePostHog:
-      "Live PostHog data"
-    case .sampleFallback:
-      "sample fallback data"
-    }
-  }
-
-  private var shippingContext: some View {
-    VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
-      Text("Shipping context")
-        .font(.headline)
-      Text(snapshot.shippingContext.summary)
-        .font(.subheadline)
-      if let topRepositoryName = snapshot.shippingContext.topRepositoryName {
-        Text("Top included repo: \(topRepositoryName)")
-          .font(.caption)
-          .foregroundStyle(.secondary)
-      }
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .prbarSurface()
-  }
-
-  @ViewBuilder
-  private var providerSections: some View {
-    if snapshot.connection(for: .postHog)?.status == .connected {
-      GrowthProviderSectionView(provider: .postHog, rows: postHogSectionRows)
-    }
-
-    if snapshot.connection(for: .searchConsole)?.status == .connected {
-      GrowthProviderSectionView(
-        provider: .searchConsole,
-        rows: snapshot.topQueries + snapshot.topPages
-      )
-
-      Text("Search Console data can lag by a few days.")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-    }
-  }
-
-  @ViewBuilder
-  private var setupCards: some View {
-    ForEach(GrowthProviderKind.allCases) { provider in
-      if let connection = snapshot.connection(for: provider),
-        connection.status == .notConnected || connection.status == .needsAttention
-      {
-        GrowthSetupCardView(provider: provider, issue: connection.issue)
-      }
-    }
-  }
-
-  private var postHogSectionRows: [GrowthListRow] {
-    if snapshot.connection(for: .searchConsole)?.status == .connected {
-      return snapshot.topEvents
-    }
-    return snapshot.topEvents + snapshot.topPages
   }
 
   private func issueView(_ issue: AuthIssue) -> some View {

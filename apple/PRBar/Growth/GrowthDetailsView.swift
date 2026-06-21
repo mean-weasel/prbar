@@ -1,0 +1,351 @@
+import SwiftUI
+
+struct GrowthDetailsView: View {
+  var snapshot: GrowthDashboardSnapshot
+  var range: ActivityRange
+  var refreshStatus: GrowthRefreshStatus
+
+  var body: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 20) {
+        header
+        summaryMetrics
+        dashboardScopeStrip
+        growthProvenancePanel
+        shippingContext
+        providerSections
+        setupCards
+      }
+      .padding()
+      .padding(.bottom, PRBarTheme.tabContentBottomPadding)
+    }
+    .navigationTitle("Growth details")
+    .navigationBarTitleDisplayMode(.inline)
+  }
+
+  private var detailMetrics: [GrowthDetailMetric] {
+    [
+      GrowthDetailMetric(
+        title: "Visible metrics",
+        value: "\(snapshot.visibleMetrics.count)",
+        systemImage: "square.grid.2x2"
+      ),
+      GrowthDetailMetric(
+        title: "Window",
+        value: range.windowLabel,
+        systemImage: "calendar"
+      ),
+      GrowthDetailMetric(
+        title: "Source",
+        value: snapshot.dataSource.displayName,
+        systemImage: dataSourceSymbol(for: snapshot.dataSource)
+      ),
+    ]
+  }
+
+  private var header: some View {
+    VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
+      Text("Usage and search movement near shipped work")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+
+      HStack(spacing: PRBarTheme.compactSpacing) {
+        Label(snapshot.project.name, systemImage: "square.stack.3d.up")
+          .font(.subheadline.weight(.semibold))
+
+        Spacer()
+
+        Label(
+          snapshot.dataSource.displayName,
+          systemImage: dataSourceSymbol(for: snapshot.dataSource)
+        )
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(Capsule())
+        .accessibilityHint(snapshot.dataSource.detail)
+      }
+    }
+  }
+
+  private var summaryMetrics: some View {
+    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: PRBarTheme.compactSpacing) {
+      ForEach(detailMetrics) { metric in
+        VStack(alignment: .leading, spacing: 8) {
+          Image(systemName: metric.systemImage)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(PRBarTheme.accent)
+
+          Text(metric.value)
+            .font(.headline.weight(.bold))
+            .foregroundStyle(.primary)
+            .lineLimit(2)
+            .minimumScaleFactor(0.76)
+
+          Text(metric.title)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, minHeight: 104, alignment: .leading)
+        .padding(12)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+      }
+    }
+  }
+
+  private var dashboardScopeStrip: some View {
+    VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
+      HStack(spacing: PRBarTheme.compactSpacing) {
+        Label("Growth dashboard", systemImage: "chart.line.uptrend.xyaxis")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.secondary)
+
+        Spacer(minLength: 0)
+
+        Label(snapshot.dataSource.displayName, systemImage: dataSourceSymbol(for: snapshot.dataSource))
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
+          .accessibilityIdentifier("growth-scope-source")
+      }
+
+      VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
+        scopeLine(title: "Dashboard", value: snapshot.project.name, identifier: "growth-scope-dashboard")
+        scopeLine(title: "Window", value: range.windowLabel, identifier: "growth-scope-window")
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .prbarSurface()
+    .accessibilityIdentifier("growth-dashboard-scope")
+  }
+
+  private func scopeLine(title: String, value: String, identifier: String) -> some View {
+    HStack(alignment: .firstTextBaseline, spacing: 8) {
+      Text(title)
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .frame(width: 70, alignment: .leading)
+
+      Text(value)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.primary)
+        .lineLimit(2)
+        .minimumScaleFactor(0.82)
+        .accessibilityIdentifier(identifier)
+    }
+  }
+
+  private var growthProvenancePanel: some View {
+    HStack(alignment: .top, spacing: 10) {
+      provenanceIcon
+        .font(.subheadline.weight(.semibold))
+        .frame(width: 20, height: 20)
+
+      VStack(alignment: .leading, spacing: 8) {
+        Text(growthProvenanceTitle)
+          .font(.subheadline.weight(.semibold))
+
+        Text(growthProvenanceDetail)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+
+        VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
+          provenanceRow(title: "Project", value: snapshot.project.name)
+          provenanceRow(title: "Source", value: snapshot.dataSource.displayName)
+          provenanceRow(title: "Updated", value: growthUpdatedLabel)
+        }
+      }
+
+      Spacer(minLength: 0)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .prbarSurface()
+    .accessibilityIdentifier("growth-provenance-status")
+  }
+
+  @ViewBuilder
+  private var provenanceIcon: some View {
+    switch refreshStatus {
+    case .loading:
+      ProgressView()
+    case .failed:
+      Image(systemName: "exclamationmark.triangle.fill")
+        .foregroundStyle(.orange)
+    case .loaded:
+      Image(systemName: "checkmark.circle.fill")
+        .foregroundStyle(.green)
+    case .idle:
+      Image(systemName: dataSourceSymbol(for: snapshot.dataSource))
+        .foregroundStyle(dataSourceIconColor(for: snapshot.dataSource))
+    }
+  }
+
+  private func provenanceRow(title: String, value: String) -> some View {
+    HStack(alignment: .firstTextBaseline, spacing: 6) {
+      Text(title)
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .frame(width: 48, alignment: .leading)
+      Text(value)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.primary)
+        .lineLimit(2)
+        .minimumScaleFactor(0.82)
+    }
+  }
+
+  private var growthProvenanceTitle: String {
+    switch refreshStatus {
+    case .loading:
+      "Refreshing Growth from PostHog"
+    case .loaded:
+      "Growth data refreshed"
+    case .failed:
+      "Growth refresh needs attention"
+    case .idle:
+      "Growth data source"
+    }
+  }
+
+  private var growthProvenanceDetail: String {
+    switch refreshStatus {
+    case .loading(let message):
+      "\(message) Pull to refresh reloads only this Growth dashboard."
+    case .loaded(_, let source):
+      """
+      Showing \(provenanceDataSourceLabel(for: source)) for \(snapshot.project.name) over the \(range.growthRefreshDescription). \
+      Pull to refresh reloads this Growth dashboard.
+      """
+    case .failed(let message):
+      "\(message) Existing Growth data remains visible."
+    case .idle:
+      "\(snapshot.dataSource.detail) Pull to refresh reloads this Growth dashboard."
+    }
+  }
+
+  private var growthUpdatedLabel: String {
+    switch refreshStatus {
+    case .loaded(let lastRefreshedAt, _):
+      refreshDateLabel(for: lastRefreshedAt)
+    case .loading:
+      "Refreshing now"
+    case .failed:
+      "Refresh failed"
+    case .idle:
+      connectionRefreshLabel ?? "Not refreshed yet"
+    }
+  }
+
+  private var connectionRefreshLabel: String? {
+    snapshot.connections
+      .compactMap(\.lastRefreshedAt)
+      .max()
+      .map { refreshDateLabel(for: $0) }
+  }
+
+  private func provenanceDataSourceLabel(for source: GrowthDataSource) -> String {
+    switch source {
+    case .sample:
+      "sample data"
+    case .livePostHog:
+      "Live PostHog data"
+    case .sampleFallback:
+      "sample fallback data"
+    }
+  }
+
+  private var shippingContext: some View {
+    VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
+      Text("Shipping context")
+        .font(.headline)
+      Text(snapshot.shippingContext.summary)
+        .font(.subheadline)
+      if let topRepositoryName = snapshot.shippingContext.topRepositoryName {
+        Text("Top included repo: \(topRepositoryName)")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .prbarSurface()
+  }
+
+  @ViewBuilder
+  private var providerSections: some View {
+    if snapshot.connection(for: .postHog)?.status == .connected {
+      GrowthProviderSectionView(provider: .postHog, rows: postHogSectionRows)
+    }
+
+    if snapshot.connection(for: .searchConsole)?.status == .connected {
+      GrowthProviderSectionView(
+        provider: .searchConsole,
+        rows: snapshot.topQueries + snapshot.topPages
+      )
+
+      Text("Search Console data can lag by a few days.")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+  }
+
+  @ViewBuilder
+  private var setupCards: some View {
+    ForEach(GrowthProviderKind.allCases) { provider in
+      if let connection = snapshot.connection(for: provider),
+        connection.status == .notConnected || connection.status == .needsAttention
+      {
+        GrowthSetupCardView(provider: provider, issue: connection.issue)
+      }
+    }
+  }
+
+  private var postHogSectionRows: [GrowthListRow] {
+    if snapshot.connection(for: .searchConsole)?.status == .connected {
+      return snapshot.topEvents
+    }
+    return snapshot.topEvents + snapshot.topPages
+  }
+
+  private func dataSourceSymbol(for source: GrowthDataSource) -> String {
+    switch source {
+    case .sample:
+      "sparkles"
+    case .livePostHog:
+      "dot.radiowaves.left.and.right"
+    case .sampleFallback:
+      "exclamationmark.triangle"
+    }
+  }
+
+  private func dataSourceIconColor(for source: GrowthDataSource) -> Color {
+    switch source {
+    case .sample:
+      PRBarTheme.accent
+    case .livePostHog:
+      .green
+    case .sampleFallback:
+      .orange
+    }
+  }
+
+  private func refreshDateLabel(for date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.dateStyle = .medium
+    formatter.timeStyle = .short
+    return formatter.string(from: date)
+  }
+}
+
+private struct GrowthDetailMetric: Identifiable {
+  var title: String
+  var value: String
+  var systemImage: String
+
+  var id: String { title }
+}
