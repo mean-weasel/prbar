@@ -415,6 +415,10 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Selected repos power Activity, Growth context, and work cards."].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["3 of 5 selected"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["1 repo needs access"].waitForExistence(timeout: 2))
+    XCTAssertFalse(
+      app.staticTexts["4 repos are selectable. Blocked repos stay off until GitHub App, SSO, or permission access is granted."].isHittable
+    )
+    XCTAssertTrue(app.staticTexts["4 selectable"].waitForExistence(timeout: 2))
 
     app.textFields["repo-search-field"].tap()
     app.textFields["repo-search-field"].typeText("neonwatty/docs-site")
