@@ -4,7 +4,9 @@ struct GrowthTrendChartView: View {
   var metric: GrowthMetric
   var range: ActivityRange
   var anchorDate: Date
-  private let chartHeight: CGFloat = 148
+  private var chartHeight: CGFloat {
+    axisScale.maximum <= 1 ? 76 : 148
+  }
 
   private var points: [GrowthMetricPoint] {
     metric.normalizedSeries(endingAt: anchorDate, range: range)

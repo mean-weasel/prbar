@@ -14,6 +14,7 @@ enum PRBarTheme {
   static let surfacePadding: CGFloat = 14
   static let sectionSpacing: CGFloat = 16
   static let compactSpacing: CGFloat = 8
+  static let tabContentBottomPadding: CGFloat = 72
   static let surfaceBackground = Color(.secondarySystemBackground)
   static let selectedSurfaceBackground = accent.opacity(0.12)
   static let separator = Color(.separator).opacity(0.24)

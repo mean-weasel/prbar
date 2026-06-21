@@ -8,10 +8,15 @@ final class PRBarUITests: XCTestCase {
     app.launch()
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.staticTexts["Shipping snapshot"].waitForExistence(timeout: 2))
+    XCTAssertFalse(app.staticTexts["#39 Connect GitHub auth fallback"].isHittable)
+    XCTAssertFalse(app.staticTexts["v1.4.0 GitHub auth fallback"].isHittable)
     XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
     XCTAssertFalse(app.staticTexts["Latest meaningful work"].exists)
     app.openWorkLog()
     XCTAssertTrue(app.workLogDetailText().waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["#39 Connect GitHub auth fallback"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["v1.4.0 GitHub auth fallback"].exists)
     app.navigationBars.buttons.element(boundBy: 0).tap()
     XCTAssertFalse(app.tabBars.buttons["Releases"].exists)
 
@@ -32,8 +37,6 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("Growth")
 
     XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["Growth dashboard"].exists)
-    XCTAssertTrue(app.staticTexts["7-day window"].exists)
     XCTAssertTrue(app.staticTexts["Sample data"].exists)
     XCTAssertTrue(app.staticTexts["Active users"].exists)
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
@@ -42,7 +45,14 @@ final class PRBarUITests: XCTestCase {
     let chartValue = app.otherElements["growth-trend-chart"].firstMatch.value as? String
     XCTAssertTrue(chartValue?.contains("bar chart") == true)
     XCTAssertTrue(chartValue?.contains("selected metric Active users") == true)
-    XCTAssertTrue(app.staticTexts["Shipping context"].exists)
+    XCTAssertFalse(app.staticTexts["Shipping context"].exists)
+    XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["growth-details-entry"].label.contains("7-day window"))
+    XCTAssertTrue(app.buttons["growth-details-entry"].label.contains("Sample data"))
+    app.buttons["growth-details-entry"].tap()
+    XCTAssertTrue(app.staticTexts["Shipping context"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Growth dashboard"].exists)
+    XCTAssertTrue(app.staticTexts["7-day window"].exists)
   }
 
   @MainActor
@@ -62,8 +72,9 @@ final class PRBarUITests: XCTestCase {
       .flatMap { Int($0.components(separatedBy: " points").first ?? "") }
     XCTAssertGreaterThanOrEqual(monthPointCount ?? 0, 28)
     XCTAssertLessThanOrEqual(monthPointCount ?? 0, 31)
-    XCTAssertTrue(app.staticTexts["Current month"].waitForExistence(timeout: 4))
+    XCTAssertTrue(app.buttons["growth-details-entry"].label.contains("Current month"))
     app.buttons["growth-details-entry"].tap()
+    XCTAssertTrue(app.staticTexts["Current month"].waitForExistence(timeout: 4))
     app.scrollToStaticText("Search Console data can lag by a few days.")
   }
 
@@ -92,7 +103,6 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Growth"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
-    XCTAssertTrue(app.staticTexts["7-day window"].exists)
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
@@ -100,6 +110,7 @@ final class PRBarUITests: XCTestCase {
     app.assertGrowthChartHasAxisLabels(xAxis: "Calendar day", yAxis: "Visitors")
 
     app.buttons["growth-details-entry"].tap()
+    XCTAssertTrue(app.staticTexts["7-day window"].exists)
     XCTAssertTrue(app.staticTexts["Growth data source"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Project"].exists)
     XCTAssertTrue(app.staticTexts["Source"].exists)
@@ -130,8 +141,9 @@ final class PRBarUITests: XCTestCase {
     app.navigationBars.buttons.element(boundBy: 0).tap()
     XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 8), "Refresh PostHog growth did not become enabled")
     refreshButton.tap()
-    XCTAssertTrue(app.staticTexts["Growth data refreshed"].waitForExistence(timeout: 8))
+    XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 8))
     app.buttons["growth-details-entry"].tap()
+    XCTAssertTrue(app.staticTexts["Growth data refreshed"].waitForExistence(timeout: 8))
     XCTAssertTrue(
       app.staticTexts
         .containing(NSPredicate(format: "label CONTAINS %@", "over the last 7 days"))
@@ -261,6 +273,8 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.buttons["Evidence"].exists)
     XCTAssertTrue(app.buttons["Style"].exists)
     XCTAssertTrue(app.staticTexts["Public side"].exists)
+    XCTAssertFalse(app.staticTexts["Review evidence before sharing"].isHittable)
+    XCTAssertTrue(app.staticTexts["Proof"].exists)
     app.buttons["Export card"].tap()
     XCTAssertTrue(app.staticTexts["Share public-safe card"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.buttons["Share public-safe image"].exists)
@@ -275,7 +289,10 @@ final class PRBarUITests: XCTestCase {
 
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
     app.buttons["Refresh activity"].tap()
+    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 4))
+    app.buttons["Work log"].tap()
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
+    app.navigationBars.buttons.element(boundBy: 0).tap()
 
     app.tapTab("Share")
     XCTAssertTrue(app.staticTexts["Share a work card"].waitForExistence(timeout: 2))
@@ -297,6 +314,8 @@ final class PRBarUITests: XCTestCase {
     seedApp.launchArguments = ["--ui-testing", "--ui-testing-seed-activity-cache"]
     seedApp.launch()
 
+    XCTAssertTrue(seedApp.buttons["Work log"].waitForExistence(timeout: 4))
+    seedApp.buttons["Work log"].tap()
     XCTAssertTrue(seedApp.staticTexts["#424 Cached relaunch PR"].waitForExistence(timeout: 4))
     seedApp.terminate()
 
@@ -400,6 +419,10 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Selected repos power Activity, Growth context, and work cards."].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["3 of 5 selected"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["1 repo needs access"].waitForExistence(timeout: 2))
+    XCTAssertFalse(
+      app.staticTexts["4 repos are selectable. Blocked repos stay off until GitHub App, SSO, or permission access is granted."].isHittable
+    )
+    XCTAssertTrue(app.staticTexts["4 selectable"].waitForExistence(timeout: 2))
 
     app.textFields["repo-search-field"].tap()
     app.textFields["repo-search-field"].typeText("neonwatty/docs-site")
@@ -484,9 +507,10 @@ final class PRBarUITests: XCTestCase {
     } else {
       XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 8))
     }
+    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
+    app.openWorkLog()
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 10))
     XCTAssertTrue(app.staticTexts["v9.9.9 UI refresh release"].waitForExistence(timeout: 4))
-    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
   }
 
   @MainActor
@@ -516,6 +540,8 @@ final class PRBarUITests: XCTestCase {
 
     app.tapTab("Activity")
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
+    app.openWorkLog()
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 10))
   }
 
@@ -530,7 +556,6 @@ final class PRBarUITests: XCTestCase {
     app.buttons["Refresh activity"].tap()
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Synced selected repositories")).firstMatch.exists)
-    XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
 
     XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 2))
@@ -553,6 +578,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Showing cached GitHub data"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Retry failed")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Showing cached data from")).firstMatch.exists)
+    app.openWorkLog()
     XCTAssertTrue(app.staticTexts["#39 Connect GitHub auth fallback"].exists)
   }
 
@@ -580,6 +606,8 @@ final class PRBarUITests: XCTestCase {
     seedApp.launch()
 
     XCTAssertTrue(seedApp.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(seedApp.buttons["Work log"].waitForExistence(timeout: 4))
+    seedApp.buttons["Work log"].tap()
     XCTAssertTrue(seedApp.staticTexts["#424 Cached relaunch PR"].waitForExistence(timeout: 4))
     seedApp.terminate()
 
@@ -590,8 +618,8 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "May 24, 2026")).firstMatch.exists)
+    app.openWorkLog()
     XCTAssertTrue(app.staticTexts["#424 Cached relaunch PR"].exists)
-
     XCTAssertTrue(app.staticTexts["v4.2.4 Cached relaunch release"].waitForExistence(timeout: 2))
   }
 
@@ -694,8 +722,14 @@ private extension XCUIApplication {
       swipeUp()
     }
     XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing Work log drilldown", file: file, line: line)
-    activate()
-    button.tap()
+    for _ in 0..<3 where workLogDetailText().exists == false {
+      activate()
+      button.tap()
+      if workLogDetailText().waitForExistence(timeout: 4) {
+        return
+      }
+    }
+    XCTAssertTrue(workLogDetailText().exists, "Work log did not open", file: file, line: line)
   }
 
   @MainActor

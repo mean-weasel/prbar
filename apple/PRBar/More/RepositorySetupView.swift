@@ -158,7 +158,9 @@ struct RepositorySetupView: View {
     }
     .navigationTitle(title)
     .safeAreaInset(edge: .bottom) {
-      selectionSummaryBar
+      if showsFinishButton {
+        selectionSummaryBar
+      }
     }
     .toolbar {
       if showsFinishButton {
@@ -222,7 +224,10 @@ struct RepositorySetupView: View {
 
   private var accessSummaryDetail: String {
     guard blockedCount > 0 else {
-      return "\(availableCount) repos are ready to include in PR and release sync."
+      return "\(availableCount) selectable"
+    }
+    if store?.githubConnection.user != nil && showsFinishButton == false {
+      return "\(availableCount) selectable"
     }
     return "\(availableCount) repos are selectable. Blocked repos stay off until GitHub App, SSO, or permission access is granted."
   }
