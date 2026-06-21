@@ -233,9 +233,7 @@ struct PRsView: View {
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(16)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .prbarSurface()
   }
 
   private var snapshotSummary: String {
@@ -306,9 +304,7 @@ struct PRsView: View {
           .foregroundStyle(.tertiary)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(14)
-      .background(Color(.secondarySystemBackground))
-      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+      .prbarSurface()
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier("activity-release-cadence-entry")
@@ -349,9 +345,7 @@ struct PRsView: View {
           .foregroundStyle(.secondary)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(14)
-      .background(Color(.secondarySystemBackground))
-      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+      .prbarSurface()
     } else {
       ActivityEmptyStateView(
         title: "No release selected",
@@ -392,9 +386,7 @@ struct PRsView: View {
           .foregroundStyle(.tertiary)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(14)
-      .background(Color(.secondarySystemBackground))
-      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+      .prbarSurface()
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier("activity-work-log-entry")
@@ -417,9 +409,7 @@ struct PRsView: View {
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(14)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .prbarSurface()
   }
 
   private func pullRequests(on date: Date) -> [PullRequest] {
@@ -634,9 +624,7 @@ private struct ActivityReleaseCadenceView: View {
           .fixedSize(horizontal: false, vertical: true)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(14)
-      .background(Color(.secondarySystemBackground))
-      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+      .prbarSurface()
     } else {
       ActivityEmptyStateView(
         title: "No release selected",
@@ -711,9 +699,7 @@ private struct ActivitySummaryMetric: View {
         .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(12)
-    .background(Color(.tertiarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .prbarSurface()
   }
 }
 

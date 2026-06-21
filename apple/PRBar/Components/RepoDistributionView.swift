@@ -57,9 +57,7 @@ struct RepoDistributionView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
             }
-            .padding(12)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .prbarSurface()
           }
           .buttonStyle(.plain)
         }

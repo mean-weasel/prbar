@@ -39,6 +39,9 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
     app.assertGrowthChartPointCount(7)
     app.assertGrowthChartHasYAxis()
+    let chartValue = app.otherElements["growth-trend-chart"].firstMatch.value as? String
+    XCTAssertTrue(chartValue?.contains("bar chart") == true)
+    XCTAssertTrue(chartValue?.contains("selected metric Active users") == true)
     XCTAssertTrue(app.staticTexts["Shipping context"].exists)
   }
 
@@ -255,6 +258,8 @@ final class PRBarUITests: XCTestCase {
 
     app.tapTab("Share")
     XCTAssertTrue(app.staticTexts["Share a work card"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Evidence"].exists)
+    XCTAssertTrue(app.buttons["Style"].exists)
     XCTAssertTrue(app.staticTexts["Public side"].exists)
     app.buttons["Export card"].tap()
     XCTAssertTrue(app.staticTexts["Share public-safe card"].waitForExistence(timeout: 2))
