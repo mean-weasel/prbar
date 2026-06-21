@@ -722,8 +722,14 @@ private extension XCUIApplication {
       swipeUp()
     }
     XCTAssertTrue(button.waitForExistence(timeout: 2), "Missing Work log drilldown", file: file, line: line)
-    activate()
-    button.tap()
+    for _ in 0..<3 where workLogDetailText().exists == false {
+      activate()
+      button.tap()
+      if workLogDetailText().waitForExistence(timeout: 4) {
+        return
+      }
+    }
+    XCTAssertTrue(workLogDetailText().exists, "Work log did not open", file: file, line: line)
   }
 
   @MainActor
