@@ -503,9 +503,10 @@ final class PRBarUITests: XCTestCase {
     } else {
       XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 8))
     }
+    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
+    app.openWorkLog()
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 10))
     XCTAssertTrue(app.staticTexts["v9.9.9 UI refresh release"].waitForExistence(timeout: 4))
-    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
   }
 
   @MainActor
@@ -535,6 +536,8 @@ final class PRBarUITests: XCTestCase {
 
     app.tapTab("Activity")
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
+    app.openWorkLog()
     XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 10))
   }
 
@@ -549,7 +552,6 @@ final class PRBarUITests: XCTestCase {
     app.buttons["Refresh activity"].tap()
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Synced selected repositories")).firstMatch.exists)
-    XCTAssertTrue(app.staticTexts["#999 UI refresh merged PR"].waitForExistence(timeout: 4))
 
     XCTAssertTrue(app.buttons["Work log"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 2))
@@ -572,6 +574,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Showing cached GitHub data"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Retry failed")).firstMatch.exists)
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Showing cached data from")).firstMatch.exists)
+    app.openWorkLog()
     XCTAssertTrue(app.staticTexts["#39 Connect GitHub auth fallback"].exists)
   }
 
@@ -599,6 +602,8 @@ final class PRBarUITests: XCTestCase {
     seedApp.launch()
 
     XCTAssertTrue(seedApp.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
+    XCTAssertTrue(seedApp.buttons["Work log"].waitForExistence(timeout: 4))
+    seedApp.buttons["Work log"].tap()
     XCTAssertTrue(seedApp.staticTexts["#424 Cached relaunch PR"].waitForExistence(timeout: 4))
     seedApp.terminate()
 
@@ -609,8 +614,8 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Shipping rhythm"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts["Last refreshed"].waitForExistence(timeout: 4))
     XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "May 24, 2026")).firstMatch.exists)
+    app.openWorkLog()
     XCTAssertTrue(app.staticTexts["#424 Cached relaunch PR"].exists)
-
     XCTAssertTrue(app.staticTexts["v4.2.4 Cached relaunch release"].waitForExistence(timeout: 2))
   }
 
