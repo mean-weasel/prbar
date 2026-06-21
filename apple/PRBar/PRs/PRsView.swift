@@ -76,11 +76,11 @@ struct PRsView: View {
     .sorted { $0.count > $1.count }
   }
 
-  private var latestWorkRows: [ActivityWorkRow] {
+  private var workLogRows: [ActivityWorkRow] {
     let pullRequestRows = includedPullRequests.map { pullRequest in
       ActivityWorkRow(
         id: "pr-\(pullRequest.id)",
-        kind: "PR",
+        kind: .pullRequest,
         title: "#\(pullRequest.number) \(pullRequest.title)",
         repositoryName: repository(for: pullRequest.repoID)?.name ?? pullRequest.repoID,
         happenedAt: pullRequest.mergedAt,
@@ -92,7 +92,7 @@ struct PRsView: View {
       group.releases.map { release in
         ActivityWorkRow(
           id: "release-\(release.id)",
-          kind: "Release",
+          kind: .release,
           title: "\(release.tag) \(release.title)",
           repositoryName: repository(for: release.repoID)?.name ?? release.repoID,
           happenedAt: release.date,
@@ -101,7 +101,7 @@ struct PRsView: View {
       }
     }
 
-    return Array((pullRequestRows + releaseRows).sorted { $0.happenedAt > $1.happenedAt }.prefix(8))
+    return (pullRequestRows + releaseRows).sorted { $0.happenedAt > $1.happenedAt }
   }
 
   var body: some View {
@@ -345,7 +345,7 @@ struct PRsView: View {
 
   private var workLogEntrySection: some View {
     NavigationLink {
-      ActivityWorkLogView(rows: latestWorkRows, emptyDetail: latestWorkEmptyDetail)
+      ActivityWorkLogView(rows: workLogRows, emptyDetail: latestWorkEmptyDetail)
     } label: {
       HStack(alignment: .center, spacing: 12) {
         Image(systemName: "list.bullet.rectangle")
@@ -506,11 +506,11 @@ struct PRsView: View {
   }
 
   private var workLogSummary: String {
-    guard latestWorkRows.isEmpty == false else {
+    guard workLogRows.isEmpty == false else {
       return latestWorkEmptyDetail
     }
 
-    let itemText = latestWorkRows.count == 1 ? "1 recent item" : "\(latestWorkRows.count) recent items"
+    let itemText = workLogRows.count == 1 ? "1 recent item" : "\(workLogRows.count) recent items"
     return "\(itemText) across pull requests, tags, and releases."
   }
 
