@@ -20,7 +20,7 @@ final class PRBarUITests: XCTestCase {
 
     app.tapTab("Settings")
     XCTAssertTrue(app.buttons["Account & data"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["Manage"].exists)
+    XCTAssertTrue(app.buttons["Repos"].exists)
   }
 
   @MainActor
