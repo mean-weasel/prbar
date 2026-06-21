@@ -4,7 +4,7 @@ struct GrowthTrendChartView: View {
   var metric: GrowthMetric
   var range: ActivityRange
   var anchorDate: Date
-  private let chartHeight: CGFloat = 128
+  private let chartHeight: CGFloat = 148
 
   private var points: [GrowthMetricPoint] {
     metric.normalizedSeries(endingAt: anchorDate, range: range)
@@ -20,6 +20,15 @@ struct GrowthTrendChartView: View {
 
   private var chartSpacing: CGFloat {
     range == .month ? 4 : 8
+  }
+
+  private var barFill: LinearGradient {
+    let baseColor = metric.provider == .postHog ? PRBarTheme.chartPalette[2] : PRBarTheme.chartPalette[0]
+    return LinearGradient(
+      colors: [baseColor.opacity(0.72), baseColor],
+      startPoint: .top,
+      endPoint: .bottom
+    )
   }
 
   private var xAxisTitle: String? {
@@ -65,7 +74,7 @@ struct GrowthTrendChartView: View {
               VStack(spacing: 0) {
                 ForEach(Array(axisScale.ticks.enumerated()), id: \.offset) { index, _ in
                   Rectangle()
-                    .fill(Color(.separator).opacity(index == axisScale.ticks.count - 1 ? 0.45 : 0.2))
+                    .fill(index == axisScale.ticks.count - 1 ? PRBarTheme.separator : PRBarTheme.separator.opacity(0.65))
                     .frame(height: 1)
                   if index < axisScale.ticks.count - 1 {
                     Spacer(minLength: 0)
@@ -76,7 +85,7 @@ struct GrowthTrendChartView: View {
               HStack(alignment: .bottom, spacing: chartSpacing) {
                 ForEach(points) { point in
                   RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(metric.provider == .postHog ? PRBarTheme.chartPalette[2] : PRBarTheme.chartPalette[0])
+                    .fill(barFill)
                     .frame(width: barWidth, height: barHeight(for: point.value))
                     .accessibilityLabel("\(shortDateLabel(point.date)), \(formatted(point.value))")
                 }
@@ -113,9 +122,7 @@ struct GrowthTrendChartView: View {
         .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(14)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .prbarSurface()
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("\(metric.title) trend")
     .accessibilityIdentifier("growth-trend-chart")
@@ -125,6 +132,8 @@ struct GrowthTrendChartView: View {
   private var chartAccessibilityValue: String {
     var parts = [
       "\(points.count) points",
+      "bar chart",
+      "selected metric \(metric.title)",
       "y-axis \(axisLabel(axisScale.minimum)) to \(axisLabel(axisScale.maximum))",
     ]
     if let xAxisTitle {

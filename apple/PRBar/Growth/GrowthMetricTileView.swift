@@ -28,13 +28,10 @@ struct GrowthMetricTileView: View {
         .lineLimit(2)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(14)
-    .background(isSelected ? PRBarTheme.accent.opacity(0.12) : Color(.secondarySystemBackground))
-    .overlay(
-      RoundedRectangle(cornerRadius: 8, style: .continuous)
-        .stroke(isSelected ? PRBarTheme.accent : Color.clear, lineWidth: 1)
+    .prbarSurface(
+      isSelected: isSelected,
+      strokeColor: isSelected ? PRBarTheme.accent : .clear
     )
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     .accessibilityElement(children: .combine)
     .accessibilityLabel("\(metric.provider.displayName), \(metric.title)")
     .accessibilityValue(accessibilityValue)

@@ -39,6 +39,9 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
     app.assertGrowthChartPointCount(7)
     app.assertGrowthChartHasYAxis()
+    let chartValue = app.otherElements["growth-trend-chart"].firstMatch.value as? String
+    XCTAssertTrue(chartValue?.contains("bar chart") == true)
+    XCTAssertTrue(chartValue?.contains("selected metric Active users") == true)
     XCTAssertTrue(app.staticTexts["Shipping context"].exists)
   }
 

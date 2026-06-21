@@ -24,7 +24,7 @@ struct GrowthView: View {
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: PRBarTheme.sectionSpacing) {
           header
 
           RangePickerView(selection: growthRangeBinding)
@@ -87,8 +87,8 @@ struct GrowthView: View {
   }
 
   private var dashboardScopeStrip: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(spacing: 8) {
+    VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
+      HStack(spacing: PRBarTheme.compactSpacing) {
         Label("Growth dashboard", systemImage: "chart.line.uptrend.xyaxis")
           .font(.caption.weight(.semibold))
           .foregroundStyle(.secondary)
@@ -101,15 +101,13 @@ struct GrowthView: View {
           .accessibilityIdentifier("growth-scope-source")
       }
 
-      VStack(alignment: .leading, spacing: 6) {
+      VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
         scopeLine(title: "Dashboard", value: snapshot.project.name, identifier: "growth-scope-dashboard")
         scopeLine(title: "Window", value: store.growthRange.windowLabel, identifier: "growth-scope-window")
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(12)
-    .background(Color(.tertiarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .prbarSurface()
     .accessibilityIdentifier("growth-dashboard-scope")
   }
 
@@ -130,12 +128,12 @@ struct GrowthView: View {
   }
 
   private var header: some View {
-    VStack(alignment: .leading, spacing: 12) {
+    VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
       Text("Usage and search movement near shipped work")
         .font(.subheadline)
         .foregroundStyle(.secondary)
 
-      HStack(spacing: 8) {
+      HStack(spacing: PRBarTheme.compactSpacing) {
         Label(snapshot.project.name, systemImage: "square.stack.3d.up")
           .font(.subheadline.weight(.semibold))
 
@@ -153,7 +151,7 @@ struct GrowthView: View {
         .accessibilityHint(snapshot.dataSource.detail)
       }
 
-      HStack(spacing: 8) {
+      HStack(spacing: PRBarTheme.compactSpacing) {
         ForEach(snapshot.connections) { connection in
           Text(connection.provider.displayName)
             .font(.caption.weight(.semibold))
@@ -200,7 +198,7 @@ struct GrowthView: View {
           Text("Growth details")
             .font(.headline)
             .foregroundStyle(.primary)
-          HStack(spacing: 6) {
+          HStack(spacing: PRBarTheme.compactSpacing) {
             detailChip("Growth dashboard")
             detailChip(store.growthRange.windowLabel)
             detailChip(snapshot.dataSource.displayName)
@@ -223,9 +221,7 @@ struct GrowthView: View {
         }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(14)
-      .background(Color(.secondarySystemBackground))
-      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+      .prbarSurface()
     }
     .buttonStyle(.plain)
     .accessibilityIdentifier("growth-details-entry")
@@ -241,7 +237,7 @@ struct GrowthView: View {
 
   private var growthDetailsView: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 16) {
+      VStack(alignment: .leading, spacing: PRBarTheme.sectionSpacing) {
         dashboardScopeStrip
         growthProvenancePanel
         providerSections
@@ -254,7 +250,7 @@ struct GrowthView: View {
   }
 
   private var metricTiles: some View {
-    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: PRBarTheme.compactSpacing) {
       ForEach(visibleMetrics) { metric in
         Button {
           selectedMetricID = metric.id
@@ -280,7 +276,7 @@ struct GrowthView: View {
           .font(.caption)
           .foregroundStyle(.secondary)
 
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
           provenanceRow(title: "Project", value: snapshot.project.name)
           provenanceRow(title: "Source", value: snapshot.dataSource.displayName)
           provenanceRow(title: "Updated", value: growthUpdatedLabel)
@@ -290,9 +286,7 @@ struct GrowthView: View {
       Spacer(minLength: 0)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(12)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .prbarSurface()
     .accessibilityIdentifier("growth-provenance-status")
   }
 
@@ -388,7 +382,7 @@ struct GrowthView: View {
   }
 
   private var shippingContext: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: PRBarTheme.compactSpacing) {
       Text("Shipping context")
         .font(.headline)
       Text(snapshot.shippingContext.summary)
@@ -400,9 +394,7 @@ struct GrowthView: View {
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(14)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .prbarSurface()
   }
 
   @ViewBuilder
