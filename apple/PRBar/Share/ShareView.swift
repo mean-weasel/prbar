@@ -65,17 +65,22 @@ struct ShareView: View {
   }
 
   private var cardControls: some View {
-    HStack(spacing: 10) {
-      Button(store.cardDraft.side == .publicSide ? "Show evidence" : "Show public card") {
+    HStack(spacing: PRBarTheme.compactSpacing) {
+      Button {
         store.cardDraft.side = store.cardDraft.side == .publicSide ? .evidenceSide : .publicSide
+      } label: {
+        Label(store.cardDraft.side == .publicSide ? "Evidence" : "Public", systemImage: "doc.text.magnifyingglass")
       }
       .buttonStyle(.bordered)
 
-      Button("Style & Privacy") {
+      Button {
         isStylePrivacyPresented = true
+      } label: {
+        Label("Style", systemImage: "slider.horizontal.3")
       }
       .buttonStyle(.bordered)
     }
+    .font(.subheadline.weight(.semibold))
   }
 
   @ViewBuilder
@@ -133,9 +138,7 @@ struct ShareView: View {
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(12)
-    .background(Color(.secondarySystemBackground))
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .prbarSurface()
   }
 
   private var currentExport: WorkCardExport {

@@ -258,6 +258,8 @@ final class PRBarUITests: XCTestCase {
 
     app.tapTab("Share")
     XCTAssertTrue(app.staticTexts["Share a work card"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["Evidence"].exists)
+    XCTAssertTrue(app.buttons["Style"].exists)
     XCTAssertTrue(app.staticTexts["Public side"].exists)
     app.buttons["Export card"].tap()
     XCTAssertTrue(app.staticTexts["Share public-safe card"].waitForExistence(timeout: 2))

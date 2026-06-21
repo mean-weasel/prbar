@@ -5,7 +5,7 @@ struct WorkCardView: View {
   var draft: WorkCardDraft
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 18) {
+    VStack(alignment: .leading, spacing: 14) {
       VStack(alignment: .leading, spacing: 8) {
         Text("Public side")
           .font(.caption.weight(.semibold))
