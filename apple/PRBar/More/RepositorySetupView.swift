@@ -16,6 +16,7 @@ struct RepositorySetupView: View {
   private var showsFinishButton: Bool
   @State private var searchText = ""
   @State private var filter: RepositoryFilter = .all
+  @State private var showsBulkSelection = false
 
   init(store: PRBarStore, title: String = "Repos", showsFinishButton: Bool = false) {
     self.store = store
@@ -34,7 +35,7 @@ struct RepositorySetupView: View {
   var body: some View {
     List {
       Section {
-        Text("Included repos power PRs, Releases, and Cards.")
+        Text("Selected repos power Activity, Growth context, and work cards.")
           .font(.subheadline)
           .foregroundStyle(.secondary)
       }
@@ -99,24 +100,28 @@ struct RepositorySetupView: View {
           .pickerStyle(.segmented)
           .accessibilityIdentifier("repo-filter-picker")
 
-          HStack(spacing: 10) {
-            Button {
-              setVisibleReadyRepositories(included: true)
-            } label: {
-              Label("Select visible", systemImage: "checkmark.circle")
-            }
-            .buttonStyle(.bordered)
-            .disabled(store == nil || visibleReadyRepositories.isEmpty)
+          DisclosureGroup("Bulk selection", isExpanded: $showsBulkSelection) {
+            HStack(spacing: 10) {
+              Button {
+                setVisibleReadyRepositories(included: true)
+              } label: {
+                Label("Select visible", systemImage: "checkmark.circle")
+              }
+              .buttonStyle(.bordered)
+              .disabled(store == nil || visibleReadyRepositories.isEmpty)
 
-            Button {
-              setVisibleReadyRepositories(included: false)
-            } label: {
-              Label("Clear visible", systemImage: "xmark.circle")
+              Button {
+                setVisibleReadyRepositories(included: false)
+              } label: {
+                Label("Clear visible", systemImage: "xmark.circle")
+              }
+              .buttonStyle(.bordered)
+              .disabled(store == nil || visibleSelectedRepositories.isEmpty)
             }
-            .buttonStyle(.bordered)
-            .disabled(store == nil || visibleSelectedRepositories.isEmpty)
+            .font(.subheadline)
+            .padding(.top, 8)
           }
-          .font(.subheadline)
+          .font(.subheadline.weight(.medium))
         }
       }
 
