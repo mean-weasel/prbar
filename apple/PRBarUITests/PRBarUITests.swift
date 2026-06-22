@@ -183,7 +183,9 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 30), "Refresh PostHog growth did not become enabled")
     refreshButton.tap()
 
-    XCTAssertTrue(app.staticTexts["Weekly visitors"].waitForExistence(timeout: 30))
+    XCTAssertTrue(refreshButton.waitUntilDisabled(timeout: 8), "Refresh PostHog growth did not enter loading")
+    XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 30), "Refresh PostHog growth did not finish")
+    XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
     app.assertGrowthChartHasYAxis()
@@ -688,6 +690,13 @@ private extension XCUIElement {
   @MainActor
   func waitUntilEnabled(timeout: TimeInterval) -> Bool {
     let predicate = NSPredicate(format: "enabled == true")
+    let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+    return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
+  }
+
+  @MainActor
+  func waitUntilDisabled(timeout: TimeInterval) -> Bool {
+    let predicate = NSPredicate(format: "enabled == false")
     let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
     return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
   }
