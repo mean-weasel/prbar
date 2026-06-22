@@ -182,11 +182,20 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(refreshButton.waitForExistence(timeout: 4))
     XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 30), "Refresh PostHog growth did not become enabled")
     refreshButton.tap()
+
+    XCTAssertTrue(app.staticTexts["Weekly visitors"].waitForExistence(timeout: 30))
+    XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
+    app.assertGrowthChartPointCount(7)
+    app.assertGrowthChartHasYAxis()
+    app.assertGrowthChartHasAxisLabels(xAxis: "Calendar day", yAxis: "Visitors")
+
+    XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 8))
+    app.buttons["growth-details-entry"].tap()
     let dashboardLoaded = app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 30)
     if dashboardLoaded == false {
       let hierarchy = app.debugDescription
       let attachment = XCTAttachment(string: hierarchy)
-      attachment.name = "Growth tab hierarchy after live PostHog refresh"
+      attachment.name = "Growth details hierarchy after live PostHog refresh"
       attachment.lifetime = .keepAlways
       add(attachment)
 
@@ -202,11 +211,6 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
     XCTAssertTrue(app.staticTexts["7-day window"].exists)
     XCTAssertTrue(app.staticTexts["Growth data refreshed"].exists)
-    XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
-    XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
-    app.assertGrowthChartPointCount(7)
-    app.assertGrowthChartHasYAxis()
-    app.assertGrowthChartHasAxisLabels(xAxis: "Calendar day", yAxis: "Visitors")
   }
 
   @MainActor
