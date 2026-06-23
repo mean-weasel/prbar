@@ -7,6 +7,12 @@ struct SettingsView: View {
     let diagnostics = store.settingsDiagnostics
 
     Form {
+      Section {
+        Text("Diagnostics help explain connection state, cached data, and integration setup when something looks off.")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+      }
+
       Section("GitHub") {
         LabeledContent("Account", value: diagnostics.account)
         LabeledContent("Auth", value: diagnostics.auth)
@@ -18,7 +24,7 @@ struct SettingsView: View {
         }
       }
 
-      Section("Status") {
+      Section("Sync diagnostics") {
         LabeledContent("Sync", value: diagnostics.sync)
         LabeledContent("Last refresh", value: diagnostics.lastRefresh)
         LabeledContent("Last attempt", value: diagnostics.lastAttempt)
@@ -36,7 +42,7 @@ struct SettingsView: View {
         }
       }
 
-      Section("Growth") {
+      Section("Growth diagnostics") {
         NavigationLink("PostHog") {
           PostHogSettingsView(snapshot: store.growthSnapshot)
         }

@@ -122,7 +122,7 @@ enum WorkCardImageRenderer {
   }
 }
 
-private struct WorkCardExportPreview: View {
+struct WorkCardExportPreview: View {
   var export: WorkCardExport
 
   var body: some View {
