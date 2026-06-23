@@ -72,14 +72,7 @@ struct RepositorySetupView: View {
           .background(Color(.tertiarySystemFill))
           .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-          HStack {
-            Label(selectionSummaryText, systemImage: "checkmark.circle")
-            Spacer()
-            Text("\(availableCount) available")
-              .foregroundStyle(.secondary)
-          }
-          .font(.subheadline)
-
+          repoSummary
           accessSummary
 
           if showsFinishButton && includedCount == 0 {
@@ -100,7 +93,7 @@ struct RepositorySetupView: View {
           .pickerStyle(.segmented)
           .accessibilityIdentifier("repo-filter-picker")
 
-          DisclosureGroup("Bulk selection", isExpanded: $showsBulkSelection) {
+          DisclosureGroup(isExpanded: $showsBulkSelection) {
             HStack(spacing: 10) {
               Button {
                 setVisibleReadyRepositories(included: true)
@@ -120,8 +113,10 @@ struct RepositorySetupView: View {
             }
             .font(.subheadline)
             .padding(.top, 8)
+          } label: {
+            Label("Bulk selection", systemImage: "checklist")
+              .font(.subheadline.weight(.medium))
           }
-          .font(.subheadline.weight(.medium))
         }
       }
 
@@ -285,6 +280,16 @@ struct RepositorySetupView: View {
         .foregroundStyle(.secondary)
     }
     .padding(.vertical, 2)
+  }
+
+  private var repoSummary: some View {
+    HStack {
+      Label(selectionSummaryText, systemImage: "checkmark.circle")
+      Spacer()
+      Text("\(availableCount) available")
+        .foregroundStyle(.secondary)
+    }
+    .font(.subheadline)
   }
 
   private func matchesSearch(_ repository: Repository) -> Bool {

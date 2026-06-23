@@ -16,8 +16,13 @@ struct RepoDistributionView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
-      Text("Distribution by repo")
-        .font(.headline)
+      VStack(alignment: .leading, spacing: 4) {
+        Text("Distribution by repo")
+          .font(.headline)
+        Text("Tap a repo to inspect its PR timeline.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
 
       VStack(spacing: 8) {
         ForEach(rows) { row in
@@ -49,9 +54,14 @@ struct RepoDistributionView: View {
 
               Spacer()
 
-              Text("\(row.count)")
-                .font(.subheadline.weight(.semibold))
-                .monospacedDigit()
+              VStack(alignment: .trailing, spacing: 2) {
+                Text("\(row.count)")
+                  .font(.subheadline.weight(.semibold))
+                  .monospacedDigit()
+                Text("timeline")
+                  .font(.caption2.weight(.medium))
+                  .foregroundStyle(.secondary)
+              }
 
               Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
@@ -60,6 +70,7 @@ struct RepoDistributionView: View {
             .prbarSurface()
           }
           .buttonStyle(.plain)
+          .accessibilityHint("Opens this repository's pull request timeline")
         }
       }
     }

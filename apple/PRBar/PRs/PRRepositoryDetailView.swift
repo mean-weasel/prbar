@@ -46,7 +46,18 @@ struct PRRepositoryDetailView: View {
   }
 
   private var activeDayCount: Int {
-    Set(pullRequests.map { calendar.startOfDay(for: $0.mergedAt) }).count
+    calendarDays.filter { $0.count > 0 }.count
+  }
+
+  private var busiestDay: CalendarDay? {
+    calendarDays
+      .filter { $0.count > 0 }
+      .max { lhs, rhs in
+        if lhs.count == rhs.count {
+          return lhs.date < rhs.date
+        }
+        return lhs.count < rhs.count
+      }
   }
 
   private var repositoryFullName: String {
@@ -57,10 +68,9 @@ struct PRRepositoryDetailView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 24) {
         header
-        metrics
+        timelineSummary
         distributionSection
         selectedDaySection
-        recentPRs
       }
       .padding()
     }
@@ -93,17 +103,35 @@ struct PRRepositoryDetailView: View {
     }
   }
 
-  private var metrics: some View {
-    HStack(spacing: 10) {
-      RepoActivityMetric(
-        text: "\(pullRequests.count) merged",
-        systemImage: "arrow.triangle.pull"
-      )
+  private var timelineSummary: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack(spacing: 10) {
+        RepoActivityMetric(
+          text: "\(pullRequests.count) merged",
+          label: "Pull requests",
+          systemImage: "arrow.triangle.pull"
+        )
 
-      RepoActivityMetric(
-        text: "\(activeDayCount) \(activeDayCount == 1 ? "active day" : "active days")",
-        systemImage: "calendar"
-      )
+        RepoActivityMetric(
+          text: "\(activeDayCount) \(activeDayCount == 1 ? "active day" : "active days")",
+          label: range.windowLabel,
+          systemImage: "calendar"
+        )
+      }
+
+      Label {
+        Text(timelineReadout)
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+      } icon: {
+        Image(systemName: "chart.bar.xaxis")
+          .foregroundStyle(PRBarTheme.accent)
+      }
+      .padding(12)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(Color(.secondarySystemBackground))
+      .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
   }
 
@@ -114,7 +142,7 @@ struct PRRepositoryDetailView: View {
         Text("PR distribution")
           .font(.headline)
 
-        Text("\(range.windowLabel) by merge date")
+        Text("\(range.windowLabel) by merge date. Pick a bar to see that day's PRs.")
           .font(.caption)
           .foregroundStyle(.secondary)
 
@@ -155,28 +183,10 @@ struct PRRepositoryDetailView: View {
         }
       }
     }
-  }
-
-  private var recentPRs: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Text("Recent PRs")
-        .font(.headline)
-
-      if sortedPullRequests.isEmpty {
-        ActivityEmptyStateView(
-          title: "No merged PRs",
-          detail: "Merged pull requests for this repository will appear here after activity sync.",
-          systemImage: "arrow.triangle.pull",
-          identifier: "repo-prs-empty-state"
-        )
-      } else {
-        VStack(spacing: 10) {
-          ForEach(sortedPullRequests.prefix(8)) { pullRequest in
-            RepoActivityPullRequestRow(pullRequest: pullRequest, dateLabel: shortDateLabel(for: pullRequest.mergedAt))
-          }
-        }
-      }
-    }
+    .padding(14)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(Color(.secondarySystemBackground))
+    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
   }
 
   private func pullRequests(on date: Date) -> [PullRequest] {
@@ -212,6 +222,16 @@ struct PRRepositoryDetailView: View {
 
   private func pullRequestCountLabel(for count: Int) -> String {
     count == 1 ? "pull request" : "pull requests"
+  }
+
+  private var timelineReadout: String {
+    guard let busiestDay else {
+      return "No merged PRs in this \(range.windowLabel.lowercased()). Activity will appear here after sync."
+    }
+
+    let activeDayText = activeDayCount == 1 ? "1 active day" : "\(activeDayCount) active days"
+    let mergedText = busiestDay.count == 1 ? "1 PR" : "\(busiestDay.count) PRs"
+    return "In this \(range.windowLabel.lowercased()), PRs landed on \(activeDayText). \(monthDayLabel(for: busiestDay.date)) was busiest with \(mergedText) merged."
   }
 
   private var calendar: Calendar {
@@ -262,6 +282,7 @@ struct PRRepositoryDetailView: View {
 
 private struct RepoActivityMetric: View {
   var text: String
+  var label: String
   var systemImage: String
 
   var body: some View {
@@ -273,6 +294,10 @@ private struct RepoActivityMetric: View {
       Text(text)
         .font(.title2.weight(.bold))
         .monospacedDigit()
+
+      Text(label)
+        .font(.caption.weight(.medium))
+        .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .prbarSurface()
