@@ -1,0 +1,90 @@
+name: AAK iOS Simulator Fixture UI Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: Type fixture-ui-smoke to run the sterile iOS simulator fixture lane
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aak-ios-simulator-fixture-ui-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fixture-ui-smoke:
+    name: simulator fixture UI smoke
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Checkout Apple Agent Kit
+        uses: actions/checkout@v6
+        with:
+          repository: neonwatty/apple-agent-kit
+          ref: main
+          path: .aak/apple-agent-kit
+
+      - name: Materialize private adapter
+        env:
+          APPLE_AGENT_KIT_ADAPTER_JSON: ${{ secrets.APPLE_AGENT_KIT_ADAPTER_JSON }}
+        run: |
+          set -euo pipefail
+          test -n "$APPLE_AGENT_KIT_ADAPTER_JSON"
+          printf '%s' "$APPLE_AGENT_KIT_ADAPTER_JSON" > .apple-agent-kit.json
+
+      - name: Validate private adapter
+        run: python3 .aak/apple-agent-kit/scripts/aak.py validate-adapter .apple-agent-kit.json --json
+
+      - name: Prepare iOS simulator fixture UI smoke command
+        id: fixture
+        run: |
+          set -euo pipefail
+          python3 .aak/apple-agent-kit/scripts/aak.py prepare-fixture-ui-smoke \
+            --adapter .apple-agent-kit.json \
+            --script .aak/ios-simulator-fixture-ui-smoke-command.sh \
+            --github-output "$GITHUB_OUTPUT" \
+            --approval "${{ github.event.inputs.approval }}" \
+            --platform ios
+
+      - name: Xcode readiness
+        run: python3 .aak/apple-agent-kit/scripts/aak.py check-xcode --json
+
+      - name: Run iOS simulator fixture UI smoke command
+        run: bash .aak/ios-simulator-fixture-ui-smoke-command.sh
+
+      - name: Validate fixture UI smoke receipt
+        run: |
+          set -euo pipefail
+          python3 .aak/apple-agent-kit/scripts/aak.py validate-fixture-ui-smoke-receipt \
+            "${{ steps.fixture.outputs.receipt_path }}" \
+            --json
+
+      - name: Simulator boundary assertion
+        run: |
+          set -euo pipefail
+          echo "No physical-device actions, personal-app automation, raw accessibility trees, non-fixture screenshots, WDA, or live-account flows are allowed by this workflow."
+
+      - name: Upload fixture UI smoke receipt
+        if: ${{ always() && steps.fixture.outputs.receipt_path != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-simulator-fixture-ui-smoke-receipt
+          path: ${{ steps.fixture.outputs.receipt_path }}
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload fixture UI smoke evidence
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-simulator-fixture-ui-smoke-evidence
+          path: ${{ steps.fixture.outputs.artifact_paths }}
+          if-no-files-found: warn
+          retention-days: 14

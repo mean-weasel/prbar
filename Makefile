@@ -5,7 +5,7 @@ DERIVED_DATA := build
 APP_BINARY := $(DERIVED_DATA)/Build/Products/Debug/PRMenuBar.app/Contents/MacOS/PRMenuBar
 
 .PHONY: generate format-check file-size-check build test refresh-benchmark coverage-report app-smoke aak-fixture-ui-smoke package-release run run-live ci-local clean
-.PHONY: ios-generate ios-build ios-test ios-ui-smoke ios-ci-local
+.PHONY: ios-generate ios-build ios-test ios-ui-smoke aak-ios-simulator-fixture-ui-smoke ios-ci-local
 
 generate:
 	node scripts/sync-product-version.mjs
@@ -97,6 +97,9 @@ ios-test:
 
 ios-ui-smoke:
 	./scripts/ios-ui-smoke.sh
+
+aak-ios-simulator-fixture-ui-smoke:
+	./scripts/aak-ios-simulator-fixture-ui-smoke.sh
 
 ios-ci-local: ios-build ios-test ios-ui-smoke
 

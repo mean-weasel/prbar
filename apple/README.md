@@ -28,6 +28,17 @@ gh workflow run ios-physical-preview.yml \
   -f device_name=iPhone-preview
 ```
 
+Use the AAK simulator fixture workflow for receipt-based iOS GUI proof that does not touch a physical device:
+
+```bash
+gh workflow run aak-ios-simulator-fixture-ui-smoke.yml \
+  --repo mean-weasel/prbar \
+  --ref <branch> \
+  -f approval=fixture-ui-smoke
+```
+
+The workflow expects `APPLE_AGENT_KIT_ADAPTER_JSON` to provide `platforms.ios.simulatorDestination`, `automation.fixtureSmokeCommand` set to `make aak-ios-simulator-fixture-ui-smoke`, and an allowlist for the fixture receipt plus sanitized log artifacts. It writes `adapter.platform=ios` receipts and withholds raw xcodebuild output, result-bundle internals, screenshots, and accessibility trees from public evidence.
+
 Use the production workflows only when the production iPhone is connected, trusted, unlocked, and ready to receive the day-to-day app build:
 
 ```bash
