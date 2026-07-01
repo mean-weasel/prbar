@@ -56,6 +56,9 @@ jobs:
       - name: Xcode readiness
         run: python3 .aak/apple-agent-kit/scripts/aak.py check-xcode --json
 
+      - name: Install xcodegen
+        run: brew install xcodegen
+
       - name: Run iOS simulator fixture UI smoke command
         run: bash .aak/ios-simulator-fixture-ui-smoke-command.sh
 
@@ -81,7 +84,7 @@ jobs:
           retention-days: 14
 
       - name: Upload fixture UI smoke evidence
-        if: ${{ success() }}
+        if: ${{ always() && steps.fixture.outputs.artifact_paths != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: ios-simulator-fixture-ui-smoke-evidence
