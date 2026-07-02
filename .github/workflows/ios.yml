@@ -59,6 +59,13 @@ jobs:
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Checkout Apple Agent Kit
+        if: github.event_name != 'pull_request' || steps.ios_changes.outputs.run == 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: neonwatty/apple-agent-kit
+          ref: main
+          path: .aak/apple-agent-kit
       - name: Select Xcode
         if: github.event_name != 'pull_request' || steps.ios_changes.outputs.run == 'true'
         run: |
@@ -84,6 +91,11 @@ jobs:
         env:
           IOS_UI_SMOKE_PROFILE: ${{ steps.ios_changes.outputs.smoke_profile || inputs.smoke_profile || 'pr' }}
         run: ./scripts/ios-ui-smoke.sh
+      - name: Assert UI smoke xcresult
+        if: github.event_name != 'pull_request' || steps.ios_changes.outputs.run == 'true'
+        env:
+          IOS_UI_SMOKE_PROFILE: ${{ steps.ios_changes.outputs.smoke_profile || inputs.smoke_profile || 'pr' }}
+        run: ./scripts/ios-assert-ui-smoke-xcresult.sh
       - name: Skip iOS checks
         if: github.event_name == 'pull_request' && steps.ios_changes.outputs.run != 'true'
         run: echo "No iOS files changed; reporting required iOS check as skipped."
