@@ -11,12 +11,12 @@ AAK_SCRIPT="${AAK_SCRIPT_PATH:-.aak/apple-agent-kit/scripts/aak.py}"
 EXPECTED_TESTS=()
 case "$PROFILE" in
   fast)
-    EXPECTED_TESTS=("testTabsExposeReviewedPrototypeSurfaces")
+    EXPECTED_TESTS=("PRBarUITests/PRBarUITests/testTabsExposeReviewedPrototypeSurfaces")
     ;;
   pr | full)
     EXPECTED_TESTS=(
-      "testTabsExposeReviewedPrototypeSurfaces"
-      "testShareTabExplainsWorkCardExport"
+      "PRBarUITests/PRBarUITests/testTabsExposeReviewedPrototypeSurfaces"
+      "PRBarUITests/PRBarUITests/testShareTabExplainsWorkCardExport"
     )
     ;;
   *)
