@@ -83,6 +83,10 @@ jobs:
           set -euo pipefail
           python3 .aak/apple-agent-kit/scripts/aak.py validate-fixture-ui-smoke-receipt \
             "${{ steps.fixture.outputs.receipt_path }}" \
+            --verify-artifacts \
+            --adapter .apple-agent-kit.json \
+            --platform ios \
+            --github-output "$GITHUB_OUTPUT" \
             --json
 
       - name: Simulator boundary assertion
@@ -101,10 +105,10 @@ jobs:
           retention-days: 14
 
       - name: Upload fixture UI smoke evidence
-        if: ${{ always() && steps.fixture.outputs.artifact_paths != '' && steps.validate-fixture-receipt.outcome == 'success' }}
+        if: ${{ always() && steps.validate-fixture-receipt.outputs.verified_artifact_paths != '' && steps.validate-fixture-receipt.outcome == 'success' }}
         uses: actions/upload-artifact@v7
         with:
           name: ios-simulator-fixture-ui-smoke-evidence
-          path: ${{ steps.fixture.outputs.artifact_paths }}
+          path: ${{ steps.validate-fixture-receipt.outputs.verified_artifact_paths }}
           if-no-files-found: warn
           retention-days: 14
