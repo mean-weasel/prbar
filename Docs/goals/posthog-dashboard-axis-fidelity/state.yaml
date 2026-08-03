@@ -395,6 +395,19 @@ tasks:
       - "Post-merge main CI/iOS green."
       - "Production app installed."
       - "Physical production Growth smoke passes and verifies axis-label metadata or records exact blocker."
+    attempts:
+      - date: "2026-06-04"
+        result: "production_device_unavailable"
+        note: "Docs/goals/posthog-dashboard-axis-fidelity/notes/T008-production-device-attempt-2026-06-04.md"
+        proven:
+          - "PR #132 merged through merge queue at 2026-06-04T04:39:41Z."
+          - "Post-merge main CI passed: https://github.com/mean-weasel/prbar/actions/runs/26931137245"
+          - "Post-merge main iOS passed: https://github.com/mean-weasel/prbar/actions/runs/26931137266"
+          - "Post-merge Release passed: https://github.com/mean-weasel/prbar/actions/runs/26931137249"
+        blocker:
+          - "iOS Production Install run failed in Runner preflight before build/install: https://github.com/mean-weasel/prbar/actions/runs/26931558037"
+          - "CoreDevice reports iPhone-prod paired but unavailable; tunnelState=unavailable and ddiServicesAvailable=false."
+          - "xcodebuild -showdestinations lists iPhone-preview but not iPhone-prod."
     receipt: null
 
   - id: T999
@@ -423,11 +436,14 @@ tasks:
 checks:
   dirty_fingerprint: unknown
   last_verification:
-    result: pass
-    task: T005
+    result: partial_blocked
+    task: T008
     commands:
-      - "git diff --check"
-      - "./scripts/format-check.sh"
-      - "IOS_TEST_ONLY=PRBarTests ./scripts/ios-test.sh"
-      - "xcodebuild test -project apple/PRBar.xcodeproj -scheme PRBar -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath apple/build -resultBundlePath apple/PostHogAxisFidelityUITest-2.xcresult CODE_SIGNING_ALLOWED=NO -only-testing:PRBarUITests/PRBarUITests/testGrowthTabRendersBleepPostHogDashboardExperiment"
-      - "./scripts/ios-test.sh"
+      - "gh pr view 132 --json state,mergedAt,mergeCommit,url"
+      - "gh run view 26931137245 --json status,conclusion,jobs"
+      - "gh run view 26931137266 --json status,conclusion,jobs"
+      - "gh workflow run ios-production-install.yml --ref main -f device_name=iPhone-prod"
+      - "gh run view 26931558037 --json status,conclusion,jobs"
+      - "./scripts/ios-list-devices.sh"
+      - "xcrun devicectl device info details --device D7045658-5C05-5166-B20F-1E01DEC05DB1 --json-output <tmp> --quiet --timeout 10"
+      - "xcodebuild -project apple/PRBar.xcodeproj -scheme PRBar -showdestinations"
