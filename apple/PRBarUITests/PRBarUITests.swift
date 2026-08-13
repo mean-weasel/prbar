@@ -40,7 +40,9 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("Growth")
 
     XCTAssertTrue(app.staticTexts["Usage and search movement near shipped work"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["Sample data"].exists)
+    XCTAssertFalse(app.staticTexts["Growth dashboard"].exists)
+    XCTAssertFalse(app.staticTexts["Sample data"].exists)
+    XCTAssertFalse(app.staticTexts["Shipping context"].exists)
     XCTAssertTrue(app.staticTexts["Active users"].exists)
     XCTAssertTrue(app.staticTexts["Search clicks"].exists)
     app.assertGrowthChartPointCount(7)
@@ -48,14 +50,13 @@ final class PRBarUITests: XCTestCase {
     let chartValue = app.otherElements["growth-trend-chart"].firstMatch.value as? String
     XCTAssertTrue(chartValue?.contains("bar chart") == true)
     XCTAssertTrue(chartValue?.contains("selected metric Active users") == true)
-    XCTAssertFalse(app.staticTexts["Shipping context"].exists)
     XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.buttons["growth-details-entry"].label.contains("7-day window"))
-    XCTAssertTrue(app.buttons["growth-details-entry"].label.contains("Sample data"))
     app.buttons["growth-details-entry"].tap()
-    XCTAssertTrue(app.staticTexts["Shipping context"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["Growth dashboard"].exists)
+    XCTAssertTrue(app.staticTexts["Growth dashboard"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["7-day window"].exists)
+    XCTAssertTrue(app.staticTexts["Sample data"].exists)
+    XCTAssertTrue(app.staticTexts["Shipping context"].exists)
   }
 
   @MainActor
@@ -76,6 +77,7 @@ final class PRBarUITests: XCTestCase {
     XCTAssertGreaterThanOrEqual(monthPointCount ?? 0, 28)
     XCTAssertLessThanOrEqual(monthPointCount ?? 0, 31)
     XCTAssertTrue(app.buttons["growth-details-entry"].label.contains("Current month"))
+    XCTAssertFalse(app.staticTexts["Search Console data can lag by a few days."].exists)
     app.buttons["growth-details-entry"].tap()
     XCTAssertTrue(app.staticTexts["Current month"].waitForExistence(timeout: 4))
     app.scrollToStaticText("Search Console data can lag by a few days.")
@@ -104,8 +106,10 @@ final class PRBarUITests: XCTestCase {
     app.tapTab("Growth")
 
     XCTAssertTrue(app.staticTexts["Growth"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 2))
-    XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
+    XCTAssertFalse(app.staticTexts["Bleep Blog KPI Dashboard"].exists)
+    XCTAssertFalse(app.staticTexts["Live PostHog"].exists)
+    XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.buttons["growth-details-entry"].label.contains("7-day window"))
     XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
     XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
     app.assertGrowthChartPointCount(7)
@@ -113,7 +117,8 @@ final class PRBarUITests: XCTestCase {
     app.assertGrowthChartHasAxisLabels(xAxis: "Calendar day", yAxis: "Visitors")
 
     app.buttons["growth-details-entry"].tap()
-    XCTAssertTrue(app.staticTexts["7-day window"].exists)
+    XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 2))
+    XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
     XCTAssertTrue(app.staticTexts["Growth data source"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Project"].exists)
     XCTAssertTrue(app.staticTexts["Source"].exists)
@@ -130,10 +135,11 @@ final class PRBarUITests: XCTestCase {
 
     let refreshButton = app.buttons["Refresh PostHog growth"]
     XCTAssertTrue(refreshButton.waitForExistence(timeout: 4))
-    XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 4))
-    XCTAssertTrue(app.staticTexts["Live PostHog"].waitForExistence(timeout: 4))
+    XCTAssertFalse(app.staticTexts["Bleep Blog KPI Dashboard"].exists)
+    XCTAssertFalse(app.staticTexts["Live PostHog"].exists)
     XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 2))
     app.buttons["growth-details-entry"].tap()
+    XCTAssertTrue(app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 2))
     XCTAssertTrue(app.staticTexts["Growth data source"].exists)
     XCTAssertTrue(
       app.staticTexts
@@ -176,11 +182,22 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(refreshButton.waitForExistence(timeout: 4))
     XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 30), "Refresh PostHog growth did not become enabled")
     refreshButton.tap()
+
+    XCTAssertTrue(refreshButton.waitUntilDisabled(timeout: 8), "Refresh PostHog growth did not enter loading")
+    XCTAssertTrue(refreshButton.waitUntilEnabled(timeout: 30), "Refresh PostHog growth did not finish")
+    XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
+    XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
+    app.assertGrowthChartPointCount(7)
+    app.assertGrowthChartHasYAxis()
+    app.assertGrowthChartHasAxisLabels(xAxis: "Calendar day", yAxis: "Visitors")
+
+    XCTAssertTrue(app.buttons["growth-details-entry"].waitForExistence(timeout: 8))
+    app.buttons["growth-details-entry"].tap()
     let dashboardLoaded = app.staticTexts["Bleep Blog KPI Dashboard"].waitForExistence(timeout: 30)
     if dashboardLoaded == false {
       let hierarchy = app.debugDescription
       let attachment = XCTAttachment(string: hierarchy)
-      attachment.name = "Growth tab hierarchy after live PostHog refresh"
+      attachment.name = "Growth details hierarchy after live PostHog refresh"
       attachment.lifetime = .keepAlways
       add(attachment)
 
@@ -196,11 +213,6 @@ final class PRBarUITests: XCTestCase {
     XCTAssertTrue(app.staticTexts["Live PostHog"].exists)
     XCTAssertTrue(app.staticTexts["7-day window"].exists)
     XCTAssertTrue(app.staticTexts["Growth data refreshed"].exists)
-    XCTAssertTrue(app.staticTexts["Weekly visitors"].exists)
-    XCTAssertTrue(app.staticTexts["Daily pageviews"].exists)
-    app.assertGrowthChartPointCount(7)
-    app.assertGrowthChartHasYAxis()
-    app.assertGrowthChartHasAxisLabels(xAxis: "Calendar day", yAxis: "Visitors")
   }
 
   @MainActor
@@ -678,6 +690,13 @@ private extension XCUIElement {
   @MainActor
   func waitUntilEnabled(timeout: TimeInterval) -> Bool {
     let predicate = NSPredicate(format: "enabled == true")
+    let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+    return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
+  }
+
+  @MainActor
+  func waitUntilDisabled(timeout: TimeInterval) -> Bool {
+    let predicate = NSPredicate(format: "enabled == false")
     let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
     return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
   }
